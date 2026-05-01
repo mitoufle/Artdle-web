@@ -1,158 +1,89 @@
-# Artdle Web — Handover (Fresh Project)
+# Artdle Web — Handover
 
-**Date:** 2026-05-01
-**Status:** Pre-scaffold. The repo does not exist yet — this handover folder is staged content for the new repo.
-
----
-
-## The story so far
-
-The project started as a Godot 4 idle painting game (`~/Documents/artdle/`). After three months of MVP rebuild + Canvas + Workshop backend implementation in Godot, the decision was made on 2026-05-01 to **port to the web** — fresh repo, fresh stack, no Godot inheritance beyond the design specs and assets.
-
-A 2026-05-01 brainstorming session produced two specs:
-
-1. The original `web-port-plan.md` (full-design v1) — superseded.
-2. The active **`PORT_PLAN.md`** (v1 stripped + wave roadmap) — what we're actually building.
-
-V1 = minimum playable loop with 5 stripped systems (Tree, Canvas, Workshop, Skill Tree, Ascend). Each system in its lightest playable form. Feature richness deferred to waves v1.1 → v1.8 (which port the Canvas and Workshop design specs incrementally), then v2.x (Painter's Office, Painting School, Expositions, audio, offline progress), then v3.x (multi-art-form, backend, public hosting).
-
-The first implementation plan covers **Phase 0 + Phase 1** (scaffold + foundations). It's at `docs/superpowers/plans/2026-05-01-artdle-web-phase0-1.md`.
+**Date:** 2026-05-01 (post Phase 0+1 execution)
+**Status:** Phase 0 + Phase 1 plan executed. 84/84 tests green. tsc clean. lint clean (1 unrelated warning). Save persists across reload.
 
 ---
 
-## What's in this handover folder
+## Where we are
 
-```
-artdle-web-handover/
-├── CLAUDE.md                              # auto-loaded by Claude Code; project intro + conventions
-└── docs/
-    ├── HANDOVER.md                        # this file
-    ├── PORT_PLAN.md                       # the v1 spec (authoritative)
-    ├── specs/                             # 4 source Godot design specs (reference for waves)
-    │   ├── 2026-04-24-artdle-rescope-design.md
-    │   ├── 2026-04-25-canvas-design.md
-    │   ├── 2026-04-25-info-panel-design.md
-    │   └── 2026-04-26-workshop-design.md
-    ├── superpowers/plans/
-    │   └── 2026-05-01-artdle-web-phase0-1.md   # Phase 0 + 1 plan (31 tasks, ~2400 lines)
-    └── agent_docs/
-        ├── architecture.md                # Zustand pattern, persistence, tick loop, big numbers
-        ├── conventions.md                 # TS strict, file structure, slice anatomy, TDD discipline
-        └── workflow.md                    # subagent-driven dev, plan execution, when stuck
-```
+The repo at `~/Documents/artdle-web/` is scaffolded and the foundation is laid. The plan at `docs/superpowers/plans/2026-05-01-artdle-web-phase0-1.md` is fully executed.
+
+**What's green:**
+
+- Vite + React 19 + TS 6 strict (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`)
+- Tailwind 4 CSS-first `@theme` palette
+- ESLint 10 flat config + Prettier
+- Vitest 4 (jsdom + fake-indexeddb)
+- `src/core/`: bigNumber wrapper, formatter (K/M/B/T/Q), v1 balance formulas, mulberry32 RNG, playerId UUID, tickLoop (RAF + visibilitychange, no offline catch-up)
+- `src/systems/persistence.ts`: idb-keyval-backed `SaveAdapter`
+- `src/store/`: combined Zustand store with three slices (meta, currency, hoverInfo) wrapped in `persist` (idb, version 1, migrate stub, recursive Big serializer in `partialize`, hoverInfo partialized OUT)
+- `src/main.tsx`: rehydration-gated Bootstrap renders `<LoadingScreen>` until `useGameStore.persist.hasHydrated()`, then `<App>`
+- `src/App.tsx`: stub showing the persisted playerId — refresh-stable proof the persistence loop closes
+
+**Test count breakdown:** bigNumber 9, formatter 11, balance 17, rng 8, playerId 5, tickLoop 6, persistence 5, metaSlice 5, currencySlice 8, hoverInfoSlice 5, persistence-integration 5 = **84 tests across 11 files**.
 
 ---
 
-## How to start the new project
+## What's next
 
-**Run these in a regular shell (not Claude Code) — this is one-time bootstrap before the first Claude session.**
+Phase 2 needs a fresh brainstorm → spec → plan → execute cycle:
 
-```bash
-# 1. Create the new repo directory (clean, empty)
-mkdir -p /c/Users/mitoufle/Documents/artdle-web
-cd /c/Users/mitoufle/Documents/artdle-web
+- Tree slice (3 stages, parts, accrual rate per part * level)
+- Canvas slice (single slot, fixed paint-time, auto-sell)
+- Tree config (`src/config/treeStages.ts`)
+- Wire `tickLoop` → tree.tick (accrue inspiration) + canvas.tick (advance painting + auto-sell on completion)
+- Still no UI — verifies the gameplay loop end-to-end via tests
 
-# 2. Verify it's empty
-ls -A
-# Expected: nothing (or only .git if you ran git init somehow)
+Subsequent plans (one per phase, each written after the previous executes):
+- Phase 3: Workshop click-to-craft, Ascend, Skill Tree (5 nodes)
+- Phase 4: UI shell + 4 view stubs
+- Phase 5: Hover-info wiring + Workshop popup
+- Phase 6: Polish (Motion) + balance pass + ship v1.0
 
-# 3. Copy this handover bundle into it
-cp -r /c/Users/mitoufle/Documents/artdle-web-handover/* .
-cp /c/Users/mitoufle/Documents/artdle-web-handover/CLAUDE.md .
-
-# 4. Verify
-ls
-# Expected: CLAUDE.md, docs/
-
-# 5. Start a fresh Claude Code session in this directory
-# (open a new terminal here, run: claude)
-```
-
-**Then in the fresh Claude session, your first message can be:**
-
-> Read CLAUDE.md and docs/HANDOVER.md. We're starting Phase 0 of the plan at docs/superpowers/plans/2026-05-01-artdle-web-phase0-1.md. Use the subagent-driven-development skill to execute it task-by-task. Start with Task 1.
-
-Claude will then:
-1. Read CLAUDE.md (auto) and HANDOVER.md.
-2. Load the plan.
-3. Invoke subagent-driven-development.
-4. Dispatch a subagent for Task 1 (the Vite scaffold), which will run `npm create vite@latest . --template react-ts` in the now-empty parent directory.
-
-Wait — Task 1's `npm create vite` in a non-empty directory will prompt. Two options:
-
-- **Option A (recommended):** Don't pre-populate. Run Task 1 first (Vite scaffold in empty dir), then commit, then copy the handover bundle in, then commit again. Adjust the bootstrap above to: skip step 3 until after Vite scaffold completes; then copy + commit.
-- **Option B:** Pre-populate, then choose "Ignore files and continue" when Vite prompts.
-
-Updated bootstrap (Option A — cleaner):
-
-```bash
-# 1. Create empty directory
-mkdir -p /c/Users/mitoufle/Documents/artdle-web
-cd /c/Users/mitoufle/Documents/artdle-web
-
-# 2. Vite scaffold in empty dir (no prompt)
-npm create vite@latest . -- --template react-ts
-npm install
-git init && git add -A && git commit -m "scaffold: vite react-ts template"
-
-# 3. NOW copy the handover bundle (won't conflict with scaffold)
-cp -r /c/Users/mitoufle/Documents/artdle-web-handover/docs .
-cp /c/Users/mitoufle/Documents/artdle-web-handover/CLAUDE.md .
-git add docs CLAUDE.md
-git commit -m "docs: add handover bundle (CLAUDE.md, port plan, specs, plans, agent docs)"
-
-# 4. Start Claude Code session
-claude
-```
-
-**Note:** the plan's Task 1 also does `mkdir + npm create vite + git init + initial commit`. If you've done it manually as above, the plan execution skips Task 1 (or treats it as already done). Tell Claude in your first message which tasks are already complete.
+Wave roadmap (`PORT_PLAN.md` §2.1) takes over post-v1.0.
 
 ---
 
-## Active plan execution state
+## Lessons from the Phase 0+1 execution
 
-- **Plan:** `docs/superpowers/plans/2026-05-01-artdle-web-phase0-1.md`
-- **Tasks:** 31 (Phase 0: Tasks 1-13 scaffold; Phase 1: Tasks 14-31 core primitives + persistence)
-- **State:** none executed yet (or, if you followed Option A bootstrap above, Task 1 is done — Tasks 2 onward to run via subagent).
-- **End state:** ~80 tests passing, project compiles, save persists across refresh, playerId stable.
+Three plan-level bugs surfaced during execution. Watch for these patterns when writing Phase 2's plan:
 
----
+1. **`break_eternity.js` `Big.pow(integer)` is not bit-exact.** It uses log-domain math; `2^5` returns `32000.000000000007`, not `32000`. Tests comparing Big-derived values must use `toBeCloseTo`, not `toBe`. The plan's tree-cost test (`Math.pow(1.15, 10)` precision) had this right; the palier test missed it.
 
-## What comes after Phase 0+1
+2. **`JSON.stringify` calls `Decimal.toJSON()` BEFORE the replacer runs.** A replacer-based Big serializer is unreachable for actual `Decimal` instances — they arrive as bare strings. The fix used in `src/store/index.ts`: a recursive `serializeBigs` walker invoked inside `partialize`, which transforms Bigs into `{__big: "..."}` markers BEFORE `JSON.stringify` ever runs. Reviver-side stays simple. Future slices that introduce more Bigs need no plumbing changes (the walker is recursive).
 
-The current plan covers only the scaffold and foundations. **No game logic yet.** Subsequent plans (one per phase, written after each completes):
+3. **Test name vs. test contract drift.** Phase 0+1 had a test named `"returns 0 when inspi is below 10"` whose formula returned `9` at `n=9`, not `0`. The describe text was reading `Math.max(1, n)` as a threshold-at-10 when it's actually a floor-at-1 to keep `log10(0)` from blowing up. Plan reviewer should sanity-check that each test's name actually matches the formula it tests.
 
-- **Phase 2:** Tree + Canvas slices, tick wired, end-to-end inspiration accrual + canvas auto-sale (no UI).
-- **Phase 3:** Workshop click-to-craft, Ascend, Skill Tree (5 nodes).
-- **Phase 4:** UI shell + 4 view stubs.
-- **Phase 5:** Hover-info wiring + Workshop popup.
-- **Phase 6:** Polish (Motion) + balance pass + ship v1.0.
-
-After v1.0 ships, the wave roadmap (`PORT_PLAN.md` §2.1) takes over — each wave is its own brainstorming → spec → plan → execution cycle.
+Two TS-version pinning notes:
+- TS 6.0.3 deprecates `baseUrl`. We needed `"ignoreDeprecations": "6.0"` in `tsconfig.app.json`. When upgrading to TS 7, drop `baseUrl` (paths still work under `Bundler` resolution).
+- Vite 8 + Vitest 4 + TS strict requires `import { defineConfig } from "vitest/config"` (not from `"vite"`) for the `test` block to type-check.
 
 ---
 
-## Key decisions to remember
+## Repo state at handover
 
-| | |
-|---|---|
-| Trajectory | local browser → self-hosted backend → public hosted (long-term arc) |
-| V1 scope | 5 stripped systems only; Workshop is click-to-craft, no conveyor/sets/tiers |
-| Stack | React 19, Tailwind 4 CSS-first, Vite latest, Zustand 5, Vitest, idb-keyval, break_eternity.js |
-| Persistence | IndexedDB via `idb-keyval`, async rehydration gated by `<LoadingScreen>` |
-| `playerId` | UUID v4 inside the save object; generated by meta slice initializer |
-| Offline progress | NONE in v1; tab pause = no ticking. v2.0 adds 24h hybrid catch-up |
-| Language | English only (forever) |
-| Workflow | Subagent-driven development (one subagent per plan task, review between) |
+- Branch: `master` (no remote configured; never pushed during Phase 0+1)
+- Commits since scaffold: 27 total (2 pre-Phase-0 setup + 12 Phase 0 + 11 Phase 1 + 2 plan-bug fixes)
+- Most recent: `config(eslint): also ignore underscore-prefixed locals (^_ varsIgnorePattern)` (`45c9873`)
+- Working tree: clean apart from `.claude/` (untracked, harness-local — do not commit)
+
+Versions captured in `VERSIONS.md`. Notable: TS 6.0.3, Vite 8.0.10, Vitest 4.1.5, Zustand 5.0.12, Tailwind 4.2.4, React 19.2.5.
 
 ---
 
-## Where the Godot reference lives
+## Known low-priority issues (for later cleanup, not blockers)
 
-The Godot project remains at `~/Documents/artdle/` on branch `feat/workshop` at HEAD `e72a850` (2026-04-27). The four design specs in `docs/specs/` were copied from there. The `artdleAsset/` directory contains art assets — Plan Task 12 copies them into `public/assets/artdle/` during execution. Phase 0 should NOT touch the Godot repo.
+- `src/main.tsx` triggers an `eslint-plugin-react-refresh/only-export-components` warning because `Bootstrap` is a component declared inline beside the `createRoot` mount. Splitting it out for HMR cleanliness is fine polish for a future UI-touching phase, but irrelevant until then.
+- `public/assets/artdle/` contains the Godot-side `.png.import` sidecar files. Web build doesn't use them. A one-shot prune is reasonable polish during Phase 6 (or earlier if a Phase 2 task touches assets).
+- React Compiler (Vite scaffold's babel plugin chain) was dropped during Task 6 in favour of plain `@vitejs/plugin-react`. Re-introducing it during Phase 6 polish is an option if perf shows up as an issue.
 
 ---
 
-## When this HANDOVER.md becomes stale
+## How to start Phase 2
 
-Replace its contents at every major milestone. Keep it as the single document that future-you (or a new Claude session) reads first to know "where are we, what's next." Don't let it accrete history — overwrite the snapshot, don't append.
+In a fresh Claude session in this directory:
+
+> Read CLAUDE.md and docs/HANDOVER.md. We're starting Phase 2. Use the brainstorming skill to scope the Tree + Canvas slices, then writing-plans to produce the next plan in `docs/superpowers/plans/`, then executing it via subagent-driven-development.
+
+The Phase 2 plan should specifically design around the three lessons above so similar bugs don't repeat.
