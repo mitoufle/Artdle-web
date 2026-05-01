@@ -4,9 +4,10 @@ import { idbAdapter } from "@/systems/persistence";
 import { createMetaSlice, type MetaSlice } from "./metaSlice";
 import { createCurrencySlice, type CurrencySlice } from "./currencySlice";
 import { createHoverInfoSlice, type HoverInfoSlice } from "./hoverInfoSlice";
+import { createTreeSlice, type TreeSlice } from "./treeSlice";
 import { big, isBig } from "@/core/bigNumber";
 
-export type GameStore = MetaSlice & CurrencySlice & HoverInfoSlice;
+export type GameStore = MetaSlice & CurrencySlice & HoverInfoSlice & TreeSlice;
 
 const SAVE_VERSION = 1;
 const SAVE_KEY = "artdle-save";
@@ -54,6 +55,7 @@ export const useGameStore = create<GameStore>()(
       ...createMetaSlice(...a),
       ...createCurrencySlice(...a),
       ...createHoverInfoSlice(...a),
+      ...createTreeSlice(...a),
     }),
     {
       name: SAVE_KEY,
