@@ -8,7 +8,22 @@ import { createTreeSlice, type TreeSlice } from "./treeSlice";
 import { createCanvasSlice, type CanvasSlice } from "./canvasSlice";
 import { big, isBig } from "@/core/bigNumber";
 
-export type GameStore = MetaSlice & CurrencySlice & HoverInfoSlice & TreeSlice & CanvasSlice;
+export interface GameTick {
+  /**
+   * Per-frame orchestrator. Calls `treeTick(delta)` first, then `canvasTick(delta)`.
+   * Order is part of the API contract and pinned by tests; future phases that
+   * depend on freshly-credited inspiration (none in Phase 2) require tree-first.
+   */
+  tickAll: (deltaSeconds: number) => void;
+}
+
+export type GameStore =
+  & MetaSlice
+  & CurrencySlice
+  & HoverInfoSlice
+  & TreeSlice
+  & CanvasSlice
+  & GameTick;
 
 const SAVE_VERSION = 1;
 const SAVE_KEY = "artdle-save";
@@ -52,12 +67,17 @@ const reviver = (_key: string, value: unknown): unknown => {
 
 export const useGameStore = create<GameStore>()(
   persist(
-    (...a) => ({
-      ...createMetaSlice(...a),
-      ...createCurrencySlice(...a),
-      ...createHoverInfoSlice(...a),
-      ...createTreeSlice(...a),
-      ...createCanvasSlice(...a),
+    (set, get, store) => ({
+      ...createMetaSlice(set, get, store),
+      ...createCurrencySlice(set, get, store),
+      ...createHoverInfoSlice(set, get, store),
+      ...createTreeSlice(set, get, store),
+      ...createCanvasSlice(set, get, store),
+      tickAll: (deltaSeconds: number) => {
+        const s = get();
+        s.treeTick(deltaSeconds);
+        s.canvasTick(deltaSeconds);
+      },
     }),
     {
       name: SAVE_KEY,
