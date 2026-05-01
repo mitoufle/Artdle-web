@@ -13,6 +13,7 @@ export interface GameTick {
    * Per-frame orchestrator. Calls `treeTick(delta)` first, then `canvasTick(delta)`.
    * Order is part of the API contract and pinned by tests; future phases that
    * depend on freshly-credited inspiration (none in Phase 2) require tree-first.
+   * Idle frames (delta ≤ 0) are no-ops via each child's own early-return guard.
    */
   tickAll: (deltaSeconds: number) => void;
 }

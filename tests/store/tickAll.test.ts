@@ -1,13 +1,30 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
 import { PAINT_TIME_BASE_SECONDS } from "@/core/balance";
 
 describe("tickAll orchestrator", () => {
+  // Captured at suite scope so afterEach restores method references even
+  // when an assertion throws inside the spy test (otherwise swapped tickers
+  // would leak to subsequent tests in this file).
+  const originalTicks = {
+    treeTick: useGameStore.getState().treeTick,
+    canvasTick: useGameStore.getState().canvasTick,
+  };
+
   beforeEach(() => {
     useGameStore.getState().resetRunCurrencies();
     useGameStore.getState().resetTree();
     useGameStore.getState().resetCanvas();
+  });
+
+  afterEach(() => {
+    // Idempotent: tests that don't swap still pay zero cost (assigning the
+    // already-current methods is a no-op).
+    useGameStore.setState({
+      treeTick: originalTicks.treeTick,
+      canvasTick: originalTicks.canvasTick,
+    });
   });
 
   it("tickAll(1) credits inspiration AND advances canvas in one call", () => {
@@ -31,30 +48,23 @@ describe("tickAll orchestrator", () => {
   });
 
   it("tickAll calls treeTick BEFORE canvasTick (order pinned for Phase 3 forward-compat)", () => {
-    // Spy on the slice methods via the live store. We replace them with
-    // recording wrappers that capture invocation order.
+    // Spy on the slice methods via the live store. afterEach restores them
+    // even if an assertion throws.
     const calls: Array<"tree" | "canvas"> = [];
-    const original = {
-      treeTick: useGameStore.getState().treeTick,
-      canvasTick: useGameStore.getState().canvasTick,
-    };
     useGameStore.setState({
       treeTick: (delta: number) => {
         calls.push("tree");
-        original.treeTick(delta);
+        originalTicks.treeTick(delta);
       },
       canvasTick: (delta: number) => {
         calls.push("canvas");
-        original.canvasTick(delta);
+        originalTicks.canvasTick(delta);
       },
     });
 
     useGameStore.getState().tickAll(0.1);
 
     expect(calls).toEqual(["tree", "canvas"]);
-
-    // Restore originals so other tests aren't polluted.
-    useGameStore.setState({ treeTick: original.treeTick, canvasTick: original.canvasTick });
   });
 
   it("tickAll(0) is a valid idle frame: no inspiration change, no gold change", () => {
