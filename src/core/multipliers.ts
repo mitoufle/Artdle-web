@@ -18,8 +18,13 @@ export const getInspiMultiplier = (_state: GameStore): number => 1;
 export const getCanvasGoldMultiplier = (_state: GameStore): number => 1;
 
 /**
- * Paint-speed multiplier — divides PAINT_TIME_BASE_SECONDS to compute effective time.
+ * Paint-speed multiplier — `effectivePaintTime = PAINT_TIME_BASE_SECONDS / multiplier`.
  * Higher = faster. Phase 2: returns 1.
- * Phase 3 reads `-paint_time%` affix.
+ *
+ * Convention here is the same as the other two functions (`1 + Σ contributions`),
+ * but contributions are paint-SPEED deltas, NOT paint-time reductions.
+ * Phase 3 must convert the `-paint_time%` affix at read-time:
+ *   affix value `v` ("paint time reduced by v") → contribute `v / (1 - v)`
+ *   (so 10% reduction → +0.111 contribution → multiplier = 1.111 → time = base / 1.111 ≈ 0.9 * base).
  */
 export const getPaintTimeMultiplier = (_state: GameStore): number => 1;
