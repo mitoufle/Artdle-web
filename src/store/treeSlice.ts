@@ -26,6 +26,11 @@ export interface TreeSlice extends TreeState {
    * Returns false if: unknown ID, locked stage, or insufficient gold.
    */
   buyPartLevel: (partId: string) => boolean;
+  /**
+   * If `canGrowSapling(state)`: increments `currentStage` by 1. Free.
+   * Returns false otherwise (threshold not met, or already at top stage).
+   */
+  growSapling: () => boolean;
   /** For ascend orchestrator (Phase 3). Resets state to `initialTreeState`. */
   resetTree: () => void;
 }
@@ -55,6 +60,13 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
     set((s) => ({
       partLevels: { ...s.partLevels, [partId]: (s.partLevels[partId] ?? 0) + 1 },
     }));
+    return true;
+  },
+
+  growSapling: () => {
+    const state = get();
+    if (!canGrowSapling(state)) return false;
+    set({ currentStage: state.currentStage + 1 });
     return true;
   },
 
@@ -88,4 +100,16 @@ export const getProducingParts = (
     }
   }
   return out;
+};
+
+/**
+ * True iff the player can grow into the next stage:
+ * - `currentStage + 1` exists in TREE_STAGES, AND
+ * - total levels across the CURRENT stage's parts ≥ the next stage's `unlockThreshold`.
+ */
+export const canGrowSapling = (state: GameStore): boolean => {
+  const next = state.currentStage + 1;
+  if (next >= TREE_STAGES.length) return false;
+  const required = TREE_STAGES[next]!.unlockThreshold;
+  return getTotalLevelsInStage(state, state.currentStage) >= required;
 };

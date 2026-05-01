@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useGameStore } from "@/store";
-import { getTotalLevelsInStage, getProducingParts } from "@/store/treeSlice";
+import { getTotalLevelsInStage, getProducingParts, canGrowSapling } from "@/store/treeSlice";
 import { big } from "@/core/bigNumber";
 import { TREE_STAGES } from "@/config/treeStages";
 
@@ -83,5 +83,66 @@ describe("treeSlice — state + buyPartLevel + selectors", () => {
     expect(producing).toHaveLength(1);
     expect(producing[0]?.level).toBe(1);
     expect(producing[0]?.rate).toBe(0.1);
+  });
+});
+
+describe("treeSlice — growSapling + canGrowSapling", () => {
+  beforeEach(() => {
+    useGameStore.getState().resetRunCurrencies();
+    useGameStore.getState().resetTree();
+  });
+
+  it("canGrowSapling returns false at total stage-0 levels = 9", () => {
+    useGameStore.getState().add("gold", big(10000));
+    for (let i = 0; i < 9; i++) {
+      useGameStore.getState().buyPartLevel("spark");
+    }
+    expect(getTotalLevelsInStage(useGameStore.getState(), 0)).toBe(9);
+    expect(canGrowSapling(useGameStore.getState())).toBe(false);
+  });
+
+  it("canGrowSapling returns true at exact threshold (totalLevels === 10)", () => {
+    useGameStore.getState().add("gold", big(10000));
+    for (let i = 0; i < 10; i++) {
+      useGameStore.getState().buyPartLevel("spark");
+    }
+    expect(getTotalLevelsInStage(useGameStore.getState(), 0)).toBe(10);
+    expect(canGrowSapling(useGameStore.getState())).toBe(true);
+  });
+
+  it("growSapling returns false when canGrowSapling is false; currentStage unchanged", () => {
+    expect(useGameStore.getState().growSapling()).toBe(false);
+    expect(useGameStore.getState().currentStage).toBe(0);
+  });
+
+  it("growSapling returns true when threshold is met; currentStage becomes 1", () => {
+    useGameStore.getState().add("gold", big(10000));
+    for (let i = 0; i < 10; i++) {
+      useGameStore.getState().buyPartLevel("spark");
+    }
+    expect(useGameStore.getState().growSapling()).toBe(true);
+    expect(useGameStore.getState().currentStage).toBe(1);
+  });
+
+  it("after growSapling to stage 1, stage-0 parts remain buyable (D5)", () => {
+    useGameStore.getState().add("gold", big(100000));
+    for (let i = 0; i < 10; i++) {
+      useGameStore.getState().buyPartLevel("spark");
+    }
+    useGameStore.getState().growSapling();
+    expect(useGameStore.getState().currentStage).toBe(1);
+    // stage-0 part still buyable
+    expect(useGameStore.getState().buyPartLevel("bud")).toBe(true);
+    expect(useGameStore.getState().partLevels.bud).toBe(1);
+    // stage-1 part now also buyable
+    expect(useGameStore.getState().buyPartLevel("leaf")).toBe(true);
+    expect(useGameStore.getState().partLevels.leaf).toBe(1);
+  });
+
+  it("growSapling returns false at currentStage === TREE_STAGES.length - 1 (already at top)", () => {
+    // Force-advance to the last stage by direct setState (test-only shortcut).
+    useGameStore.setState({ currentStage: TREE_STAGES.length - 1 });
+    expect(useGameStore.getState().growSapling()).toBe(false);
+    expect(useGameStore.getState().currentStage).toBe(TREE_STAGES.length - 1);
   });
 });
