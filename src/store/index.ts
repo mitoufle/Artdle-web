@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { idbAdapter } from "@/systems/persistence";
+import { persistedAdapter } from "@/systems/persistence";
 import { createMetaSlice, type MetaSlice } from "./metaSlice";
 import { createCurrencySlice, type CurrencySlice } from "./currencySlice";
 import { createHoverInfoSlice, type HoverInfoSlice } from "./hoverInfoSlice";
@@ -83,7 +83,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: SAVE_KEY,
       version: SAVE_VERSION,
-      storage: createJSONStorage(() => idbAdapter, { reviver }),
+      storage: createJSONStorage(() => persistedAdapter, { reviver }),
       migrate,
       partialize: (s) => {
         // Exclude transient hover-info, then pre-wrap Bigs as `{ __big: "..." }` markers.

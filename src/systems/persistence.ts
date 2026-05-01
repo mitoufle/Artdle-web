@@ -19,3 +19,60 @@ export const idbAdapter: SaveAdapter = {
     await del(name);
   },
 };
+
+/**
+ * Wraps a SaveAdapter so that rapid `setItem` calls are coalesced into one
+ * base write per `intervalMs` window. Exposes a `flush()` method for graceful
+ * save-on-close (visibilitychange / beforeunload).
+ *
+ * Latest-wins: only the most recently passed value is written.
+ *
+ * `getItem` and `removeItem` are pass-through (not throttled).
+ */
+export interface ThrottledSaveAdapter extends SaveAdapter {
+  flush: () => Promise<void>;
+}
+
+export function throttledAdapter(
+  base: SaveAdapter,
+  intervalMs: number,
+): ThrottledSaveAdapter {
+  let pending: { name: string; value: string } | null = null;
+  let timerId: ReturnType<typeof setTimeout> | null = null;
+
+  const flush = async (): Promise<void> => {
+    if (timerId !== null) {
+      clearTimeout(timerId);
+      timerId = null;
+    }
+    if (pending === null) return;
+    const p = pending;
+    pending = null;
+    await base.setItem(p.name, p.value);
+  };
+
+  return {
+    getItem: base.getItem.bind(base),
+    removeItem: base.removeItem.bind(base),
+    setItem: async (name, value) => {
+      pending = { name, value };
+      if (timerId === null) {
+        timerId = setTimeout(() => {
+          // Fire-and-forget; consumers should call flush() to await completion.
+          void flush();
+        }, intervalMs);
+      }
+    },
+    flush,
+  };
+}
+
+/**
+ * The production storage adapter used by the Zustand persist middleware.
+ * Throttled to ~1Hz to bound IDB write rate during tick-driven mutations
+ * (Phase 2: ~60Hz state changes from canvas/tree ticks).
+ *
+ * Save loss bound on hard crash: ≤ 1 second of work. Graceful tab close
+ * triggers `flush()` via main.tsx listeners → zero loss.
+ */
+export const persistedAdapter: ThrottledSaveAdapter = throttledAdapter(idbAdapter, 1000);
