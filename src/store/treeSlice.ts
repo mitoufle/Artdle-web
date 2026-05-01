@@ -10,9 +10,9 @@ export interface TreeState {
   partLevels: Record<string, number>;
 }
 
-const initialPartLevels: Record<string, number> = Object.fromEntries(
-  TREE_STAGES.flatMap((s) => s.parts.map((p) => [p.id, 0])),
-);
+const initialPartLevels: Record<string, number> = Object.freeze(
+  Object.fromEntries(TREE_STAGES.flatMap((s) => s.parts.map((p) => [p.id, 0]))),
+) as Record<string, number>;
 
 export const initialTreeState: TreeState = {
   currentStage: 0,
