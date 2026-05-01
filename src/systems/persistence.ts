@@ -27,6 +27,11 @@ export const idbAdapter: SaveAdapter = {
  *
  * Latest-wins: only the most recently passed value is written.
  *
+ * Designed for single-key use (Zustand `persist` writes only `SAVE_KEY`).
+ * Concurrent writes to DIFFERENT `name` values within one window all map to
+ * the same `pending` slot — earlier names are lost. If a future consumer
+ * needs multi-key throttling, replace `pending` with a `Map<string, string>`.
+ *
  * `getItem` and `removeItem` are pass-through (not throttled).
  */
 export interface ThrottledSaveAdapter extends SaveAdapter {
@@ -59,7 +64,11 @@ export function throttledAdapter(
       if (timerId === null) {
         timerId = setTimeout(() => {
           // Fire-and-forget; consumers should call flush() to await completion.
-          void flush();
+          // Log rejections so background save failures are observable instead
+          // of becoming UnhandledPromiseRejection events.
+          void flush().catch((err: unknown) => {
+            console.error("[throttledAdapter] background save failed:", err);
+          });
         }, intervalMs);
       }
     },
