@@ -4,7 +4,7 @@ import { idbAdapter } from "@/systems/persistence";
 import { createMetaSlice, type MetaSlice } from "./metaSlice";
 import { createCurrencySlice, type CurrencySlice } from "./currencySlice";
 import { createHoverInfoSlice, type HoverInfoSlice } from "./hoverInfoSlice";
-import { big } from "@/core/bigNumber";
+import { big, isBig } from "@/core/bigNumber";
 
 export type GameStore = MetaSlice & CurrencySlice & HoverInfoSlice;
 
@@ -20,25 +20,32 @@ const migrate = (persisted: unknown, _fromVersion: number): GameStore => {
 };
 
 /**
- * Big values (break_eternity.js Decimal) need custom serialisation —
- * JSON.stringify drops methods. We round-trip Big values via a marker shape.
+ * Big values (break_eternity.js Decimal) need custom serialisation.
+ * `JSON.stringify` calls `Decimal.toJSON()` BEFORE invoking any replacer,
+ * so a replacer-based approach can't see Decimals — they arrive as bare strings.
+ * Instead, we walk the partialized state and pre-wrap Bigs as `{ __big: "..." }`
+ * markers before `JSON.stringify` ever runs.
  */
 type SerializedBig = { __big: string };
 const isSerializedBig = (v: unknown): v is SerializedBig =>
   typeof v === "object" && v !== null && "__big" in v;
 
-const serializer = {
-  reviver: (_key: string, value: unknown): unknown => {
-    if (isSerializedBig(value)) return big(value.__big);
-    return value;
-  },
-  replacer: (_key: string, value: unknown): unknown => {
-    // Decimal instances have a `toJSON` method; we wrap them in our marker shape.
-    if (value && typeof value === "object" && "toJSON" in value && typeof (value as { toJSON: unknown }).toJSON === "function") {
-      return { __big: String(value) };
+function serializeBigs(value: unknown): unknown {
+  if (isBig(value)) return { __big: value.toString() };
+  if (Array.isArray(value)) return value.map(serializeBigs);
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(value)) {
+      out[k] = serializeBigs((value as Record<string, unknown>)[k]);
     }
-    return value;
-  },
+    return out;
+  }
+  return value;
+}
+
+const reviver = (_key: string, value: unknown): unknown => {
+  if (isSerializedBig(value)) return big(value.__big);
+  return value;
 };
 
 export const useGameStore = create<GameStore>()(
@@ -51,12 +58,15 @@ export const useGameStore = create<GameStore>()(
     {
       name: SAVE_KEY,
       version: SAVE_VERSION,
-      storage: createJSONStorage(() => idbAdapter, serializer),
+      storage: createJSONStorage(() => idbAdapter, { reviver }),
       migrate,
       partialize: (s) => {
-        // Exclude transient hover-info from save.
+        // Exclude transient hover-info, then pre-wrap Bigs as `{ __big: "..." }` markers.
         const { hoverTitle: _t, hoverBody: _b, hoverFooter: _f, ...rest } = s;
-        return rest as Omit<GameStore, "hoverTitle" | "hoverBody" | "hoverFooter">;
+        return serializeBigs(rest) as unknown as Omit<
+          GameStore,
+          "hoverTitle" | "hoverBody" | "hoverFooter"
+        >;
       },
     },
   ),
