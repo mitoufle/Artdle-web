@@ -146,3 +146,73 @@ describe("treeSlice — growSapling + canGrowSapling", () => {
     expect(useGameStore.getState().currentStage).toBe(TREE_STAGES.length - 1);
   });
 });
+
+describe("treeSlice — treeTick", () => {
+  beforeEach(() => {
+    useGameStore.getState().resetRunCurrencies();
+    useGameStore.getState().resetTree();
+  });
+
+  it("treeTick(1) with no levels: inspiration unchanged (no-op short-circuit)", () => {
+    const before = useGameStore.getState().inspiration.toNumber();
+    useGameStore.getState().treeTick(1);
+    expect(useGameStore.getState().inspiration.toNumber()).toBe(before);
+  });
+
+  it("treeTick(1) with spark at level 5: credits 0.5 inspi (5 * 0.1 * 1)", () => {
+    useGameStore.getState().add("gold", big(10000));
+    for (let i = 0; i < 5; i++) {
+      useGameStore.getState().buyPartLevel("spark");
+    }
+    const before = useGameStore.getState().inspiration.toNumber();
+    useGameStore.getState().treeTick(1);
+    const after = useGameStore.getState().inspiration.toNumber();
+    expect(after - before).toBeCloseTo(0.5, 6);
+  });
+
+  it("treeTick respects deltaSeconds linearly: tick(2) credits 2× tick(1)", () => {
+    useGameStore.getState().add("gold", big(10000));
+    for (let i = 0; i < 5; i++) {
+      useGameStore.getState().buyPartLevel("spark");
+    }
+    const before = useGameStore.getState().inspiration.toNumber();
+    useGameStore.getState().treeTick(2);
+    const after = useGameStore.getState().inspiration.toNumber();
+    expect(after - before).toBeCloseTo(1.0, 6); // 5 * 0.1 * 2 = 1.0
+  });
+
+  it("treeTick credits cumulatively across stages (D5: prior-stage parts still produce)", () => {
+    // Set up: spark@1 (stage 0), leaf@1 (stage 1). Force currentStage = 1.
+    useGameStore.getState().add("gold", big(100000));
+    useGameStore.getState().buyPartLevel("spark"); // 1 * 0.1 = 0.1
+    useGameStore.setState({ currentStage: 1 });
+    useGameStore.getState().buyPartLevel("leaf"); // 1 * 5 = 5
+    // Total expected rate: 0.1 + 5 = 5.1 inspi/sec
+    const before = useGameStore.getState().inspiration.toNumber();
+    useGameStore.getState().treeTick(1);
+    const after = useGameStore.getState().inspiration.toNumber();
+    expect(after - before).toBeCloseTo(5.1, 6);
+  });
+});
+
+describe("treeSlice — resetTree", () => {
+  beforeEach(() => {
+    useGameStore.getState().resetRunCurrencies();
+    useGameStore.getState().resetTree();
+  });
+
+  it("resetTree restores currentStage = 0 and zeroes all part levels", () => {
+    useGameStore.getState().add("gold", big(100000));
+    useGameStore.getState().buyPartLevel("spark");
+    useGameStore.getState().buyPartLevel("bud");
+    useGameStore.setState({ currentStage: 2 });
+    useGameStore.getState().resetTree();
+    const s = useGameStore.getState();
+    expect(s.currentStage).toBe(0);
+    for (const stage of TREE_STAGES) {
+      for (const part of stage.parts) {
+        expect(s.partLevels[part.id]).toBe(0);
+      }
+    }
+  });
+});

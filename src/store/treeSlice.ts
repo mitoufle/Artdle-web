@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 import { TREE_STAGES, type TreePartConfig } from "@/config/treeStages";
-import { treePartCost } from "@/core/balance";
+import { treePartCost, inspiPerSec } from "@/core/balance";
+import { getInspiMultiplier } from "@/core/multipliers";
 import type { GameStore } from "@/store";
 
 export interface TreeState {
@@ -31,6 +32,11 @@ export interface TreeSlice extends TreeState {
    * Returns false otherwise (threshold not met, or already at top stage).
    */
   growSapling: () => boolean;
+  /**
+   * Per-frame: credit inspiration via currencySlice.
+   * No-op when no parts are producing (avoids 60Hz persist writes during bootstrap).
+   */
+  treeTick: (deltaSeconds: number) => void;
   /** For ascend orchestrator (Phase 3). Resets state to `initialTreeState`. */
   resetTree: () => void;
 }
@@ -68,6 +74,17 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
     if (!canGrowSapling(state)) return false;
     set({ currentStage: state.currentStage + 1 });
     return true;
+  },
+
+  treeTick: (deltaSeconds) => {
+    const state = get();
+    const producing = getProducingParts(state);
+    if (producing.length === 0) return;
+    const multiplier = getInspiMultiplier(state);
+    const rate = inspiPerSec(producing, multiplier);
+    if (rate.lte(0)) return;
+    const gain = rate.mul(deltaSeconds);
+    state.add("inspiration", gain);
   },
 
   resetTree: () => set(initialTreeState),
