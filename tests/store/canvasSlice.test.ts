@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useGameStore } from "@/store";
-import { big } from "@/core/bigNumber";
 import { PAINT_TIME_BASE_SECONDS, CANVAS_GOLD_BASE } from "@/core/balance";
 
 describe("canvasSlice — canvasTick", () => {
