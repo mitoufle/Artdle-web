@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useGameStore } from "@/store";
-import { idbAdapter } from "@/systems/persistence";
+import { idbAdapter, persistedAdapter } from "@/systems/persistence";
+import { TREE_STAGES } from "@/config/treeStages";
 import { big, isBig } from "@/core/bigNumber";
 
 describe("persistence integration", () => {
@@ -21,7 +22,7 @@ describe("persistence integration", () => {
     useGameStore.getState().add("gold", big(1234));
     // Wait one microtask for persist's async write.
     await Promise.resolve();
-    await new Promise((r) => setTimeout(r, 50));
+    await persistedAdapter.flush();
 
     // Read raw IDB content; should contain serialized state.
     const raw = await idbAdapter.getItem("artdle-save");
@@ -34,7 +35,7 @@ describe("persistence integration", () => {
   it("the stored state preserves playerId across writes", async () => {
     const idBefore = useGameStore.getState().playerId;
     useGameStore.getState().add("inspiration", big(50));
-    await new Promise((r) => setTimeout(r, 50));
+    await persistedAdapter.flush();
 
     const raw = await idbAdapter.getItem("artdle-save");
     const parsed = JSON.parse(raw!);
@@ -43,7 +44,7 @@ describe("persistence integration", () => {
 
   it("hoverInfo state is partialized OUT of the save", async () => {
     useGameStore.getState().pushHoverInfo("Title", "Body", "Footer");
-    await new Promise((r) => setTimeout(r, 50));
+    await persistedAdapter.flush();
 
     const raw = await idbAdapter.getItem("artdle-save");
     const parsed = JSON.parse(raw!);
@@ -57,7 +58,7 @@ describe("persistence integration", () => {
     // pre-rehydrate value (the store is a singleton across tests, so we can't
     // assume a clean baseline — only that `add` advanced gold by 9876).
     useGameStore.getState().add("gold", big(9876));
-    await new Promise((r) => setTimeout(r, 50));
+    await persistedAdapter.flush();
     const before = useGameStore.getState().gold.toString();
 
     // Force-rehydrate from IDB; should restore gold as a Big (not a string or marker).
@@ -66,5 +67,50 @@ describe("persistence integration", () => {
     const restored = useGameStore.getState().gold;
     expect(isBig(restored)).toBe(true);
     expect(restored.toString()).toBe(before);
+  });
+});
+
+describe("persistence integration — Phase 2 fields round-trip", () => {
+  beforeEach(async () => {
+    await idbAdapter.removeItem("artdle-save");
+    // Reset in-memory state to defaults so the test starts from a clean slate.
+    useGameStore.getState().resetRunCurrencies();
+    useGameStore.getState().resetTree();
+    useGameStore.getState().resetCanvas();
+  });
+
+  it("partLevels + currentStage + canvasProgress all round-trip through save", async () => {
+    // Seed known state.
+    useGameStore.getState().add("gold", big(100000));
+    useGameStore.getState().buyPartLevel("spark"); // partLevels.spark → 1
+    useGameStore.getState().buyPartLevel("spark"); // → 2
+    useGameStore.getState().buyPartLevel("bud"); // partLevels.bud → 1
+    useGameStore.setState({ currentStage: 1, canvasProgress: 5.5 });
+
+    const beforeStage = useGameStore.getState().currentStage;
+    const beforeProgress = useGameStore.getState().canvasProgress;
+    const beforeLevels = { ...useGameStore.getState().partLevels };
+
+    // Force the throttle to flush the latest persist write.
+    await persistedAdapter.flush();
+
+    // Stomp in-memory state with bogus values so we can prove rehydration
+    // restored from IDB rather than just observing in-memory.
+    useGameStore.setState({
+      currentStage: 99,
+      canvasProgress: 999,
+      partLevels: Object.fromEntries(
+        TREE_STAGES.flatMap((s) => s.parts.map((p) => [p.id, 99])),
+      ),
+    });
+
+    // Force-rehydrate from IDB.
+    await useGameStore.persist.rehydrate();
+
+    // Assert the seeded values were restored.
+    const after = useGameStore.getState();
+    expect(after.currentStage).toBe(beforeStage);
+    expect(after.canvasProgress).toBe(beforeProgress);
+    expect(after.partLevels).toEqual(beforeLevels);
   });
 });
