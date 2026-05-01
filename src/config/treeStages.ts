@@ -53,4 +53,4 @@ export const TREE_STAGES: ReadonlyArray<TreeStageConfig> = [
       { id: "crown", name: "Crown", baseCost: 5000, rate: 500 },
     ],
   },
-] as const;
+];

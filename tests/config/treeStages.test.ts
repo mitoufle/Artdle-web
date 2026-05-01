@@ -26,6 +26,11 @@ describe("TREE_STAGES config", () => {
     expect(new Set(allIds).size).toBe(allIds.length);
   });
 
+  it("all stage IDs are unique", () => {
+    const ids = TREE_STAGES.map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it("every part has positive baseCost and rate", () => {
     for (const stage of TREE_STAGES) {
       for (const part of stage.parts) {
