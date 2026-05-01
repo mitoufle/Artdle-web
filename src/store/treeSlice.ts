@@ -77,12 +77,13 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
   },
 
   treeTick: (deltaSeconds) => {
+    if (deltaSeconds <= 0) return;
     const state = get();
     const producing = getProducingParts(state);
     if (producing.length === 0) return;
     const multiplier = getInspiMultiplier(state);
     const rate = inspiPerSec(producing, multiplier);
-    if (rate.lte(0)) return;
+    if (rate.lte(0)) return; // defensive: Phase 3 multipliers may push rate non-positive
     const gain = rate.mul(deltaSeconds);
     state.add("inspiration", gain);
   },
