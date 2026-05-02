@@ -1,16 +1,40 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
-import { isPlayerId } from "@/core/playerId";
+import { TopBar } from "@/ui/widgets/TopBar";
+import { BottomBar } from "@/ui/widgets/BottomBar";
+import { InfoPanel } from "@/ui/widgets/InfoPanel";
+
+function ViewStub({ name }: { name: string }): JSX.Element {
+  return (
+    <div className="flex h-full items-center justify-center text-app-text/60">
+      <p>{name} — coming in a later task</p>
+    </div>
+  );
+}
 
 export function App(): JSX.Element {
-  const playerId = useGameStore((s) => s.playerId);
+  const currentView = useGameStore((s) => s.currentView);
+  let body: JSX.Element;
+  switch (currentView) {
+    case "home":
+      body = <ViewStub name="HomeView" />;
+      break;
+    case "painting":
+      body = <ViewStub name="PaintingView" />;
+      break;
+    case "ascension":
+      body = <ViewStub name="AscensionView" />;
+      break;
+    case "skills":
+      body = <ViewStub name="SkillTreeView" />;
+      break;
+  }
   return (
-    <main className="flex h-screen w-screen flex-col items-center justify-center bg-app-bg text-app-text">
-      <h1 className="mb-4 text-4xl font-bold">Artdle</h1>
-      <p className="text-sm opacity-60">v0.1 — scaffold</p>
-      <p className="mt-8 text-xs opacity-40">
-        playerId: {playerId} {isPlayerId(playerId) ? "✓" : "✗"}
-      </p>
-    </main>
+    <div className="flex h-screen w-screen flex-col bg-app-bg text-app-text">
+      <TopBar />
+      <main className="flex-1 overflow-auto">{body}</main>
+      <InfoPanel />
+      <BottomBar />
+    </div>
   );
 }
