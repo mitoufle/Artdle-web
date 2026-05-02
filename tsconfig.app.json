@@ -23,7 +23,7 @@
       "@/*": ["src/*"]
     },
     "ignoreDeprecations": "6.0",
-    "types": ["vite/client", "vitest/globals"]
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"]
   },
   "include": ["src", "tests"]
 }
