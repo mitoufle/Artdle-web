@@ -89,4 +89,22 @@ describe("<Hoverable />", () => {
     fireEvent.mouseEnter(wrapper);
     expect(useGameStore.getState().hoverBody).toBe("Gold: 99");
   });
+
+  it("defaults to a <span> wrapper when `as` is not provided", () => {
+    render(
+      <Hoverable title="T" body="B">
+        <span data-testid="target">X</span>
+      </Hoverable>,
+    );
+    expect(screen.getByTestId("target").parentElement!.tagName).toBe("SPAN");
+  });
+
+  it('renders as a <div> when `as="div"` is passed (for block-level children)', () => {
+    render(
+      <Hoverable as="div" title="T" body="B">
+        <span data-testid="target">X</span>
+      </Hoverable>,
+    );
+    expect(screen.getByTestId("target").parentElement!.tagName).toBe("DIV");
+  });
 });

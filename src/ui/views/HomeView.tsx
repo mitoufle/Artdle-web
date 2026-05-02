@@ -40,12 +40,14 @@ export function HomeView(): JSX.Element {
     <div className="flex flex-col gap-4 p-4">
       <header>
         <Hoverable
+          as="div"
           title={() => TREE_STAGES[useGameStore.getState().currentStage]?.name ?? "?"}
           body="Current tree stage. Each part on this stage produces inspiration."
         >
           <h2 className="text-xl font-semibold">{stageName}</h2>
         </Hoverable>
         <Hoverable
+          as="div"
           title="Inspiration / sec"
           body={() => {
             const s = useGameStore.getState();
