@@ -13,6 +13,9 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
+# Superpowers brainstorm/visual-companion session artifacts
+.superpowers/
+
 # Belt-and-braces: tsc emits .js next to .ts if noEmit is ever turned off.
 # Vite handles bundling — these never belong in source.
 src/**/*.js
