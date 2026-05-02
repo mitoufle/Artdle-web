@@ -1,8 +1,9 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
-import { SKILL_NODES } from "@/config/skillTreeNodes";
+import { SKILL_NODES, type SkillNodeId } from "@/config/skillTreeNodes";
 import { big } from "@/core/bigNumber";
 import { formatBig } from "@/core/formatter";
+import { Hoverable } from "@/ui/widgets/Hoverable";
 
 type Status = "purchased" | "available" | "locked";
 
@@ -10,6 +11,15 @@ const STATUS_LABEL: Record<Status, string> = {
   purchased: "Purchased",
   available: "Available",
   locked: "Locked",
+};
+
+const EFFECT_DESCRIPTIONS: Record<SkillNodeId, string> = {
+  goldsmith: "+10% gold from canvas sales.",
+  patient_eye: "+15% inspiration generation rate.",
+  second_slot: "Workshop equipment slots: 1 → 2.",
+  faster_strokes: "Ascend palier reduced 10%.",
+  better_brush:
+    "+1 magnitude on workshop item affixes (e.g., 5–15% → 6–16%).",
 };
 
 /**
@@ -49,14 +59,32 @@ export function SkillTreeView(): JSX.Element {
                   ({STATUS_LABEL[status]} · {node.cost} fame)
                 </span>
               </span>
-              <button
-                type="button"
-                disabled={!canBuy}
-                onClick={() => buyNode(node.id)}
-                className="rounded bg-fame/20 px-3 py-1 text-sm disabled:opacity-40"
+              <Hoverable
+                title={node.name}
+                body={() => {
+                  const s = useGameStore.getState();
+                  const ownedNow = s.purchasedNodes[node.id] === true;
+                  const prereqMetNow =
+                    node.prereq === null || s.purchasedNodes[node.prereq] === true;
+                  const affordableNow = s.fame.gte(big(node.cost));
+                  const liveStatus: Status = ownedNow
+                    ? "purchased"
+                    : prereqMetNow && affordableNow
+                      ? "available"
+                      : "locked";
+                  return `${EFFECT_DESCRIPTIONS[node.id]} Status: ${STATUS_LABEL[liveStatus]}.`;
+                }}
+                footer={`Cost: ${node.cost} fame`}
               >
-                Buy
-              </button>
+                <button
+                  type="button"
+                  disabled={!canBuy}
+                  onClick={() => buyNode(node.id)}
+                  className="rounded bg-fame/20 px-3 py-1 text-sm disabled:opacity-40"
+                >
+                  Buy
+                </button>
+              </Hoverable>
             </li>
           );
         })}
