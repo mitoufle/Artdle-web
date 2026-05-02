@@ -1,3 +1,4 @@
+/** Persisted node identifier. Renames require a save migration. */
 export type SkillNodeId =
   | "goldsmith"
   | "patient_eye"
@@ -17,8 +18,9 @@ export interface SkillNodeConfig {
 /**
  * Phase 3 skill tree: 5 nodes in a strict-linear chain.
  * Costs and effects per PORT_PLAN.md §1.4. Effects are wired in:
- *   - core/multipliers.ts: goldsmith (+10% gold), patient_eye (+15% inspi), better_brush (roll-time +1 magnitude)
- *   - workshopSlice.ts: second_slot (1→2 equip slots via getCurrentSlotCount)
+ *   - core/multipliers.ts: goldsmith (+10% gold), patient_eye (+15% inspi)
+ *   - workshopSlice.ts: second_slot (1→2 equip slots via getCurrentSlotCount),
+ *                       better_brush (craft magnitude +1 via BETTER_BRUSH_BONUS_PCT)
  *   - systems/ascend.ts: faster_strokes (-10% palier via getEffectivePalier)
  */
 export const SKILL_NODES: ReadonlyArray<SkillNodeConfig> = [
