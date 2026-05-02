@@ -3,6 +3,7 @@ import { useGameStore } from "@/store";
 import { TopBar } from "@/ui/widgets/TopBar";
 import { BottomBar } from "@/ui/widgets/BottomBar";
 import { InfoPanel } from "@/ui/widgets/InfoPanel";
+import { WorkshopPopup } from "@/ui/popups/WorkshopPopup";
 import { HomeView } from "@/ui/views/HomeView";
 import { PaintingView } from "@/ui/views/PaintingView";
 import { AscensionView } from "@/ui/views/AscensionView";
@@ -28,7 +29,10 @@ export function App(): JSX.Element {
   return (
     <div className="flex h-screen w-screen flex-col bg-app-bg text-app-text">
       <TopBar />
-      <main className="flex-1 overflow-auto">{body}</main>
+      <main className="relative flex-1 overflow-auto">
+        {body}
+        <WorkshopPopup />
+      </main>
       <InfoPanel />
       <BottomBar />
     </div>

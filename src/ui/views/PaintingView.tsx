@@ -3,10 +3,13 @@ import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import { PAINT_TIME_BASE_SECONDS } from "@/core/balance";
 import { getPaintTimeMultiplier } from "@/core/multipliers";
+import { Hoverable } from "@/ui/widgets/Hoverable";
+import { MAX_INVENTORY_SLOTS } from "@/config/workshopAffixes";
 
 export function PaintingView(): JSX.Element {
   const canvasProgress = useGameStore((s) => s.canvasProgress);
   const equippedItems = useGameStore((s) => s.equippedItems);
+  const openWorkshopPopup = useGameStore((s) => s.openWorkshopPopup);
 
   // Helpers expect a GameStore; pass the field they actually read.
   // Cast is intentional and safe — see docs/agent_docs/ui-patterns.md.
@@ -39,14 +42,21 @@ export function PaintingView(): JSX.Element {
         )}
       </section>
 
-      <button
-        type="button"
-        disabled
-        className="self-start rounded bg-app-panel px-4 py-2 text-sm opacity-40"
-        title="Workshop popup arrives in Phase 5"
+      <Hoverable
+        title="Workshop"
+        body="Craft items with random affixes. Equip them to boost canvas/tree."
+        footer={() =>
+          `Inventory: ${useGameStore.getState().inventory.length}/${MAX_INVENTORY_SLOTS}`
+        }
       >
-        Workshop (coming soon)
-      </button>
+        <button
+          type="button"
+          onClick={() => openWorkshopPopup()}
+          className="self-start rounded bg-app-panel px-4 py-2 text-sm hover:bg-app-panel/80"
+        >
+          Workshop
+        </button>
+      </Hoverable>
     </div>
   );
 }
