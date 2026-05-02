@@ -3,6 +3,7 @@ import { useGameStore } from "@/store";
 import { TopBar } from "@/ui/widgets/TopBar";
 import { BottomBar } from "@/ui/widgets/BottomBar";
 import { InfoPanel } from "@/ui/widgets/InfoPanel";
+import { HomeView } from "@/ui/views/HomeView";
 
 function ViewStub({ name }: { name: string }): JSX.Element {
   return (
@@ -17,7 +18,7 @@ export function App(): JSX.Element {
   let body: JSX.Element;
   switch (currentView) {
     case "home":
-      body = <ViewStub name="HomeView" />;
+      body = <HomeView />;
       break;
     case "painting":
       body = <ViewStub name="PaintingView" />;
