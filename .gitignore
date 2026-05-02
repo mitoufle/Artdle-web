@@ -13,6 +13,13 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
+# Belt-and-braces: tsc emits .js next to .ts if noEmit is ever turned off.
+# Vite handles bundling — these never belong in source.
+src/**/*.js
+src/**/*.jsx
+tests/**/*.js
+tests/**/*.jsx
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -16,6 +16,7 @@
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
     "useDefineForClassFields": true,
+    "noEmit": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {

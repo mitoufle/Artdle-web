@@ -136,4 +136,22 @@ describe("multipliers — Phase 3 contributors", () => {
     const gain = useGameStore.getState().gold.toNumber() - before;
     expect(gain).toBeCloseTo(CANVAS_GOLD_BASE * 1.10, 6);
   });
+
+  it("equipped -paint_time% 10 item → canvasTick(9.0) crosses threshold (effective time = 10/1.111 ≈ 9.0)", () => {
+    // Without the paint-time multiplier, canvasTick(9.0) would NOT cross the
+    // 10s threshold (9 < 10) and no sale fires. With one -paint_time% 10 item
+    // equipped, the multiplier becomes 1.111, effective paint time becomes 9.0,
+    // and canvasTick(9.0) DOES cross the threshold — a sale fires.
+    //
+    // This integration test specifically guards against canvasSlice.canvasTick
+    // silently dropping the getPaintTimeMultiplier(state) call.
+    useGameStore.setState({
+      equippedItems: [{ kind: "-paint_time%", magnitude: 10 }],
+    });
+    const before = useGameStore.getState().gold.toNumber();
+    useGameStore.getState().canvasTick(9.0);
+    const gain = useGameStore.getState().gold.toNumber() - before;
+    expect(gain).toBe(CANVAS_GOLD_BASE);
+    // Sanity: without the equipped item, canvasTick(9.0) would have gained 0.
+  });
 });
