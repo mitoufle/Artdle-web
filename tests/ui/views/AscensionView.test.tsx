@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { describe, it, expect, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { AscensionView } from "@/ui/views/AscensionView";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
@@ -14,10 +14,6 @@ describe("<AscensionView />", () => {
       fame: big(0),
       purchasedNodes: {},
     });
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   it("disables the Ascend button when inspiration < palier", () => {

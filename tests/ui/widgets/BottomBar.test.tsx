@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { describe, it, expect, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
 import { BottomBar } from "@/ui/widgets/BottomBar";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
@@ -11,10 +11,6 @@ describe("<BottomBar />", () => {
       inspiration: big(56),
       fame: big(7),
     });
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   it("renders all three currency labels", () => {

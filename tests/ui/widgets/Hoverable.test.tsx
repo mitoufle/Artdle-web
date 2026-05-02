@@ -1,15 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { describe, it, expect, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
 
 describe("<Hoverable />", () => {
   beforeEach(() => {
     useGameStore.getState().clearHoverInfo();
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   it("pushes title and body on mouseEnter", () => {
