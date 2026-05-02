@@ -6,14 +6,7 @@ import { InfoPanel } from "@/ui/widgets/InfoPanel";
 import { HomeView } from "@/ui/views/HomeView";
 import { PaintingView } from "@/ui/views/PaintingView";
 import { AscensionView } from "@/ui/views/AscensionView";
-
-function ViewStub({ name }: { name: string }): JSX.Element {
-  return (
-    <div className="flex h-full items-center justify-center text-app-text/60">
-      <p>{name} — coming in a later task</p>
-    </div>
-  );
-}
+import { SkillTreeView } from "@/ui/views/SkillTreeView";
 
 export function App(): JSX.Element {
   const currentView = useGameStore((s) => s.currentView);
@@ -29,7 +22,7 @@ export function App(): JSX.Element {
       body = <AscensionView />;
       break;
     case "skills":
-      body = <ViewStub name="SkillTreeView" />;
+      body = <SkillTreeView />;
       break;
   }
   return (
