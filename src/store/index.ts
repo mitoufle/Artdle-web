@@ -6,6 +6,7 @@ import { createCurrencySlice, type CurrencySlice } from "./currencySlice";
 import { createHoverInfoSlice, type HoverInfoSlice } from "./hoverInfoSlice";
 import { createTreeSlice, type TreeSlice } from "./treeSlice";
 import { createCanvasSlice, type CanvasSlice } from "./canvasSlice";
+import { createSkillTreeSlice, type SkillTreeSlice } from "./skillTreeSlice";
 import { big, isBig } from "@/core/bigNumber";
 
 export interface GameTick {
@@ -24,6 +25,7 @@ export type GameStore =
   & HoverInfoSlice
   & TreeSlice
   & CanvasSlice
+  & SkillTreeSlice
   & GameTick;
 
 const SAVE_VERSION = 1;
@@ -74,6 +76,7 @@ export const useGameStore = create<GameStore>()(
       ...createHoverInfoSlice(set, get, store),
       ...createTreeSlice(set, get, store),
       ...createCanvasSlice(set, get, store),
+      ...createSkillTreeSlice(set, get, store),
       tickAll: (deltaSeconds: number) => {
         const s = get();
         s.treeTick(deltaSeconds);
