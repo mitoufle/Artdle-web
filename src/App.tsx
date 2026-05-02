@@ -5,6 +5,7 @@ import { BottomBar } from "@/ui/widgets/BottomBar";
 import { InfoPanel } from "@/ui/widgets/InfoPanel";
 import { HomeView } from "@/ui/views/HomeView";
 import { PaintingView } from "@/ui/views/PaintingView";
+import { AscensionView } from "@/ui/views/AscensionView";
 
 function ViewStub({ name }: { name: string }): JSX.Element {
   return (
@@ -25,7 +26,7 @@ export function App(): JSX.Element {
       body = <PaintingView />;
       break;
     case "ascension":
-      body = <ViewStub name="AscensionView" />;
+      body = <AscensionView />;
       break;
     case "skills":
       body = <ViewStub name="SkillTreeView" />;
