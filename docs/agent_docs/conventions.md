@@ -93,6 +93,12 @@ describe("featureName", () => {
 
 **Don't test framework code.** Trust that Zustand `set` works, React renders, IDB stores. Test *your* logic.
 
+**RTL auto-cleanup:** with `@testing-library/react` 16 + Vitest globals, components rendered via `render()` are unmounted automatically between tests. Don't write `afterEach(cleanup)` blocks — they're redundant.
+
+**`@testing-library/jest-dom` matchers** (`toBeInTheDocument`, `toBeDisabled`, `toHaveTextContent`, etc.) are loaded by `vitest.setup.ts`. Under `verbatimModuleSyntax`, the matcher types must be in `tsconfig.app.json`'s `types` array as `@testing-library/jest-dom/vitest`; without it, type-checking UI tests fails. Already wired since Phase 4.
+
+**UI test pattern:** see `docs/agent_docs/ui-patterns.md` for view subscription rules; tests inherit the same model — `useGameStore.setState(...)` in `beforeEach` to seed, render, assert on DOM.
+
 ## Imports
 
 ```ts
