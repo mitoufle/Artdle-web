@@ -4,6 +4,7 @@ import type { GameStore } from "@/store";
 import { canAscend, getEffectivePalier } from "@/systems/ascend";
 import { fameOnAscend } from "@/core/balance";
 import { formatBig } from "@/core/formatter";
+import { Hoverable } from "@/ui/widgets/Hoverable";
 
 export function AscensionView(): JSX.Element {
   const inspiration = useGameStore((s) => s.inspiration);
@@ -44,14 +45,33 @@ export function AscensionView(): JSX.Element {
         Ascends so far: {ascendCount} · Total fame: {formatBig(fame)}
       </section>
 
-      <button
-        type="button"
-        disabled={!canDo}
-        onClick={() => performAscend()}
-        className="self-start rounded bg-fame/30 px-4 py-2 text-sm font-semibold disabled:opacity-40"
+      <Hoverable
+        title="Ascend"
+        body={() => {
+          const s = useGameStore.getState();
+          const liveGain = fameOnAscend(s.inspiration);
+          return `Reset the run for permanent fame. Currently gain +${liveGain} fame.`;
+        }}
+        footer={() => {
+          const s = useGameStore.getState();
+          const hs = {
+            inspiration: s.inspiration,
+            ascendCount: s.ascendCount,
+            purchasedNodes: s.purchasedNodes,
+          } as unknown as GameStore;
+          const livePalier = getEffectivePalier(hs, s.ascendCount);
+          return `Palier: ${formatBig(s.inspiration)} / ${formatBig(livePalier)} inspi`;
+        }}
       >
-        Ascend
-      </button>
+        <button
+          type="button"
+          disabled={!canDo}
+          onClick={() => performAscend()}
+          className="self-start rounded bg-fame/30 px-4 py-2 text-sm font-semibold disabled:opacity-40"
+        >
+          Ascend
+        </button>
+      </Hoverable>
     </div>
   );
 }
