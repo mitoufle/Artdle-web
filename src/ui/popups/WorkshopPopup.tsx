@@ -10,6 +10,14 @@ import {
 } from "@/config/workshopAffixes";
 import { getCurrentSlotCount } from "@/store/workshopSlice";
 
+/**
+ * @invariant The popup is reachable only from PaintingView and self-closes
+ * when `currentView !== "painting"` (see auto-close `useEffect` below). If a
+ * future entry point opens the Workshop from a non-painting view, that effect
+ * will fire on mount and immediately close. Before adding such an entry point,
+ * relax the predicate — e.g., capture the view-at-open in a ref and only close
+ * when `currentView` differs from that captured value.
+ */
 export function WorkshopPopup(): JSX.Element | null {
   const open = useGameStore((s) => s.workshopPopupOpen);
   const close = useGameStore((s) => s.closeWorkshopPopup);
@@ -33,9 +41,7 @@ export function WorkshopPopup(): JSX.Element | null {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
 
-  // Auto-close when the user navigates away from PaintingView.
-  // On first mount currentView === "painting" (popup's only trigger is the
-  // PaintingView Workshop button), so this is a no-op until a switch.
+  // Auto-close when navigating away from PaintingView. See @invariant above.
   useEffect(() => {
     if (open && currentView !== "painting") close();
   }, [open, currentView, close]);
@@ -60,6 +66,7 @@ export function WorkshopPopup(): JSX.Element | null {
       onClick={close}
     >
       <div
+        data-testid="workshop-popup-card"
         className="w-[min(720px,90%)] max-h-[90%] overflow-auto rounded-lg bg-app-bg border border-app-panel shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >

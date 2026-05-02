@@ -83,8 +83,7 @@ describe("<WorkshopPopup />", () => {
   it("Backdrop click closes the popup; clicking the inner card does not", () => {
     render(<WorkshopPopup />);
     const dialog = screen.getByRole("dialog");
-    // Inner card is the only child div with bg-app-bg.
-    const innerCard = dialog.firstChild as HTMLElement;
+    const innerCard = screen.getByTestId("workshop-popup-card");
     fireEvent.click(innerCard);
     expect(useGameStore.getState().workshopPopupOpen).toBe(true);
     fireEvent.click(dialog);
