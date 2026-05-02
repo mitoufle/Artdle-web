@@ -188,3 +188,23 @@ describe("persistence integration — Phase 4 fields round-trip", () => {
     expect(useGameStore.getState().currentView).toBe("skills");
   });
 });
+
+describe("persistence integration — Phase 5 fields strip", () => {
+  beforeEach(async () => {
+    await idbAdapter.removeItem("artdle-save");
+    useGameStore.setState({ workshopPopupOpen: false });
+  });
+
+  it("workshopPopupOpen is partialized OUT of the save", async () => {
+    // Set a non-default value so we can confirm it doesn't appear in the raw save.
+    useGameStore.setState({ workshopPopupOpen: true });
+
+    // Force the throttle to flush the latest persist write.
+    await persistedAdapter.flush();
+
+    // Read raw IDB content and confirm the field is absent.
+    const raw = await idbAdapter.getItem("artdle-save");
+    const parsed = JSON.parse(raw!);
+    expect("workshopPopupOpen" in parsed.state).toBe(false);
+  });
+});

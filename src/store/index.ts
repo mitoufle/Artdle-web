@@ -9,6 +9,7 @@ import { createCanvasSlice, type CanvasSlice } from "./canvasSlice";
 import { createSkillTreeSlice, type SkillTreeSlice } from "./skillTreeSlice";
 import { createWorkshopSlice, type WorkshopSlice } from "./workshopSlice";
 import { createViewSlice, type ViewSlice } from "./viewSlice";
+import { createUiSlice, type UiSlice } from "./uiSlice";
 import { big, isBig } from "@/core/bigNumber";
 
 export interface GameTick {
@@ -30,6 +31,7 @@ export type GameStore =
   & SkillTreeSlice
   & WorkshopSlice
   & ViewSlice
+  & UiSlice
   & GameTick;
 
 const SAVE_VERSION = 1;
@@ -83,6 +85,7 @@ export const useGameStore = create<GameStore>()(
       ...createSkillTreeSlice(set, get, store),
       ...createWorkshopSlice(set, get, store),
       ...createViewSlice(set, get, store),
+      ...createUiSlice(set, get, store),
       tickAll: (deltaSeconds: number) => {
         const s = get();
         s.treeTick(deltaSeconds);
@@ -95,11 +98,11 @@ export const useGameStore = create<GameStore>()(
       storage: createJSONStorage(() => persistedAdapter, { reviver }),
       migrate,
       partialize: (s) => {
-        // Exclude transient hover-info, then pre-wrap Bigs as `{ __big: "..." }` markers.
-        const { hoverTitle: _t, hoverBody: _b, hoverFooter: _f, ...rest } = s;
+        // Exclude transient hover-info + UI state, then pre-wrap Bigs as `{ __big: "..." }` markers.
+        const { hoverTitle: _t, hoverBody: _b, hoverFooter: _f, workshopPopupOpen: _w, ...rest } = s;
         return serializeBigs(rest) as unknown as Omit<
           GameStore,
-          "hoverTitle" | "hoverBody" | "hoverFooter"
+          "hoverTitle" | "hoverBody" | "hoverFooter" | "workshopPopupOpen"
         >;
       },
     },
