@@ -114,3 +114,52 @@ describe("persistence integration — Phase 2 fields round-trip", () => {
     expect(after.partLevels).toEqual(beforeLevels);
   });
 });
+
+describe("persistence integration — Phase 3 fields round-trip", () => {
+  beforeEach(async () => {
+    await idbAdapter.removeItem("artdle-save");
+    useGameStore.getState().resetRunCurrencies();
+    useGameStore.getState().resetTree();
+    useGameStore.getState().resetCanvas();
+    useGameStore.getState().resetWorkshop();
+    useGameStore.setState({ purchasedNodes: {} });
+  });
+
+  it("inventory + equippedItems + purchasedNodes all round-trip through save", async () => {
+    // Seed known state.
+    useGameStore.setState({
+      inventory: [
+        { kind: "+canvas_gold%", magnitude: 12 },
+        { kind: "-paint_time%", magnitude: 8 },
+      ],
+      equippedItems: [
+        { kind: "+inspiration_rate%", magnitude: 10 },
+      ],
+      purchasedNodes: { goldsmith: true, patient_eye: true },
+    });
+
+    const beforeInventory = [...useGameStore.getState().inventory];
+    const beforeEquipped = [...useGameStore.getState().equippedItems];
+    const beforeNodes = { ...useGameStore.getState().purchasedNodes };
+
+    // Force the throttle to flush the latest persist write.
+    await persistedAdapter.flush();
+
+    // Stomp in-memory state with bogus values so we can prove rehydration
+    // restored from IDB rather than just observing in-memory.
+    useGameStore.setState({
+      inventory: [{ kind: "+canvas_gold%", magnitude: 99 }],
+      equippedItems: [],
+      purchasedNodes: { better_brush: true }, // Use a real SkillNodeId; we just want a different value than seeded.
+    });
+
+    // Force-rehydrate from IDB.
+    await useGameStore.persist.rehydrate();
+
+    // Assert the seeded values were restored.
+    const after = useGameStore.getState();
+    expect(after.inventory).toEqual(beforeInventory);
+    expect(after.equippedItems).toEqual(beforeEquipped);
+    expect(after.purchasedNodes).toEqual(beforeNodes);
+  });
+});
