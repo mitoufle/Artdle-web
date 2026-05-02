@@ -6,7 +6,16 @@ import { LoadingScreen } from "@/ui/widgets/LoadingScreen";
 import { App } from "@/App";
 import { startTickLoop, stopTickLoop } from "@/core/tickLoop";
 import { persistedAdapter } from "@/systems/persistence";
+import { big } from "@/core/bigNumber";
 import "./index.css";
+
+// Dev-only: expose store + helpers on window for DevTools console smoke tests.
+// Stripped from production builds via the import.meta.env.DEV check.
+if (import.meta.env.DEV) {
+  (window as unknown as { useGameStore: typeof useGameStore; big: typeof big }).useGameStore =
+    useGameStore;
+  (window as unknown as { useGameStore: typeof useGameStore; big: typeof big }).big = big;
+}
 
 function Bootstrap(): JSX.Element {
   const [hydrated, setHydrated] = useState<boolean>(useGameStore.persist.hasHydrated());
