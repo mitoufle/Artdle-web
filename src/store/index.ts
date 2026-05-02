@@ -8,6 +8,7 @@ import { createTreeSlice, type TreeSlice } from "./treeSlice";
 import { createCanvasSlice, type CanvasSlice } from "./canvasSlice";
 import { createSkillTreeSlice, type SkillTreeSlice } from "./skillTreeSlice";
 import { createWorkshopSlice, type WorkshopSlice } from "./workshopSlice";
+import { createViewSlice, type ViewSlice } from "./viewSlice";
 import { big, isBig } from "@/core/bigNumber";
 
 export interface GameTick {
@@ -28,6 +29,7 @@ export type GameStore =
   & CanvasSlice
   & SkillTreeSlice
   & WorkshopSlice
+  & ViewSlice
   & GameTick;
 
 const SAVE_VERSION = 1;
@@ -80,6 +82,7 @@ export const useGameStore = create<GameStore>()(
       ...createCanvasSlice(set, get, store),
       ...createSkillTreeSlice(set, get, store),
       ...createWorkshopSlice(set, get, store),
+      ...createViewSlice(set, get, store),
       tickAll: (deltaSeconds: number) => {
         const s = get();
         s.treeTick(deltaSeconds);
