@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
+import type { GameStore } from "@/store";
 import { canAscend, getEffectivePalier } from "@/systems/ascend";
 import { fameOnAscend } from "@/core/balance";
 import { formatBig } from "@/core/formatter";
@@ -8,10 +9,18 @@ export function AscensionView(): JSX.Element {
   const inspiration = useGameStore((s) => s.inspiration);
   const fame = useGameStore((s) => s.fame);
   const ascendCount = useGameStore((s) => s.ascendCount);
+  const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const performAscend = useGameStore((s) => s.performAscend);
-  const fullState = useGameStore.getState();
-  const palier = getEffectivePalier(fullState, ascendCount);
-  const canDo = canAscend(fullState);
+
+  // Helpers expect a GameStore; pass the fields they actually read.
+  // Cast is intentional and safe — see docs/agent_docs/ui-patterns.md.
+  const helperState = {
+    inspiration,
+    ascendCount,
+    purchasedNodes,
+  } as unknown as GameStore;
+  const palier = getEffectivePalier(helperState, ascendCount);
+  const canDo = canAscend(helperState);
   const fameGain = fameOnAscend(inspiration);
 
   return (

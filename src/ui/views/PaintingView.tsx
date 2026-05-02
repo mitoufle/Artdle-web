@@ -1,13 +1,17 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
+import type { GameStore } from "@/store";
 import { PAINT_TIME_BASE_SECONDS } from "@/core/balance";
 import { getPaintTimeMultiplier } from "@/core/multipliers";
 
 export function PaintingView(): JSX.Element {
   const canvasProgress = useGameStore((s) => s.canvasProgress);
   const equippedItems = useGameStore((s) => s.equippedItems);
-  const fullState = useGameStore.getState();
-  const paintTime = PAINT_TIME_BASE_SECONDS / getPaintTimeMultiplier(fullState);
+
+  // Helpers expect a GameStore; pass the field they actually read.
+  // Cast is intentional and safe — see docs/agent_docs/ui-patterns.md.
+  const helperState = { equippedItems } as unknown as GameStore;
+  const paintTime = PAINT_TIME_BASE_SECONDS / getPaintTimeMultiplier(helperState);
   const stateLabel = canvasProgress > 0 ? "Painting" : "Idle";
 
   return (

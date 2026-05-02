@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
+import type { GameStore } from "@/store";
 import { TREE_STAGES } from "@/config/treeStages";
 import { treePartCost, inspiPerSec } from "@/core/balance";
 import { getInspiMultiplier } from "@/core/multipliers";
@@ -10,13 +11,21 @@ export function HomeView(): JSX.Element {
   const currentStage = useGameStore((s) => s.currentStage);
   const partLevels = useGameStore((s) => s.partLevels);
   const gold = useGameStore((s) => s.gold);
+  const equippedItems = useGameStore((s) => s.equippedItems);
+  const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const buyPartLevel = useGameStore((s) => s.buyPartLevel);
   const growSapling = useGameStore((s) => s.growSapling);
 
-  // Compute live inspi/sec the same way treeTick does.
-  const fullState = useGameStore.getState();
-  const rate = inspiPerSec(getProducingParts(fullState), getInspiMultiplier(fullState));
-  const canGrow = canGrowSapling(fullState);
+  // Helpers expect a GameStore; pass the fields they actually read.
+  // Cast is intentional and safe — see docs/agent_docs/ui-patterns.md.
+  const helperState = {
+    currentStage,
+    partLevels,
+    equippedItems,
+    purchasedNodes,
+  } as unknown as GameStore;
+  const rate = inspiPerSec(getProducingParts(helperState), getInspiMultiplier(helperState));
+  const canGrow = canGrowSapling(helperState);
 
   const stageName = TREE_STAGES[currentStage]?.name ?? "?";
 
