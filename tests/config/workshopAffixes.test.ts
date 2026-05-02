@@ -1,0 +1,35 @@
+import { describe, it, expect } from "vitest";
+import {
+  AFFIX_KINDS,
+  MAGNITUDE_MIN_PCT,
+  MAGNITUDE_MAX_PCT,
+  BETTER_BRUSH_BONUS,
+  MAX_INVENTORY_SLOTS,
+  CRAFT_COST_GOLD,
+} from "@/config/workshopAffixes";
+
+describe("workshopAffixes config", () => {
+  it("AFFIX_KINDS has exactly 3 entries", () => {
+    expect(AFFIX_KINDS).toHaveLength(3);
+  });
+
+  it("the 3 affix kinds are unique", () => {
+    expect(new Set(AFFIX_KINDS).size).toBe(AFFIX_KINDS.length);
+  });
+
+  it("MAGNITUDE_MIN_PCT < MAGNITUDE_MAX_PCT", () => {
+    expect(MAGNITUDE_MIN_PCT).toBeLessThan(MAGNITUDE_MAX_PCT);
+  });
+
+  it("all numeric constants are positive", () => {
+    expect(MAGNITUDE_MIN_PCT).toBeGreaterThan(0);
+    expect(MAGNITUDE_MAX_PCT).toBeGreaterThan(0);
+    expect(BETTER_BRUSH_BONUS).toBeGreaterThan(0);
+    expect(MAX_INVENTORY_SLOTS).toBeGreaterThan(0);
+    expect(CRAFT_COST_GOLD).toBeGreaterThan(0);
+  });
+
+  it("MAX_INVENTORY_SLOTS === 3 (pin v1 contract)", () => {
+    expect(MAX_INVENTORY_SLOTS).toBe(3);
+  });
+});
