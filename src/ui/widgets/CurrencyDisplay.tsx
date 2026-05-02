@@ -2,6 +2,10 @@ import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import { formatBig } from "@/core/formatter";
 
+/**
+ * UI-side mirror of CurrencyKey from currencySlice. Kept independent so the
+ * slice can rename its key type without dragging this widget along.
+ */
 export type CurrencyKind = "gold" | "inspiration" | "fame";
 
 const LABELS: Record<CurrencyKind, string> = {

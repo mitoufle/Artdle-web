@@ -163,3 +163,28 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
     expect(after.purchasedNodes).toEqual(beforeNodes);
   });
 });
+
+describe("persistence integration — Phase 4 fields round-trip", () => {
+  beforeEach(async () => {
+    await idbAdapter.removeItem("artdle-save");
+    useGameStore.setState({ currentView: "home" });
+  });
+
+  it("currentView round-trips through save/rehydrate", async () => {
+    // Seed: switch away from the default.
+    useGameStore.getState().setView("skills");
+    expect(useGameStore.getState().currentView).toBe("skills");
+
+    // Force the throttle to flush the latest persist write.
+    await persistedAdapter.flush();
+
+    // Stomp in-memory state with a different view so we can prove rehydration
+    // restored from IDB rather than just observing in-memory.
+    useGameStore.setState({ currentView: "home" });
+
+    // Force-rehydrate from IDB.
+    await useGameStore.persist.rehydrate();
+
+    expect(useGameStore.getState().currentView).toBe("skills");
+  });
+});
