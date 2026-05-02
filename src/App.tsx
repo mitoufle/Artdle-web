@@ -4,6 +4,7 @@ import { TopBar } from "@/ui/widgets/TopBar";
 import { BottomBar } from "@/ui/widgets/BottomBar";
 import { InfoPanel } from "@/ui/widgets/InfoPanel";
 import { HomeView } from "@/ui/views/HomeView";
+import { PaintingView } from "@/ui/views/PaintingView";
 
 function ViewStub({ name }: { name: string }): JSX.Element {
   return (
@@ -21,7 +22,7 @@ export function App(): JSX.Element {
       body = <HomeView />;
       break;
     case "painting":
-      body = <ViewStub name="PaintingView" />;
+      body = <PaintingView />;
       break;
     case "ascension":
       body = <ViewStub name="AscensionView" />;
