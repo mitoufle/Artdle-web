@@ -3,7 +3,7 @@ import {
   AFFIX_KINDS,
   MAGNITUDE_MIN_PCT,
   MAGNITUDE_MAX_PCT,
-  BETTER_BRUSH_BONUS,
+  BETTER_BRUSH_BONUS_PCT,
   MAX_INVENTORY_SLOTS,
   CRAFT_COST_GOLD,
 } from "@/config/workshopAffixes";
@@ -24,7 +24,7 @@ describe("workshopAffixes config", () => {
   it("all numeric constants are positive", () => {
     expect(MAGNITUDE_MIN_PCT).toBeGreaterThan(0);
     expect(MAGNITUDE_MAX_PCT).toBeGreaterThan(0);
-    expect(BETTER_BRUSH_BONUS).toBeGreaterThan(0);
+    expect(BETTER_BRUSH_BONUS_PCT).toBeGreaterThan(0);
     expect(MAX_INVENTORY_SLOTS).toBeGreaterThan(0);
     expect(CRAFT_COST_GOLD).toBeGreaterThan(0);
   });
