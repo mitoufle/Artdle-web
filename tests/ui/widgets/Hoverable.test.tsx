@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
+import { big } from "@/core/bigNumber";
 
 describe("<Hoverable />", () => {
   beforeEach(() => {
@@ -44,5 +45,48 @@ describe("<Hoverable />", () => {
     expect(s.hoverTitle).toBe("");
     expect(s.hoverBody).toBe("");
     expect(s.hoverFooter).toBe("");
+  });
+
+  it("resolves callback title at hover time", () => {
+    render(
+      <Hoverable title={() => "LiveTitle"} body="B">
+        <span data-testid="target">X</span>
+      </Hoverable>,
+    );
+    fireEvent.mouseEnter(screen.getByTestId("target").parentElement!);
+    expect(useGameStore.getState().hoverTitle).toBe("LiveTitle");
+  });
+
+  it("resolves callback body at hover time using getState()", () => {
+    useGameStore.setState({ gold: big(42) });
+    render(
+      <Hoverable
+        title="T"
+        body={() => `Gold: ${useGameStore.getState().gold.toString()}`}
+      >
+        <span data-testid="target">X</span>
+      </Hoverable>,
+    );
+    fireEvent.mouseEnter(screen.getByTestId("target").parentElement!);
+    expect(useGameStore.getState().hoverBody).toBe("Gold: 42");
+  });
+
+  it("re-resolves callback on each mouseEnter so post-state-change reads see new value", () => {
+    useGameStore.setState({ gold: big(10) });
+    render(
+      <Hoverable
+        title="T"
+        body={() => `Gold: ${useGameStore.getState().gold.toString()}`}
+      >
+        <span data-testid="target">X</span>
+      </Hoverable>,
+    );
+    const wrapper = screen.getByTestId("target").parentElement!;
+    fireEvent.mouseEnter(wrapper);
+    expect(useGameStore.getState().hoverBody).toBe("Gold: 10");
+    fireEvent.mouseLeave(wrapper);
+    useGameStore.setState({ gold: big(99) });
+    fireEvent.mouseEnter(wrapper);
+    expect(useGameStore.getState().hoverBody).toBe("Gold: 99");
   });
 });
