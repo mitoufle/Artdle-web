@@ -301,3 +301,56 @@ describe("save schema migration", () => {
     expect(result.equippedItems).toEqual([]);
   });
 });
+
+describe("save migration v2 → v3", () => {
+  it("v2 save (no canvasTier, no paintMastery) gets defaults on migrate", () => {
+    const v2State = {
+      gold: { __big: "5000" },
+      inspiration: { __big: "100" },
+      fame: { __big: "3" },
+      ascendCount: 1,
+      playerId: "test-player-id-v2",
+      // ...other v2 fields would be here, but migrate doesn't depend on them
+    };
+    const migrated = migrate(v2State, 2) as unknown as Record<string, unknown>;
+    expect(migrated.canvasTier).toBe(1);
+    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    // playerId preserved.
+    expect(migrated.playerId).toBe("test-player-id-v2");
+    // gold preserved.
+    expect((migrated.gold as { __big: string }).__big).toBe("5000");
+  });
+
+  it("v1 save chained through migrateV1toV2 then v2→v3 lands with all defaults", () => {
+    const v1State = {
+      gold: { __big: "100" },
+      inventory: [
+        { kind: "+inspiration_rate%", magnitude: 10 }, // removed by v1→v2
+        { kind: "+canvas_gold%", magnitude: 5 },
+      ],
+      equippedItems: [],
+      playerId: "test-player-id-v1",
+    };
+    const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
+    // v1→v2: inspiration_rate% removed.
+    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(1);
+    expect((migrated.inventory as Array<{ kind: string }>)[0]!.kind).toBe("+canvas_gold%");
+    // v2→v3: defaults added.
+    expect(migrated.canvasTier).toBe(1);
+    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+  });
+
+  it("v3 save with non-default canvasTier and paintMastery round-trips", async () => {
+    // Mutate the live store with non-defaults, flush, re-read.
+    useGameStore.setState({ canvasTier: 7 });
+    useGameStore.getState()._setPaintMastery(big(54_321));
+    await persistedAdapter.flush();
+
+    const raw = await idbAdapter.getItem("artdle-save");
+    expect(raw).not.toBeNull();
+    const parsed = JSON.parse(raw!);
+    expect(parsed.state.canvasTier).toBe(7);
+    expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
+    expect(parsed.version).toBe(3);
+  });
+});

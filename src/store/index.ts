@@ -36,7 +36,7 @@ export type GameStore =
   & UiSlice
   & GameTick;
 
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -47,6 +47,9 @@ const SAVE_KEY = "artdle-save";
  * v1 → v2 (2026-05-03): the `+inspiration_rate%` workshop affix was removed
  * (items are now painting-only by design). Filter out any items with that
  * kind from `inventory` and `equippedItems`.
+ *
+ * v2 → v3 (2026-05-03): v1.1 adds canvasTier (default 1) and paintMastery
+ * (default big(0)). Existing v2 saves load with v1.0-equivalent defaults.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -63,6 +66,14 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       ...state,
       inventory: filterRemovedAffix(state.inventory),
       equippedItems: filterRemovedAffix(state.equippedItems),
+    };
+  }
+
+  if (fromVersion < 3) {
+    state = {
+      ...state,
+      canvasTier: 1,
+      paintMastery: big(0),
     };
   }
 
