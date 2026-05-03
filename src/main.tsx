@@ -7,6 +7,7 @@ import { App } from "@/App";
 import { startTickLoop, stopTickLoop } from "@/core/tickLoop";
 import { installLifecycle, defaultLifecycleHooks } from "@/systems/lifecycle";
 import { big } from "@/core/bigNumber";
+import "./styles/globals.css";
 import "./index.css";
 
 // Dev-only: expose store + helpers on window for DevTools console smoke tests.
