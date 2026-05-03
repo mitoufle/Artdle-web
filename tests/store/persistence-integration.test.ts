@@ -351,6 +351,59 @@ describe("save migration v2 → v3", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.canvasTier).toBe(7);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(3);
+    expect(parsed.version).toBe(4);
+  });
+});
+
+describe("save migration v3 → v4 (PM redesign)", () => {
+  it("v3 save (no lifetimeGold) gets default big(0) on migrate", () => {
+    const v3State = {
+      gold: { __big: "5000" },
+      inspiration: { __big: "100" },
+      fame: { __big: "3" },
+      ascendCount: 1,
+      playerId: "test-player-id-v3",
+      canvasTier: 5,
+      paintMastery: { __big: "42" },
+    };
+    const migrated = migrate(v3State, 3) as unknown as Record<string, unknown>;
+    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
+    // Existing paintMastery preserved.
+    expect((migrated.paintMastery as { __big: string }).__big).toBe("42");
+    // Other fields preserved.
+    expect(migrated.canvasTier).toBe(5);
+    expect(migrated.playerId).toBe("test-player-id-v3");
+  });
+
+  it("v1 save chained through v1→v2→v3→v4 lands with all defaults", () => {
+    const v1State = {
+      gold: { __big: "100" },
+      inventory: [
+        { kind: "+inspiration_rate%", magnitude: 10 },
+        { kind: "+canvas_gold%", magnitude: 5 },
+      ],
+      equippedItems: [],
+      playerId: "test-player-id-v1",
+    };
+    const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
+    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(1);
+    expect(migrated.canvasTier).toBe(1);
+    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
+  });
+
+  it("v4 save with non-default lifetimeGold round-trips", async () => {
+    useGameStore.setState({ canvasTier: 3 });
+    useGameStore.getState()._setPaintMastery(big(100));
+    useGameStore.getState()._setLifetimeGold(big(50_000));
+    await persistedAdapter.flush();
+
+    const raw = await idbAdapter.getItem("artdle-save");
+    expect(raw).not.toBeNull();
+    const parsed = JSON.parse(raw!);
+    expect(parsed.state.canvasTier).toBe(3);
+    expect(parsed.state.paintMastery).toEqual({ __big: "100" });
+    expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
+    expect(parsed.version).toBe(4);
   });
 });

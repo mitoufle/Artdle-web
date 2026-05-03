@@ -36,7 +36,7 @@ export type GameStore =
   & UiSlice
   & GameTick;
 
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -50,6 +50,9 @@ const SAVE_KEY = "artdle-save";
  *
  * v2 → v3 (2026-05-03): v1.1 adds canvasTier (default 1) and paintMastery
  * (default big(0)). Existing v2 saves load with v1.0-equivalent defaults.
+ *
+ * v3 → v4 (2026-05-03): v1.1 PM redesign — adds lifetimeGold (default big(0)).
+ * Existing paintMastery values preserved; gain rate slows going forward.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -74,6 +77,16 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       ...state,
       canvasTier: 1,
       paintMastery: big(0),
+    };
+  }
+
+  if (fromVersion < 4) {
+    // v3 → v4 (2026-05-03): PM redesign — gain is now gold-fraction (not tier²).
+    // Existing paintMastery values are preserved; only the gain formula changes
+    // going forward. lifetimeGold defaults to 0 (no retroactive credit).
+    state = {
+      ...state,
+      lifetimeGold: big(0),
     };
   }
 
