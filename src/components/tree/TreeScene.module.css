@@ -1,0 +1,21 @@
+.scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--bg-stone-d);
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Reduced motion: pause SVG animations */
+@media (prefers-reduced-motion: reduce) {
+  .svg :global(animate) {
+    animation: none !important;
+  }
+}
