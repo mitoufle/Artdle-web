@@ -1,0 +1,8 @@
+.chip {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  padding: var(--s-1) var(--s-2);
+  border: var(--border-subtle);
+  border-radius: var(--r-sm);
+}
