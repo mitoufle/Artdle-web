@@ -30,7 +30,7 @@ export const getCanvasGoldMultiplier = (state: GameStore): number => {
 };
 
 /**
- * Paint-speed multiplier — `effectivePaintTime = PAINT_TIME_BASE_SECONDS / multiplier`.
+ * Paint-speed multiplier — `effectivePaintTime = canvasTime(tier) / multiplier`.
  * Higher = faster.
  *
  * Convention here is the same as the other two functions (`1 + Σ contributions`),
