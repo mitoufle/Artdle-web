@@ -1,5 +1,102 @@
 # Artdle Web — Handover
 
+**Date:** 2026-05-03 (v1.1 SHIPPED)
+**Status:** v1.1 tagged. Phases 0+1+2+3+4+5+6a+6b (v1.0) + all v1.1 tasks complete. **332/332 tests** across 32 files. tsc clean. lint clean (1 pre-existing warning in main.tsx). Bundle: 124.83 KB gzipped JS / ~129 KB total. Repo on `origin/main` with `v1.1` annotated tag pending push (user will push explicitly).
+
+---
+
+## What v1.1 adds (on top of v1.0)
+
+- **10 canvas tiers.** Tier 1 = 2s/sale, 10g; tier 5 = 10s/sale, 250g; tier 10 = 20s/sale, 1000g. Gold scales as `BASE × tier² × multipliers`. Paint time scales as `tier × 2 / paintTimeMult`. Stripped form of canvas-design.md §6 (`quality = tier`, no style/palette/mastery yet).
+- **Tier upgrade button** on PaintingView. Cost curve `100 × 2.78^(tier-1)` g per single upgrade. Total path 1→10 ≈ 558k g. Hover shows current vs. next tier deltas (gold/sale, time/sale, PM/sale).
+- **Paint Mastery (PM)** — 4th currency. Permanent (persists across ascends). Earned `tier²` per canvas sale. Multiplies canvas gold via `1 + 5 × log10(pm + 1)`. PM 100 → ×11; PM 1M → ×31; PM 1e10 → ×51 (asymptotic log shape).
+- **BottomBar** grows from 3 to 4 currency widgets (gold / inspi / fame / PM). PM widget pulses on increment, same CSS-keyframe pattern as fame.
+- **Save migration v2 → v3.** Existing v2 saves load with `canvasTier = 1`, `paintMastery = big(0)` defaults. v1 saves chain through v1→v2 then v2→v3.
+
+---
+
+## v1.1 deliverables vs. spec DoD
+
+| # | DoD requirement | Status |
+|---|---|---|
+| 1 | All formulas in balance.ts with passing tests | ✅ |
+| 2 | canvasSlice.canvasTier works (init, upgrade, reset) | ✅ |
+| 3 | paintMasterySlice works (gain, persist, no-reset on ascend) | ✅ |
+| 4 | PM mult applied to canvas gold sales end-to-end | ✅ |
+| 5 | PaintingView has TierUpgradeButton with hover + disabled states | ✅ |
+| 6 | BottomBar 4 widgets; PM widget pulses on increment | ✅ |
+| 7 | Save migration v2→v3 unit + integration tests | ✅ |
+| 8 | 276 baseline tests still pass; ~25 new; ~300+ total | ✅ (332 total — +56 from v1.0 baseline) |
+| 9 | Manual smoke check | ⚠️ DEFERRED to user (subagent cannot run interactive playthrough) |
+| 10 | Bundle < 250 KB gzipped | ✅ (124.83 KB — ~50% headroom; +0.65 KB over v1.0) |
+| 11 | tsc + lint clean | ✅ |
+
+---
+
+## Strict scope adhered
+
+No new workshop affixes, no new skill tree nodes, no tree-stage expansion (per spec strict scope). All changes interior to canvas + new PM slice + UI surface.
+
+---
+
+## What shipped in v1.1 (commit log)
+
+- `29320a3` — `core(balance):` canvasGold takes tier; tier² scaling
+- `836bf1e` — `core(balance):` add canvasTime(tier) formula
+- `655edfe` — `core(balance):` add tierUpgradeCost + tier constants
+- `5c0142e` — `core(balance):` add pmGainPerSale(tier) formula
+- `c7f57f6` — `core(balance):` add pmMult + PM_LOG_FACTOR
+- `1d115d5` — `store(paintMastery):` scaffold slice (not yet registered)
+- `4ef2ab7` — `test(paintMastery):` cover initial state, gainFromSale, helper
+- `04d9e05` — `store:` register paintMasterySlice + getPmMultiplier helper
+- `d964d80` — `store(canvas):` add canvasTier field (default 1, resets on ascend)
+- `7fd81e2` — `store(canvas):` add upgradeTier() atomic action
+- `7bba100` — `store(canvas):` tick uses canvasTime(tier) and tier-scaled gold
+- `afd4a6b` — `test(canvas):` pin canvasTier-at-sale contract
+- `8323678` — `test(ascend):` pin v1.1 reset semantics
+- `5f9f629` — `store:` bump SAVE_VERSION to 3; v2→v3 migration adds v1.1 defaults
+- `0c0a49a` — `test(persistence):` rename stale 'v2 current' test to '(legacy)'
+- `31f2bfd` — `ui(painting):` add TierUpgradeButton widget
+- `029310f` — `ui(painting):` mount TierUpgradeButton; show tier in canvas header
+- `5561dc1` — `ui(currency):` support paintMastery kind in CurrencyDisplay
+- `7276b5c` — `ui(bottombar):` add 4th currency widget for paintMastery
+
+---
+
+## Lessons preserved (v1.1 additions)
+
+(Appended to the existing list. Numbering continues from lesson #37.)
+
+38. **Cross-slice action calls inside ticks are idiomatic.** `state.gainFromSale(state.canvasTier)` from `canvasSlice.canvasTick` reaches into `paintMasterySlice` — same shape as the existing `state.add("gold", gain)` pattern. No coupling concerns.
+39. **PM mult composes multiplicatively, item bonuses additively.** Convention: `getCanvasGoldMultiplier` returns `1 + Σ contributions` (additive); `getPmMultiplier` returns the multiplicative factor; combined via `*` at the call site. Documented in `multipliers.ts` JSDoc.
+40. **Save migrations are transient typecheck-broken until the slice is registered.** v1.1's slice scaffold (1d115d5) and tests (4ef2ab7) were committed before registration (04d9e05), leaving typecheck broken for that window. Future rule: any new slice using `state.X` from the same slice must be committed in the same commit as the store registration in `store/index.ts`, OR use `as any` casts during the gap.
+41. **Vitest's `toBeCloseTo` with negative precision is more lenient than Jest documents.** `toBeCloseTo(5983, -1)` passes for values near `5972.82` even though the tolerance formula would predict failure. Test expectations don't need to match `Big.pow` exactly; integer-rounding the actual value is cleaner.
+42. **Test name discipline:** "migrate from version N (current) is a no-op" rots when N becomes legacy. Prefer "migrate from version N (legacy) is idempotent" — see commit 0c0a49a which renamed the stale test.
+
+---
+
+## Repo state
+
+- **Branch:** `main` at `https://github.com/mitoufle/Artdle-web.git`. **Pending push** (`v1.1` annotated tag pending push — user will push explicitly).
+- **Bundle:** `dist/index.html` 0.29 KB gzipped, CSS 3.98 KB gzipped, JS 124.83 KB gzipped — total **~129 KB gzipped**. Well under the 250 KB DoD budget.
+- **Versions:** TS 6.0.3, Vite 8.0.10, Vitest 4.1.5, Zustand 5.0.12, Tailwind 4.2.4, React 19.2.5, Motion 12.38.0. See `VERSIONS.md`.
+
+---
+
+## What's next — v1.2
+
+Per `docs/PORT_PLAN.md` §2.1: v1.2 = subjects (5 starters + 15 derived) + per-subject 10-tier mastery. Source: `docs/specs/2026-04-25-canvas-design.md` §7.
+
+When starting v1.2 in a fresh Claude session in this directory:
+
+> Read CLAUDE.md and docs/HANDOVER.md. v1.1 is shipped (tag v1.1). We're starting v1.2 — Subjects + per-subject mastery. Read docs/specs/2026-04-25-canvas-design.md §7 for the source design. Use brainstorming → writing-plans → subagent-driven-development.
+
+---
+
+---
+
+# Historical — v1.0 (shipped 2026-05-03)
+
 **Date:** 2026-05-03 (v1.0 SHIPPED)
 **Status:** v1.0 tagged. Phases 0+1+2+3+4+5+6a+6b complete. **276/276 tests** across 30 files. tsc clean. lint clean (1 pre-existing warning). Bundle: 124.18 KB gzipped JS / ~128 KB total. Repo pushed to `origin/main` with `v1.0` annotated tag.
 
@@ -141,9 +238,17 @@ From Phase 6a:
 36. **Save migrations: `(persisted, fromVersion) => mergedState`. Always merge, never replace.** v1→v2 migration pattern: walk a `Record<string, unknown>`, mutate the relevant slots, return `state as unknown as GameStore`. Filter functions return `[]` for non-array inputs (defensive). Export `migrate` for unit testing.
 37. **`v1.0` deliberately ships unplaytested.** v1.1+ waves will re-tune anyway. Patch path is `v1.0.1` if real play surfaces issues.
 
+From v1.1:
+
+38. **Cross-slice action calls inside ticks are idiomatic.** `state.gainFromSale(state.canvasTier)` from `canvasSlice.canvasTick` reaches into `paintMasterySlice` — same shape as the existing `state.add("gold", gain)` pattern. No coupling concerns.
+39. **PM mult composes multiplicatively, item bonuses additively.** Convention: `getCanvasGoldMultiplier` returns `1 + Σ contributions` (additive); `getPmMultiplier` returns the multiplicative factor; combined via `*` at the call site. Documented in `multipliers.ts` JSDoc.
+40. **Save migrations are transient typecheck-broken until the slice is registered.** v1.1's slice scaffold (1d115d5) and tests (4ef2ab7) were committed before registration (04d9e05), leaving typecheck broken for that window. Future rule: any new slice using `state.X` must be committed in the same commit as the store registration in `store/index.ts`, OR use `as any` casts during the gap.
+41. **Vitest's `toBeCloseTo` with negative precision is more lenient than Jest documents.** `toBeCloseTo(5983, -1)` passes for values near `5972.82` even though the tolerance formula would predict failure. Test expectations don't need to match `Big.pow` exactly; integer-rounding the actual value is cleaner.
+42. **Test name discipline:** "migrate from version N (current) is a no-op" rots when N becomes legacy. Prefer "migrate from version N (legacy) is idempotent" — see commit 0c0a49a which renamed the stale test.
+
 ---
 
-## Repo state
+## v1.0 repo state (historical)
 
 - **Branch:** `main` at `https://github.com/mitoufle/Artdle-web.git`. **Pushed; `v1.0` tag pushed.**
 - **Recent commits:** see `git log --oneline 12e749b..HEAD`.
@@ -165,24 +270,8 @@ From Phase 6a:
 - **3 unused `ticks: number[]` arrays in `tests/core/tickLoop.test.ts`** (Phase 6a Task 2): reviewer-flagged; trace back to plan code blocks; clean opportunistically.
 - **5 minor reviewer suggestions across Phase 6a tasks:** `ErrorReporter` export from telemetry; `err instanceof Error` guard in lifecycle hooks instead of `as Error` cast; JSDoc wording polish on FloatingGoldText; `onUnload` defensive `pauseTickLoop()` call; per-component vs global reduced-motion approach. All non-blocking; documented in each task's review.
 - **No empirical playtest of the full loop.** v1.0 ships analytically; v1.0.1 is the patch path if real play surfaces issues.
-
----
-
-## What's next — v1.1+
-
-Per `docs/PORT_PLAN.md` §2.1, the wave roadmap:
-
-- **v1.1 — Painter's Office + Painting School.** The "between runs" meta loop. Painter's Office: persistent NPC interactions / quests. Painting School: skill XP system that overlays the existing ascend loop. Source design specs at `docs/specs/`.
-- **v1.2 — Expositions.** Timed challenges with bespoke rewards.
-- **v1.3 — Audio + achievements.** Sound design + achievement system.
-- **v1.5 — Drag-to-reorder equipped items + Workshop affix expansion.** Stable-identity keys become required at this point.
-- **v2.0 — Offline progress (24h hybrid catch-up), telemetry backend, possible accounts, possible PWA.** The `setErrorReporter` hook from Phase 6a Task 1 is the integration point for the telemetry backend.
-
-The 3-year long-term player-time target unlocks the full game once all waves are out. v1.0 itself plays in 1-3 hours.
-
-When starting v1.1, in a fresh Claude session in this directory:
-
-> Read `CLAUDE.md` and `docs/HANDOVER.md`. v1.0 is shipped (tag `v1.0`). We're starting v1.1 — Painter's Office + Painting School. Read `docs/specs/` for the source designs. Use the brainstorming skill to scope, then writing-plans, then subagent-driven-development.
+- **PM widget pulse rate at high tiers.** At tier 10, PM increments fire every 2s. At v1.4 multi-canvas time (8 slots), that's ~4 pulses/sec. Flag for v1.4 — debounce or batch if distracting. Not a v1.1 concern.
+- **`pm.toNumber()` saturation in pmMult.** For PM beyond `Number.MAX_SAFE_INTEGER`, behavior is technically correct but not ideal. Future v2.x refactor opportunity: Big-native logarithm. Not a v1.1 concern; v1.1 reachability is well under saturation territory.
 
 ---
 
@@ -191,9 +280,9 @@ When starting v1.1, in a fresh Claude session in this directory:
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 276/276 in ~6s
+npm test           # 332/332 in ~10s
 npm run build      # dist/ in <1s
-npm run preview    # serves dist/
+npm run preview    # serves dist/ at http://localhost:4173
 npm run lint
 npx tsc -b --noEmit
 ```
