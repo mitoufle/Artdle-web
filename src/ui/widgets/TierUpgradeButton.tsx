@@ -39,7 +39,7 @@ export function TierUpgradeButton(): JSX.Element {
         const goldMult = getCanvasGoldMultiplier(s) * getPmMultiplier(s);
         const curGold = canvasGold(t, goldMult);
         const curTime = canvasTime(t);
-        const curPm = pmGainPerSale(t);
+        const curPm = pmGainPerSale(curGold, s.lifetimeGold);
 
         if (t >= MAX_TIER) {
           return `Canvas at tier ${MAX_TIER}. No further upgrades in v1.1.\nCurrent: ${formatBig(curGold)} g/sale, ${curTime}s/sale, ${formatBig(curPm)} PM/sale.`;
@@ -47,7 +47,7 @@ export function TierUpgradeButton(): JSX.Element {
 
         const nextGold = canvasGold(t + 1, goldMult);
         const nextTime = canvasTime(t + 1);
-        const nextPm = pmGainPerSale(t + 1);
+        const nextPm = pmGainPerSale(nextGold, s.lifetimeGold);
         return [
           `Current tier ${t}: ${formatBig(curGold)} g/sale, ${curTime}s/sale, ${formatBig(curPm)} PM/sale.`,
           `Next tier ${t + 1}: ${formatBig(nextGold)} g/sale, ${nextTime}s/sale, ${formatBig(nextPm)} PM/sale.`,
