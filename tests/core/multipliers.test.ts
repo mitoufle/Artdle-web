@@ -3,8 +3,9 @@ import {
   getInspiMultiplier,
   getCanvasGoldMultiplier,
   getPaintTimeMultiplier,
+  getPmMultiplier,
 } from "@/core/multipliers";
-import { useGameStore } from "@/store";
+import { useGameStore, type GameStore } from "@/store";
 import { big } from "@/core/bigNumber";
 import { PAINT_TIME_BASE_SECONDS, CANVAS_GOLD_BASE } from "@/core/balance";
 
@@ -149,5 +150,24 @@ describe("multipliers — Phase 3 contributors", () => {
     const gain = useGameStore.getState().gold.toNumber() - before;
     expect(gain).toBe(CANVAS_GOLD_BASE);
     // Sanity: without the equipped item, canvasTick(9.0) would have gained 0.
+  });
+
+  // ============================================================================
+  // getPmMultiplier
+  // ============================================================================
+
+  it("returns 1.0 when paintMastery is 0", () => {
+    const state = { paintMastery: big(0) } as unknown as GameStore;
+    expect(getPmMultiplier(state)).toBe(1);
+  });
+
+  it("returns ~11 at paintMastery 100", () => {
+    const state = { paintMastery: big(100) } as unknown as GameStore;
+    expect(getPmMultiplier(state)).toBeCloseTo(11.0, 1);
+  });
+
+  it("returns ~31 at paintMastery 1,000,000", () => {
+    const state = { paintMastery: big(1_000_000) } as unknown as GameStore;
+    expect(getPmMultiplier(state)).toBeCloseTo(31.0, 1);
   });
 });

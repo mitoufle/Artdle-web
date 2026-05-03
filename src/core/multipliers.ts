@@ -1,5 +1,6 @@
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
+import { pmMult } from "./balance";
 
 /**
  * Aggregate multiplier on inspiration accrual rate.
@@ -50,3 +51,17 @@ export const getPaintTimeMultiplier = (state: GameStore): number => {
   }
   return 1 + bonus;
 };
+
+/**
+ * Paint Mastery multiplier on canvas gold output.
+ * Wraps `pmMult(state.paintMastery)` so call sites only need the state.
+ *
+ * Composes multiplicatively with `getCanvasGoldMultiplier` at the call site:
+ *
+ *   const gain = canvasGold(tier, getCanvasGoldMultiplier(state) * getPmMultiplier(state));
+ *
+ * NOT folded into `getCanvasGoldMultiplier` because PM follows multiplicative
+ * convention while item / skill bonuses follow additive `1 + Σ` convention.
+ */
+export const getPmMultiplier = (state: GameStore): number =>
+  pmMult(state.paintMastery);

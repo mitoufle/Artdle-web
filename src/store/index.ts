@@ -6,6 +6,7 @@ import { createCurrencySlice, type CurrencySlice } from "./currencySlice";
 import { createHoverInfoSlice, type HoverInfoSlice } from "./hoverInfoSlice";
 import { createTreeSlice, type TreeSlice } from "./treeSlice";
 import { createCanvasSlice, type CanvasSlice } from "./canvasSlice";
+import { createPaintMasterySlice, type PaintMasterySlice } from "./paintMasterySlice";
 import { createSkillTreeSlice, type SkillTreeSlice } from "./skillTreeSlice";
 import { createWorkshopSlice, type WorkshopSlice } from "./workshopSlice";
 import { createViewSlice, type ViewSlice } from "./viewSlice";
@@ -28,6 +29,7 @@ export type GameStore =
   & HoverInfoSlice
   & TreeSlice
   & CanvasSlice
+  & PaintMasterySlice
   & SkillTreeSlice
   & WorkshopSlice
   & ViewSlice
@@ -104,6 +106,7 @@ export const useGameStore = create<GameStore>()(
       ...createHoverInfoSlice(set, get, store),
       ...createTreeSlice(set, get, store),
       ...createCanvasSlice(set, get, store),
+      ...createPaintMasterySlice(set, get, store),
       ...createSkillTreeSlice(set, get, store),
       ...createWorkshopSlice(set, get, store),
       ...createViewSlice(set, get, store),
