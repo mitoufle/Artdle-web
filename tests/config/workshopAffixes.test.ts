@@ -9,12 +9,21 @@ import {
 } from "@/config/workshopAffixes";
 
 describe("workshopAffixes config", () => {
-  it("AFFIX_KINDS has exactly 3 entries", () => {
-    expect(AFFIX_KINDS).toHaveLength(3);
+  it("AFFIX_KINDS has exactly 2 entries (painting-only pool)", () => {
+    expect(AFFIX_KINDS).toHaveLength(2);
   });
 
-  it("the 3 affix kinds are unique", () => {
+  it("the affix kinds are unique", () => {
     expect(new Set(AFFIX_KINDS).size).toBe(AFFIX_KINDS.length);
+  });
+
+  it("the affix kinds are all painting-related (no tree-mechanic affixes)", () => {
+    // v1 design constraint: items only boost painting mechanics. Tree-side
+    // bonuses live on skill-tree nodes. See workshopAffixes.ts JSDoc.
+    const treeMechanicAffixes = ["+inspiration_rate%", "+tree_part_cost_reduction%"];
+    for (const kind of AFFIX_KINDS) {
+      expect(treeMechanicAffixes).not.toContain(kind);
+    }
   });
 
   it("MAGNITUDE_MIN_PCT < MAGNITUDE_MAX_PCT", () => {

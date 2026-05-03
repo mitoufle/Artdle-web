@@ -30,29 +30,25 @@ describe("multipliers — Phase 3 contributors", () => {
     expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.15, 6);
   });
 
-  it("getInspiMultiplier returns 1 + magnitude/100 with one +inspiration_rate% item equipped", () => {
-    useGameStore.setState({
-      equippedItems: [{ kind: "+inspiration_rate%", magnitude: 12 }],
-    });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.12, 6);
-  });
-
-  it("getInspiMultiplier sums multiple +inspiration_rate% items", () => {
+  it("getInspiMultiplier ignores equipped workshop items (items are painting-only)", () => {
+    // Items now only affect painting mechanics; tree-side bonuses come from
+    // the skill tree only. Even with painting-related affixes equipped,
+    // getInspiMultiplier should return 1 (no equipped contribution).
     useGameStore.setState({
       equippedItems: [
-        { kind: "+inspiration_rate%", magnitude: 10 },
-        { kind: "+inspiration_rate%", magnitude: 5 },
+        { kind: "+canvas_gold%", magnitude: 12 },
+        { kind: "-paint_time%", magnitude: 10 },
       ],
     });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.15, 6);
+    expect(getInspiMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getInspiMultiplier combines item + Patient Eye contributions", () => {
+  it("getInspiMultiplier with Patient Eye + equipped items still equals 1.15 (items don't contribute)", () => {
     useGameStore.setState({
-      equippedItems: [{ kind: "+inspiration_rate%", magnitude: 10 }],
+      equippedItems: [{ kind: "+canvas_gold%", magnitude: 10 }],
       purchasedNodes: { patient_eye: true },
     });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.25, 6);
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.15, 6);
   });
 
   // ============================================================================

@@ -34,15 +34,37 @@ export type GameStore =
   & UiSlice
   & GameTick;
 
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 const SAVE_KEY = "artdle-save";
 
 /**
- * v1 has no prior version to migrate from. The chain stub exists so future
- * waves can append migrations without reorganising this file.
+ * Save schema migration chain. Each `if (fromVersion < N)` block migrates
+ * from version N-1 to version N. Always merge into existing state — never
+ * replace whole — so playerId and other invariants survive.
+ *
+ * v1 → v2 (2026-05-03): the `+inspiration_rate%` workshop affix was removed
+ * (items are now painting-only by design). Filter out any items with that
+ * kind from `inventory` and `equippedItems`.
+ *
+ * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
-const migrate = (persisted: unknown, _fromVersion: number): GameStore => {
-  return persisted as GameStore;
+export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
+  let state = persisted as Record<string, unknown>;
+
+  if (fromVersion < 2) {
+    const isItem = (v: unknown): v is { kind: string; magnitude: number } =>
+      typeof v === "object" && v !== null && "kind" in v && "magnitude" in v;
+    const filterRemovedAffix = (arr: unknown): unknown[] =>
+      Array.isArray(arr) ? arr.filter((i) => isItem(i) && i.kind !== "+inspiration_rate%") : [];
+
+    state = {
+      ...state,
+      inventory: filterRemovedAffix(state.inventory),
+      equippedItems: filterRemovedAffix(state.equippedItems),
+    };
+  }
+
+  return state as unknown as GameStore;
 };
 
 /**

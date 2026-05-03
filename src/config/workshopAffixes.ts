@@ -1,10 +1,16 @@
-/** Persisted affix identifier. Renames require a save migration. */
-export type AffixKind = "+canvas_gold%" | "-paint_time%" | "+inspiration_rate%";
+/**
+ * Persisted affix identifier. Renames require a save migration.
+ *
+ * v1 design constraint: items come from the Workshop (Painting screen) and
+ * thematically only boost painting-related mechanics. Tree-mechanic affixes
+ * (e.g., the now-removed `+inspiration_rate%`) belong to skill-tree nodes
+ * instead. Save schema v1→v2 migration filters out items with removed kinds.
+ */
+export type AffixKind = "+canvas_gold%" | "-paint_time%";
 
 export const AFFIX_KINDS: ReadonlyArray<AffixKind> = [
   "+canvas_gold%",
   "-paint_time%",
-  "+inspiration_rate%",
 ];
 
 /** Inclusive lower bound on rolled magnitude (integer percent). */

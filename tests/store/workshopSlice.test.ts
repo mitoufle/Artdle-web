@@ -198,12 +198,11 @@ describe("workshopSlice", () => {
       equippedItems: [
         { kind: "+canvas_gold%", magnitude: 10 },
         { kind: "+canvas_gold%", magnitude: 5 },
-        { kind: "+inspiration_rate%", magnitude: 12 },
+        { kind: "-paint_time%", magnitude: 12 },
       ],
     });
     expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBeCloseTo(0.15, 6);
-    expect(getEquippedContribution(useGameStore.getState(), "+inspiration_rate%")).toBeCloseTo(0.12, 6);
-    expect(getEquippedContribution(useGameStore.getState(), "-paint_time%")).toBe(0);
+    expect(getEquippedContribution(useGameStore.getState(), "-paint_time%")).toBeCloseTo(0.12, 6);
   });
 
   it("resetWorkshop() restores initialWorkshopState", () => {

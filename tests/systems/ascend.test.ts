@@ -125,7 +125,7 @@ describe("systems/ascend", () => {
   it("performAscendOrchestrator on success: workshop resets (inventory empty, equippedItems empty)", () => {
     useGameStore.setState({
       inventory: [{ kind: "+canvas_gold%", magnitude: 10 }],
-      equippedItems: [{ kind: "+inspiration_rate%", magnitude: 8 }],
+      equippedItems: [{ kind: "-paint_time%", magnitude: 8 }],
     });
     useGameStore.getState().add("inspiration", big(1500));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);

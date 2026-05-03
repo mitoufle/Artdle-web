@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { useGameStore } from "@/store";
+import { useGameStore, migrate } from "@/store";
 import { idbAdapter, persistedAdapter } from "@/systems/persistence";
 import { TREE_STAGES } from "@/config/treeStages";
 import { big, isBig } from "@/core/bigNumber";
@@ -147,7 +147,7 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
         { kind: "-paint_time%", magnitude: 8 },
       ],
       equippedItems: [
-        { kind: "+inspiration_rate%", magnitude: 10 },
+        { kind: "-paint_time%", magnitude: 10 },
       ],
       purchasedNodes: { goldsmith: true, patient_eye: true },
     });
@@ -245,5 +245,59 @@ describe("persistence integration — flush error routing through telemetry", ()
     const [err, ctx] = errorSink.mock.calls[0]!;
     expect((err as Error).message).toBe("integration-boom");
     expect(ctx).toBe("persist.flush.beforeunload");
+  });
+});
+
+describe("save schema migration", () => {
+  it("migrate v1 → v2 filters out items with the removed +inspiration_rate% affix", () => {
+    const v1State = {
+      playerId: "deadbeef-uuid",
+      gold: { __big: "100" },
+      inventory: [
+        { kind: "+canvas_gold%", magnitude: 12 },
+        { kind: "+inspiration_rate%", magnitude: 8 },
+        { kind: "-paint_time%", magnitude: 5 },
+      ],
+      equippedItems: [
+        { kind: "+inspiration_rate%", magnitude: 10 },
+      ],
+    };
+    const result = migrate(v1State, 1);
+    expect(result.inventory).toHaveLength(2);
+    expect(result.inventory.map((i) => i.kind)).toEqual(["+canvas_gold%", "-paint_time%"]);
+    expect(result.equippedItems).toHaveLength(0);
+  });
+
+  it("migrate v1 → v2 preserves all other fields verbatim (only inventory + equippedItems are filtered)", () => {
+    const v1State = {
+      playerId: "preserved-uuid",
+      gold: { __big: "1234" },
+      inventory: [],
+      equippedItems: [],
+      purchasedNodes: { goldsmith: true },
+      currentStage: 1,
+    };
+    const result = migrate(v1State, 1) as unknown as Record<string, unknown>;
+    expect(result.playerId).toBe("preserved-uuid");
+    expect(result.gold).toEqual({ __big: "1234" });
+    expect(result.purchasedNodes).toEqual({ goldsmith: true });
+    expect(result.currentStage).toBe(1);
+  });
+
+  it("migrate from version 2 (current) is a no-op", () => {
+    const v2State = {
+      inventory: [{ kind: "+canvas_gold%", magnitude: 10 }],
+      equippedItems: [{ kind: "-paint_time%", magnitude: 7 }],
+    };
+    const result = migrate(v2State, 2);
+    expect(result.inventory).toHaveLength(1);
+    expect(result.equippedItems).toHaveLength(1);
+  });
+
+  it("migrate handles missing inventory/equippedItems gracefully (defaults to empty)", () => {
+    const v1State = { playerId: "x" };
+    const result = migrate(v1State, 1);
+    expect(result.inventory).toEqual([]);
+    expect(result.equippedItems).toEqual([]);
   });
 });

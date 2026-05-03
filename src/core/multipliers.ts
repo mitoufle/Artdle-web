@@ -3,14 +3,16 @@ import { getEquippedContribution } from "@/store/workshopSlice";
 
 /**
  * Aggregate multiplier on inspiration accrual rate.
- * Phase 3: reads `+inspiration_rate%` equipped item magnitudes + "Patient Eye" skill node.
+ *
+ * Workshop items do NOT contribute here — items are painting-only by design
+ * (see `src/config/workshopAffixes.ts` JSDoc). Tree-side bonuses come from
+ * the skill tree only.
  *
  * Convention: result is `1 + Σ contributions`, where each contribution is
  * an additive percentage (e.g., `+10%` = `0.10`).
  */
 export const getInspiMultiplier = (state: GameStore): number => {
   let bonus = 0;
-  bonus += getEquippedContribution(state, "+inspiration_rate%");
   if (state.purchasedNodes.patient_eye) bonus += 0.15;
   return 1 + bonus;
 };

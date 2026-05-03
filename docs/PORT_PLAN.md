@@ -61,10 +61,12 @@ Every system feeds the canvas. Canvas is the gold faucet. Workshop is a click-dr
 A button labelled **Craft** in the Workshop popup. Click it: spend `X` gold (initial: 100, scales with workshop level later — v1 has no level), receive 1 item.
 
 **Item shape:**
-- 1 implicit affix from a small pool: `+canvas_gold%`, `-paint_time%`, `+inspiration_rate%`. Magnitude rolls in a fixed range (e.g., 5% to 15%).
+- 1 implicit affix from a painting-only pool: `+canvas_gold%`, `-paint_time%`. Magnitude rolls in a fixed range (e.g., 5% to 15%).
 - 1 equipment slot total. Equipping replaces any currently-equipped item; the unequipped one is discarded (no stash in v1).
 
-**Tuning note (flagged for v1 balance pass):** the 3-affix pool may feel thin in playtest — the same shape with different numbers can register as "the workshop just rolls a random %." If so, expand to 4-5 affixes (e.g., `+ascend_palier_reduction%`, `+tree_part_cost_reduction%`) before declaring v1 balanced. This is a tuning question, not a redesign.
+**Design constraint (locked 2026-05-03):** items come from the Workshop (Painting screen) and only boost painting-related mechanics. Tree-side bonuses (e.g., `+inspiration_rate%`) live on skill-tree nodes, not on items. The `+inspiration_rate%` affix that originally rounded out the pool was removed for this reason — its job is done by the Patient Eye skill node.
+
+**Tuning note (flagged for v1 balance pass):** the 2-affix pool may feel thin in playtest — same shape with different numbers can register as "the workshop just rolls a random %." If so, expand to 3-5 painting-related affixes before declaring v1 balanced. Candidates: `-craft_cost%`, `+craft_quality%` (wider magnitude rolls), `+canvas_gold_per_equipped%`. This is a tuning question, not a redesign.
 
 ### 1.4 Stripped skill tree — exact node list (proposed; tunable)
 
@@ -534,7 +536,7 @@ The original port plan had Phase 0–10. Stripped v1 collapses to **Phase 0–6*
 ### Phase 3 — Workshop + Ascend + Skill tree
 
 - `src/store/workshopSlice.ts`: click-to-craft action (validates gold, rolls 1 affix from `workshopAffixes.ts`), equip action, equipped-item state.
-- `src/config/workshopAffixes.ts`: 3-affix pool with magnitude ranges (e.g., `+canvas_gold%: 5–15`, `-paint_time%: 5–15`, `+inspiration_rate%: 5–15`).
+- `src/config/workshopAffixes.ts`: 2-affix painting-only pool with magnitude ranges (`+canvas_gold%: 5–15`, `-paint_time%: 5–15`). The `+inspiration_rate%` affix was originally Phase 3's third entry; removed 2026-05-03 as a v1 design refinement (items boost painting only).
 - `src/systems/ascend.ts`: orchestrated reset (currency → 0 except fame, tree → fresh, canvas → fresh, equipped item → null), preserves fame, ascend_count, skill tree, playerId.
 - `src/store/ascendSlice.ts`: `canAscend()` selector, `performAscend()` action.
 - `src/store/skillTreeSlice.ts`: 5-node purchase actions, fame spend.
