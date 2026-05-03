@@ -1,9 +1,19 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { useLocation } from "react-router-dom";
 import { WorkshopPopup } from "@/ui/popups/WorkshopPopup";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
 import { setSeed } from "@/core/rng";
+
+// Mock react-router-dom
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router-dom")>();
+  return {
+    ...actual,
+    useLocation: vi.fn(() => ({ pathname: "/painting" })),
+  };
+});
 
 describe("<WorkshopPopup />", () => {
   beforeEach(() => {
@@ -12,7 +22,6 @@ describe("<WorkshopPopup />", () => {
       workshopPopupOpen: true,
       gold: big(1000),
       purchasedNodes: {},
-      currentView: "painting",
     });
     setSeed(42);
   });
@@ -90,10 +99,14 @@ describe("<WorkshopPopup />", () => {
     expect(useGameStore.getState().workshopPopupOpen).toBe(false);
   });
 
-  it("auto-closes when currentView changes away from 'painting'", () => {
-    render(<WorkshopPopup />);
+  it("auto-closes when pathname changes away from '/painting'", () => {
+    const { rerender } = render(<WorkshopPopup />);
     expect(useGameStore.getState().workshopPopupOpen).toBe(true);
-    act(() => { useGameStore.setState({ currentView: "home" }); });
+
+    // Mock the location change to a different route.
+    vi.mocked(useLocation).mockReturnValue({ pathname: "/home" } as any);
+
+    rerender(<WorkshopPopup />);
     expect(useGameStore.getState().workshopPopupOpen).toBe(false);
   });
 });

@@ -9,7 +9,6 @@ import { createCanvasSlice, type CanvasSlice } from "./canvasSlice";
 import { createPaintMasterySlice, type PaintMasterySlice } from "./paintMasterySlice";
 import { createSkillTreeSlice, type SkillTreeSlice } from "./skillTreeSlice";
 import { createWorkshopSlice, type WorkshopSlice } from "./workshopSlice";
-import { createViewSlice, type ViewSlice } from "./viewSlice";
 import { createUiSlice, type UiSlice } from "./uiSlice";
 import { big, isBig } from "@/core/bigNumber";
 
@@ -32,11 +31,10 @@ export type GameStore =
   & PaintMasterySlice
   & SkillTreeSlice
   & WorkshopSlice
-  & ViewSlice
   & UiSlice
   & GameTick;
 
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 6;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -53,6 +51,11 @@ const SAVE_KEY = "artdle-save";
  *
  * v3 → v4 (2026-05-03): v1.1 PM redesign — adds lifetimeGold (default big(0)).
  * Existing paintMastery values preserved; gain rate slows going forward.
+ *
+ * v4 → v5 (2026-05-04): prep for v2.0 router — no schema change, version bump only.
+ *
+ * v5 → v6 (2026-05-04): viewSlice retired in favor of react-router-dom.
+ * Drop the persisted currentView field so future loads don't carry it.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -88,6 +91,19 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       ...state,
       lifetimeGold: big(0),
     };
+  }
+
+  if (fromVersion < 5) {
+    // v4 → v5 (2026-05-04): prep for v2.0 router.
+    // No schema change; version bump only to align with task numbering.
+  }
+
+  if (fromVersion < 6) {
+    // v5 → v6 (2026-05-04): viewSlice retired in favor of react-router-dom.
+    // Drop the persisted currentView field so future loads don't carry it.
+    const { currentView: _cv, ...rest } = state;
+    state = rest;
+    void _cv;
   }
 
   return state as unknown as GameStore;
@@ -133,7 +149,6 @@ export const useGameStore = create<GameStore>()(
       ...createPaintMasterySlice(set, get, store),
       ...createSkillTreeSlice(set, get, store),
       ...createWorkshopSlice(set, get, store),
-      ...createViewSlice(set, get, store),
       ...createUiSlice(set, get, store),
       tickAll: (deltaSeconds: number) => {
         const s = get();

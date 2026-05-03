@@ -178,31 +178,6 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
   });
 });
 
-describe("persistence integration — Phase 4 fields round-trip", () => {
-  beforeEach(async () => {
-    await idbAdapter.removeItem("artdle-save");
-    useGameStore.setState({ currentView: "home" });
-  });
-
-  it("currentView round-trips through save/rehydrate", async () => {
-    // Seed: switch away from the default.
-    useGameStore.getState().setView("skills");
-    expect(useGameStore.getState().currentView).toBe("skills");
-
-    // Force the throttle to flush the latest persist write.
-    await persistedAdapter.flush();
-
-    // Stomp in-memory state with a different view so we can prove rehydration
-    // restored from IDB rather than just observing in-memory.
-    useGameStore.setState({ currentView: "home" });
-
-    // Force-rehydrate from IDB.
-    await useGameStore.persist.rehydrate();
-
-    expect(useGameStore.getState().currentView).toBe("skills");
-  });
-});
-
 describe("persistence integration — Phase 5 fields strip", () => {
   beforeEach(async () => {
     await idbAdapter.removeItem("artdle-save");
@@ -351,7 +326,7 @@ describe("save migration v2 → v3", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.canvasTier).toBe(7);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(4);
+    expect(parsed.version).toBe(6);
   });
 });
 
@@ -404,6 +379,43 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     expect(parsed.state.canvasTier).toBe(3);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(4);
+    expect(parsed.version).toBe(6);
+  });
+});
+
+describe("save migration v5 → v6 (drop currentView)", () => {
+  it("drops currentView field from v5 save", () => {
+    const v5State = {
+      gold: { __big: "0" },
+      inspiration: { __big: "0" },
+      fame: { __big: "0" },
+      ascendCount: 0,
+      playerId: "test-id",
+      canvasTier: 1,
+      paintMastery: { __big: "0" },
+      lifetimeGold: { __big: "0" },
+      currentView: "painting",
+    };
+    const migrated = migrate(v5State, 5) as unknown as Record<string, unknown>;
+    expect("currentView" in migrated).toBe(false);
+  });
+
+  it("v1 → v6 chain preserves all earlier-migration data + drops currentView", () => {
+    const v1State = {
+      gold: { __big: "100" },
+      inventory: [
+        { kind: "+inspiration_rate%", magnitude: 10 },
+        { kind: "+canvas_gold%", magnitude: 5 },
+      ],
+      equippedItems: [],
+      playerId: "test-id-v1",
+      currentView: "home",
+    };
+    const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
+    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(1);
+    expect(migrated.canvasTier).toBe(1);
+    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect("currentView" in migrated).toBe(false);
   });
 });

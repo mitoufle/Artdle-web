@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import { useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { useLocation } from "react-router-dom";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import { big } from "@/core/bigNumber";
@@ -12,21 +13,21 @@ import {
 import { getCurrentSlotCount } from "@/store/workshopSlice";
 
 /**
- * @invariant The popup is reachable only from PaintingView and self-closes
- * when `currentView !== "painting"` (see auto-close `useEffect` below). If a
- * future entry point opens the Workshop from a non-painting view, that effect
+ * @invariant The popup is reachable only from /painting and self-closes
+ * when the user navigates away (see auto-close `useEffect` below). If a
+ * future entry point opens the Workshop from a non-painting route, that effect
  * will fire on mount and immediately close. Before adding such an entry point,
- * relax the predicate — e.g., capture the view-at-open in a ref and only close
- * when `currentView` differs from that captured value.
+ * relax the predicate — e.g., capture the route-at-open in a ref and only close
+ * when the route differs from that captured value.
  */
 export function WorkshopPopup(): JSX.Element {
+  const { pathname } = useLocation();
   const open = useGameStore((s) => s.workshopPopupOpen);
   const close = useGameStore((s) => s.closeWorkshopPopup);
   const inventory = useGameStore((s) => s.inventory);
   const equippedItems = useGameStore((s) => s.equippedItems);
   const gold = useGameStore((s) => s.gold);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
-  const currentView = useGameStore((s) => s.currentView);
   const craft = useGameStore((s) => s.craft);
   const equip = useGameStore((s) => s.equip);
   const unequip = useGameStore((s) => s.unequip);
@@ -43,10 +44,10 @@ export function WorkshopPopup(): JSX.Element {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
 
-  // Auto-close when navigating away from PaintingView. See @invariant above.
+  // Auto-close when navigating away from /painting. See @invariant above.
   useEffect(() => {
-    if (open && currentView !== "painting") close();
-  }, [open, currentView, close]);
+    if (open && pathname !== "/painting") close();
+  }, [open, pathname, close]);
 
   // Helper expects GameStore; pass the field it actually reads.
   // Cast pattern per docs/agent_docs/ui-patterns.md.
