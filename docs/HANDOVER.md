@@ -1,7 +1,7 @@
 # Artdle Web — Handover
 
 **Date:** 2026-05-03 (v1.1 SHIPPED)
-**Status:** v1.1 tagged. Phases 0+1+2+3+4+5+6a+6b (v1.0) + all v1.1 tasks complete. **332/332 tests** across 32 files. tsc clean. lint clean (1 pre-existing warning in main.tsx). Bundle: 124.83 KB gzipped JS / ~129 KB total. Repo on `origin/main` with `v1.1` annotated tag pending push (user will push explicitly).
+**Status:** v1.1 tagged. Phases 0+1+2+3+4+5+6a+6b (v1.0) + all v1.1 tasks complete + PM redesign patch. **350/350 tests** across 32 files. tsc clean. lint clean (1 pre-existing warning in main.tsx). Bundle: 124.83 KB gzipped JS / ~129 KB total. Repo on `origin/main` with `v1.1` annotated tag pending push (user will push explicitly).
 
 ---
 
@@ -60,6 +60,30 @@ No new workshop affixes, no new skill tree nodes, no tree-stage expansion (per s
 - `029310f` — `ui(painting):` mount TierUpgradeButton; show tier in canvas header
 - `5561dc1` — `ui(currency):` support paintMastery kind in CurrencyDisplay
 - `7276b5c` — `ui(bottombar):` add 4th currency widget for paintMastery
+
+---
+
+### v1.1 patch — PM redesign (2026-05-03, post-internal-playtest)
+
+The original v1.1 PM gain (`tier²` per sale) felt too aggressive in playtest:
+canvas gold compounded within minutes. Redesigned to a gold-fraction model:
+
+- **PM gain per sale = `saleGold / pmThreshold(lifetimeGold)`.**
+- **`pmThreshold(lifetimeGold)`** ratchets up by 1000× at each milestone:
+  1k g/PM (lifetime < 1M) → 1M g/PM (1M ≤ lt < 1B) → 1B g/PM (1B ≤ lt < 1T) → ...
+- **New persisted field:** `lifetimeGold: Big` on `paintMasterySlice`. Cumulative
+  canvas gold ever earned. Persists across ascends like `paintMastery`.
+- **Save migration v3 → v4:** adds `lifetimeGold: big(0)` default. Existing
+  `paintMastery` values preserved — only the gain rate changes going forward.
+- **PM/sale is now fractional** (early game: 0.01 PM/sale at tier 1). The
+  multiplier curve (1 + 5 × log10(pm + 1)) is unchanged; only the gain shape
+  shifted from per-canvas to per-gold.
+- **Net effect:** PM accumulates roughly log-shaped relative to lifetime gold.
+  Asymptotic ceiling around ×16-20 multiplier in normal play, vs the original
+  design's effectively-uncapped curve.
+
+The `v1.1` tag was moved forward locally to include this patch. The original
+v1.1-without-redesign was never publicly tagged.
 
 ---
 
@@ -245,6 +269,8 @@ From v1.1:
 40. **Save migrations are transient typecheck-broken until the slice is registered.** v1.1's slice scaffold (1d115d5) and tests (4ef2ab7) were committed before registration (04d9e05), leaving typecheck broken for that window. Future rule: any new slice using `state.X` must be committed in the same commit as the store registration in `store/index.ts`, OR use `as any` casts during the gap.
 41. **Vitest's `toBeCloseTo` with negative precision is more lenient than Jest documents.** `toBeCloseTo(5983, -1)` passes for values near `5972.82` even though the tolerance formula would predict failure. Test expectations don't need to match `Big.pow` exactly; integer-rounding the actual value is cleaner.
 42. **Test name discipline:** "migrate from version N (current) is a no-op" rots when N becomes legacy. Prefer "migrate from version N (legacy) is idempotent" — see commit 0c0a49a which renamed the stale test.
+43. **PM gain shape redesign mid-wave is OK if the multiplier formula stays.** The v1.1 internal-playtest catch (PM compounded too fast with `tier²` gain) was fixed in 6 small commits without retiring the v1.1 tag. The pmMult formula (`1 + 5 × log10(pm + 1)`) was preserved; only `pmGainPerSale` changed from `tier²` to `saleGold / pmThreshold(lifetimeGold)`, with `lifetimeGold` added as a new persisted Big.
+44. **Save migrations chain neatly through 4 versions now (v1→v2→v3→v4).** Each migration is a single `if (fromVersion < N)` block with a spread that preserves all prior fields. Round-trip integration tests confirm both per-step migration (v2 direct) and chained migration (v1 through to current) preserve player-meaningful data.
 
 ---
 
