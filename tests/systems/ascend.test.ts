@@ -170,4 +170,53 @@ describe("systems/ascend", () => {
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState),
     ).toBe(false);
   });
+
+  // ============================================================================
+  // v1.1 reset semantics: canvasTier and paintMastery
+  // ============================================================================
+
+  describe("performAscendOrchestrator — v1.1 reset semantics", () => {
+    beforeEach(() => {
+      useGameStore.getState().resetCanvas();
+      useGameStore.getState().resetRunCurrencies();
+      useGameStore.getState()._setPaintMastery(big(0));
+    });
+
+    it("ascend resets canvasTier to 1", () => {
+      // Set up an ascendable state.
+      useGameStore.setState({ canvasTier: 7, inspiration: big(2_000) });
+      const ok = performAscendOrchestrator(
+        useGameStore.setState,
+        useGameStore.getState,
+      );
+      expect(ok).toBe(true);
+      expect(useGameStore.getState().canvasTier).toBe(1);
+    });
+
+    it("ascend preserves paintMastery exactly (no reset)", () => {
+      useGameStore.setState({ inspiration: big(2_000) });
+      useGameStore.getState()._setPaintMastery(big(12_345));
+      performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+      expect(useGameStore.getState().paintMastery.toNumber()).toBe(12_345);
+    });
+
+    it("multi-ascend accumulates paintMastery additively across runs", () => {
+      // Run 1: gain 100 PM, ascend.
+      useGameStore.setState({ inspiration: big(2_000) });
+      useGameStore.getState()._setPaintMastery(big(100));
+      performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+      expect(useGameStore.getState().paintMastery.toNumber()).toBe(100);
+
+      // Run 2: gain another 50 PM via canvasTick at tier 5.
+      useGameStore.setState({ canvasTier: 5 });
+      useGameStore.getState().canvasTick(10);
+      useGameStore.getState().canvasTick(10);
+      expect(useGameStore.getState().paintMastery.toNumber()).toBe(100 + 25 + 25); // 150
+
+      // Ascend run 2 with same palier (count 1 → palier 2000).
+      useGameStore.setState({ inspiration: big(4_000) });
+      performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+      expect(useGameStore.getState().paintMastery.toNumber()).toBe(150);
+    });
+  });
 });
