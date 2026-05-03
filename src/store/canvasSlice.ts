@@ -1,8 +1,9 @@
 import type { StateCreator } from "zustand";
-import { PAINT_TIME_BASE_SECONDS, canvasGold, tierUpgradeCost, MAX_TIER } from "@/core/balance";
+import { canvasGold, canvasTime, tierUpgradeCost, MAX_TIER } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getPaintTimeMultiplier,
+  getPmMultiplier,
 } from "@/core/multipliers";
 import type { GameStore } from "@/store";
 import type { Big } from "@/core/bigNumber";
@@ -67,7 +68,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
   canvasTick: (deltaSeconds) => {
     if (deltaSeconds <= 0) return;
     const state = get();
-    const paintTime = PAINT_TIME_BASE_SECONDS / getPaintTimeMultiplier(state);
+    const paintTime = canvasTime(state.canvasTier) / getPaintTimeMultiplier(state);
     const newProgress = state.canvasProgress + deltaSeconds;
 
     if (newProgress < paintTime) {
@@ -76,8 +77,10 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
     }
 
     // Threshold crossed — exactly one sale per tick.
-    const gain = canvasGold(1, getCanvasGoldMultiplier(state));
+    const goldMult = getCanvasGoldMultiplier(state) * getPmMultiplier(state);
+    const gain = canvasGold(state.canvasTier, goldMult);
     state.add("gold", gain);
+    state.gainFromSale(state.canvasTier);
     const leftover = newProgress - paintTime;
     const prevId = state.lastSale?.id ?? 0;
     set({

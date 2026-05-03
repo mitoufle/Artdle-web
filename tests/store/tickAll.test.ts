@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
-import { PAINT_TIME_BASE_SECONDS } from "@/core/balance";
 
 describe("tickAll orchestrator", () => {
   // Captured at suite scope so afterEach restores method references even
@@ -29,11 +28,13 @@ describe("tickAll orchestrator", () => {
 
   it("tickAll(1) credits inspiration AND advances canvas in one call", () => {
     // Set up: spark@5 produces 0.5 inspi/sec; canvas starts mid-paint.
+    // Tier 1 paint time = 2s; start at 1.5s so delta=1 pushes to 2.5 ≥ 2 → sale fires.
     useGameStore.getState().add("gold", big(10000));
+    useGameStore.getState()._setPaintMastery(big(0));
     for (let i = 0; i < 5; i++) {
       useGameStore.getState().buyPartLevel("spark");
     }
-    useGameStore.setState({ canvasProgress: PAINT_TIME_BASE_SECONDS - 0.5 });
+    useGameStore.setState({ canvasProgress: 1.5 }); // 2s paintTime - 0.5 = 1.5
     const inspBefore = useGameStore.getState().inspiration.toNumber();
     const goldBefore = useGameStore.getState().gold.toNumber();
 
@@ -41,9 +42,9 @@ describe("tickAll orchestrator", () => {
 
     // Tree credit: 5 * 0.1 * 1 = 0.5
     expect(useGameStore.getState().inspiration.toNumber() - inspBefore).toBeCloseTo(0.5, 6);
-    // Canvas: 9.5 + 1 = 10.5 ≥ 10, so one sale fires; gold += CANVAS_GOLD_BASE.
+    // Canvas: 1.5 + 1 = 2.5 ≥ 2, so one sale fires; gold += CANVAS_GOLD_BASE (tier 1, PM=0).
     expect(useGameStore.getState().gold.toNumber() - goldBefore).toBe(10);
-    // Progress carries 0.5s leftover.
+    // Progress carries 0.5s leftover (2.5 - 2.0 = 0.5 < 2 → no clamp).
     expect(useGameStore.getState().canvasProgress).toBeCloseTo(0.5, 9);
   });
 
