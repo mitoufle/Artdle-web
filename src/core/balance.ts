@@ -115,3 +115,28 @@ export const inspiPerSec = (
   parts
     .reduce((acc, p) => acc.add(big(p.level).mul(p.rate)), big(0))
     .mul(multiplier);
+
+/**
+ * Cost-per-PM at the given lifetime canvas gold.
+ * v1.1 PM redesign: rate ratchets down by 1000× at each milestone.
+ *
+ * Returns:
+ * - 1000 g per PM while lifetime gold < 1M
+ * - 1M g per PM while 1M ≤ lifetime gold < 1B
+ * - 1B g per PM while 1B ≤ lifetime gold < 1T
+ * - 1T g per PM while 1T ≤ lifetime gold < 1Q
+ * - ...
+ *
+ * Formula: max(1000, 10^(3 × floor(log10(lifetimeGold) / 3))).
+ *
+ * The pmGainPerSale(saleGold, lifetimeGold) function divides saleGold by this
+ * threshold to compute PM gain. As lifetime gold grows by 1000×, each new PM
+ * costs 1000× more gold — log-shaped accumulation by design.
+ */
+export const pmThreshold = (lifetimeGold: Big): Big => {
+  const lt = lifetimeGold.toNumber();
+  if (lt <= 0) return big(1000);
+  const phase = Math.floor(Math.log10(lt) / 3);
+  const exp = Math.max(3, 3 * phase);
+  return big(10).pow(exp);
+};

@@ -9,6 +9,7 @@ import {
   inspiPerSec,
   pmGainPerSale,
   pmMult,
+  pmThreshold,
   PALIER_BASE,
   PALIER_GROWTH,
   MAX_TIER,
@@ -212,5 +213,31 @@ describe("pmMult (v1.1)", () => {
 
   it("PM_LOG_FACTOR is 5.0", () => {
     expect(PM_LOG_FACTOR).toBe(5.0);
+  });
+});
+
+describe("pmThreshold (v1.1 PM redesign)", () => {
+  it("at lifetime 0, threshold is 1000", () => {
+    expect(pmThreshold(big(0)).toNumber()).toBe(1000);
+  });
+
+  it("at lifetime 999_999, threshold is still 1000 (phase 1)", () => {
+    expect(pmThreshold(big(999_999)).toNumber()).toBe(1000);
+  });
+
+  it("at lifetime 1_000_000, threshold steps up to 1_000_000", () => {
+    expect(pmThreshold(big(1_000_000)).toNumber()).toBe(1_000_000);
+  });
+
+  it("at lifetime 999_999_999, threshold is still 1_000_000 (phase 2)", () => {
+    expect(pmThreshold(big(999_999_999)).toNumber()).toBe(1_000_000);
+  });
+
+  it("at lifetime 1_000_000_000, threshold steps up to 1e9", () => {
+    expect(pmThreshold(big(1_000_000_000)).toNumber()).toBe(1_000_000_000);
+  });
+
+  it("at lifetime 1e12, threshold is 1e12", () => {
+    expect(pmThreshold(big(1e12)).toNumber()).toBe(1e12);
   });
 });
