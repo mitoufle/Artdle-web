@@ -1,5 +1,35 @@
 # Artdle Web — Handover
 
+## v2.0 Round 1 — Tree route (complete on `feat/v2-redesign`)
+
+**Status:** Round 1 complete. Round 2 (Painting) pending.
+
+### What landed
+
+- New `src/components/tree/` directory:
+  - `<TreeScene>` — pixel-art landscape SVG with sky/mountains/hills/pond/ground + 3-stage tree variant + 7 animated motes + 3 rising fireflies.
+  - `<InspiReadout>` — Cinzel 28px inspi-purple rate readout overlay (top-left of scene) with mono `Stage · {name}` subtext.
+  - `<StagePanel>` — right-rail top: title `Current → Next`, 3 stage chips (Seed/Sapling/Tree, current highlighted), progress bar, `Grow into …` CTA.
+  - `<UpgradeRow>` — bordered rows with monogram tile + serif name + mono meta + gold cost pill.
+- `src/routes/TreeRoute.tsx` rebuilt: CSS Grid `1fr 340px` layout (scene + right rail). All v1.1 tree mechanics preserved (3 stages × 2 parts; `buyPartLevel`/`growSapling` actions; `canGrowSapling` gate).
+
+### Visual state
+
+- Tree route: matches handoff aesthetic (pixel landscape + Cinzel/mono typography + inspi-glow + 3-stage tree visual).
+- Painting / Ascension / Constellation: still degraded post-T9; Rounds 2-4 rebuild.
+
+### Tests + build
+
+- 399 tests passing.
+- tsc clean. Lint clean (pre-existing main.tsx warning only).
+- Bundle: 140.76 KB gzipped JS / 2.47 KB gzipped CSS / ~143 KB total gzipped.
+
+### Next
+
+Round 2: Painting route. Per spec §8 Round 2.
+
+---
+
 ## v2.0 Round 0 — Foundation (in progress on `feat/v2-redesign`)
 
 **Status:** Round 0 complete on branch. Round 1+ pending.
