@@ -1,0 +1,25 @@
+.readout {
+  position: absolute;
+  top: var(--s-5);
+  left: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  pointer-events: none;
+  user-select: none;
+}
+
+.rate {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 0.04em;
+  color: var(--inspi);
+  text-shadow: var(--inspi-glow);
+}
+
+.subtext {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-2);
+}
