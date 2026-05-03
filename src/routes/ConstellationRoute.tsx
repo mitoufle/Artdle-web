@@ -34,9 +34,9 @@ export function ConstellationRoute(): JSX.Element {
   const buyNode = useGameStore((s) => s.buyNode);
 
   return (
-    <div className="flex flex-col gap-3 p-4">
-      <header className="text-sm opacity-70">Fame: {formatBig(fame)}</header>
-      <ul className="flex flex-col gap-2">
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem" }}>
+      <header>Fame: {formatBig(fame)}</header>
+      <ul style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         {SKILL_NODES.map((node) => {
           const owned = purchasedNodes[node.id] === true;
           const prereqMet =
@@ -51,11 +51,11 @@ export function ConstellationRoute(): JSX.Element {
           return (
             <li
               key={node.id}
-              className="flex items-center justify-between rounded bg-app-panel px-3 py-2"
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
             >
               <span>
                 <strong>{node.name}</strong>{" "}
-                <span className="opacity-60">
+                <span>
                   ({STATUS_LABEL[status]} · {node.cost} fame)
                 </span>
               </span>
@@ -80,7 +80,6 @@ export function ConstellationRoute(): JSX.Element {
                   type="button"
                   disabled={!canBuy}
                   onClick={() => buyNode(node.id)}
-                  className="rounded bg-fame/20 px-3 py-1 text-sm disabled:opacity-40"
                 >
                   Buy
                 </button>

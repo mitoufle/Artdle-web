@@ -1,35 +1,7 @@
-@import "tailwindcss";
-
-@theme {
-  /* Tier color palette — refine to taste */
-  --color-tier-normal: oklch(70% 0 0);
-  --color-tier-rare: oklch(65% 0.18 250);
-  --color-tier-magic: oklch(65% 0.22 305);
-  --color-tier-epic: oklch(75% 0.18 75);
-  --color-tier-legendary: oklch(65% 0.22 25);
-  --color-tier-masterpiece: oklch(90% 0.2 95);
-
-  /* Currency icon colors */
-  --color-gold: oklch(75% 0.18 80);
-  --color-inspiration: oklch(70% 0.22 280);
-  --color-fame: oklch(80% 0.2 60);
-
-  /* App background */
-  --color-app-bg: oklch(15% 0 0);
-  --color-app-panel: oklch(20% 0 0);
-  --color-app-text: oklch(95% 0 0);
-}
-
-body {
-  background: var(--color-app-bg);
-  color: var(--color-app-text);
-  font-family: system-ui, sans-serif;
-}
-
 @keyframes fame-pulse {
-  0%   { transform: scale(1);    color: var(--color-fame); }
-  40%  { transform: scale(1.15); color: var(--color-gold); }
-  100% { transform: scale(1);    color: var(--color-fame); }
+  0%   { transform: scale(1);    color: var(--fame); }
+  40%  { transform: scale(1.15); color: var(--gold); }
+  100% { transform: scale(1);    color: var(--fame); }
 }
 
 .fame-pulse-anim {

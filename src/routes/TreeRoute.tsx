@@ -43,7 +43,7 @@ export function TreeRoute(): JSX.Element {
     : { duration: 0.3, ease: "easeInOut" as const };
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem" }}>
       <AnimatePresence mode="wait">
         <motion.header
           key={currentStage}
@@ -57,7 +57,7 @@ export function TreeRoute(): JSX.Element {
             title={() => TREE_STAGES[useGameStore.getState().currentStage]?.name ?? "?"}
             body="Current tree stage. Each part on this stage produces inspiration."
           >
-            <h2 className="text-xl font-semibold">{stageName}</h2>
+            <h2>{stageName}</h2>
           </Hoverable>
           <Hoverable
             as="div"
@@ -74,12 +74,12 @@ export function TreeRoute(): JSX.Element {
               return `Sum of all part levels × rate, then × multipliers (currently ×${mult.toFixed(2)}).`;
             }}
           >
-            <p className="text-sm opacity-70">{formatBig(rate)} inspi/sec</p>
+            <p>{formatBig(rate)} inspi/sec</p>
           </Hoverable>
         </motion.header>
       </AnimatePresence>
 
-      <ul className="flex flex-col gap-2">
+      <ul style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         {TREE_STAGES.slice(0, currentStage + 1).flatMap((stage) =>
           stage.parts.map((part) => {
             const level = partLevels[part.id] ?? 0;
@@ -88,11 +88,11 @@ export function TreeRoute(): JSX.Element {
             return (
               <li
                 key={part.id}
-                className="flex items-center justify-between rounded bg-app-panel px-3 py-2"
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
               >
                 <span>
                   <strong>{part.name}</strong>{" "}
-                  <span className="opacity-60">Lv {level}</span>
+                  <span>Lv {level}</span>
                 </span>
                 <Hoverable
                   title={() => {
@@ -114,7 +114,6 @@ export function TreeRoute(): JSX.Element {
                     type="button"
                     disabled={!canAfford}
                     onClick={() => buyPartLevel(part.id)}
-                    className="rounded bg-gold/20 px-3 py-1 text-sm disabled:opacity-40"
                   >
                     Buy ({formatBig(cost)} gold)
                   </button>
@@ -141,7 +140,6 @@ export function TreeRoute(): JSX.Element {
           <button
             type="button"
             onClick={() => growSapling()}
-            className="self-start rounded bg-inspiration/20 px-4 py-2 text-sm"
           >
             Grow next stage
           </button>

@@ -23,11 +23,11 @@ export function PaintingRoute(): JSX.Element {
   const stateLabel = canvasProgress > 0 ? "Painting" : "Idle";
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <section className="relative rounded bg-app-panel p-3">
-        <div className="text-sm opacity-70">Canvas — Tier {canvasTier}</div>
-        <div className="text-lg font-semibold">{stateLabel}</div>
-        <div className="text-sm">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem" }}>
+      <section style={{ position: "relative" }}>
+        <div>Canvas — Tier {canvasTier}</div>
+        <div>{stateLabel}</div>
+        <div>
           {canvasProgress.toFixed(1)} / {paintTime.toFixed(1)}s
         </div>
         {lastSale && (
@@ -41,14 +41,14 @@ export function PaintingRoute(): JSX.Element {
 
       <TierUpgradeButton />
 
-      <section className="rounded bg-app-panel p-3">
-        <div className="mb-2 text-sm opacity-70">Equipped</div>
+      <section>
+        <div>Equipped</div>
         {equippedItems.length === 0 ? (
-          <div className="text-sm opacity-60">No item equipped</div>
+          <div>No item equipped</div>
         ) : (
-          <ul className="flex flex-col gap-1">
+          <ul style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             {equippedItems.map((item, idx) => (
-              <li key={idx} className="text-sm">
+              <li key={idx}>
                 {item.kind} {item.magnitude}
               </li>
             ))}
@@ -66,7 +66,6 @@ export function PaintingRoute(): JSX.Element {
         <button
           type="button"
           onClick={() => openWorkshopPopup()}
-          className="self-start rounded bg-app-panel px-4 py-2 text-sm hover:bg-app-panel/80"
         >
           Workshop
         </button>

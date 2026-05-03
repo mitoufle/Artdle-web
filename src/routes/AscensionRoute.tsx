@@ -25,23 +25,23 @@ export function AscensionRoute(): JSX.Element {
   const fameGain = fameOnAscend(inspiration);
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <section className="rounded bg-app-panel p-3">
-        <div className="text-sm opacity-70">Palier (threshold)</div>
-        <div className="text-lg font-semibold">{formatBig(palier)} inspi</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem" }}>
+      <section>
+        <div>Palier (threshold)</div>
+        <div>{formatBig(palier)} inspi</div>
       </section>
 
-      <section className="rounded bg-app-panel p-3">
-        <div className="text-sm opacity-70">Current inspiration</div>
-        <div className="text-lg">{formatBig(inspiration)}</div>
+      <section>
+        <div>Current inspiration</div>
+        <div>{formatBig(inspiration)}</div>
       </section>
 
-      <section className="rounded bg-app-panel p-3">
-        <div className="text-sm opacity-70">If you ascend now</div>
-        <div className="text-lg text-fame">+{fameGain} fame</div>
+      <section>
+        <div>If you ascend now</div>
+        <div>+{fameGain} fame</div>
       </section>
 
-      <section className="rounded bg-app-panel p-3 text-sm opacity-80">
+      <section>
         Ascends so far: {ascendCount} · Total fame: {formatBig(fame)}
       </section>
 
@@ -67,7 +67,6 @@ export function AscensionRoute(): JSX.Element {
           type="button"
           disabled={!canDo}
           onClick={() => performAscend()}
-          className="self-start rounded bg-fame/30 px-4 py-2 text-sm font-semibold disabled:opacity-40"
         >
           Ascend
         </button>

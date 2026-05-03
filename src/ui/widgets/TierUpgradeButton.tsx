@@ -61,7 +61,6 @@ export function TierUpgradeButton(): JSX.Element {
         type="button"
         onClick={upgradeTier}
         disabled={disabled}
-        className="self-start rounded bg-app-panel px-4 py-2 text-sm hover:bg-app-panel/80 disabled:opacity-50 disabled:cursor-not-allowed"
         data-testid="tier-upgrade-button"
       >
         {label}

@@ -33,7 +33,7 @@ export function FloatingGoldText({ amount, onComplete }: Props): JSX.Element {
       animate={{ y: targetY, opacity: 0 }}
       transition={{ duration, ease: "easeOut" }}
       onAnimationComplete={onComplete}
-      className="pointer-events-none absolute right-3 top-3 text-gold font-semibold"
+      style={{ pointerEvents: "none", position: "absolute", right: "0.75rem", top: "0.75rem" }}
     >
       +{formatBig(amount)}g
     </motion.div>
