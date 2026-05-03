@@ -284,7 +284,7 @@ describe("save schema migration", () => {
     expect(result.currentStage).toBe(1);
   });
 
-  it("migrate from version 2 (current) is a no-op", () => {
+  it("migrate from version 2 (legacy) leaves inventory and equipped items untouched", () => {
     const v2State = {
       inventory: [{ kind: "+canvas_gold%", magnitude: 10 }],
       equippedItems: [{ kind: "-paint_time%", magnitude: 7 }],
