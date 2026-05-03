@@ -16,9 +16,11 @@
   "dependencies": {
     "break_eternity.js": "^2.1.3",
     "idb-keyval": "^6.2.2",
+    "lucide-react": "^1.14.0",
     "motion": "^12.38.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2",
     "uuid": "^14.0.0",
     "zustand": "^5.0.12"
   },
