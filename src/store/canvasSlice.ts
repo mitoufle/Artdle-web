@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import { PAINT_TIME_BASE_SECONDS, canvasGold } from "@/core/balance";
+import { PAINT_TIME_BASE_SECONDS, canvasGold, tierUpgradeCost, MAX_TIER } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getPaintTimeMultiplier,
@@ -47,6 +47,14 @@ export interface CanvasSlice extends CanvasState {
    * No-ops on `delta <= 0` (avoids spurious persist writes on idle frames).
    */
   canvasTick: (deltaSeconds: number) => void;
+  /**
+   * Atomic guard-spend-mutate tier upgrade. Validates:
+   *   1. canvasTier < MAX_TIER (otherwise no-op).
+   *   2. gold ≥ tierUpgradeCost(canvasTier) (otherwise no-op).
+   * On success: gold -= cost, canvasTier += 1.
+   * No partial state. No race window between gold check and tier mutation.
+   */
+  upgradeTier: () => void;
   /** For ascend orchestrator (Phase 3). */
   resetCanvas: () => void;
   /** Clear the lastSale animation trigger. Called from onAnimationComplete. */
@@ -75,6 +83,17 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
     set({
       canvasProgress: leftover < paintTime ? leftover : 0,
       lastSale: { id: prevId + 1, amount: gain },
+    });
+  },
+
+  upgradeTier: () => {
+    const state = get();
+    if (state.canvasTier >= MAX_TIER) return;
+    const cost = tierUpgradeCost(state.canvasTier);
+    if (state.gold.lt(cost)) return;
+    set({
+      gold: state.gold.sub(cost),
+      canvasTier: state.canvasTier + 1,
     });
   },
 
