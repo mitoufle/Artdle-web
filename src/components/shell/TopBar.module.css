@@ -1,0 +1,68 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+  padding: var(--s-3) var(--s-6);
+  border-bottom: var(--border-subtle);
+  background: var(--bg-1);
+  height: 52px;
+}
+
+.brand {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: var(--ink-0);
+  user-select: none;
+}
+
+.brandA {
+  color: var(--fame);
+  text-shadow: var(--fame-glow);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+}
+
+.navItem {
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  transition: color 140ms ease, border-color 140ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.navItem:hover {
+  color: var(--ink-0);
+}
+
+.navItemActive {
+  color: var(--fame);
+  border-color: var(--fame-d);
+}
+
+.flourish {
+  color: var(--fame);
+  text-shadow: var(--fame-glow);
+  font-size: 11px;
+}
+
+.meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
