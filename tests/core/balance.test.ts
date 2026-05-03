@@ -8,9 +8,11 @@ import {
   tierUpgradeCost,
   inspiPerSec,
   pmGainPerSale,
+  pmMult,
   PALIER_BASE,
   PALIER_GROWTH,
   MAX_TIER,
+  PM_LOG_FACTOR,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -184,5 +186,31 @@ describe("pmGainPerSale (v1.1)", () => {
     const result = pmGainPerSale(7);
     expect(typeof result.toNumber).toBe("function");
     expect(result.toNumber()).toBe(49);
+  });
+});
+
+describe("pmMult (v1.1)", () => {
+  it("PM = 0 returns exactly 1.0 (no mult)", () => {
+    expect(pmMult(big(0))).toBe(1);
+  });
+
+  it("PM = 100 returns ≈ 11.0", () => {
+    expect(pmMult(big(100))).toBeCloseTo(11.0, 1);
+  });
+
+  it("PM = 1,000 returns ≈ 16.0", () => {
+    expect(pmMult(big(1_000))).toBeCloseTo(16.0, 1);
+  });
+
+  it("PM = 1,000,000 returns ≈ 31.0", () => {
+    expect(pmMult(big(1_000_000))).toBeCloseTo(31.0, 1);
+  });
+
+  it("PM = 1e10 returns ≈ 51.0", () => {
+    expect(pmMult(big(1e10))).toBeCloseTo(51.0, 1);
+  });
+
+  it("PM_LOG_FACTOR is 5.0", () => {
+    expect(PM_LOG_FACTOR).toBe(5.0);
   });
 });

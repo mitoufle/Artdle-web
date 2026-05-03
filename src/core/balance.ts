@@ -13,6 +13,7 @@ export const PAINT_TIME_BASE_SECONDS = 10;
 export const TIER_UPGRADE_BASE = 100;
 export const TIER_UPGRADE_RATIO = 2.78;
 export const MAX_TIER = 10;
+export const PM_LOG_FACTOR = 5.0;
 
 // ============================================================================
 // Formulas
@@ -83,6 +84,21 @@ export const tierUpgradeCost = (currentTier: number): Big =>
  */
 export const pmGainPerSale = (tier: number): Big =>
   big(tier).mul(tier);
+
+/**
+ * Paint Mastery multiplier on canvas gold output.
+ * `1 + PM_LOG_FACTOR × log10(pm + 1)`. Returns a plain number — composes with
+ * existing `getCanvasGoldMultiplier` (additive `1 + Σ`) by simple multiplication
+ * at the call site.
+ *
+ * At PM = 0: returns 1 exactly. At PM = 1e10: returns ~51. The log shape
+ * preserves the rescope spec's "pas ×1000" intent even at factor 5.0.
+ *
+ * Saturates `pm.toNumber()` at Number.MAX_SAFE_INTEGER (~9e15); v1.1 stays
+ * well below that.
+ */
+export const pmMult = (pm: Big): number =>
+  1 + PM_LOG_FACTOR * Math.log10(pm.toNumber() + 1);
 
 /**
  * Inspiration produced per second from a list of tree parts and an aggregate multiplier.
