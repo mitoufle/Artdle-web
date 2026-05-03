@@ -76,16 +76,52 @@ export const tierUpgradeCost = (currentTier: number): Big =>
   big(TIER_UPGRADE_BASE).mul(big(TIER_UPGRADE_RATIO).pow(currentTier - 1));
 
 /**
- * Paint Mastery gained per canvas sale.
- * v1.1 redesign (2026-05-03): saleGold / pmThreshold(lifetimeGold).
- * The threshold steps up by 1000× at each lifetime-gold milestone (1M, 1B, 1T, ...),
- * so PM accumulation is log-shaped relative to total gold earned.
+ * Total PM accumulated at a given lifetime canvas gold.
+ * v1.1 redesign (integer): PM ticks only when lifetimeGold crosses a multiple
+ * of the current threshold. Phase 1 (lt < 1M): floor(lt / 1000), max 1000.
+ * Phase 2 (1M ≤ lt < 1B): 1000 + floor((lt - 1M) / 1M), max 1999.
+ * Each subsequent phase adds up to 999 PM as threshold ratchets ×1000.
  *
- * Returns a fractional Big — gain accumulates over many sales. PM is no longer
- * per-tier-bound; it scales with actual gold output (tier × multipliers).
+ * Returns Big for cross-precision arithmetic but the value is always
+ * integer-valued.
  */
-export const pmGainPerSale = (saleGold: Big, lifetimeGold: Big): Big =>
-  saleGold.div(pmThreshold(lifetimeGold));
+export const pmFromLifetime = (lt: Big): Big => {
+  if (lt.lte(0)) return big(0);
+  let pm = big(0);
+  let phaseStart = big(0);
+  let threshold = big(1000);
+  // Upper bound on phases — generous but bounded to keep the loop terminating.
+  // 30 phases covers lifetime gold up to 10^33; well past any reachable scenario.
+  for (let i = 0; i < 30; i++) {
+    if (lt.lte(phaseStart)) break;
+    const phaseEnd = threshold.mul(1000);
+    if (lt.gte(phaseEnd)) {
+      // Full phase consumed.
+      pm = pm.add(phaseEnd.sub(phaseStart).div(threshold).floor());
+      phaseStart = phaseEnd;
+      threshold = threshold.mul(1000);
+    } else {
+      // Partial phase.
+      pm = pm.add(lt.sub(phaseStart).div(threshold).floor());
+      break;
+    }
+  }
+  return pm;
+};
+
+/**
+ * Paint Mastery gained per canvas sale.
+ * v1.1 integer redesign: gain = pmFromLifetime(lt + saleGold) - pmFromLifetime(lt).
+ * Always integer. Sub-threshold sales return 0; ticks fire when crossing
+ * a multiple of the current threshold.
+ */
+export const pmGainPerSale = (saleGold: Big, lifetimeGold: Big): Big => {
+  if (saleGold.lte(0)) return big(0);
+  const newLt = lifetimeGold.add(saleGold);
+  const diff = pmFromLifetime(newLt).sub(pmFromLifetime(lifetimeGold));
+  // Guard against break_eternity's -0 on equal subtraction.
+  return diff.lte(0) ? big(0) : diff;
+};
 
 /**
  * Paint Mastery multiplier on canvas gold output.

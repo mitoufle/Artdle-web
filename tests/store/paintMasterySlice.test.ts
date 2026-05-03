@@ -36,51 +36,57 @@ describe("paintMasterySlice — initial state (v1.1 redesign)", () => {
   });
 });
 
-describe("paintMasterySlice — addGoldEarned (v1.1 redesign)", () => {
+describe("paintMasterySlice — addGoldEarned (v1.1 integer redesign)", () => {
   it("phase 1: 1000g sale credits 1 PM and increments lifetimeGold by 1000", () => {
     const h = createHarness();
     h.slice.addGoldEarned(big(1000));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBeCloseTo(1, 9);
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(1);
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(1000);
   });
 
-  it("phase 1: 100g sale credits 0.1 PM (fractional)", () => {
+  it("phase 1: 999g sale credits 0 PM (sub-threshold)", () => {
     const h = createHarness();
-    h.slice.addGoldEarned(big(100));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBeCloseTo(0.1, 9);
+    h.slice.addGoldEarned(big(999));
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(999);
   });
 
-  it("repeated addGoldEarned accumulates lifetimeGold and PM", () => {
+  it("two 500g sales: PM ticks once when crossing 1000g", () => {
     const h = createHarness();
     h.slice.addGoldEarned(big(500));
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     h.slice.addGoldEarned(big(500));
-    h.slice.addGoldEarned(big(1000));
-    expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(2000);
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBeCloseTo(2, 9);
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(1);
   });
 
-  it("0g sale is a no-op for PM, increments lifetime by 0", () => {
+  it("0g sale is a no-op for both PM and lifetime", () => {
     const h = createHarness();
     h.slice.addGoldEarned(big(0));
     expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 
-  it("phase 2 (lifetime ≥ 1M): 1000g sale credits only 0.001 PM", () => {
+  it("phase 2 (lifetime ≥ 1M): 1000g sale credits 0 PM (sub-threshold for new phase)", () => {
     const h = createHarness();
     h.slice._setLifetimeGold(big(1_000_000));
     h.slice.addGoldEarned(big(1000));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBeCloseTo(0.001, 9);
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(1_001_000);
   });
 
-  it("threshold uses pre-sale lifetimeGold (boundary fairness)", () => {
+  it("phase 2: 1M-gold sale credits 1 PM tick", () => {
     const h = createHarness();
-    // Lifetime 999_999 (still phase 1, threshold 1000); sale of 2g would land in phase 2.
-    h.slice._setLifetimeGold(big(999_999));
-    h.slice.addGoldEarned(big(2));
-    // Pre-sale threshold was 1000, so gain = 2/1000 = 0.002, NOT 2/1M.
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBeCloseTo(0.002, 9);
+    h.slice._setLifetimeGold(big(1_000_000));
+    h.slice.addGoldEarned(big(1_000_000));
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(1);
+  });
+
+  it("phase boundary: lt=999_500, sale=1000 grants 1 PM (crosses into phase 2 just barely)", () => {
+    const h = createHarness();
+    h.slice._setLifetimeGold(big(999_500));
+    h.slice.addGoldEarned(big(1000));
+    // pmFromLifetime(999_500) = 999. pmFromLifetime(1_000_500) = 1000.
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(1);
   });
 });
 

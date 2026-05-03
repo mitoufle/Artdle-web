@@ -210,26 +210,18 @@ describe("systems/ascend", () => {
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
       expect(useGameStore.getState().paintMastery.toNumber()).toBe(100);
 
-      // Run 2: reset PM and lifetimeGold so the tick arithmetic is clean
-      // (PM>0 feeds back into pmMult which inflates gold and PM gain).
-      useGameStore.getState()._setPaintMastery(big(0));
-      useGameStore.getState()._setLifetimeGold(big(0));
-
-      // One tier-5 sale at lifetimeGold 0 with PM=0: gold=250, PM gain=250/1000=0.25.
-      useGameStore.setState({ canvasTier: 5 });
-      useGameStore.getState().canvasTick(10);
-      expect(useGameStore.getState().paintMastery.toNumber()).toBeCloseTo(0.25, 9);
-      expect(useGameStore.getState().lifetimeGold.toNumber()).toBeCloseTo(250, 9);
-
-      // Now add the run-1 PM back to simulate the full accumulated total.
-      // run-1 gave 100 PM; run-2 added 0.25 PM → total 100.25.
-      useGameStore.getState()._setPaintMastery(big(100.25));
+      // Run 2: bypass the tick formula — set PM and lifetimeGold directly to
+      // avoid coupling this test to the integer-PM formula details.
+      // Simulate that run 2 earned 5 PM (e.g. via 5000g of lifetime gold).
+      useGameStore.getState()._setPaintMastery(big(105));
+      useGameStore.getState()._setLifetimeGold(big(5_000));
 
       // Ascend run 2 (count 1 → palier 2000).
       useGameStore.setState({ inspiration: big(4_000) });
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
       // PM accumulates and survives across ascends (not reset).
-      expect(useGameStore.getState().paintMastery.toNumber()).toBeCloseTo(100.25, 9);
+      expect(useGameStore.getState().paintMastery.toNumber()).toBe(105);
+      expect(useGameStore.getState().lifetimeGold.toNumber()).toBe(5_000);
     });
   });
 });

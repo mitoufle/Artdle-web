@@ -221,12 +221,12 @@ describe("canvasSlice — tier-aware tick (v1.1)", () => {
     expect(useGameStore.getState().gold.toNumber()).toBe(1000);
   });
 
-  it("sale credits PM via addGoldEarned (post-mult gold / threshold)", () => {
+  it("sale credits PM via addGoldEarned (integer: 250g at lt=0 is sub-threshold → 0 PM)", () => {
     useGameStore.setState({ canvasTier: 5 });
     useGameStore.getState().canvasTick(10);
-    // Tier 5 sale at lifetimeGold 0: gold = 250 (no other mults), PM gain = 250/1000 = 0.25.
+    // Tier 5 sale at lifetimeGold 0: gold = 250. pmFromLifetime(250) - pmFromLifetime(0) = 0.
     // lifetimeGold = 250.
-    expect(useGameStore.getState().paintMastery.toNumber()).toBeCloseTo(0.25, 9);
+    expect(useGameStore.getState().paintMastery.toNumber()).toBe(0);
     expect(useGameStore.getState().lifetimeGold.toNumber()).toBeCloseTo(250, 9);
   });
 
@@ -253,7 +253,8 @@ describe("canvasSlice — tick reads canvasTier at threshold-cross (contract pin
     useGameStore.getState().canvasTick(10);
     // gold = 10 × 25 × 1 = 250 (tier 5 was active at the sale)
     expect(useGameStore.getState().gold.toNumber()).toBe(250);
-    // PM = 250/1000 = 0.25 (post-mult gold / phase 1 threshold)
-    expect(useGameStore.getState().paintMastery.toNumber()).toBeCloseTo(0.25, 9);
+    // PM: pmFromLifetime(250) - pmFromLifetime(0) = 0 (250 < 1000, sub-threshold).
+    expect(useGameStore.getState().paintMastery.toNumber()).toBe(0);
+    expect(useGameStore.getState().lifetimeGold.toNumber()).toBe(250);
   });
 });

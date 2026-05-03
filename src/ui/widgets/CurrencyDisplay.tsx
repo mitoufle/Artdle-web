@@ -40,7 +40,7 @@ const HOVER_BODY_TEMPLATE: Record<CurrencyKind, (formatted: string) => string> =
   fame: (v) =>
     `Earned on ascend, spent in skill tree. Current: ${v}. Permanent.`,
   paintMastery: (v) =>
-    `Permanent painting mastery. Earned slowly from canvas gold (1 PM per 1000g, then per 1M g, then per 1B g, ...). Multiplies canvas gold via 1 + 5 × log10(pm + 1). Current: ${v}. Survives ascends.`,
+    `Permanent painting mastery (integer). Earned in whole-PM ticks as lifetime canvas gold crosses each threshold (1 PM per 1000g, then per 1M g, then per 1B g, ...). Multiplies canvas gold via 1 + 5 × log10(pm + 1). Current: ${v}. Survives ascends.`,
 };
 
 const PULSE_DURATION_MS = 500;
