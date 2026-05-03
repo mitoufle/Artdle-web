@@ -15,6 +15,12 @@ export interface CanvasState {
    */
   canvasProgress: number;
   /**
+   * Current canvas tier (v1.1: 1..MAX_TIER). Determines per-sale gold (BASE × tier²)
+   * and base paint time (tier × 2 s). Reset to 1 on ascend (initialCanvasState
+   * is the source of truth for resetCanvas).
+   */
+  canvasTier: number;
+  /**
    * Most recent sale event for animation triggering. The `id` increments on
    * each sale; consumers (e.g. `<FloatingGoldText>`) use it as an
    * AnimatePresence/motion key so each sale starts a fresh animation.
@@ -29,6 +35,7 @@ export interface CanvasState {
 
 export const initialCanvasState: CanvasState = Object.freeze({
   canvasProgress: 0,
+  canvasTier: 1,
   lastSale: null,
 }) as CanvasState;
 

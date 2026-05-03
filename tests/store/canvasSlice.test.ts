@@ -133,3 +133,19 @@ describe("canvasSlice — lastSale animation trigger", () => {
     expect(useGameStore.getState().canvasProgress).toBe(0);
   });
 });
+
+describe("canvasSlice — canvasTier (v1.1)", () => {
+  beforeEach(() => {
+    useGameStore.getState().resetCanvas();
+  });
+
+  it("initializes with canvasTier = 1", () => {
+    expect(useGameStore.getState().canvasTier).toBe(1);
+  });
+
+  it("resetCanvas resets canvasTier to 1", () => {
+    useGameStore.setState({ canvasTier: 7 });
+    useGameStore.getState().resetCanvas();
+    expect(useGameStore.getState().canvasTier).toBe(1);
+  });
+});
