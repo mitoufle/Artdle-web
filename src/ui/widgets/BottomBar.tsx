@@ -7,6 +7,7 @@ export function BottomBar(): JSX.Element {
       <CurrencyDisplay kind="gold" />
       <CurrencyDisplay kind="inspiration" />
       <CurrencyDisplay kind="fame" />
+      <CurrencyDisplay kind="paintMastery" />
     </footer>
   );
 }

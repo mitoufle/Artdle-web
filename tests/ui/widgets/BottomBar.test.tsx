@@ -13,11 +13,12 @@ describe("<BottomBar />", () => {
     });
   });
 
-  it("renders all three currency labels", () => {
+  it("renders all four currency labels (v1.1)", () => {
     render(<BottomBar />);
     expect(screen.getByText("Gold:")).toBeInTheDocument();
     expect(screen.getByText("Inspi:")).toBeInTheDocument();
     expect(screen.getByText("Fame:")).toBeInTheDocument();
+    expect(screen.getByText("PM:")).toBeInTheDocument();
   });
 
   it("formats gold via formatBig (1234 -> '1.23K')", () => {
@@ -33,6 +34,17 @@ describe("<BottomBar />", () => {
   it("renders fame as integer (7)", () => {
     render(<BottomBar />);
     expect(screen.getByTestId("currency-fame")).toHaveTextContent("7");
+  });
+
+  it("renders paintMastery (8000) as '8.00K'", () => {
+    useGameStore.setState({
+      gold: big(0),
+      inspiration: big(0),
+      fame: big(0),
+    });
+    useGameStore.getState()._setPaintMastery(big(8_000));
+    render(<BottomBar />);
+    expect(screen.getByTestId("currency-paintMastery")).toHaveTextContent("8.00K");
   });
 });
 
@@ -70,5 +82,19 @@ describe("<BottomBar /> — fame pulse on increment", () => {
     });
 
     expect(fameValue).not.toHaveAttribute("data-pulsing", "true");
+  });
+
+  it("toggles data-pulsing on PM when paintMastery increases", async () => {
+    useGameStore.setState({ gold: big(0), inspiration: big(0), fame: big(0) });
+    useGameStore.getState()._setPaintMastery(big(10));
+    render(<BottomBar />);
+    const pmValue = screen.getByTestId("currency-paintMastery");
+    expect(pmValue).not.toHaveAttribute("data-pulsing", "true");
+
+    act(() => {
+      useGameStore.getState()._setPaintMastery(big(15));
+    });
+
+    expect(pmValue).toHaveAttribute("data-pulsing", "true");
   });
 });
