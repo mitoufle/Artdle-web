@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import type { JSX } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import { useGameStore } from "@/store";
 import { LoadingScreen } from "@/ui/widgets/LoadingScreen";
 import { App } from "@/App";
@@ -44,7 +45,11 @@ function Bootstrap(): JSX.Element {
   }, [hydrated]);
 
   if (!hydrated) return <LoadingScreen />;
-  return <App />;
+  return (
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  );
 }
 
 const root = document.getElementById("root");

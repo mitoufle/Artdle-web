@@ -1,0 +1,14 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg-0);
+  color: var(--ink-0);
+}
+
+.main {
+  position: relative;
+  flex: 1;
+  overflow: auto;
+}

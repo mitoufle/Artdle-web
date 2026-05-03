@@ -1,36 +1,28 @@
 import type { JSX } from "react";
-import { useGameStore } from "@/store";
-import { TopBar } from "@/ui/widgets/TopBar";
-import { BottomBar } from "@/ui/widgets/BottomBar";
-import { InfoPanel } from "@/ui/widgets/InfoPanel";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { TopBar } from "@/components/shell/TopBar";
+import { BottomBar } from "@/components/shell/BottomBar";
+import { InfoPanel } from "@/components/shell/InfoPanel";
+import { TreeRoute } from "@/routes/TreeRoute";
+import { PaintingRoute } from "@/routes/PaintingRoute";
+import { AscensionRoute } from "@/routes/AscensionRoute";
+import { ConstellationRoute } from "@/routes/ConstellationRoute";
 import { WorkshopPopup } from "@/ui/popups/WorkshopPopup";
-import { HomeView } from "@/ui/views/HomeView";
-import { PaintingView } from "@/ui/views/PaintingView";
-import { AscensionView } from "@/ui/views/AscensionView";
-import { SkillTreeView } from "@/ui/views/SkillTreeView";
+import styles from "./App.module.css";
 
 export function App(): JSX.Element {
-  const currentView = useGameStore((s) => s.currentView);
-  let body: JSX.Element;
-  switch (currentView) {
-    case "home":
-      body = <HomeView />;
-      break;
-    case "painting":
-      body = <PaintingView />;
-      break;
-    case "ascension":
-      body = <AscensionView />;
-      break;
-    case "skills":
-      body = <SkillTreeView />;
-      break;
-  }
   return (
-    <div className="flex h-screen w-screen flex-col bg-app-bg text-app-text">
+    <div className={styles.app}>
       <TopBar />
-      <main className="relative flex-1 overflow-auto">
-        {body}
+      <main className={styles.main}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/tree" replace />} />
+          <Route path="/tree" element={<TreeRoute />} />
+          <Route path="/painting" element={<PaintingRoute />} />
+          <Route path="/ascension" element={<AscensionRoute />} />
+          <Route path="/constellation" element={<ConstellationRoute />} />
+          <Route path="*" element={<Navigate to="/tree" replace />} />
+        </Routes>
         <WorkshopPopup />
       </main>
       <InfoPanel />
