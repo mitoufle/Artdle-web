@@ -1,7 +1,8 @@
-import type { JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { useGameStore } from "@/store";
 import { formatBig } from "@/core/formatter";
 import { Hoverable } from "@/ui/widgets/Hoverable";
+import type { Big } from "@/core/bigNumber";
 
 /**
  * Currency identifier for the BottomBar widget. Deliberately shadows
@@ -37,12 +38,45 @@ const HOVER_BODY_TEMPLATE: Record<CurrencyKind, (formatted: string) => string> =
     `Earned on ascend, spent in skill tree. Current: ${v}. Permanent.`,
 };
 
+const PULSE_DURATION_MS = 500;
+
 interface Props {
   kind: CurrencyKind;
 }
 
+/**
+ * @invariant Fame is the only currency that gets the increment pulse — gold
+ * and inspiration tick continuously. Adding a pulse to a continuously-ticking
+ * currency would mount-and-fire on every frame.
+ */
 export function CurrencyDisplay({ kind }: Props): JSX.Element {
   const value = useGameStore((s) => s[kind]);
+  const [pulsing, setPulsing] = useState<boolean>(false);
+  const prevRef = useRef<Big | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (kind !== "fame") return;
+    const prev = prevRef.current;
+    prevRef.current = value;
+    if (prev === null) return; // first render — no comparison
+    if (value.gt(prev)) {
+      setPulsing(true);
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        setPulsing(false);
+        timerRef.current = null;
+      }, PULSE_DURATION_MS);
+    }
+  }, [value, kind]);
+
+  // Cleanup on unmount.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   return (
     <Hoverable
       title={HOVER_TITLE[kind]}
@@ -53,7 +87,13 @@ export function CurrencyDisplay({ kind }: Props): JSX.Element {
     >
       <span className={"flex items-baseline gap-1 text-sm " + COLOR_CLASS[kind]}>
         <span className="font-semibold">{LABELS[kind]}:</span>
-        <span data-testid={`currency-${kind}`}>{formatBig(value)}</span>
+        <span
+          data-testid={`currency-${kind}`}
+          data-pulsing={pulsing ? "true" : undefined}
+          className={pulsing ? "fame-pulse-anim inline-block" : "inline-block"}
+        >
+          {formatBig(value)}
+        </span>
       </span>
     </Hoverable>
   );

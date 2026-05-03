@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { BottomBar } from "@/ui/widgets/BottomBar";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
@@ -33,5 +33,42 @@ describe("<BottomBar />", () => {
   it("renders fame as integer (7)", () => {
     render(<BottomBar />);
     expect(screen.getByTestId("currency-fame")).toHaveTextContent("7");
+  });
+});
+
+describe("<BottomBar /> — fame pulse on increment", () => {
+  it("toggles data-pulsing on the fame value when fame increases", async () => {
+    useGameStore.setState({ gold: big(0), inspiration: big(0), fame: big(10) });
+    render(<BottomBar />);
+    const fameValue = screen.getByTestId("currency-fame");
+    expect(fameValue).not.toHaveAttribute("data-pulsing", "true");
+
+    // Trigger the increase via the React effect path.
+    act(() => {
+      useGameStore.setState({ fame: big(15) });
+    });
+
+    // After the store update, the useEffect should have toggled data-pulsing=true
+    // synchronously (set inside the effect body).
+    expect(fameValue).toHaveAttribute("data-pulsing", "true");
+  });
+
+  it("does NOT pulse on initial render (no prior value to compare)", () => {
+    useGameStore.setState({ gold: big(0), inspiration: big(0), fame: big(10) });
+    render(<BottomBar />);
+    const fameValue = screen.getByTestId("currency-fame");
+    expect(fameValue).not.toHaveAttribute("data-pulsing", "true");
+  });
+
+  it("does NOT pulse when fame stays the same", () => {
+    useGameStore.setState({ gold: big(0), inspiration: big(0), fame: big(10) });
+    render(<BottomBar />);
+    const fameValue = screen.getByTestId("currency-fame");
+
+    act(() => {
+      useGameStore.setState({ fame: big(10) }); // same value
+    });
+
+    expect(fameValue).not.toHaveAttribute("data-pulsing", "true");
   });
 });

@@ -25,3 +25,19 @@ body {
   color: var(--color-app-text);
   font-family: system-ui, sans-serif;
 }
+
+@keyframes fame-pulse {
+  0%   { transform: scale(1);    color: var(--color-fame); }
+  40%  { transform: scale(1.15); color: var(--color-gold); }
+  100% { transform: scale(1);    color: var(--color-fame); }
+}
+
+.fame-pulse-anim {
+  animation: fame-pulse 500ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fame-pulse-anim {
+    animation: none;
+  }
+}
