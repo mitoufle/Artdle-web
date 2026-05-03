@@ -3,6 +3,7 @@ import { useGameStore } from "@/store";
 import { idbAdapter, persistedAdapter } from "@/systems/persistence";
 import { TREE_STAGES } from "@/config/treeStages";
 import { big, isBig } from "@/core/bigNumber";
+import { PAINT_TIME_BASE_SECONDS } from "@/core/balance";
 import { defaultLifecycleHooks } from "@/systems/lifecycle";
 import { setErrorReporter, resetErrorReporter } from "@/systems/telemetry";
 
@@ -53,6 +54,17 @@ describe("persistence integration", () => {
     expect("hoverTitle" in parsed.state).toBe(false);
     expect("hoverBody" in parsed.state).toBe(false);
     expect("hoverFooter" in parsed.state).toBe(false);
+  });
+
+  it("lastSale transient is partialized OUT of the save", async () => {
+    // Trigger a sale to make lastSale non-null.
+    useGameStore.getState().canvasTick(PAINT_TIME_BASE_SECONDS);
+    expect(useGameStore.getState().lastSale).not.toBeNull();
+    await persistedAdapter.flush();
+
+    const raw = await idbAdapter.getItem("artdle-save");
+    const parsed = JSON.parse(raw!);
+    expect("lastSale" in parsed.state).toBe(false);
   });
 
   it("rehydration reconstructs Bigs from {__big} markers", async () => {

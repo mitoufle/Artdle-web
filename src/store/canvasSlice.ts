@@ -5,6 +5,7 @@ import {
   getPaintTimeMultiplier,
 } from "@/core/multipliers";
 import type { GameStore } from "@/store";
+import type { Big } from "@/core/bigNumber";
 
 export interface CanvasState {
   /**
@@ -13,9 +14,23 @@ export interface CanvasState {
    * On threshold-cross, a sale fires and progress resets (with optional carry).
    */
   canvasProgress: number;
+  /**
+   * Most recent sale event for animation triggering. The `id` increments on
+   * each sale; consumers (e.g. `<FloatingGoldText>`) use it as an
+   * AnimatePresence/motion key so each sale starts a fresh animation.
+   * `amount` carries the gold gained for display.
+   *
+   * TRANSIENT — stripped from `partialize`. Rehydrate must not replay an
+   * animation (set to `null` on reload). Cleared by `clearLastSale()`,
+   * typically called from `onAnimationComplete`.
+   */
+  lastSale: { id: number; amount: Big } | null;
 }
 
-export const initialCanvasState: CanvasState = { canvasProgress: 0 };
+export const initialCanvasState: CanvasState = Object.freeze({
+  canvasProgress: 0,
+  lastSale: null,
+}) as CanvasState;
 
 export interface CanvasSlice extends CanvasState {
   /**
@@ -27,6 +42,8 @@ export interface CanvasSlice extends CanvasState {
   canvasTick: (deltaSeconds: number) => void;
   /** For ascend orchestrator (Phase 3). */
   resetCanvas: () => void;
+  /** Clear the lastSale animation trigger. Called from onAnimationComplete. */
+  clearLastSale: () => void;
 }
 
 export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (set, get) => ({
@@ -47,9 +64,13 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
     const gain = canvasGold(getCanvasGoldMultiplier(state));
     state.add("gold", gain);
     const leftover = newProgress - paintTime;
-    // If leftover would itself trigger another sale, drop to 0 (one-sale-per-tick).
-    set({ canvasProgress: leftover < paintTime ? leftover : 0 });
+    const prevId = state.lastSale?.id ?? 0;
+    set({
+      canvasProgress: leftover < paintTime ? leftover : 0,
+      lastSale: { id: prevId + 1, amount: gain },
+    });
   },
 
   resetCanvas: () => set(initialCanvasState),
+  clearLastSale: () => set({ lastSale: null }),
 });

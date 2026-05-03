@@ -98,11 +98,18 @@ export const useGameStore = create<GameStore>()(
       storage: createJSONStorage(() => persistedAdapter, { reviver }),
       migrate,
       partialize: (s) => {
-        // Exclude transient hover-info + UI state, then pre-wrap Bigs as `{ __big: "..." }` markers.
-        const { hoverTitle: _t, hoverBody: _b, hoverFooter: _f, workshopPopupOpen: _w, ...rest } = s;
+        // Exclude transient hover-info + UI + animation-trigger state, then pre-wrap Bigs as `{ __big: "..." }` markers.
+        const {
+          hoverTitle: _t,
+          hoverBody: _b,
+          hoverFooter: _f,
+          workshopPopupOpen: _w,
+          lastSale: _ls,
+          ...rest
+        } = s;
         return serializeBigs(rest) as unknown as Omit<
           GameStore,
-          "hoverTitle" | "hoverBody" | "hoverFooter" | "workshopPopupOpen"
+          "hoverTitle" | "hoverBody" | "hoverFooter" | "workshopPopupOpen" | "lastSale"
         >;
       },
     },
