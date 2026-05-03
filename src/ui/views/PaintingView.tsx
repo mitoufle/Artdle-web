@@ -4,12 +4,15 @@ import type { GameStore } from "@/store";
 import { PAINT_TIME_BASE_SECONDS } from "@/core/balance";
 import { getPaintTimeMultiplier } from "@/core/multipliers";
 import { Hoverable } from "@/ui/widgets/Hoverable";
+import { FloatingGoldText } from "@/ui/widgets/FloatingGoldText";
 import { MAX_INVENTORY_SLOTS } from "@/config/workshopAffixes";
 
 export function PaintingView(): JSX.Element {
   const canvasProgress = useGameStore((s) => s.canvasProgress);
   const equippedItems = useGameStore((s) => s.equippedItems);
   const openWorkshopPopup = useGameStore((s) => s.openWorkshopPopup);
+  const lastSale = useGameStore((s) => s.lastSale);
+  const clearLastSale = useGameStore((s) => s.clearLastSale);
 
   // Helpers expect a GameStore; pass the field they actually read.
   // Cast is intentional and safe — see docs/agent_docs/ui-patterns.md.
@@ -19,12 +22,19 @@ export function PaintingView(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <section className="rounded bg-app-panel p-3">
+      <section className="relative rounded bg-app-panel p-3">
         <div className="text-sm opacity-70">Canvas</div>
         <div className="text-lg font-semibold">{stateLabel}</div>
         <div className="text-sm">
           {canvasProgress.toFixed(1)} / {paintTime.toFixed(1)}s
         </div>
+        {lastSale && (
+          <FloatingGoldText
+            key={lastSale.id}
+            amount={lastSale.amount}
+            onComplete={clearLastSale}
+          />
+        )}
       </section>
 
       <section className="rounded bg-app-panel p-3">
