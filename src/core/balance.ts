@@ -77,13 +77,15 @@ export const tierUpgradeCost = (currentTier: number): Big =>
 
 /**
  * Paint Mastery gained per canvas sale.
- * v1.1: `tier²`, equivalent to `grossGold / 10` (where grossGold = 10 × tier²).
- * v1.3: becomes `quality × tier` once quality is implemented; same call site.
+ * v1.1 redesign (2026-05-03): saleGold / pmThreshold(lifetimeGold).
+ * The threshold steps up by 1000× at each lifetime-gold milestone (1M, 1B, 1T, ...),
+ * so PM accumulation is log-shaped relative to total gold earned.
  *
- * Computed on gross tier-derived gold (pre-multiplier) — no PM-gold feedback loop.
+ * Returns a fractional Big — gain accumulates over many sales. PM is no longer
+ * per-tier-bound; it scales with actual gold output (tier × multipliers).
  */
-export const pmGainPerSale = (tier: number): Big =>
-  big(tier).mul(tier);
+export const pmGainPerSale = (saleGold: Big, lifetimeGold: Big): Big =>
+  saleGold.div(pmThreshold(lifetimeGold));
 
 /**
  * Paint Mastery multiplier on canvas gold output.

@@ -170,23 +170,39 @@ describe("tierUpgradeCost (v1.1)", () => {
   });
 });
 
-describe("pmGainPerSale (v1.1)", () => {
-  it("tier 1 sale grants 1 PM", () => {
-    expect(pmGainPerSale(1).toNumber()).toBe(1);
+describe("pmGainPerSale (v1.1 PM redesign)", () => {
+  it("at lifetime 0 (phase 1, threshold 1000): 1000g sale grants 1 PM", () => {
+    expect(pmGainPerSale(big(1000), big(0)).toNumber()).toBeCloseTo(1, 9);
   });
 
-  it("tier 5 sale grants 25 PM", () => {
-    expect(pmGainPerSale(5).toNumber()).toBe(25);
+  it("at lifetime 0: 10g sale grants 0.01 PM (fractional)", () => {
+    expect(pmGainPerSale(big(10), big(0)).toNumber()).toBeCloseTo(0.01, 9);
   });
 
-  it("tier 10 sale grants 100 PM", () => {
-    expect(pmGainPerSale(10).toNumber()).toBe(100);
+  it("at lifetime 0: 250g sale grants 0.25 PM", () => {
+    expect(pmGainPerSale(big(250), big(0)).toNumber()).toBeCloseTo(0.25, 9);
+  });
+
+  it("at lifetime 1M (phase 2, threshold 1M): 1000g sale grants 0.001 PM", () => {
+    expect(pmGainPerSale(big(1000), big(1_000_000)).toNumber()).toBeCloseTo(0.001, 9);
+  });
+
+  it("at lifetime 1M: 1M g sale grants 1 PM", () => {
+    expect(pmGainPerSale(big(1_000_000), big(1_000_000)).toNumber()).toBeCloseTo(1, 9);
+  });
+
+  it("at lifetime 1B (phase 3, threshold 1B): 1B g sale grants 1 PM", () => {
+    expect(pmGainPerSale(big(1_000_000_000), big(1_000_000_000)).toNumber()).toBeCloseTo(1, 9);
+  });
+
+  it("0g sale grants 0 PM", () => {
+    expect(pmGainPerSale(big(0), big(0)).toNumber()).toBe(0);
   });
 
   it("returns a Big (not a number)", () => {
-    const result = pmGainPerSale(7);
+    const result = pmGainPerSale(big(500), big(0));
     expect(typeof result.toNumber).toBe("function");
-    expect(result.toNumber()).toBe(49);
+    expect(result.toNumber()).toBeCloseTo(0.5, 9);
   });
 });
 
