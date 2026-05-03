@@ -40,10 +40,15 @@ export const treePartCost = (level: number, baseCost: number): Big =>
 
 /**
  * Gold awarded when a canvas is sold, before equipped-item modifiers.
- * `multiplier` is the aggregated canvas-gold multiplier from skill tree + items.
+ * v1.1: scales as `BASE × tier² × multiplier`. The `tier²` substitutes for
+ * the `quality × tier` shape from canvas-design.md §6.3 with `quality = tier`;
+ * v1.3 will replace `tier × tier` with `quality × tier` (one-line drop-in).
+ *
+ * `multiplier` is the aggregated canvas-gold multiplier from skill tree + items
+ * + PM mult (composed by the caller in `multipliers.ts`).
  */
-export const canvasGold = (multiplier: number): Big =>
-  big(CANVAS_GOLD_BASE).mul(multiplier);
+export const canvasGold = (tier: number, multiplier: number): Big =>
+  big(CANVAS_GOLD_BASE).mul(tier).mul(tier).mul(multiplier);
 
 /**
  * Inspiration produced per second from a list of tree parts and an aggregate multiplier.

@@ -61,7 +61,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
     }
 
     // Threshold crossed — exactly one sale per tick.
-    const gain = canvasGold(getCanvasGoldMultiplier(state));
+    const gain = canvasGold(1, getCanvasGoldMultiplier(state));
     state.add("gold", gain);
     const leftover = newProgress - paintTime;
     const prevId = state.lastSale?.id ?? 0;

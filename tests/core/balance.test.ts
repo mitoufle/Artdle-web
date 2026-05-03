@@ -74,9 +74,31 @@ describe("treePartCost", () => {
 
 describe("canvasGold", () => {
   it("scales linearly with multiplier", () => {
-    expect(canvasGold(1).toNumber()).toBe(10);
-    expect(canvasGold(2).toNumber()).toBe(20);
-    expect(canvasGold(0.5).toNumber()).toBe(5);
+    expect(canvasGold(1, 1).toNumber()).toBe(10);
+    expect(canvasGold(1, 2).toNumber()).toBe(20);
+    expect(canvasGold(1, 0.5).toNumber()).toBe(5);
+  });
+});
+
+describe("canvasGold (v1.1 tier scaling)", () => {
+  it("tier 1, mult 1: returns CANVAS_GOLD_BASE × 1 = 10", () => {
+    expect(canvasGold(1, 1).toNumber()).toBe(10);
+  });
+
+  it("tier 5, mult 1: returns CANVAS_GOLD_BASE × 25 = 250", () => {
+    expect(canvasGold(5, 1).toNumber()).toBe(250);
+  });
+
+  it("tier 10, mult 1: returns CANVAS_GOLD_BASE × 100 = 1000", () => {
+    expect(canvasGold(10, 1).toNumber()).toBe(1000);
+  });
+
+  it("tier 10, mult 2: returns 2000 (mult composes)", () => {
+    expect(canvasGold(10, 2).toNumber()).toBe(2000);
+  });
+
+  it("tier 1, mult 1.5: returns 15", () => {
+    expect(canvasGold(1, 1.5).toNumber()).toBeCloseTo(15, 9);
   });
 });
 
