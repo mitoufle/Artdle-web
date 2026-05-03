@@ -1,0 +1,1826 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Artdle — Hi-Fi Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=JetBrains+Mono:wght@400;600&family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-0: #0a0814;
+  --bg-1: #14102a;
+  --bg-2: #1f1830;
+  --bg-3: #2a2240;
+  --bg-stone: #2a2240;
+  --bg-stone-d: #0d0d12;
+
+  --ink-0: #f4efe6;
+  --ink-1: #c9b8ff;
+  --ink-2: #a89cd6;
+  --ink-3: #6b5b9a;
+  --ink-line: #3a2e5a;
+
+  --gold:  #e6b667;
+  --gold-d:#a87f3a;
+  --inspi: #9b6cd6;
+  --inspi-d:#6b4cb8;
+  --fame:  #ffd86a;
+  --fame-d:#c9a23e;
+
+  --portal-glow: 0 0 24px rgba(155,108,214,0.55), 0 0 48px rgba(107,76,184,0.3);
+  --gold-glow:   0 0 14px rgba(230,182,103,0.5);
+  --inspi-glow:  0 0 14px rgba(155,108,214,0.55);
+  --fame-glow:   0 0 14px rgba(255,216,106,0.55);
+
+  --pixel: 'Press Start 2P', monospace;
+  --pixelL:'VT323', monospace;
+  --serif: 'Cinzel', serif;
+  --mono:  'JetBrains Mono', ui-monospace, monospace;
+  --sans:  'Inter', system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background:
+    radial-gradient(ellipse at 50% 0%, #1a1438 0%, var(--bg-0) 60%) fixed,
+    var(--bg-0);
+  color: var(--ink-0);
+  font-family: var(--sans);
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+img { image-rendering: pixelated; }
+svg { image-rendering: pixelated; }
+
+/* ============ APP SHELL ============ */
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* ----- top bar ----- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--ink-line);
+  background:
+    linear-gradient(180deg, rgba(31,24,48,0.9), rgba(20,16,42,0.7));
+  backdrop-filter: blur(6px);
+}
+.brand {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--ink-1);
+  text-shadow: var(--portal-glow);
+}
+.brand .a { color: var(--fame); }
+.nav { display: flex; gap: 4px; margin-left: 24px; }
+.nav-item {
+  font-family: var(--serif);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  border-radius: 2px;
+  position: relative;
+  transition: color 120ms;
+}
+.nav-item:hover { color: var(--ink-0); }
+.nav-item[data-active="true"] {
+  color: var(--fame);
+  border-color: var(--fame-d);
+  text-shadow: var(--fame-glow);
+}
+.nav-item[data-active="true"]::before {
+  content: "✦"; position: absolute; left: 4px; top: 50%; transform: translateY(-50%); font-size: 9px; color: var(--fame);
+}
+.nav-item[data-active="true"]::after {
+  content: "✦"; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 9px; color: var(--fame);
+}
+.topbar-end {
+  margin-left: auto;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.topbar-end .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--inspi); box-shadow: var(--inspi-glow); display: inline-block; margin-right: 6px; }
+
+/* ----- main ----- */
+.main {
+  position: relative;
+  overflow: hidden;
+}
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  padding: 18px;
+  overflow: auto;
+}
+.screen[data-active="true"] { display: block; }
+
+/* ----- bottom bar ----- */
+.bottombar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 10px 18px;
+  border-top: 1px solid var(--ink-line);
+  background:
+    linear-gradient(0deg, rgba(31,24,48,0.92), rgba(20,16,42,0.7));
+  backdrop-filter: blur(6px);
+  min-height: 64px;
+}
+.currencies { display: flex; gap: 14px; align-items: center; }
+.cur {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-weight: 600;
+  background: rgba(0,0,0,0.25);
+  transition: opacity 200ms, filter 200ms;
+}
+.cur[data-dim="true"] { opacity: 0.28; filter: saturate(0.4); }
+.cur .icon {
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+.cur .num { font-size: 14px; }
+.cur .rate { font-size: 10px; opacity: 0.7; margin-left: 2px; }
+
+.cur.gold  { color: var(--gold); }
+.cur.inspi { color: var(--inspi); }
+.cur.fame  { color: var(--fame); }
+
+/* pixel coin / spark / star */
+.icon-gold {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe4a8, var(--gold) 60%, var(--gold-d));
+  box-shadow: inset 0 -2px 0 var(--gold-d);
+}
+.icon-inspi {
+  width: 14px; height: 14px;
+  background: var(--inspi);
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+}
+.icon-fame {
+  width: 14px; height: 14px;
+  background: var(--fame);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 18px;
+  border-left: 1px solid var(--ink-line);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+.info .ttl {
+  font-family: var(--serif);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fame);
+}
+.info b { color: var(--ink-0); }
+
+.bottombar-end .chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ============ COMMON UI ============ */
+.panel {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(42,34,64,0.55), rgba(20,16,42,0.7));
+  border: 1px solid var(--ink-line);
+  border-radius: 4px;
+  padding: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 8px 32px rgba(0,0,0,0.35);
+}
+.panel.bordered::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(155,108,214,0.18);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.panel-label {
+  position: absolute; top: -9px; left: 14px;
+  background: var(--bg-0);
+  padding: 0 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+.panel-title {
+  font-family: var(--serif);
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-0);
+  margin: 0 0 4px;
+}
+.panel-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.btn {
+  font-family: var(--serif);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, var(--bg-3), var(--bg-1));
+  border: 1px solid var(--ink-line);
+  color: var(--ink-1);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 120ms;
+  position: relative;
+}
+.btn:hover { color: var(--ink-0); border-color: var(--ink-2); transform: translateY(-1px); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.btn.gold { color: var(--gold); border-color: var(--gold-d); }
+.btn.gold:hover { background: linear-gradient(180deg, #2e2418, var(--bg-1)); box-shadow: var(--gold-glow); }
+.btn.inspi { color: var(--inspi); border-color: var(--inspi-d); }
+.btn.inspi:hover { box-shadow: var(--inspi-glow); }
+.btn.fame { color: var(--fame); border-color: var(--fame-d); }
+.btn.fame:hover { box-shadow: var(--fame-glow); }
+.btn.ghost { background: transparent; }
+.btn.lg { font-size: 14px; padding: 12px 28px; }
+
+.bar {
+  height: 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--ink-line);
+  position: relative;
+  overflow: hidden;
+}
+.bar > .fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--inspi-d), var(--inspi));
+  box-shadow: 0 0 8px rgba(155,108,214,0.6);
+}
+.bar.gold > .fill { background: linear-gradient(90deg, var(--gold-d), var(--gold)); box-shadow: 0 0 8px rgba(230,182,103,0.6); }
+.bar.fame > .fill { background: linear-gradient(90deg, var(--fame-d), var(--fame)); box-shadow: 0 0 8px rgba(255,216,106,0.6); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border: 1px solid var(--ink-line);
+  border-radius: 999px;
+  color: var(--ink-2);
+}
+.chip.active { background: var(--inspi-d); border-color: var(--inspi); color: var(--ink-0); }
+.chip.done   { background: var(--ink-line); color: var(--ink-1); }
+.chip.gold   { color: var(--gold); border-color: var(--gold-d); }
+.chip.fame   { color: var(--fame); border-color: var(--fame-d); }
+
+.row { display: flex; gap: 12px; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+
+.tier-rare { color: #6fb1ff; border-color: #4a7ad6; }
+.tier-magic { color: #d57bff; border-color: #9c4ad6; }
+.tier-epic { color: #ffb867; border-color: #d68a3a; }
+.tier-legendary { color: #ff7a4a; border-color: #d65a2a; }
+
+/* ============ SCREEN: HOME (TREE) ============ */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 18px;
+  height: 100%;
+}
+
+.scene {
+  position: relative;
+  border: 1px solid var(--ink-line);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1c2630;
+}
+.scene-overlay-top {
+  position: absolute; top: 16px; left: 16px;
+  z-index: 2;
+}
+.scene-overlay-top .ips {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--inspi);
+  text-shadow: var(--inspi-glow);
+  letter-spacing: 0.04em;
+}
+.scene-overlay-top .ips .num { font-family: var(--mono); }
+.scene-overlay-top .stage {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin-top: 2px;
+}
+
+.stage-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.stage-row .arrow { color: var(--ink-3); }
+
+.upgrade {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--ink-line);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(42,34,64,0.45), rgba(20,16,42,0.55));
+  cursor: pointer;
+  transition: border-color 140ms, transform 140ms;
+}
+.upgrade:hover { border-color: var(--inspi); transform: translateX(2px); }
+.upgrade .icon-mini {
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border: 1px solid var(--ink-line);
+  background: var(--bg-1);
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: var(--inspi);
+}
+.upgrade .name {
+  font-family: var(--serif);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--ink-0);
+  text-transform: uppercase;
+}
+.upgrade .meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.upgrade .meta .rate { color: var(--inspi); }
+.upgrade .buy {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--gold);
+  padding: 6px 12px;
+  border: 1px solid var(--gold-d);
+  background: rgba(230,182,103,0.05);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.upgrade .buy::before {
+  content: "⬢";
+  margin-right: 4px;
+  color: var(--gold);
+}
+
+/* ============ SCREEN: PAINT ============ */
+.paint-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px 64px;
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "stage room rail"
+    "canvas-up room rail";
+  gap: 14px;
+  height: 100%;
+}
+.paint-grid .canvas-stage { grid-area: stage; }
+.paint-grid .canvas-upgrades { grid-area: canvas-up; }
+.paint-grid .room-panel-wrap { grid-area: room; }
+.paint-grid .room-rail { grid-area: rail; }
+
+/* always-visible canvas upgrades strip under the easel */
+.canvas-upgrades {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) repeat(4, minmax(140px, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--gold-d);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(64,48,16,0.18), rgba(20,16,42,0.55));
+  box-shadow: inset 0 0 18px rgba(230,182,103,0.06);
+  position: relative;
+}
+.canvas-upgrades::before {
+  content: "Canvas · always available";
+  position: absolute;
+  top: -9px; left: 14px;
+  background: var(--bg-0);
+  padding: 0 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.cu-tier {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid var(--gold-d);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(64,48,16,0.4), rgba(20,16,42,0.55));
+  box-shadow: inset 0 0 10px rgba(230,182,103,0.12);
+}
+.cu-tier .lbl {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-d);
+}
+.cu-tier .val {
+  font-family: var(--serif);
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: var(--gold-glow);
+  margin: 2px 0 6px;
+}
+.cu-tier button { width: 100%; }
+
+.cu-card {
+  display: flex; flex-direction: column;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-line);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(42,34,64,0.5), rgba(20,16,42,0.6));
+  cursor: pointer;
+  transition: border-color 140ms, transform 140ms;
+}
+.cu-card:hover { border-color: var(--gold-d); transform: translateY(-1px); }
+.cu-card .row1 { display: flex; align-items: center; gap: 6px; }
+.cu-card .ico {
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border: 1px solid var(--ink-line);
+  font-family: var(--pixel);
+  font-size: 9px;
+  background: var(--bg-1);
+  color: var(--gold);
+}
+.cu-card .nm {
+  font-family: var(--serif);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-0);
+  flex: 1;
+}
+.cu-card .lv {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+.cu-card .effect {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--gold);
+  margin: 4px 0 6px;
+  letter-spacing: 0.08em;
+}
+.cu-card .cost {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--gold);
+  align-self: flex-start;
+  padding: 3px 8px;
+  border: 1px solid var(--gold-d);
+  background: rgba(230,182,103,0.06);
+  border-radius: 2px;
+}
+.cu-card.locked { opacity: 0.5; }
+.cu-card.locked .cost { color: var(--ink-3); border-color: var(--ink-line); background: transparent; }
+.cu-card.inspi .ico { color: var(--inspi); }
+.cu-card.inspi .effect { color: var(--inspi); }
+
+.canvas-stage {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 50% 60%, #1a1530 0%, #0a0814 70%);
+  border: 1px solid var(--ink-line);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+.canvas-frame {
+  flex: 1;
+  margin: 36px 64px;
+  position: relative;
+  border: 4px solid;
+  border-image: linear-gradient(180deg, #f0d28a, var(--gold-d) 50%, #6b4a20) 1;
+  background: #0a0612;
+  box-shadow:
+    inset 0 0 0 2px var(--bg-0),
+    0 12px 40px rgba(0,0,0,0.6),
+    0 0 60px rgba(230,182,103,0.12);
+}
+.canvas-art {
+  position: absolute; inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+/* progressive painting fill — bottom-up */
+.canvas-fill {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 62%;
+  background:
+    linear-gradient(180deg, transparent, rgba(230,182,103,0.18) 40%, rgba(230,182,103,0.45) 100%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0 4px, transparent 4px 8px);
+  mix-blend-mode: screen;
+}
+.canvas-pigment {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 62%;
+  background:
+    linear-gradient(180deg,
+      transparent,
+      rgba(214,90,108,0.18) 30%,
+      rgba(214,138,58,0.22) 60%,
+      rgba(214,176,90,0.24) 100%);
+}
+.canvas-strokes {
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(80deg, rgba(0,0,0,0.06) 0 2px, transparent 2px 12px);
+  opacity: 0.3;
+}
+
+.easel {
+  position: absolute;
+  left: 50%; bottom: 0;
+  transform: translateX(-50%);
+  width: 280px; height: 60px;
+  background:
+    linear-gradient(180deg, transparent 50%, #2a1d10 50%, #1a1208 100%);
+  clip-path: polygon(20% 50%, 80% 50%, 95% 100%, 5% 100%);
+  opacity: 0.6;
+}
+
+.canvas-status {
+  position: absolute;
+  left: 64px; right: 64px; bottom: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+.canvas-status .progress { color: var(--ink-0); }
+.canvas-status .gain { color: var(--gold); text-shadow: var(--gold-glow); font-weight: 600; }
+
+.canvas-title {
+  position: absolute;
+  top: 14px; left: 0; right: 0;
+  text-align: center;
+  font-family: var(--serif);
+  letter-spacing: 0.4em;
+  font-size: 12px;
+  color: var(--ink-2);
+  text-transform: uppercase;
+}
+.canvas-title .tier { color: var(--gold); }
+
+.canvas-progressbar {
+  position: absolute;
+  left: 64px; right: 64px; top: 36px;
+  height: 4px;
+  background: var(--bg-2);
+  border: 1px solid var(--ink-line);
+}
+.canvas-progressbar > div {
+  height: 100%;
+  width: 62%;
+  background: linear-gradient(90deg, var(--gold-d), var(--gold));
+  box-shadow: 0 0 8px var(--gold);
+}
+
+/* room rail */
+.room-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.room-tab {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 12px 4px;
+  border: 1px solid var(--ink-line);
+  background: linear-gradient(180deg, rgba(42,34,64,0.4), rgba(20,16,42,0.6));
+  color: var(--ink-2);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 140ms;
+}
+.room-tab:hover { color: var(--ink-0); border-color: var(--ink-2); }
+.room-tab[data-active="true"] {
+  background: linear-gradient(180deg, var(--inspi-d), var(--bg-1));
+  border-color: var(--inspi);
+  color: var(--ink-0);
+  box-shadow: inset 0 0 12px rgba(155,108,214,0.3);
+}
+.room-tab .tab-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.room-tab .tab-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* room panels */
+.room-panel { display: flex; flex-direction: column; gap: 10px; height: 100%; overflow: auto; }
+.room-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--ink-line);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+.room-head h2 {
+  font-family: var(--serif);
+  font-size: 18px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-0);
+}
+.room-head .crumb {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.affix-card {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-line);
+  border-radius: 2px;
+  background: var(--bg-1);
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+.affix-card[data-tier="rare"] { border-color: #4a7ad6; }
+.affix-card[data-tier="magic"] { border-color: #9c4ad6; }
+.affix-card[data-tier="epic"] { border-color: #d68a3a; }
+.affix-card[data-tier="legendary"] { border-color: #d65a2a; box-shadow: 0 0 10px rgba(255,122,74,0.3); }
+.affix-card[data-empty="true"] { border-style: dashed; opacity: 0.4; }
+.affix-card .badge {
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  background: var(--bg-2);
+  font-family: var(--pixel);
+  font-size: 8px;
+}
+.affix-card .text strong { display: block; color: var(--ink-0); font-weight: 600; }
+.affix-card .text small { color: var(--ink-3); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.slot {
+  aspect-ratio: 1/1;
+  border: 1px solid var(--ink-line);
+  border-radius: 2px;
+  background: var(--bg-1);
+  position: relative;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: var(--ink-2);
+}
+.slot.empty {
+  border-style: dashed;
+  color: var(--ink-3);
+  opacity: 0.5;
+}
+.slot[data-tier="rare"]      { border-color: #4a7ad6; color: #6fb1ff; }
+.slot[data-tier="magic"]     { border-color: #9c4ad6; color: #d57bff; }
+.slot[data-tier="epic"]      { border-color: #d68a3a; color: #ffb867; box-shadow: inset 0 0 8px rgba(255,184,103,0.2); }
+.slot[data-tier="legendary"] { border-color: #d65a2a; color: #ff7a4a; box-shadow: inset 0 0 12px rgba(255,122,74,0.3); }
+.slot::after {
+  content: attr(data-tier);
+  position: absolute;
+  bottom: 2px; right: 2px;
+  font-family: var(--mono);
+  font-size: 7px;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.slot.empty::after { content: ""; }
+
+/* ============ SCREEN: ASCEND ============ */
+.ascend-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 18px;
+  height: 100%;
+}
+
+.cavern {
+  position: relative;
+  border: 1px solid var(--ink-line);
+  border-radius: 4px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 60%, #2a1c50 0%, #14102a 50%, #0a0814 100%);
+}
+.cavern-stones {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.4) 0 14px, transparent 14px 28px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.4) 0 14px, transparent 14px 28px),
+    repeating-linear-gradient(0deg, rgba(155,108,214,0.06) 0 28px, transparent 28px 56px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+.crystals {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.crystal {
+  position: absolute;
+  width: 6px; height: 14px;
+  background: var(--inspi);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  opacity: 0.6;
+  filter: drop-shadow(0 0 6px var(--inspi));
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes shimmer {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 12px rgba(155,108,214,0.5)); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 32px rgba(155,108,214,0.9)); }
+}
+
+.portal-wrap {
+  position: relative;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+.portal {
+  width: min(380px, 60%);
+  aspect-ratio: 1/1.3;
+  position: relative;
+  animation: float 6s ease-in-out infinite;
+}
+.portal svg {
+  width: 100%; height: 100%;
+  animation: shimmer 4s ease-in-out infinite;
+}
+
+.cavern-overlay-top {
+  position: absolute;
+  top: 18px; left: 18px;
+  z-index: 2;
+}
+.cavern-overlay-top .label {
+  font-family: var(--serif);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.cavern-overlay-top .threshold {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink-1);
+  margin-top: 4px;
+  text-shadow: var(--portal-glow);
+}
+
+.cavern-cta {
+  position: absolute;
+  bottom: 24px; left: 0; right: 0;
+  text-align: center;
+}
+.cavern-cta .summon {
+  font-family: var(--serif);
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--fame);
+  text-shadow: var(--fame-glow);
+  margin-bottom: 12px;
+}
+
+.ascend-rail { display: flex; flex-direction: column; gap: 14px; }
+
+.ascend-stat {
+  padding: 16px 18px;
+  border: 1px solid var(--ink-line);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(42,34,64,0.4), rgba(20,16,42,0.7));
+}
+.ascend-stat .lbl {
+  font-family: var(--serif);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 6px;
+}
+.ascend-stat .val {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--ink-0);
+}
+.ascend-stat.inspi .val { color: var(--inspi); text-shadow: var(--inspi-glow); }
+.ascend-stat.fame {
+  border-color: var(--fame-d);
+  background: linear-gradient(180deg, rgba(64,48,16,0.35), rgba(20,16,42,0.7));
+}
+.ascend-stat.fame .val { color: var(--fame); text-shadow: var(--fame-glow); font-size: 38px; font-family: var(--serif); font-weight: 700; }
+.ascend-stat .meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+/* ============ SCREEN: SKILL TREE ============ */
+.skill-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 18px;
+  height: 100%;
+}
+
+.skill-canvas {
+  position: relative;
+  border: 1px solid var(--ink-line);
+  border-radius: 4px;
+  background:
+    radial-gradient(ellipse at 50% 90%, rgba(255,216,106,0.06) 0%, transparent 60%),
+    var(--bg-0);
+  overflow: hidden;
+}
+.skill-canvas svg { width: 100%; height: 100%; display: block; }
+
+.skill-info-card {
+  position: absolute;
+  right: 14px; top: 14px;
+  width: 240px;
+  background: linear-gradient(180deg, rgba(31,24,48,0.95), rgba(20,16,42,0.95));
+  border: 1px solid var(--fame-d);
+  border-radius: 3px;
+  padding: 14px;
+  box-shadow: var(--fame-glow);
+}
+.skill-info-card h3 {
+  font-family: var(--serif);
+  font-size: 16px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fame);
+  margin: 0 0 4px;
+}
+.skill-info-card .desc {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  margin: 8px 0;
+}
+.skill-info-card .meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 10px;
+}
+
+.minimap {
+  padding: 12px;
+}
+.minimap svg { width: 100%; display: block; }
+.minimap .label {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  text-align: center;
+  margin-top: 6px;
+}
+
+.fame-display {
+  text-align: center;
+  padding: 20px;
+  border: 1px solid var(--fame-d);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(64,48,16,0.4), rgba(20,16,42,0.6));
+  box-shadow: inset 0 0 24px rgba(255,216,106,0.1);
+}
+.fame-display .lbl {
+  font-family: var(--serif);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--fame-d);
+}
+.fame-display .val {
+  font-family: var(--serif);
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--fame);
+  text-shadow: var(--fame-glow);
+  letter-spacing: 0.04em;
+}
+
+.cluster-list { display: flex; flex-direction: column; gap: 4px; }
+.cluster-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-line);
+  background: var(--bg-1);
+  border-radius: 2px;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.cluster-item:hover { color: var(--ink-0); border-color: var(--ink-2); }
+.cluster-item .count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+/* ============ SCROLLBARS ============ */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ink-line); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand"><span class="a">A</span>RTDLE</div>
+    <nav class="nav" id="nav">
+      <button class="nav-item" data-screen="home" data-active="true">The Tree</button>
+      <button class="nav-item" data-screen="paint">Painting View</button>
+      <button class="nav-item" data-screen="ascend">Ascension</button>
+      <button class="nav-item" data-screen="skill">Constellation</button>
+    </nav>
+    <div class="topbar-end">
+      <span><span class="dot"></span>auto-saved · 12s</span>
+      <span>⚙ settings</span>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ============ HOME / TREE ============ -->
+    <section class="screen" data-screen="home" data-active="true">
+      <div class="home-grid">
+        <!-- Tree scene -->
+        <div class="scene">
+          <div class="scene-overlay-top">
+            <div class="ips">+<span class="num">3.2</span> inspi/s</div>
+            <div class="stage">Stage · Sapling</div>
+          </div>
+          <!-- pixel-art tree scene -->
+          <svg viewBox="0 0 600 480" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block;">
+            <defs>
+              <linearGradient id="sky-h" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#3a4f6a"/>
+                <stop offset="60%" stop-color="#5a7390"/>
+                <stop offset="100%" stop-color="#7a96b0"/>
+              </linearGradient>
+              <radialGradient id="moonglow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#fff8d8" stop-opacity="0.7"/>
+                <stop offset="100%" stop-color="#fff8d8" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <!-- sky -->
+            <rect width="600" height="320" fill="url(#sky-h)"/>
+            <!-- moon -->
+            <circle cx="120" cy="80" r="48" fill="url(#moonglow)"/>
+            <circle cx="120" cy="80" r="22" fill="#f5e7b8"/>
+            <circle cx="115" cy="76" r="20" fill="#fff5d8"/>
+            <!-- stars -->
+            <g fill="#fffbe0" opacity="0.85">
+              <rect x="200" y="40" width="2" height="2"/>
+              <rect x="280" y="60" width="2" height="2"/>
+              <rect x="380" y="30" width="2" height="2"/>
+              <rect x="480" y="50" width="2" height="2"/>
+              <rect x="540" y="90" width="2" height="2"/>
+              <rect x="430" y="100" width="2" height="2"/>
+              <rect x="320" y="20" width="2" height="2"/>
+            </g>
+            <!-- far mountains -->
+            <path d="M0 280 L60 220 L120 250 L200 200 L280 240 L360 210 L440 250 L520 220 L600 240 L600 320 L0 320 Z" fill="#2a3850" opacity="0.85"/>
+            <!-- mid hills / forest -->
+            <path d="M0 320 L40 290 L100 310 L180 280 L240 305 L300 285 L360 310 L420 290 L480 305 L540 285 L600 300 L600 360 L0 360 Z" fill="#1f3528"/>
+            <!-- tiny pixel pine trees on hills -->
+            <g fill="#163021">
+              <polygon points="60,300 65,288 70,300"/>
+              <polygon points="170,290 175,278 180,290"/>
+              <polygon points="290,295 295,283 300,295"/>
+              <polygon points="410,300 415,288 420,300"/>
+              <polygon points="510,295 515,283 520,295"/>
+            </g>
+            <!-- water pool -->
+            <ellipse cx="180" cy="380" rx="140" ry="14" fill="#3a6b88"/>
+            <ellipse cx="180" cy="378" rx="140" ry="10" fill="#5a8fa8"/>
+            <!-- waterfall hint behind hills -->
+            <rect x="220" y="290" width="14" height="50" fill="#a8d6ec" opacity="0.7"/>
+            <rect x="222" y="290" width="2" height="50" fill="#fff" opacity="0.6"/>
+            <rect x="230" y="290" width="2" height="50" fill="#fff" opacity="0.6"/>
+
+            <!-- ground -->
+            <rect x="0" y="360" width="600" height="120" fill="#3a5a3a"/>
+            <rect x="0" y="380" width="600" height="100" fill="#2a4a2a"/>
+            <!-- grass tufts -->
+            <g fill="#4a6f4a">
+              <rect x="60" y="364" width="2" height="4"/>
+              <rect x="64" y="362" width="2" height="6"/>
+              <rect x="68" y="364" width="2" height="4"/>
+              <rect x="160" y="368" width="2" height="4"/>
+              <rect x="320" y="370" width="2" height="6"/>
+              <rect x="324" y="372" width="2" height="4"/>
+              <rect x="500" y="368" width="2" height="6"/>
+            </g>
+
+            <!-- THE TREE — chunky pixel construction -->
+            <g>
+              <!-- root flare -->
+              <rect x="350" y="370" width="120" height="14" fill="#3a2412"/>
+              <rect x="356" y="364" width="108" height="12" fill="#5a3a22"/>
+              <!-- trunk -->
+              <rect x="386" y="220" width="48" height="160" fill="#5a3a22"/>
+              <rect x="386" y="220" width="6" height="160" fill="#3a2412"/>
+              <rect x="428" y="220" width="6" height="160" fill="#7a523a"/>
+              <!-- bark detail -->
+              <rect x="396" y="260" width="12" height="4" fill="#3a2412"/>
+              <rect x="404" y="300" width="14" height="4" fill="#3a2412"/>
+              <rect x="396" y="340" width="10" height="4" fill="#3a2412"/>
+              <!-- left branch -->
+              <rect x="346" y="270" width="40" height="10" fill="#5a3a22"/>
+              <rect x="346" y="270" width="40" height="3" fill="#3a2412"/>
+              <!-- right branch -->
+              <rect x="434" y="250" width="46" height="10" fill="#5a3a22"/>
+              <rect x="434" y="257" width="46" height="3" fill="#7a523a"/>
+
+              <!-- canopy: stacked clusters -->
+              <g>
+                <!-- back layer dark -->
+                <ellipse cx="410" cy="180" rx="120" ry="80" fill="#2d4a28"/>
+                <ellipse cx="350" cy="170" rx="55" ry="45" fill="#2d4a28"/>
+                <ellipse cx="470" cy="170" rx="65" ry="50" fill="#2d4a28"/>
+                <!-- mid layer -->
+                <ellipse cx="410" cy="170" rx="105" ry="68" fill="#3f6b3a"/>
+                <ellipse cx="360" cy="160" rx="48" ry="38" fill="#3f6b3a"/>
+                <ellipse cx="470" cy="160" rx="58" ry="44" fill="#3f6b3a"/>
+                <!-- highlight layer -->
+                <ellipse cx="395" cy="155" rx="80" ry="50" fill="#5a8a4a"/>
+                <ellipse cx="445" cy="148" rx="40" ry="30" fill="#5a8a4a"/>
+                <!-- top sparkle -->
+                <ellipse cx="395" cy="138" rx="30" ry="20" fill="#7aa85a"/>
+                <!-- pixel highlights -->
+                <rect x="380" y="130" width="6" height="3" fill="#a8c878"/>
+                <rect x="420" y="142" width="6" height="3" fill="#a8c878"/>
+                <rect x="470" y="148" width="6" height="3" fill="#a8c878"/>
+              </g>
+
+              <!-- glowing inspiration motes around canopy -->
+              <g>
+                <circle cx="320" cy="160" r="2" fill="#9b6cd6">
+                  <animate attributeName="opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="360" cy="100" r="2.5" fill="#c9b8ff">
+                  <animate attributeName="opacity" values="0.5;1;0.5" dur="2.5s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="500" cy="120" r="2" fill="#9b6cd6">
+                  <animate attributeName="opacity" values="0.4;1;0.4" dur="3.5s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="540" cy="180" r="2" fill="#c9b8ff">
+                  <animate attributeName="opacity" values="0.6;1;0.6" dur="2.8s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="280" cy="200" r="1.5" fill="#9b6cd6">
+                  <animate attributeName="opacity" values="0.4;1;0.4" dur="3.2s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="430" cy="80" r="1.5" fill="#fffbe0">
+                  <animate attributeName="opacity" values="0.5;1;0.5" dur="2.2s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="490" cy="230" r="2" fill="#9b6cd6">
+                  <animate attributeName="opacity" values="0.4;1;0.4" dur="3.7s" repeatCount="indefinite"/>
+                </circle>
+              </g>
+
+              <!-- fireflies / particles drifting up -->
+              <g>
+                <circle cx="200" cy="380" r="1.5" fill="#fffbe0">
+                  <animate attributeName="cy" values="380;320;380" dur="6s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0;1;0" dur="6s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="250" cy="400" r="1.5" fill="#c9b8ff">
+                  <animate attributeName="cy" values="400;340;400" dur="7s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0;1;0" dur="7s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="540" cy="390" r="1.5" fill="#fffbe0">
+                  <animate attributeName="cy" values="390;330;390" dur="8s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0;1;0" dur="8s" repeatCount="indefinite"/>
+                </circle>
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Side panel: stage + upgrades -->
+        <aside class="col" style="overflow:hidden;">
+          <div class="panel bordered">
+            <div class="panel-label">stage progress</div>
+            <h3 class="panel-title" style="margin-top:4px;">Sapling → Young Tree</h3>
+            <div class="stage-row" style="margin:8px 0;">
+              <span class="chip done">Seed</span>
+              <span class="arrow">→</span>
+              <span class="chip active">Sapling</span>
+              <span class="arrow">→</span>
+              <span class="chip">Young Tree</span>
+              <span class="arrow">→</span>
+              <span class="chip">Grand Tree</span>
+            </div>
+            <div class="bar"><div class="fill" style="width:47%;"></div></div>
+            <div class="panel-sub" style="margin-top:6px;">14 / 30 levels in stage</div>
+            <button class="btn inspi" disabled style="margin-top:12px; width:100%;">Grow into Young Tree</button>
+          </div>
+
+          <div class="panel-label" style="position:static; padding:0; background:none;">Upgrades · spend gold</div>
+          <div class="col" style="gap:8px; overflow:auto; padding-right:4px;">
+            <div class="upgrade">
+              <div class="icon-mini">R</div>
+              <div>
+                <div class="name">Roots</div>
+                <div class="meta">Lv 7 · <span class="rate">+2.8 inspi/s</span></div>
+              </div>
+              <div class="buy">480g</div>
+            </div>
+            <div class="upgrade">
+              <div class="icon-mini">T</div>
+              <div>
+                <div class="name">Trunk</div>
+                <div class="meta">Lv 5 · <span class="rate">+2.0 inspi/s</span></div>
+              </div>
+              <div class="buy">320g</div>
+            </div>
+            <div class="upgrade">
+              <div class="icon-mini">F</div>
+              <div>
+                <div class="name">Foliage</div>
+                <div class="meta">Lv 4 · <span class="rate">+1.2 inspi/s</span></div>
+              </div>
+              <div class="buy">260g</div>
+            </div>
+            <div class="upgrade">
+              <div class="icon-mini">B</div>
+              <div>
+                <div class="name">Branch</div>
+                <div class="meta">Lv 2 · <span class="rate">+0.6 inspi/s</span></div>
+              </div>
+              <div class="buy">180g</div>
+            </div>
+            <div class="upgrade">
+              <div class="icon-mini">✦</div>
+              <div>
+                <div class="name">Bloom</div>
+                <div class="meta">Lv 0 · <span class="rate">+0.0 inspi/s</span></div>
+              </div>
+              <div class="buy">90g</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ PAINT / ATELIER ============ -->
+    <section class="screen" data-screen="paint">
+      <div class="paint-grid">
+        <!-- Canvas hero -->
+        <div class="canvas-stage">
+          <div class="canvas-title">— <span>Tier 2</span> · <span class="tier">Masterpiece</span> —</div>
+          <div class="canvas-progressbar"><div></div></div>
+          <div class="canvas-frame">
+            <div class="canvas-art">
+              <!-- pixel landscape being painted -->
+              <svg viewBox="0 0 200 240" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block;">
+                <!-- sky band -->
+                <rect width="200" height="100" fill="#3a4f6a"/>
+                <rect width="200" height="20" y="80" fill="#7a8fa8"/>
+                <!-- sun -->
+                <circle cx="60" cy="50" r="14" fill="#f5d28a"/>
+                <!-- mountains -->
+                <path d="M0 110 L40 80 L80 100 L120 70 L160 95 L200 85 L200 130 L0 130 Z" fill="#2a3a4a"/>
+                <!-- ground -->
+                <rect x="0" y="130" width="200" height="120" fill="#3a5a3a"/>
+                <!-- tree -->
+                <rect x="140" y="160" width="10" height="40" fill="#5a3a22"/>
+                <ellipse cx="145" cy="155" rx="22" ry="18" fill="#3f6b3a"/>
+                <!-- pond -->
+                <ellipse cx="60" cy="180" rx="40" ry="6" fill="#4a7a98"/>
+                <!-- progressive overlay shows what's "painted" already -->
+              </svg>
+              <div class="canvas-fill"></div>
+              <div class="canvas-strokes"></div>
+            </div>
+          </div>
+          <div class="canvas-status">
+            <span class="progress">Painting · 3.7s / 6.0s</span>
+            <span class="gain">+184g on next sale</span>
+            <span>▲ Upgrade Tier · 12K g</span>
+          </div>
+          <div class="easel"></div>
+        </div>
+
+        <!-- Always-visible Canvas upgrades strip -->
+        <div class="canvas-upgrades">
+          <div class="cu-tier">
+            <div class="lbl">Canvas Tier</div>
+            <div class="val">II → III</div>
+            <button class="btn gold">Upgrade · 12K g</button>
+          </div>
+          <div class="cu-card">
+            <div class="row1">
+              <div class="ico">⏱</div>
+              <div class="nm">Strokes</div>
+              <div class="lv">Lv 4</div>
+            </div>
+            <div class="effect">−0.4s / paint</div>
+            <div class="cost">640g</div>
+          </div>
+          <div class="cu-card">
+            <div class="row1">
+              <div class="ico">$</div>
+              <div class="nm">Pigments</div>
+              <div class="lv">Lv 6</div>
+            </div>
+            <div class="effect">+18% sale</div>
+            <div class="cost">820g</div>
+          </div>
+          <div class="cu-card inspi">
+            <div class="row1">
+              <div class="ico">✦</div>
+              <div class="nm">Auto-Sell</div>
+              <div class="lv">Lv 2</div>
+            </div>
+            <div class="effect">on completion</div>
+            <div class="cost">1.2K g</div>
+          </div>
+          <div class="cu-card inspi locked">
+            <div class="row1">
+              <div class="ico">◎</div>
+              <div class="nm">2nd Easel</div>
+              <div class="lv">Lv 0</div>
+            </div>
+            <div class="effect">paint in parallel</div>
+            <div class="cost">5K g</div>
+          </div>
+        </div>
+
+        <!-- Active room panel (Workshop) -->
+        <aside class="panel bordered room-panel-wrap" style="display:flex; flex-direction:column; padding:0; overflow:auto;">
+          <div style="padding:14px 16px;">
+            <div class="room-head">
+              <h2>Workshop</h2>
+              <span class="crumb">Craft · Equip</span>
+            </div>
+
+            <!-- Craft station -->
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; border:1px solid var(--ink-line); border-radius:2px; background: linear-gradient(180deg, rgba(64,48,16,0.18), rgba(20,16,42,0.4)); margin-bottom:14px;">
+              <div>
+                <div style="font-family:var(--serif); font-size:13px; letter-spacing:0.16em; text-transform:uppercase; color: var(--ink-0);">Roll an item</div>
+                <div class="panel-sub">Random affix · 5–15% magnitude</div>
+              </div>
+              <button class="btn gold">Craft · 200g</button>
+            </div>
+
+            <!-- Equipped slots -->
+            <div style="margin-bottom:6px; display:flex; justify-content:space-between; align-items:baseline;">
+              <span class="panel-sub">Equipped · 1 / 2</span>
+              <span class="panel-sub">Slot II locked</span>
+            </div>
+            <div class="slot-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:14px;">
+              <div class="slot" data-tier="rare">+12% gold</div>
+              <div class="slot empty">empty</div>
+            </div>
+
+            <!-- Inventory -->
+            <div style="margin-bottom:6px;" class="panel-sub">Inventory · 4 / 12</div>
+            <div class="slot-grid" style="margin-bottom:12px;">
+              <div class="slot" data-tier="rare">+14% gold</div>
+              <div class="slot" data-tier="magic">+18% pace</div>
+              <div class="slot" data-tier="epic">+22% inspi</div>
+              <div class="slot" data-tier="legendary">+28% all</div>
+              <div class="slot empty">·</div>
+              <div class="slot empty">·</div>
+              <div class="slot empty">·</div>
+              <div class="slot empty">·</div>
+            </div>
+
+            <!-- Recent affixes detail -->
+            <div class="affix-card" data-tier="legendary" style="margin-bottom:6px;">
+              <div class="badge">★</div>
+              <div class="text">
+                <strong>+28% all earnings</strong>
+                <small>Legendary · drop rate 0.4%</small>
+              </div>
+              <button class="btn ghost" style="font-size:10px; padding:4px 8px;">Equip</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Room rail -->
+        <div class="room-rail">
+          <button class="room-tab" data-active="true">
+            <span class="tab-icon">⚒</span>
+            <span class="tab-label">Workshop</span>
+          </button>
+          <button class="room-tab">
+            <span class="tab-icon">👤</span>
+            <span class="tab-label">Office</span>
+          </button>
+          <button class="room-tab">
+            <span class="tab-icon">📜</span>
+            <span class="tab-label">School</span>
+          </button>
+          <button class="room-tab">
+            <span class="tab-icon">⚗</span>
+            <span class="tab-label">Lab</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ASCEND ============ -->
+    <section class="screen" data-screen="ascend">
+      <div class="ascend-grid">
+        <!-- Cavern + portal -->
+        <div class="cavern">
+          <div class="cavern-stones"></div>
+          <div class="crystals">
+            <div class="crystal" style="left:8%; top:18%;"></div>
+            <div class="crystal" style="left:14%; top:62%; animation-delay:.4s;"></div>
+            <div class="crystal" style="right:10%; top:24%; animation-delay:.8s;"></div>
+            <div class="crystal" style="right:18%; top:70%; animation-delay:1.2s;"></div>
+            <div class="crystal" style="left:42%; top:88%; animation-delay:1.6s;"></div>
+          </div>
+          <div class="cavern-overlay-top">
+            <div class="label">— Threshold —</div>
+            <div class="threshold">847,000 / 1.20M inspi</div>
+          </div>
+
+          <div class="portal-wrap">
+            <div class="portal">
+              <svg viewBox="0 0 400 480">
+                <defs>
+                  <radialGradient id="portal-glow" cx="50%" cy="55%" r="50%">
+                    <stop offset="0%" stop-color="#c9b8ff" stop-opacity="0.95"/>
+                    <stop offset="35%" stop-color="#9b6cd6" stop-opacity="0.85"/>
+                    <stop offset="75%" stop-color="#3a2855" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="#14102a" stop-opacity="0"/>
+                  </radialGradient>
+                  <linearGradient id="brick" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#5a2855"/>
+                    <stop offset="100%" stop-color="#2a1238"/>
+                  </linearGradient>
+                </defs>
+                <!-- Arch outer -->
+                <path d="M80 460 L80 230 Q80 70 200 70 Q320 70 320 230 L320 460 Z" fill="url(#brick)" stroke="#9b6cd6" stroke-width="2"/>
+                <!-- bricks pattern -->
+                <g stroke="#1a0a28" stroke-width="1" opacity="0.6">
+                  <path d="M80 110 L320 110" />
+                  <path d="M80 150 L320 150" />
+                  <path d="M80 190 L320 190" />
+                  <path d="M80 230 L320 230" />
+                  <path d="M80 270 L320 270" />
+                  <path d="M80 310 L320 310" />
+                  <path d="M80 350 L320 350" />
+                  <path d="M80 390 L320 390" />
+                  <path d="M80 430 L320 430" />
+                  <path d="M120 110 L120 460" />
+                  <path d="M160 110 L160 460" />
+                  <path d="M200 70 L200 460" />
+                  <path d="M240 110 L240 460" />
+                  <path d="M280 110 L280 460" />
+                </g>
+                <!-- Inner portal -->
+                <path d="M105 460 L105 245 Q105 95 200 95 Q295 95 295 245 L295 460 Z" fill="url(#portal-glow)"/>
+                <!-- Inner swirl -->
+                <g opacity="0.7">
+                  <ellipse cx="200" cy="280" rx="80" ry="40" fill="none" stroke="#c9b8ff" stroke-width="1" opacity="0.5"/>
+                  <ellipse cx="200" cy="280" rx="50" ry="25" fill="none" stroke="#fff" stroke-width="1" opacity="0.3"/>
+                </g>
+                <!-- Keystone sigil -->
+                <circle cx="200" cy="80" r="20" fill="#1f1830" stroke="#ffd86a" stroke-width="2"/>
+                <text x="200" y="88" text-anchor="middle" font-size="20" fill="#ffd86a" font-family="serif">✦</text>
+                <!-- Runes around -->
+                <g fill="#9b6cd6" font-family="serif" font-size="14" opacity="0.85">
+                  <text x="60" y="200" text-anchor="middle">✦</text>
+                  <text x="50" y="290" text-anchor="middle">⟁</text>
+                  <text x="60" y="380" text-anchor="middle">✦</text>
+                  <text x="340" y="200" text-anchor="middle">✦</text>
+                  <text x="350" y="290" text-anchor="middle">⟁</text>
+                  <text x="340" y="380" text-anchor="middle">✦</text>
+                </g>
+                <!-- floor stones -->
+                <rect x="40" y="450" width="320" height="30" fill="#1a0f28"/>
+                <rect x="40" y="450" width="320" height="3" fill="#3a2855"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="cavern-cta">
+            <div class="summon">— Step Through —</div>
+            <button class="btn fame lg">✦ Ascend ·  +12 fame ✦</button>
+          </div>
+        </div>
+
+        <!-- Right rail: ledger -->
+        <aside class="ascend-rail">
+          <div class="ascend-stat inspi">
+            <div class="lbl">Current Inspiration</div>
+            <div class="val">847,000</div>
+            <div class="bar" style="margin-top:8px;"><div class="fill" style="width:70%;"></div></div>
+            <div class="meta">70% to threshold · ~3m at +3.2/s</div>
+          </div>
+
+          <div class="ascend-stat fame">
+            <div class="lbl">If you ascend now</div>
+            <div class="val">+12</div>
+            <div class="meta">Fame is permanent · spent in the constellation</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-label">past ascensions</div>
+            <div style="font-family:var(--mono); font-size:12px; color:var(--ink-2); display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+              <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--ink-line); padding-bottom:6px;">
+                <span>Run 01</span><span style="color:var(--fame);">+3</span><span style="color:var(--ink-3);">82K inspi</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--ink-line); padding-bottom:6px;">
+                <span>Run 02</span><span style="color:var(--fame);">+2</span><span style="color:var(--ink-3);">121K inspi</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-bottom: 1px dashed var(--ink-line); padding-bottom:6px;">
+                <span>Run 03</span><span style="color:var(--fame);">+4</span><span style="color:var(--ink-3);">260K inspi</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span>Run 04</span><span style="color:var(--ink-3);">in progress</span><span style="color:var(--inspi);">847K</span>
+              </div>
+            </div>
+            <div style="border-top: 1px solid var(--ink-line); margin-top:10px; padding-top:8px; font-family:var(--serif); font-size:14px; letter-spacing:0.16em; color:var(--fame); text-align:center;">
+              ✦ Total · 12 fame ✦
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ SKILL TREE / CONSTELLATION ============ -->
+    <section class="screen" data-screen="skill">
+      <div class="skill-grid">
+        <div class="skill-canvas">
+          <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <pattern id="sk-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                <path d="M32 0 L0 0 0 32" fill="none" stroke="rgba(230,182,103,0.05)" stroke-width="1"/>
+              </pattern>
+              <radialGradient id="node-glow-fame" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffd86a" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#ffd86a" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="node-glow-avail" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#c9b8ff" stop-opacity="0.5"/>
+                <stop offset="100%" stop-color="#c9b8ff" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="800" height="600" fill="url(#sk-grid)"/>
+
+            <!-- background nebula glow -->
+            <ellipse cx="400" cy="500" rx="280" ry="120" fill="rgba(255,216,106,0.04)"/>
+
+            <!-- Connections -->
+            <g stroke="#ffd86a" stroke-width="1.5" opacity="0.85">
+              <line x1="400" y1="540" x2="280" y2="430"/>
+              <line x1="400" y1="540" x2="520" y2="430"/>
+              <line x1="280" y1="430" x2="180" y2="320"/>
+              <line x1="280" y1="430" x2="360" y2="320"/>
+              <line x1="520" y1="430" x2="440" y2="320"/>
+              <line x1="520" y1="430" x2="620" y2="320"/>
+            </g>
+            <g stroke="#3a2e5a" stroke-width="1.5" stroke-dasharray="4 4">
+              <line x1="180" y1="320" x2="100" y2="220"/>
+              <line x1="180" y1="320" x2="240" y2="220"/>
+              <line x1="360" y1="320" x2="320" y2="220"/>
+              <line x1="360" y1="320" x2="400" y2="220"/>
+              <line x1="440" y1="320" x2="400" y2="220"/>
+              <line x1="440" y1="320" x2="480" y2="220"/>
+              <line x1="620" y1="320" x2="560" y2="220"/>
+              <line x1="620" y1="320" x2="700" y2="220"/>
+              <line x1="100" y1="220" x2="60" y2="120"/>
+              <line x1="100" y1="220" x2="160" y2="120"/>
+              <line x1="240" y1="220" x2="240" y2="120"/>
+              <line x1="320" y1="220" x2="320" y2="120"/>
+              <line x1="400" y1="220" x2="400" y2="120"/>
+              <line x1="480" y1="220" x2="480" y2="120"/>
+              <line x1="560" y1="220" x2="560" y2="120"/>
+              <line x1="700" y1="220" x2="740" y2="120"/>
+            </g>
+
+            <!-- Root: Fame -->
+            <circle cx="400" cy="540" r="36" fill="url(#node-glow-fame)"/>
+            <circle cx="400" cy="540" r="20" fill="#ffd86a" stroke="#0a0814" stroke-width="2"/>
+            <text x="400" y="580" text-anchor="middle" font-family="Cinzel, serif" font-size="11" fill="#ffd86a" letter-spacing="2">FAME</text>
+
+            <!-- Owned nodes (gold) -->
+            <g>
+              <circle cx="280" cy="430" r="28" fill="url(#node-glow-fame)"/>
+              <circle cx="280" cy="430" r="14" fill="#ffd86a" stroke="#0a0814" stroke-width="2"/>
+              <text x="280" y="466" text-anchor="middle" font-family="Cinzel, serif" font-size="10" fill="#ffd86a" letter-spacing="1.5">GOLDSMITH</text>
+            </g>
+            <g>
+              <circle cx="520" cy="430" r="28" fill="url(#node-glow-fame)"/>
+              <circle cx="520" cy="430" r="14" fill="#ffd86a" stroke="#0a0814" stroke-width="2"/>
+              <text x="520" y="466" text-anchor="middle" font-family="Cinzel, serif" font-size="10" fill="#ffd86a" letter-spacing="1.5">PATIENT EYE</text>
+            </g>
+            <g>
+              <circle cx="180" cy="320" r="11" fill="#ffd86a" stroke="#0a0814" stroke-width="2"/>
+            </g>
+            <g>
+              <circle cx="440" cy="320" r="11" fill="#ffd86a" stroke="#0a0814" stroke-width="2"/>
+            </g>
+            <g>
+              <circle cx="620" cy="320" r="11" fill="#ffd86a" stroke="#0a0814" stroke-width="2"/>
+            </g>
+
+            <!-- Available (highlighted, currently selected) -->
+            <g>
+              <circle cx="360" cy="320" r="32" fill="url(#node-glow-avail)"/>
+              <circle cx="360" cy="320" r="14" fill="#0a0814" stroke="#ffd86a" stroke-width="2"/>
+              <circle cx="360" cy="320" r="6" fill="#c9b8ff"/>
+              <text x="360" y="356" text-anchor="middle" font-family="Cinzel, serif" font-size="10" fill="#c9b8ff" letter-spacing="1.5">FASTER STROKES</text>
+            </g>
+
+            <!-- Locked (deep, dim) -->
+            <g fill="#1f1830" stroke="#3a2e5a" stroke-width="2">
+              <circle cx="100" cy="220" r="9"/>
+              <circle cx="240" cy="220" r="9"/>
+              <circle cx="320" cy="220" r="9"/>
+              <circle cx="400" cy="220" r="9"/>
+              <circle cx="480" cy="220" r="9"/>
+              <circle cx="560" cy="220" r="9"/>
+              <circle cx="700" cy="220" r="9"/>
+              <circle cx="60" cy="120" r="7"/>
+              <circle cx="160" cy="120" r="7"/>
+              <circle cx="240" cy="120" r="7"/>
+              <circle cx="320" cy="120" r="7"/>
+              <circle cx="400" cy="120" r="7"/>
+              <circle cx="480" cy="120" r="7"/>
+              <circle cx="560" cy="120" r="7"/>
+              <circle cx="740" cy="120" r="7"/>
+            </g>
+
+            <!-- Twinkling stars background -->
+            <g fill="#c9b8ff" opacity="0.5">
+              <circle cx="50" cy="80" r="1"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="3s" repeatCount="indefinite"/></circle>
+              <circle cx="160" cy="40" r="1"><animate attributeName="opacity" values="0.3;0.8;0.3" dur="2.5s" repeatCount="indefinite"/></circle>
+              <circle cx="380" cy="60" r="1"><animate attributeName="opacity" values="0.2;1;0.2" dur="4s" repeatCount="indefinite"/></circle>
+              <circle cx="640" cy="50" r="1"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="3.5s" repeatCount="indefinite"/></circle>
+              <circle cx="730" cy="60" r="1"><animate attributeName="opacity" values="0.4;0.9;0.4" dur="3.2s" repeatCount="indefinite"/></circle>
+              <circle cx="220" cy="180" r="1"><animate attributeName="opacity" values="0.3;0.8;0.3" dur="2.8s" repeatCount="indefinite"/></circle>
+              <circle cx="600" cy="180" r="1"><animate attributeName="opacity" values="0.3;1;0.3" dur="3.4s" repeatCount="indefinite"/></circle>
+            </g>
+
+            <!-- Viewport rectangle -->
+            <rect x="120" y="280" width="560" height="290" stroke="#ffd86a" stroke-dasharray="6 6" fill="none" opacity="0.4" rx="4"/>
+          </svg>
+
+          <!-- Selected node card -->
+          <div class="skill-info-card">
+            <h3>Faster Strokes</h3>
+            <div class="meta">Tier II · 3 fame · prereq met ✓</div>
+            <p class="desc">Reduces the ascension threshold by 10%. Stacks multiplicatively with future palier nodes.</p>
+            <button class="btn fame" style="width:100%;">✦ Acquire · 3 fame</button>
+          </div>
+        </div>
+
+        <!-- Right rail -->
+        <aside class="col" style="overflow:hidden;">
+          <div class="fame-display">
+            <div class="lbl">Fame to spend</div>
+            <div class="val">12</div>
+          </div>
+
+          <div class="panel minimap">
+            <div class="panel-label">constellation map</div>
+            <svg viewBox="0 0 240 200">
+              <rect width="240" height="200" fill="rgba(255,216,106,0.03)"/>
+              <g fill="#3a2e5a">
+                <circle cx="120" cy="170" r="3"/>
+                <circle cx="80" cy="135" r="2.5"/>
+                <circle cx="160" cy="135" r="2.5"/>
+                <circle cx="55" cy="100" r="2"/>
+                <circle cx="95" cy="100" r="2"/>
+                <circle cx="135" cy="100" r="2"/>
+                <circle cx="185" cy="100" r="2"/>
+                <circle cx="40" cy="65" r="1.5"/>
+                <circle cx="75" cy="65" r="1.5"/>
+                <circle cx="110" cy="65" r="1.5"/>
+                <circle cx="135" cy="65" r="1.5"/>
+                <circle cx="170" cy="65" r="1.5"/>
+                <circle cx="205" cy="65" r="1.5"/>
+              </g>
+              <g fill="#ffd86a">
+                <circle cx="120" cy="170" r="3"/>
+                <circle cx="80" cy="135" r="2.5"/>
+                <circle cx="160" cy="135" r="2.5"/>
+                <circle cx="55" cy="100" r="2"/>
+                <circle cx="135" cy="100" r="2"/>
+                <circle cx="185" cy="100" r="2"/>
+              </g>
+              <circle cx="95" cy="100" r="3" fill="#c9b8ff"/>
+              <rect x="35" y="85" width="170" height="100" stroke="#ffd86a" stroke-dasharray="3 3" fill="rgba(255,216,106,0.05)"/>
+            </svg>
+            <div class="label">5 / 18+ owned · zoom out for more</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-label">jump to cluster</div>
+            <div class="cluster-list" style="margin-top:8px;">
+              <div class="cluster-item">Gold path <span class="count">2/5</span></div>
+              <div class="cluster-item">Inspiration <span class="count">1/4</span></div>
+              <div class="cluster-item">Workshop <span class="count">2/4</span></div>
+              <div class="cluster-item">Ascension <span class="count">0/3</span></div>
+              <div class="cluster-item" style="opacity:0.4;">??? <span class="count">locked</span></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM BAR -->
+  <footer class="bottombar">
+    <div class="currencies" id="currencies">
+      <div class="cur gold" data-currency="gold">
+        <span class="icon"><span class="icon-gold"></span></span>
+        <span class="num">1,247</span>
+        <span class="rate">+12/s</span>
+      </div>
+      <div class="cur inspi" data-currency="inspi">
+        <span class="icon"><span class="icon-inspi"></span></span>
+        <span class="num">847</span>
+        <span class="rate">+3.2/s</span>
+      </div>
+      <div class="cur fame" data-currency="fame">
+        <span class="icon"><span class="icon-fame"></span></span>
+        <span class="num">12</span>
+      </div>
+    </div>
+
+    <div class="info" id="info">
+      <span class="ttl">▸ Hovered</span>
+      <span><b>Trunk · Lv 5</b> — Adds 0.4 inspi/sec per level (currently +2.0). Cost: 320 gold to reach Lv 6.</span>
+    </div>
+
+    <div class="bottombar-end">
+      <span class="chip">v0.1 · hi-fi mockup</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+// Screen switcher + contextual currencies + contextual info
+const navItems = document.querySelectorAll(".nav-item");
+const screens  = document.querySelectorAll(".screen");
+const currencyEls = {
+  gold:  document.querySelector('.cur[data-currency="gold"]'),
+  inspi: document.querySelector('.cur[data-currency="inspi"]'),
+  fame:  document.querySelector('.cur[data-currency="fame"]'),
+};
+const info = document.getElementById("info");
+
+const SCREEN_INFO = {
+  home:   { visible: ["gold","inspi","fame"], title: "Trunk · Lv 5", body: "Adds 0.4 inspi/sec per level (currently +2.0). Cost: 320 gold to reach Lv 6." },
+  paint:  { visible: ["gold","inspi"],         title: "Canvas · Tier 2",  body: "Auto-paints in 6.0s, sells for 184g. Equipped: +12% gold (rare)." },
+  ascend: { visible: ["inspi","fame"],         title: "Step Through",    body: "Reset the run. Convert inspiration above palier into permanent fame. Currently +12 fame." },
+  skill:  { visible: ["fame"],                  title: "Faster Strokes",  body: "Reduces the ascension threshold by 10%. Cost: 3 fame. Status: available." },
+};
+
+function setScreen(name) {
+  navItems.forEach(n => n.dataset.active = String(n.dataset.screen === name));
+  screens.forEach(s => s.dataset.active = String(s.dataset.screen === name));
+  const cfg = SCREEN_INFO[name];
+  Object.entries(currencyEls).forEach(([k, el]) => {
+    el.dataset.dim = String(!cfg.visible.includes(k));
+  });
+  info.querySelector(".ttl").textContent = "▸ " + cfg.title;
+  info.querySelector("span:last-child").innerHTML = `<b>${cfg.title}</b> — ${cfg.body}`;
+}
+
+navItems.forEach(n => n.addEventListener("click", () => setScreen(n.dataset.screen)));
+setScreen("home");
+
+// Animate the painting fill back and forth for delight
+const fill = document.querySelector(".canvas-fill");
+const pigment = document.querySelector(".canvas-pigment");
+let t = 0;
+function tick() {
+  t += 0.4;
+  const h = 30 + 35 * (Math.sin(t/30) * 0.5 + 0.5);
+  if (fill) fill.style.height = h + "%";
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+/* Artdle — design tokens
+   Drop this into your global stylesheet (or convert to your token format
+   of choice — Tailwind theme, CSS-in-JS, SwiftUI, etc.). Every value used
+   in the mockup is here. */
+
+:root {
+  /* ---------- backgrounds ---------- */
+  --bg-0:        #0a0814;  /* page background, deepest */
+  --bg-1:        #14102a;  /* card body */
+  --bg-2:        #1f1830;  /* raised surface */
+  --bg-3:        #2a2240;  /* button / hover */
+  --bg-stone:    #2a2240;  /* cavern stone tint */
+  --bg-stone-d:  #0d0d12;
+
+  /* ---------- text / lines ---------- */
+  --ink-0:       #f4efe6;  /* primary text */
+  --ink-1:       #c9b8ff;  /* mystic accent text */
+  --ink-2:       #a89cd6;  /* secondary text */
+  --ink-3:       #6b5b9a;  /* tertiary / labels */
+  --ink-line:    #3a2e5a;  /* borders, dividers */
+
+  /* ---------- semantic / currency ---------- */
+  --gold:        #e6b667;  /* gold currency, atelier accents */
+  --gold-d:      #a87f3a;
+  --inspi:       #9b6cd6;  /* inspiration currency, mystic glow */
+  --inspi-d:     #6b4cb8;
+  --fame:        #ffd86a;  /* fame currency, prestige */
+  --fame-d:      #c9a23e;
+
+  /* ---------- glows (drop into box-shadow / text-shadow) ---------- */
+  --portal-glow: 0 0 24px rgba(155,108,214,0.55), 0 0 48px rgba(107,76,184,0.30);
+  --gold-glow:   0 0 14px rgba(230,182,103,0.50);
+  --inspi-glow:  0 0 14px rgba(155,108,214,0.55);
+  --fame-glow:   0 0 14px rgba(255,216,106,0.55);
+
+  /* ---------- type stacks ---------- */
+  --pixel:  'Press Start 2P', monospace;
+  --pixelL: 'VT323',          monospace;
+  --serif:  'Cinzel',         serif;            /* headings, nav, prestige labels */
+  --mono:   'JetBrains Mono', ui-monospace, monospace; /* numbers, meta, labels */
+  --sans:   'Inter',          system-ui, sans-serif;  /* body */
+
+  /* ---------- item rarity (loot affixes) ---------- */
+  --tier-rare:        #6fb1ff;
+  --tier-rare-d:      #4a7ad6;
+  --tier-magic:       #d57bff;
+  --tier-magic-d:     #9c4ad6;
+  --tier-epic:        #ffb867;
+  --tier-epic-d:      #d68a3a;
+  --tier-legendary:   #ff7a4a;
+  --tier-legendary-d: #d65a2a;
+
+  /* ---------- spacing (8pt-ish scale) ---------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 14px;
+  --s-5: 18px;
+  --s-6: 24px;
+  --s-7: 36px;
+
+  /* ---------- radii ---------- */
+  --r-sm: 2px;
+  --r-md: 3px;
+  --r-lg: 4px;
+
+  /* ---------- elevation / borders ---------- */
+  --border-subtle: 1px solid var(--ink-line);
+  --shadow-card:   inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 32px rgba(0,0,0,0.35);
+}
+
+/* fonts to load: */
+/*
+  https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=JetBrains+Mono:wght@400;600&family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&display=swap
+*/

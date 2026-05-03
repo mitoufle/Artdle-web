@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Artdle — Wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <h1 class="app-title">Artdle — wireframes</h1>
+    <span class="app-subtitle">low-fi · structure exploration · v0.1</span>
+  </header>
+  <div id="root"></div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="wf-primitives.jsx"></script>
+<script type="text/babel" src="wf-tree.jsx"></script>
+<script type="text/babel" src="wf-paint.jsx"></script>
+<script type="text/babel" src="wf-ascend.jsx"></script>
+<script type="text/babel" src="wf-skill.jsx"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+const SCREENS = [
+  { id: "tree",   label: "Tree (Home)",  variants: window.TREE_VARIANTS,   topActive: "tree",   bottomContext: "tree",   info: <span><b>Trunk Lv 7</b> — Adds 0.4 inspi/sec per level (currently +2.8 inspi/sec). Cost: 480 gold.</span> },
+  { id: "paint",  label: "Paint",        variants: window.PAINT_VARIANTS,  topActive: "paint",  bottomContext: "paint",  info: <span><b>Canvas tier 2</b> — Auto-paints in 6.0s, sells for 184g. Equipped: +12% gold (rare).</span> },
+  { id: "ascend", label: "Ascend",       variants: window.ASCEND_VARIANTS, topActive: "ascend", bottomContext: "ascend", info: <span><b>Step Through</b> — Reset the run. Convert inspiration above palier into permanent fame. Currently +12 fame.</span> },
+  { id: "skill",  label: "Skill Tree",   variants: window.SKILL_VARIANTS,  topActive: "ascend", bottomContext: "skills", info: <span><b>Patient Eye</b> — +15% inspiration generation rate. Cost: 3 fame. Status: available.</span> },
+];
+
+const DEFAULTS = /*EDITMODE-BEGIN*/{
+  "screen": "skill",
+  "variant_tree": 0,
+  "variant_paint": 0,
+  "variant_ascend": 1,
+  "variant_skill": 3,
+  "show_annotations": true,
+  "force_show_all_currencies": false
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(DEFAULTS);
+  const screenId = tweaks.screen;
+  const screen = SCREENS.find(s => s.id === screenId) || SCREENS[0];
+  const variantKey = "variant_" + screen.id;
+  const variantIdx = tweaks[variantKey] ?? 0;
+  const Variant = screen.variants[variantIdx];
+
+  return (
+    <>
+      {/* Screen tabs */}
+      <div className="screen-tabs">
+        {SCREENS.map(s => (
+          <button
+            key={s.id}
+            className="screen-tab"
+            data-active={s.id === screenId}
+            onClick={() => setTweak("screen", s.id)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Variant strip */}
+      <VariantStrip
+        variants={screen.variants}
+        active={variantIdx}
+        onChange={(i) => setTweak(variantKey, i)}
+        name={Variant.name}
+      />
+
+      {/* Wireframe */}
+      <WfFrame
+        topActive={screen.topActive}
+        bottomContext={screen.bottomContext}
+        bottomShowAll={tweaks.force_show_all_currencies}
+        info={screen.info}
+        infoTitle={
+          screen.id === "tree"   ? "Trunk Lv 7" :
+          screen.id === "paint"  ? "Canvas tier 2" :
+          screen.id === "ascend" ? "Step Through" :
+                                   "Patient Eye"
+        }
+      >
+        <Variant.Comp />
+      </WfFrame>
+
+      {/* Tweaks */}
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Screen">
+          <TweakSelect
+            label="Active screen"
+            value={tweaks.screen}
+            onChange={v => setTweak("screen", v)}
+            options={SCREENS.map(s => ({ value: s.id, label: s.label }))}
+          />
+        </TweakSection>
+        <TweakSection title="Layout variant">
+          <TweakRadio
+            label={"Variant for " + screen.label}
+            value={variantIdx}
+            onChange={v => setTweak(variantKey, Number(v))}
+            options={screen.variants.map((v, i) => ({ value: i, label: String.fromCharCode(65 + i) }))}
+          />
+          <div style={{ fontSize: 11, opacity: 0.7, fontFamily: "var(--mono)", marginTop: -4 }}>
+            {Variant.name}
+          </div>
+        </TweakSection>
+        <TweakSection title="Bottom bar">
+          <TweakToggle
+            label="Always show all currencies"
+            value={tweaks.force_show_all_currencies}
+            onChange={v => setTweak("force_show_all_currencies", v)}
+          />
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
