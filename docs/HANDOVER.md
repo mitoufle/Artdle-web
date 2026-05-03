@@ -1,5 +1,55 @@
 # Artdle Web — Handover
 
+## v2.0 Round 0 — Foundation (in progress on `feat/v2-redesign`)
+
+**Status:** Round 0 complete on branch. Round 1+ pending.
+
+### What landed
+
+- `feat/v2-redesign` branch off `main` at `a0bb088`.
+- Design tokens: `src/styles/tokens.css` (copied from `design_handoff_artdle/tokens.css` + new `--pm` teal block: `#7adcd6`).
+- Globals + base reset: `src/styles/globals.css`. Google Fonts (Cinzel, JetBrains Mono, Inter, Press Start 2P, VT323) loaded via `index.html`.
+- Tailwind 4 fully removed (uninstalled, vite plugin dropped, `@theme` block in `src/index.css` deleted; only the fame-pulse keyframe remains).
+- New deps: `react-router-dom@7`, `lucide-react`.
+- New shell components in `src/components/shell/`: `<TopBar>`, `<BottomBar>`, `<CurrencyChip>`, `<InfoPanel>`, `<MetaChip>`. All CSS Modules-styled per handoff aesthetic.
+- React Router wired: 4 routes (`/tree`, `/painting`, `/ascension`, `/constellation`) + redirect from `/` and catch-all to `/tree`.
+- Legacy views moved to `src/routes/` (`HomeView` → `TreeRoute`, `PaintingView` → `PaintingRoute`, `AscensionView` → `AscensionRoute`, `SkillTreeView` → `ConstellationRoute`). Tailwind classes stripped from each; layout preserved via inline style for essentials.
+- Legacy shell widgets (`ui/widgets/{TopBar, BottomBar, InfoPanel, CurrencyDisplay}`) deleted.
+- `viewSlice` retired. Migration v5 → v6 drops the `currentView` field from persisted saves. (T11 added a v4→v5 no-op + v5→v6 currentView-drop chain; final SAVE_VERSION = 6.)
+- `WorkshopPopup` auto-close-on-route-change refactored from `currentView` to `useLocation()` pathname.
+
+### Visual state
+
+- TopBar / BottomBar / InfoPanel: fully redesigned per handoff.
+- Route content (Tree / Painting / Ascension / Constellation): functionally working, visually degraded (no Tailwind = unstyled internal elements). Per-route visual rebuild lands in Round 1-4.
+
+### Tests + build
+
+- 373/373 tests passing (36 test files).
+- tsc clean. Lint clean (pre-existing main.tsx warning unchanged).
+- Bundle: 138.76 KB gzipped JS / 1.77 KB gzipped CSS / ~141 KB total gzipped. (vs v1.1's ~129 KB — +12 KB from react-router-dom + lucide-react, minus Tailwind removal).
+
+### Smoke checklist for the user
+
+After pulling this branch and running `npm run preview`:
+
+1. Open the printed URL in **incognito** (clean IDB).
+2. Browser redirects to `/tree` from `/`.
+3. TopBar: brand "ARTDLE" with fame-tinted "A". 4 nav links visible.
+4. BottomBar: 4 currency chips. On `/tree`, gold + inspi prominent; fame + PM dimmed.
+5. Click "Painting": URL changes; PaintingView content renders (degraded styling — that's expected).
+6. Tier upgrade button still works (gold spent, tier increments).
+7. Click "Ascension": URL changes; ascend works at threshold.
+8. Click "Constellation": URL changes; skill nodes purchasable.
+9. Refresh page on any route: lands back at the same route (router preserves URL); state persisted (gold/inspi/PM all rehydrate).
+10. BottomBar dimming switches correctly per route.
+
+### Next
+
+Round 1: Tree route. Per spec §8 Round 1 in `docs/superpowers/specs/2026-05-04-v2-redesign-design.md`.
+
+---
+
 **Date:** 2026-05-03 (v1.1 SHIPPED)
 **Status:** v1.1 tagged. Phases 0+1+2+3+4+5+6a+6b (v1.0) + all v1.1 tasks complete + PM redesign patch. **350/350 tests** across 32 files. tsc clean. lint clean (1 pre-existing warning in main.tsx). Bundle: 124.83 KB gzipped JS / ~129 KB total. Repo on `origin/main` with `v1.1` annotated tag pending push (user will push explicitly).
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { useLocation } from "react-router-dom";
+import { useLocation, type Location } from "react-router-dom";
 import { WorkshopPopup } from "@/ui/popups/WorkshopPopup";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
@@ -104,7 +104,7 @@ describe("<WorkshopPopup />", () => {
     expect(useGameStore.getState().workshopPopupOpen).toBe(true);
 
     // Mock the location change to a different route.
-    vi.mocked(useLocation).mockReturnValue({ pathname: "/home" } as any);
+    vi.mocked(useLocation).mockReturnValue({ pathname: "/home" } as unknown as Location);
 
     rerender(<WorkshopPopup />);
     expect(useGameStore.getState().workshopPopupOpen).toBe(false);
