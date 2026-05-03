@@ -234,3 +234,21 @@ describe("canvasSlice — tier-aware tick (v1.1)", () => {
     expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(110, 0);
   });
 });
+
+describe("canvasSlice — tick reads canvasTier at threshold-cross (contract pin)", () => {
+  beforeEach(() => {
+    useGameStore.getState().resetCanvas();
+    useGameStore.getState().resetRunCurrencies();
+    useGameStore.getState()._setPaintMastery(big(0));
+  });
+
+  it("uses the canvasTier value at the moment of sale (single tick)", () => {
+    // Set tier 5 explicitly; tick at exactly canvasTime(5) = 10s.
+    useGameStore.setState({ canvasTier: 5 });
+    useGameStore.getState().canvasTick(10);
+    // gold = 10 × 25 × 1 = 250 (tier 5 was active at the sale)
+    expect(useGameStore.getState().gold.toNumber()).toBe(250);
+    // PM = 25 (tier² at tier 5)
+    expect(useGameStore.getState().paintMastery.toNumber()).toBe(25);
+  });
+});
