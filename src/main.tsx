@@ -5,7 +5,7 @@ import { useGameStore } from "@/store";
 import { LoadingScreen } from "@/ui/widgets/LoadingScreen";
 import { App } from "@/App";
 import { startTickLoop, stopTickLoop } from "@/core/tickLoop";
-import { persistedAdapter } from "@/systems/persistence";
+import { installLifecycle, defaultLifecycleHooks } from "@/systems/lifecycle";
 import { big } from "@/core/bigNumber";
 import "./index.css";
 
@@ -34,20 +34,12 @@ function Bootstrap(): JSX.Element {
     return () => stopTickLoop();
   }, [hydrated]);
 
-  // Flush throttled persist on tab hide / unload. visibilitychange fires
-  // before beforeunload in modern browsers; beforeunload is the belt-and-
-  // braces fallback. Both call paths converge on persistedAdapter.flush().
+  // Single lifecycle install: visibilitychange (pause+flush / resume) +
+  // beforeunload (flush). Both routes go through `reportError` on flush
+  // rejection. See `src/systems/lifecycle.ts`.
   useEffect(() => {
     if (!hydrated) return;
-    const onHide = (): void => {
-      void persistedAdapter.flush();
-    };
-    document.addEventListener("visibilitychange", onHide);
-    window.addEventListener("beforeunload", onHide);
-    return () => {
-      document.removeEventListener("visibilitychange", onHide);
-      window.removeEventListener("beforeunload", onHide);
-    };
+    return installLifecycle(defaultLifecycleHooks);
   }, [hydrated]);
 
   if (!hydrated) return <LoadingScreen />;

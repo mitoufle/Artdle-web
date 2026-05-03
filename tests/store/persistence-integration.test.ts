@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useGameStore } from "@/store";
 import { idbAdapter, persistedAdapter } from "@/systems/persistence";
 import { TREE_STAGES } from "@/config/treeStages";
 import { big, isBig } from "@/core/bigNumber";
+import { defaultLifecycleHooks } from "@/systems/lifecycle";
+import { setErrorReporter, resetErrorReporter } from "@/systems/telemetry";
 
 describe("persistence integration", () => {
   beforeEach(async () => {
@@ -206,5 +208,30 @@ describe("persistence integration — Phase 5 fields strip", () => {
     const raw = await idbAdapter.getItem("artdle-save");
     const parsed = JSON.parse(raw!);
     expect("workshopPopupOpen" in parsed.state).toBe(false);
+  });
+});
+
+describe("persistence integration — flush error routing through telemetry", () => {
+  beforeEach(() => {
+    resetErrorReporter();
+  });
+
+  afterEach(() => {
+    resetErrorReporter();
+    vi.restoreAllMocks();
+  });
+
+  it("defaultLifecycleHooks.onUnload routes flush rejection to the configured reporter", async () => {
+    const errorSink = vi.fn();
+    setErrorReporter(errorSink);
+    vi.spyOn(persistedAdapter, "flush").mockRejectedValueOnce(new Error("integration-boom"));
+
+    defaultLifecycleHooks.onUnload();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(errorSink).toHaveBeenCalledOnce();
+    const [err, ctx] = errorSink.mock.calls[0]!;
+    expect((err as Error).message).toBe("integration-boom");
+    expect(ctx).toBe("persist.flush.beforeunload");
   });
 });
