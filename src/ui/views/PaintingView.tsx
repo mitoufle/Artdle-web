@@ -1,14 +1,16 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
-import { PAINT_TIME_BASE_SECONDS } from "@/core/balance";
+import { canvasTime } from "@/core/balance";
 import { getPaintTimeMultiplier } from "@/core/multipliers";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { FloatingGoldText } from "@/ui/widgets/FloatingGoldText";
+import { TierUpgradeButton } from "@/ui/widgets/TierUpgradeButton";
 import { MAX_INVENTORY_SLOTS } from "@/config/workshopAffixes";
 
 export function PaintingView(): JSX.Element {
   const canvasProgress = useGameStore((s) => s.canvasProgress);
+  const canvasTier = useGameStore((s) => s.canvasTier);
   const equippedItems = useGameStore((s) => s.equippedItems);
   const openWorkshopPopup = useGameStore((s) => s.openWorkshopPopup);
   const lastSale = useGameStore((s) => s.lastSale);
@@ -17,13 +19,13 @@ export function PaintingView(): JSX.Element {
   // Helpers expect a GameStore; pass the field they actually read.
   // Cast is intentional and safe — see docs/agent_docs/ui-patterns.md.
   const helperState = { equippedItems } as unknown as GameStore;
-  const paintTime = PAINT_TIME_BASE_SECONDS / getPaintTimeMultiplier(helperState);
+  const paintTime = canvasTime(canvasTier) / getPaintTimeMultiplier(helperState);
   const stateLabel = canvasProgress > 0 ? "Painting" : "Idle";
 
   return (
     <div className="flex flex-col gap-4 p-4">
       <section className="relative rounded bg-app-panel p-3">
-        <div className="text-sm opacity-70">Canvas</div>
+        <div className="text-sm opacity-70">Canvas — Tier {canvasTier}</div>
         <div className="text-lg font-semibold">{stateLabel}</div>
         <div className="text-sm">
           {canvasProgress.toFixed(1)} / {paintTime.toFixed(1)}s
@@ -36,6 +38,8 @@ export function PaintingView(): JSX.Element {
           />
         )}
       </section>
+
+      <TierUpgradeButton />
 
       <section className="rounded bg-app-panel p-3">
         <div className="mb-2 text-sm opacity-70">Equipped</div>
