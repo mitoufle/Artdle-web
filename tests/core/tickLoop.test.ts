@@ -1,5 +1,11 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { startTickLoop, stopTickLoop, _testing } from "@/core/tickLoop";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  startTickLoop,
+  stopTickLoop,
+  pauseTickLoop,
+  resumeTickLoop,
+  _testing,
+} from "@/core/tickLoop";
 
 describe("tickLoop", () => {
   afterEach(() => stopTickLoop());
@@ -41,5 +47,56 @@ describe("tickLoop", () => {
     stopTickLoop();
     _testing.callStep(100);
     expect(called).toBe(false);
+  });
+});
+
+describe("tickLoop pause/resume API", () => {
+  beforeEach(() => {
+    stopTickLoop();
+  });
+
+  it("pauseTickLoop() while running halts step execution", () => {
+    const ticks: number[] = [];
+    startTickLoop((delta) => ticks.push(delta));
+    expect(_testing.running).toBe(true);
+    pauseTickLoop();
+    expect(_testing.running).toBe(false);
+    stopTickLoop();
+  });
+
+  it("resumeTickLoop() after pause restarts step execution and resets _last", () => {
+    const ticks: number[] = [];
+    startTickLoop((delta) => ticks.push(delta));
+    pauseTickLoop();
+    expect(_testing.running).toBe(false);
+    resumeTickLoop();
+    expect(_testing.running).toBe(true);
+    stopTickLoop();
+  });
+
+  it("pauseTickLoop() is idempotent when already paused", () => {
+    const ticks: number[] = [];
+    startTickLoop((delta) => ticks.push(delta));
+    pauseTickLoop();
+    pauseTickLoop(); // second call must not throw or corrupt state
+    expect(_testing.running).toBe(false);
+    stopTickLoop();
+  });
+
+  it("resumeTickLoop() with no onTick installed is a no-op (does not start)", () => {
+    // Without start having been called, _onTick is null; resume must early-return.
+    resumeTickLoop();
+    expect(_testing.running).toBe(false);
+  });
+
+  it("startTickLoop does NOT register a visibilitychange listener", () => {
+    const spy = vi.spyOn(document, "addEventListener");
+    startTickLoop((d) => void d);
+    const visListenerCalls = spy.mock.calls.filter(
+      ([type]) => type === "visibilitychange",
+    );
+    expect(visListenerCalls.length).toBe(0);
+    stopTickLoop();
+    spy.mockRestore();
   });
 });

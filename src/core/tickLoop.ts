@@ -1,8 +1,14 @@
 /**
- * RAF-driven tick loop with visibility pause.
- * v1 explicitly has NO offline catch-up: tab hidden = no ticking; tab visible = resume from now.
+ * RAF-driven tick loop with explicit pause/resume.
+ * v1 explicitly has NO offline catch-up: when paused, no ticking; on resume,
+ * `_last` resets to `now` so the first post-resume frame is delta=0.
  *
  * The 24h F-style hybrid catch-up arrives in v2.0.
+ *
+ * Lifecycle integration (visibilitychange/beforeunload) lives in
+ * `src/systems/lifecycle.ts`. tickLoop is intentionally agnostic — callers
+ * drive `pauseTickLoop()` / `resumeTickLoop()` in response to whatever events
+ * they care about.
  */
 
 const MAX_FRAME_DELTA_SECONDS = 1.0; // cap per-frame delta to avoid spirals
@@ -13,7 +19,6 @@ let _last = 0;
 let _rafId = 0;
 let _running = false;
 let _onTick: TickFn | null = null;
-let _visibilityHandler: (() => void) | null = null;
 
 function step(now: number): void {
   if (!_running || !_onTick) return;
@@ -29,30 +34,36 @@ export function startTickLoop(onTick: TickFn): void {
   _last = performance.now();
   _running = true;
   _rafId = requestAnimationFrame(step);
-
-  _visibilityHandler = () => {
-    if (document.hidden) {
-      _running = false;
-      cancelAnimationFrame(_rafId);
-    } else {
-      if (_onTick) {
-        _last = performance.now(); // reset; v1 ignores elapsed offline time
-        _running = true;
-        _rafId = requestAnimationFrame(step);
-      }
-    }
-  };
-  document.addEventListener("visibilitychange", _visibilityHandler);
 }
 
 export function stopTickLoop(): void {
   _running = false;
   cancelAnimationFrame(_rafId);
-  if (_visibilityHandler) {
-    document.removeEventListener("visibilitychange", _visibilityHandler);
-    _visibilityHandler = null;
-  }
   _onTick = null;
+}
+
+/**
+ * Pause the running tick loop. Does NOT clear `_onTick` — a subsequent
+ * `resumeTickLoop()` resumes ticking against the same callback.
+ * Idempotent (no-op if already paused).
+ */
+export function pauseTickLoop(): void {
+  if (!_running) return;
+  _running = false;
+  cancelAnimationFrame(_rafId);
+}
+
+/**
+ * Resume a paused tick loop. No-op if `_onTick` is null (start was never
+ * called, or stopTickLoop cleared it). Resets `_last` to `now` so the first
+ * post-resume frame has delta ≈ 0 — v1 ignores elapsed paused time.
+ */
+export function resumeTickLoop(): void {
+  if (_running) return;
+  if (!_onTick) return;
+  _last = performance.now();
+  _running = true;
+  _rafId = requestAnimationFrame(step);
 }
 
 export const _testing = {
