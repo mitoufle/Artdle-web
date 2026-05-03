@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import { TREE_STAGES } from "@/config/treeStages";
@@ -36,34 +37,47 @@ export function HomeView(): JSX.Element {
   const nextStage = TREE_STAGES[currentStage + 1];
   const growThreshold = nextStage?.unlockThreshold ?? 0;
 
+  const reduce = useReducedMotion();
+  const stageTransition = reduce
+    ? { duration: 0.01 }
+    : { duration: 0.3, ease: "easeInOut" as const };
+
   return (
     <div className="flex flex-col gap-4 p-4">
-      <header>
-        <Hoverable
-          as="div"
-          title={() => TREE_STAGES[useGameStore.getState().currentStage]?.name ?? "?"}
-          body="Current tree stage. Each part on this stage produces inspiration."
+      <AnimatePresence mode="wait">
+        <motion.header
+          key={currentStage}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={stageTransition}
         >
-          <h2 className="text-xl font-semibold">{stageName}</h2>
-        </Hoverable>
-        <Hoverable
-          as="div"
-          title="Inspiration / sec"
-          body={() => {
-            const s = useGameStore.getState();
-            const hs = {
-              currentStage: s.currentStage,
-              partLevels: s.partLevels,
-              equippedItems: s.equippedItems,
-              purchasedNodes: s.purchasedNodes,
-            } as unknown as GameStore;
-            const mult = getInspiMultiplier(hs);
-            return `Sum of all part levels × rate, then × multipliers (currently ×${mult.toFixed(2)}).`;
-          }}
-        >
-          <p className="text-sm opacity-70">{formatBig(rate)} inspi/sec</p>
-        </Hoverable>
-      </header>
+          <Hoverable
+            as="div"
+            title={() => TREE_STAGES[useGameStore.getState().currentStage]?.name ?? "?"}
+            body="Current tree stage. Each part on this stage produces inspiration."
+          >
+            <h2 className="text-xl font-semibold">{stageName}</h2>
+          </Hoverable>
+          <Hoverable
+            as="div"
+            title="Inspiration / sec"
+            body={() => {
+              const s = useGameStore.getState();
+              const hs = {
+                currentStage: s.currentStage,
+                partLevels: s.partLevels,
+                equippedItems: s.equippedItems,
+                purchasedNodes: s.purchasedNodes,
+              } as unknown as GameStore;
+              const mult = getInspiMultiplier(hs);
+              return `Sum of all part levels × rate, then × multipliers (currently ×${mult.toFixed(2)}).`;
+            }}
+          >
+            <p className="text-sm opacity-70">{formatBig(rate)} inspi/sec</p>
+          </Hoverable>
+        </motion.header>
+      </AnimatePresence>
 
       <ul className="flex flex-col gap-2">
         {TREE_STAGES.slice(0, currentStage + 1).flatMap((stage) =>
