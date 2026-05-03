@@ -51,6 +51,16 @@ export const canvasGold = (tier: number, multiplier: number): Big =>
   big(CANVAS_GOLD_BASE).mul(tier).mul(tier).mul(multiplier);
 
 /**
+ * Paint time per canvas in seconds, before paint-speed multipliers.
+ * v1.1: `tier × 2`. Stripped form of canvas-design.md §6.5
+ * (`tier * 2 + style * 1`) with style → 0; v1.3 adds the style term.
+ *
+ * Tier 1 = 2s, tier 5 = 10s (matches v1.0's PAINT_TIME_BASE_SECONDS),
+ * tier 10 = 20s.
+ */
+export const canvasTime = (tier: number): number => tier * 2;
+
+/**
  * Inspiration produced per second from a list of tree parts and an aggregate multiplier.
  */
 export interface TreePartLevel {

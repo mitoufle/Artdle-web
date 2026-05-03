@@ -4,6 +4,7 @@ import {
   fameOnAscend,
   treePartCost,
   canvasGold,
+  canvasTime,
   inspiPerSec,
   PALIER_BASE,
   PALIER_GROWTH,
@@ -123,5 +124,24 @@ describe("inspiPerSec", () => {
     expect(
       inspiPerSec([{ level: 0, rate: 100 }, { level: 1, rate: 2 }], 1).toNumber(),
     ).toBe(2);
+  });
+});
+
+describe("canvasTime (v1.1)", () => {
+  it("tier 1 paints in 2 seconds", () => {
+    expect(canvasTime(1)).toBe(2);
+  });
+
+  it("tier 5 paints in 10 seconds (matches v1.0 PAINT_TIME_BASE_SECONDS)", () => {
+    expect(canvasTime(5)).toBe(10);
+  });
+
+  it("tier 10 paints in 20 seconds", () => {
+    expect(canvasTime(10)).toBe(20);
+  });
+
+  it("scales linearly with tier (×2)", () => {
+    expect(canvasTime(7)).toBe(14);
+    expect(canvasTime(3)).toBe(6);
   });
 });
