@@ -75,6 +75,16 @@ export const tierUpgradeCost = (currentTier: number): Big =>
   big(TIER_UPGRADE_BASE).mul(big(TIER_UPGRADE_RATIO).pow(currentTier - 1));
 
 /**
+ * Paint Mastery gained per canvas sale.
+ * v1.1: `tier²`, equivalent to `grossGold / 10` (where grossGold = 10 × tier²).
+ * v1.3: becomes `quality × tier` once quality is implemented; same call site.
+ *
+ * Computed on gross tier-derived gold (pre-multiplier) — no PM-gold feedback loop.
+ */
+export const pmGainPerSale = (tier: number): Big =>
+  big(tier).mul(tier);
+
+/**
  * Inspiration produced per second from a list of tree parts and an aggregate multiplier.
  */
 export interface TreePartLevel {

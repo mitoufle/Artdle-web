@@ -7,6 +7,7 @@ import {
   canvasTime,
   tierUpgradeCost,
   inspiPerSec,
+  pmGainPerSale,
   PALIER_BASE,
   PALIER_GROWTH,
   MAX_TIER,
@@ -163,5 +164,25 @@ describe("tierUpgradeCost (v1.1)", () => {
 
   it("MAX_TIER is 10", () => {
     expect(MAX_TIER).toBe(10);
+  });
+});
+
+describe("pmGainPerSale (v1.1)", () => {
+  it("tier 1 sale grants 1 PM", () => {
+    expect(pmGainPerSale(1).toNumber()).toBe(1);
+  });
+
+  it("tier 5 sale grants 25 PM", () => {
+    expect(pmGainPerSale(5).toNumber()).toBe(25);
+  });
+
+  it("tier 10 sale grants 100 PM", () => {
+    expect(pmGainPerSale(10).toNumber()).toBe(100);
+  });
+
+  it("returns a Big (not a number)", () => {
+    const result = pmGainPerSale(7);
+    expect(typeof result.toNumber).toBe("function");
+    expect(result.toNumber()).toBe(49);
   });
 });
