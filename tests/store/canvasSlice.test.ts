@@ -196,6 +196,7 @@ describe("canvasSlice — tier-aware tick (v1.1)", () => {
     useGameStore.getState().resetCanvas();
     useGameStore.getState().resetRunCurrencies();
     useGameStore.getState()._setPaintMastery(big(0));
+    useGameStore.getState()._setLifetimeGold(big(0));
   });
 
   it("at tier 1, completes in 2 seconds", () => {
@@ -220,10 +221,13 @@ describe("canvasSlice — tier-aware tick (v1.1)", () => {
     expect(useGameStore.getState().gold.toNumber()).toBe(1000);
   });
 
-  it("sale increments paintMastery by tier² (tier 5 → +25 PM)", () => {
+  it("sale credits PM via addGoldEarned (post-mult gold / threshold)", () => {
     useGameStore.setState({ canvasTier: 5 });
     useGameStore.getState().canvasTick(10);
-    expect(useGameStore.getState().paintMastery.toNumber()).toBe(25);
+    // Tier 5 sale at lifetimeGold 0: gold = 250 (no other mults), PM gain = 250/1000 = 0.25.
+    // lifetimeGold = 250.
+    expect(useGameStore.getState().paintMastery.toNumber()).toBeCloseTo(0.25, 9);
+    expect(useGameStore.getState().lifetimeGold.toNumber()).toBeCloseTo(250, 9);
   });
 
   it("PM mult applies to gold output (PM 100 → ~11× at tier 1)", () => {
@@ -240,6 +244,7 @@ describe("canvasSlice — tick reads canvasTier at threshold-cross (contract pin
     useGameStore.getState().resetCanvas();
     useGameStore.getState().resetRunCurrencies();
     useGameStore.getState()._setPaintMastery(big(0));
+    useGameStore.getState()._setLifetimeGold(big(0));
   });
 
   it("uses the canvasTier value at the moment of sale (single tick)", () => {
@@ -248,7 +253,7 @@ describe("canvasSlice — tick reads canvasTier at threshold-cross (contract pin
     useGameStore.getState().canvasTick(10);
     // gold = 10 × 25 × 1 = 250 (tier 5 was active at the sale)
     expect(useGameStore.getState().gold.toNumber()).toBe(250);
-    // PM = 25 (tier² at tier 5)
-    expect(useGameStore.getState().paintMastery.toNumber()).toBe(25);
+    // PM = 250/1000 = 0.25 (post-mult gold / phase 1 threshold)
+    expect(useGameStore.getState().paintMastery.toNumber()).toBeCloseTo(0.25, 9);
   });
 });

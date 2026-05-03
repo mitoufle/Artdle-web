@@ -80,7 +80,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
     const goldMult = getCanvasGoldMultiplier(state) * getPmMultiplier(state);
     const gain = canvasGold(state.canvasTier, goldMult);
     state.add("gold", gain);
-    state.gainFromSale(state.canvasTier);
+    state.addGoldEarned(gain);
     const leftover = newProgress - paintTime;
     const prevId = state.lastSale?.id ?? 0;
     set({

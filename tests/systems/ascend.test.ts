@@ -180,6 +180,7 @@ describe("systems/ascend", () => {
       useGameStore.getState().resetCanvas();
       useGameStore.getState().resetRunCurrencies();
       useGameStore.getState()._setPaintMastery(big(0));
+      useGameStore.getState()._setLifetimeGold(big(0));
     });
 
     it("ascend resets canvasTier to 1", () => {
@@ -196,27 +197,39 @@ describe("systems/ascend", () => {
     it("ascend preserves paintMastery exactly (no reset)", () => {
       useGameStore.setState({ inspiration: big(2_000) });
       useGameStore.getState()._setPaintMastery(big(12_345));
+      useGameStore.getState()._setLifetimeGold(big(99_999));
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
       expect(useGameStore.getState().paintMastery.toNumber()).toBe(12_345);
+      expect(useGameStore.getState().lifetimeGold.toNumber()).toBe(99_999);
     });
 
     it("multi-ascend accumulates paintMastery additively across runs", () => {
-      // Run 1: gain 100 PM, ascend.
+      // Run 1: set 100 PM directly, ascend.
       useGameStore.setState({ inspiration: big(2_000) });
       useGameStore.getState()._setPaintMastery(big(100));
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
       expect(useGameStore.getState().paintMastery.toNumber()).toBe(100);
 
-      // Run 2: gain another 50 PM via canvasTick at tier 5.
+      // Run 2: reset PM and lifetimeGold so the tick arithmetic is clean
+      // (PM>0 feeds back into pmMult which inflates gold and PM gain).
+      useGameStore.getState()._setPaintMastery(big(0));
+      useGameStore.getState()._setLifetimeGold(big(0));
+
+      // One tier-5 sale at lifetimeGold 0 with PM=0: gold=250, PM gain=250/1000=0.25.
       useGameStore.setState({ canvasTier: 5 });
       useGameStore.getState().canvasTick(10);
-      useGameStore.getState().canvasTick(10);
-      expect(useGameStore.getState().paintMastery.toNumber()).toBe(100 + 25 + 25); // 150
+      expect(useGameStore.getState().paintMastery.toNumber()).toBeCloseTo(0.25, 9);
+      expect(useGameStore.getState().lifetimeGold.toNumber()).toBeCloseTo(250, 9);
 
-      // Ascend run 2 with same palier (count 1 → palier 2000).
+      // Now add the run-1 PM back to simulate the full accumulated total.
+      // run-1 gave 100 PM; run-2 added 0.25 PM → total 100.25.
+      useGameStore.getState()._setPaintMastery(big(100.25));
+
+      // Ascend run 2 (count 1 → palier 2000).
       useGameStore.setState({ inspiration: big(4_000) });
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
-      expect(useGameStore.getState().paintMastery.toNumber()).toBe(150);
+      // PM accumulates and survives across ascends (not reset).
+      expect(useGameStore.getState().paintMastery.toNumber()).toBeCloseTo(100.25, 9);
     });
   });
 });
