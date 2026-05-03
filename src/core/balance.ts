@@ -10,6 +10,9 @@ export const FAME_LOG_K = 10;
 export const TREE_PART_COST_GROWTH = 1.15;
 export const CANVAS_GOLD_BASE = 10;
 export const PAINT_TIME_BASE_SECONDS = 10;
+export const TIER_UPGRADE_BASE = 100;
+export const TIER_UPGRADE_RATIO = 2.78;
+export const MAX_TIER = 10;
 
 // ============================================================================
 // Formulas
@@ -59,6 +62,17 @@ export const canvasGold = (tier: number, multiplier: number): Big =>
  * tier 10 = 20s.
  */
 export const canvasTime = (tier: number): number => tier * 2;
+
+/**
+ * Gold cost to upgrade canvas from `currentTier` to `currentTier + 1`.
+ * Defined for currentTier ∈ [1, MAX_TIER - 1]; tier MAX_TIER has no upgrade.
+ *
+ * Calibration target (canvas-design.md §10): "100 → 1M g across 10 tiers".
+ * `100 × 2.78^(currentTier - 1)` lands tier 1→2 at 100, tier 9→10 at ~357k.
+ * Total path 1→10: ~558k.
+ */
+export const tierUpgradeCost = (currentTier: number): Big =>
+  big(TIER_UPGRADE_BASE).mul(big(TIER_UPGRADE_RATIO).pow(currentTier - 1));
 
 /**
  * Inspiration produced per second from a list of tree parts and an aggregate multiplier.

@@ -5,9 +5,11 @@ import {
   treePartCost,
   canvasGold,
   canvasTime,
+  tierUpgradeCost,
   inspiPerSec,
   PALIER_BASE,
   PALIER_GROWTH,
+  MAX_TIER,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -143,5 +145,23 @@ describe("canvasTime (v1.1)", () => {
   it("scales linearly with tier (×2)", () => {
     expect(canvasTime(7)).toBe(14);
     expect(canvasTime(3)).toBe(6);
+  });
+});
+
+describe("tierUpgradeCost (v1.1)", () => {
+  it("tier 1 → 2 costs exactly 100 g", () => {
+    expect(tierUpgradeCost(1).toNumber()).toBe(100);
+  });
+
+  it("tier 5 → 6 costs ≈ 5,973 g", () => {
+    expect(tierUpgradeCost(5).toNumber()).toBeCloseTo(5973, 0);
+  });
+
+  it("tier 9 → 10 costs ≈ 356,745 g", () => {
+    expect(tierUpgradeCost(9).toNumber()).toBeCloseTo(356745, 0);
+  });
+
+  it("MAX_TIER is 10", () => {
+    expect(MAX_TIER).toBe(10);
   });
 });
