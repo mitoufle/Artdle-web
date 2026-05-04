@@ -1,0 +1,55 @@
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: var(--s-5);
+  height: 100%;
+  padding: var(--s-5);
+}
+
+.canvasArea {
+  position: relative;
+  min-height: 480px;
+}
+
+.cardSlot {
+  position: absolute;
+  top: var(--s-4);
+  right: var(--s-4);
+  z-index: 1;
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  overflow-y: auto;
+}
+
+.fameDisplay {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-4);
+  border: 2px solid var(--fame-d);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  box-shadow: var(--fame-glow);
+  text-align: center;
+}
+
+.fameLabel {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+
+.fameValue {
+  font-family: var(--serif);
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--fame);
+  text-shadow: var(--fame-glow);
+  line-height: 1;
+}
