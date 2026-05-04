@@ -1,0 +1,47 @@
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-2);
+  border-left: var(--border-subtle);
+  background: var(--bg-1);
+  width: 64px;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--s-2) 0;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.tab:hover:not(:disabled) {
+  color: var(--ink-0);
+  border-color: var(--inspi-d);
+}
+
+.tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tabActive {
+  background: linear-gradient(135deg, var(--inspi-d), var(--inspi));
+  color: var(--ink-0);
+  border-color: var(--inspi);
+  box-shadow: inset 0 0 12px rgba(155, 108, 214, 0.4);
+}
+
+.label {
+  margin-top: 2px;
+}
