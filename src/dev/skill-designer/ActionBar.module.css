@@ -1,0 +1,67 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-2) var(--s-4);
+  border-bottom: var(--border-subtle);
+  background: var(--bg-1);
+}
+
+.actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.primary,
+.secondary,
+.danger {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.primary {
+  border: 1px solid var(--gold);
+  background: var(--gold);
+  color: var(--bg-0);
+}
+
+.secondary {
+  border: 1px solid var(--ink-line);
+  background: var(--bg-2);
+  color: var(--ink-2);
+}
+
+.danger {
+  border: 1px solid #c44;
+  background: transparent;
+  color: #c44;
+}
+
+.status {
+  display: flex;
+  gap: var(--s-3);
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.statusSaved {
+  color: #6c6;
+}
+
+.statusDirty {
+  color: #f80;
+}
+
+.statusSaving {
+  color: var(--ink-2);
+}
+
+.issues {
+  color: #f80;
+}
