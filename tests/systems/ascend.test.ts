@@ -171,6 +171,35 @@ describe("systems/ascend", () => {
     ).toBe(false);
   });
 
+  describe("performAscendOrchestrator — pastRuns ledger (v2.0 Round 3)", () => {
+    beforeEach(() => {
+      useGameStore.getState().resetTree();
+      useGameStore.getState().resetCanvas();
+      useGameStore.getState().resetWorkshop();
+      useGameStore.getState().resetRunCurrencies();
+      useGameStore.setState({ ascendCount: 0, fame: big(0), pastRuns: [] });
+    });
+
+    it("appends a pastRun entry on successful ascend with the captured fame gain", () => {
+      useGameStore.setState({ inspiration: big(2_000) });
+      const before = useGameStore.getState().pastRuns.length;
+      const ok = useGameStore.getState().performAscend();
+      expect(ok).toBe(true);
+      const runs = useGameStore.getState().pastRuns;
+      expect(runs.length).toBe(before + 1);
+      expect(runs[runs.length - 1]!.fame).toBeGreaterThan(0);
+      expect(typeof runs[runs.length - 1]!.ascendedAt).toBe("number");
+    });
+
+    it("does NOT append on failed ascend (below palier)", () => {
+      useGameStore.setState({ inspiration: big(0) });
+      const before = useGameStore.getState().pastRuns.length;
+      const ok = useGameStore.getState().performAscend();
+      expect(ok).toBe(false);
+      expect(useGameStore.getState().pastRuns.length).toBe(before);
+    });
+  });
+
   // ============================================================================
   // v1.1 reset semantics: canvasTier and paintMastery
   // ============================================================================

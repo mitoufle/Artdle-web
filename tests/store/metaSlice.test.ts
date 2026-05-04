@@ -44,6 +44,31 @@ describe("metaSlice", () => {
   });
 });
 
+describe("metaSlice — pastRuns (v2.0 Round 3)", () => {
+  beforeEach(() => {
+    useGameStore.setState({ pastRuns: [] });
+  });
+
+  it("initial pastRuns is an empty array", () => {
+    expect(useGameStore.getState().pastRuns).toEqual([]);
+  });
+
+  it("addPastRun appends a new entry with fame and ascendedAt", () => {
+    useGameStore.getState().addPastRun({ fame: 12, ascendedAt: 1234567890 });
+    const runs = useGameStore.getState().pastRuns;
+    expect(runs).toHaveLength(1);
+    expect(runs[0]).toEqual({ fame: 12, ascendedAt: 1234567890 });
+  });
+
+  it("addPastRun preserves prior entries (chronological append)", () => {
+    useGameStore.getState().addPastRun({ fame: 1, ascendedAt: 1 });
+    useGameStore.getState().addPastRun({ fame: 2, ascendedAt: 2 });
+    useGameStore.getState().addPastRun({ fame: 3, ascendedAt: 3 });
+    expect(useGameStore.getState().pastRuns).toHaveLength(3);
+    expect(useGameStore.getState().pastRuns[2]!.fame).toBe(3);
+  });
+});
+
 describe("metaSlice — performAscend wrapper", () => {
   beforeEach(() => {
     useGameStore.getState().resetRunCurrencies();

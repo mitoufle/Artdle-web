@@ -32,7 +32,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -54,6 +54,9 @@ const SAVE_KEY = "artdle-save";
  *
  * v5 → v6 (2026-05-04): viewSlice retired in favor of react-router-dom.
  * Drop the persisted currentView field so future loads don't carry it.
+ *
+ * v6 → v7 (2026-05-04): v2.0 Round 3 adds pastRuns ledger to metaSlice.
+ * Existing saves get default pastRuns: [] so the AscensionRoute ledger starts empty.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -102,6 +105,14 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     const { currentView: _cv, ...rest } = state;
     state = rest;
     void _cv;
+  }
+
+  if (fromVersion < 7) {
+    // v6 → v7 (2026-05-04): v2.0 Round 3 adds pastRuns ledger to metaSlice.
+    state = {
+      ...state,
+      pastRuns: [],
+    };
   }
 
   return state as unknown as GameStore;

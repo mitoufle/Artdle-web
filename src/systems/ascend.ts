@@ -60,9 +60,10 @@ export const performAscendOrchestrator = (
   // 4. Bump ascendCount.
   state.incrementAscendCount();
 
-  // `set` is intentionally not called directly — all mutations flow through
-  // the slice actions above. The parameter is kept for future orchestrators
-  // that may need direct cross-slice writes.
+  // 5. Append to past-runs ledger (v2.0 Round 3).
+  state.addPastRun({ fame: fameGain, ascendedAt: Date.now() });
+
+  // `set` parameter retained for future cross-slice writes.
   void set;
 
   return true;

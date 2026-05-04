@@ -307,7 +307,7 @@ describe("save migration v2 → v3", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.canvasTier).toBe(7);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(6);
+    expect(parsed.version).toBe(7);
   });
 });
 
@@ -360,7 +360,7 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     expect(parsed.state.canvasTier).toBe(3);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(6);
+    expect(parsed.version).toBe(7);
   });
 });
 
@@ -398,5 +398,38 @@ describe("save migration v5 → v6 (drop currentView)", () => {
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
     expect("currentView" in migrated).toBe(false);
+  });
+});
+
+describe("save migration v6 → v7 (add pastRuns)", () => {
+  it("v6 save (no pastRuns) gets default empty array on migrate", () => {
+    const v6State = {
+      gold: { __big: "0" },
+      inspiration: { __big: "0" },
+      fame: { __big: "0" },
+      ascendCount: 1,
+      playerId: "test-id-v6",
+      canvasTier: 1,
+      paintMastery: { __big: "0" },
+      lifetimeGold: { __big: "0" },
+    };
+    const migrated = migrate(v6State, 6) as unknown as Record<string, unknown>;
+    expect(Array.isArray(migrated.pastRuns)).toBe(true);
+    expect(migrated.pastRuns).toEqual([]);
+    expect(migrated.playerId).toBe("test-id-v6");
+  });
+
+  it("full chain v1 → v7 produces all defaults including pastRuns", () => {
+    const v1State = {
+      gold: { __big: "0" },
+      inventory: [],
+      equippedItems: [],
+      playerId: "v1-test",
+    };
+    const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
+    expect(migrated.canvasTier).toBe(1);
+    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect(migrated.pastRuns).toEqual([]);
   });
 });
