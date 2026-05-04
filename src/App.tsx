@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { TopBar } from "@/components/shell/TopBar";
 import { BottomBar } from "@/components/shell/BottomBar";
 import { InfoPanel } from "@/components/shell/InfoPanel";
@@ -7,9 +7,21 @@ import { TreeRoute } from "@/routes/TreeRoute";
 import { PaintingRoute } from "@/routes/PaintingRoute";
 import { AscensionRoute } from "@/routes/AscensionRoute";
 import { ConstellationRoute } from "@/routes/ConstellationRoute";
+import { SkillDesignerRoute } from "@/dev/skill-designer/SkillDesignerRoute";
 import styles from "./App.module.css";
 
 export function App(): JSX.Element {
+  const location = useLocation();
+  const isDev = location.pathname.startsWith("/dev/");
+
+  if (isDev) {
+    return (
+      <Routes>
+        <Route path="/dev/skill-designer" element={<SkillDesignerRoute />} />
+      </Routes>
+    );
+  }
+
   return (
     <div className={styles.app}>
       <TopBar />
