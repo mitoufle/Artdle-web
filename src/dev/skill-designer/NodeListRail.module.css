@@ -1,0 +1,70 @@
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-right: var(--border-subtle);
+  background: var(--bg-1);
+  overflow-y: auto;
+}
+
+.addBtn {
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: var(--s-2);
+  border: 1px solid var(--gold);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--gold);
+  cursor: pointer;
+}
+
+.search {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-1);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-2);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  cursor: pointer;
+}
+
+.row[data-selected="true"] {
+  border-color: var(--gold);
+  background: rgba(255, 216, 106, 0.08);
+}
+
+.name {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-1);
+}
+
+.pill {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
