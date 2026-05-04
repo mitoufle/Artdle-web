@@ -1,5 +1,41 @@
 # Artdle Web — Handover
 
+## v2.0 Round 4 — Constellation route (complete on `feat/v2-redesign`)
+
+**Status:** Round 4 complete. Polish pass + v2.0 tag pending.
+
+### What landed
+
+- New `src/components/constellation/` directory:
+  - `<StarCanvas>` — bg-0 + warm radial glow + 32px grid + 7 animated star twinkles + FAME hub (gold disc + halo + Cinzel "FAME" label) + 5 skill nodes laid out per `nodeLayout.ts` + 5 edges. Click → onSelect callback. Selected node gets purple halo + (for available) inner inspi dot.
+  - `<NodeCard>` — 240px fame-bordered + glow card. Shown when ConstellationRoute has a selectedId. Title (fame Cinzel) + meta + description + Acquire button.
+  - `<MiniMap>` — small SVG overview using same node positions, scaled. Caption shows N/5 owned. (No viewport rect — no pan/zoom in v2.0.)
+  - `<ClusterList>` — single "Starters · N/5" row. No fake clusters per "pure adapt" rule.
+  - `nodeLayout.ts` — fixed 2D positions for the 5 nodes + 5 edges. The data layer the 2 SVG components share.
+- `src/routes/ConstellationRoute.tsx` rebuilt: CSS Grid `1fr 280px` (canvas + right rail). Selection state at the route. Right rail panels: 42px-serif Fame to spend display + MiniMap + ClusterList.
+
+### Visual deviations from handoff (per v2.0 "pure adapt" rule)
+
+- 5 nodes only (v1.1's Goldsmith / Patient Eye / Second Slot / Faster Strokes / Better Brush). No fake locked future-nodes.
+- 1 cluster only ("Starters"). No fake clusters in the cluster list.
+- No pan/zoom interaction. With 5 nodes the entire chain fits in a single 600×600 viewBox; pan/zoom lands when a future wave grows the node count past one screen.
+
+### Visual state
+
+- All 4 routes — Tree (R1) + Painting (R2) + Ascension (R3) + Constellation (R4) — now match handoff aesthetic.
+
+### Tests + build
+
+- 470 tests passing.
+- tsc clean. Lint clean (only pre-existing main.tsx fast-refresh warning).
+- Bundle: 144.91 KB gzipped JS / 4.86 KB gzipped CSS / ~149.77 KB total gzipped.
+
+### Next
+
+Polish round (animations + reduced-motion + final HANDOVER + v2.0 tag), then v2.0 ships.
+
+---
+
 ## v2.0 Round 3 — Ascension route (complete on `feat/v2-redesign`)
 
 **Status:** Round 3 complete. Round 4 (Constellation) pending.
