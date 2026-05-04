@@ -1,0 +1,107 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  height: 100%;
+  position: relative;
+  background: radial-gradient(circle at center, var(--bg-stone) 0%, var(--bg-stone-d) 100%);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.title {
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-1);
+}
+
+.frame {
+  position: relative;
+  flex: 1;
+  margin: 0 auto;
+  width: min(360px, 80%);
+  aspect-ratio: 4 / 3;
+  border: 4px solid;
+  border-image: linear-gradient(135deg, var(--gold), var(--gold-d)) 1;
+  box-shadow:
+    0 0 24px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+  background: var(--bg-stone-d);
+  overflow: hidden;
+}
+
+.canvasArt {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.fill {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(0deg, rgba(155, 108, 214, 0.4), rgba(155, 108, 214, 0.1));
+  pointer-events: none;
+  transition: height 200ms linear;
+}
+
+.easel {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: 16px;
+  background: linear-gradient(180deg, var(--gold-d), var(--bg-stone-d));
+  clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+}
+
+.progress {
+  height: 3px;
+  background: var(--bg-stone-d);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--gold);
+  box-shadow: var(--gold-glow);
+  transition: width 100ms linear;
+}
+
+.bottomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.painting {
+  font-family: var(--mono);
+  color: var(--ink-2);
+}
+
+.goldPreview {
+  font-family: var(--mono);
+  color: var(--gold);
+  text-shadow: var(--gold-glow);
+  font-weight: 600;
+}
+
+.tierBadge {
+  font-family: var(--serif);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
