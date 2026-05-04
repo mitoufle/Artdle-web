@@ -1,0 +1,31 @@
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 340px 64px;
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "stage room rail"
+    "upgrades room rail";
+  gap: var(--s-4);
+  height: 100%;
+  padding: var(--s-4);
+}
+
+.stageArea {
+  grid-area: stage;
+  position: relative;
+  min-height: 320px;
+}
+
+.upgradesArea {
+  grid-area: upgrades;
+}
+
+.roomArea {
+  grid-area: room;
+  height: 100%;
+  overflow: hidden;
+}
+
+.railArea {
+  grid-area: rail;
+}

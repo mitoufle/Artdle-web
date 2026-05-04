@@ -7,7 +7,6 @@ import { TreeRoute } from "@/routes/TreeRoute";
 import { PaintingRoute } from "@/routes/PaintingRoute";
 import { AscensionRoute } from "@/routes/AscensionRoute";
 import { ConstellationRoute } from "@/routes/ConstellationRoute";
-import { WorkshopPopup } from "@/ui/popups/WorkshopPopup";
 import styles from "./App.module.css";
 
 export function App(): JSX.Element {
@@ -23,7 +22,6 @@ export function App(): JSX.Element {
           <Route path="/constellation" element={<ConstellationRoute />} />
           <Route path="*" element={<Navigate to="/tree" replace />} />
         </Routes>
-        <WorkshopPopup />
       </main>
       <InfoPanel />
       <BottomBar />
