@@ -1,5 +1,44 @@
 # Artdle Web — Handover
 
+## v2.0 Round 3 — Ascension route (complete on `feat/v2-redesign`)
+
+**Status:** Round 3 complete. Round 4 (Constellation) pending.
+
+### What landed
+
+- New `src/components/ascension/` directory:
+  - `<Cavern>` — radial violet→black gradient + repeating stone-block grid + 5 floating purple-diamond crystals (CSS clip-path) with staggered 3s opacity pulse.
+  - `<Portal>` — animated stone-arch SVG (bricked stone gradient + thin joint lines + inner radial glow + keystone with gold ✦ rune + 6 purple flanking runes). CSS `portal-float` (±6px Y, 6s) + `portal-shimmer` (drop-shadow pulse, 4s).
+  - `<ThresholdPanel>` — current inspi (28px mono inspi-glow) + progress bar to threshold + caption.
+  - `<FamePreviewCard>` — fame-bordered + glow card with big serif "+N" fame gain + permanence caption.
+  - `<PastRunsLedger>` — 4 most-recent runs in mono table format + total fame footer. Empty state for first-time players.
+- `src/routes/AscensionRoute.tsx` rebuilt: CSS Grid `1fr 360px` (cavern + right rail). Inline confirmation modal (role=dialog, aria-modal) for the irreversible Step Through action.
+
+### Data layer
+
+- New persisted field: `pastRuns: ReadonlyArray<PastRun>` on `metaSlice`. Each entry: `{ fame: number; ascendedAt: number }`.
+- New action: `metaSlice.addPastRun(run)` (orchestrator-only consumer).
+- `performAscendOrchestrator` now appends one entry per successful ascend after fame credit + ascendCount bump.
+- Save migration v6 → v7 adds default `pastRuns: []` to existing v6 saves.
+
+### Visual state
+
+- Ascension route: matches handoff aesthetic (cavern + animated portal + right-rail panels + irreversible-action modal).
+- Tree (R1) + Painting (R2): complete from prior rounds.
+- Constellation: still degraded; Round 4 rebuilds.
+
+### Tests + build
+
+- 442 tests passing.
+- tsc clean. Lint clean.
+- Bundle: 143.22 KB gzipped JS / 4.52 KB gzipped CSS / ~148.18 KB total gzipped.
+
+### Next
+
+Round 4: Constellation (skill tree). Per spec §8 Round 4.
+
+---
+
 ## v2.0 Round 2 — Painting route (complete on `feat/v2-redesign`)
 
 **Status:** Round 2 complete. Round 3 (Ascension) pending.
