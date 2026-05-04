@@ -1,0 +1,28 @@
+.portalWrap {
+  display: inline-block;
+  animation: portal-float 6s ease-in-out infinite;
+}
+
+.portal {
+  width: 380px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  animation: portal-shimmer 4s ease-in-out infinite;
+}
+
+@keyframes portal-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes portal-shimmer {
+  0%, 100% { filter: drop-shadow(0 0 24px rgba(155, 108, 214, 0.55)) drop-shadow(0 0 48px rgba(107, 76, 184, 0.30)); }
+  50%      { filter: drop-shadow(0 0 36px rgba(155, 108, 214, 0.75)) drop-shadow(0 0 64px rgba(107, 76, 184, 0.45)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portalWrap, .portal {
+    animation: none;
+  }
+}
