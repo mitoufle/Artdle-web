@@ -1,0 +1,96 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-left: var(--border-subtle);
+  background: var(--bg-1);
+  overflow-y: auto;
+}
+
+.placeholder {
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: center;
+  margin: var(--s-6) 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.subField {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--s-1);
+}
+
+.label {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+
+.subLabel {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.input,
+.textarea {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-1);
+}
+
+.textarea {
+  resize: vertical;
+  font-family: var(--sans);
+}
+
+.posReadout {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.secondaryBtn {
+  align-self: flex-start;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.dangerBtn {
+  margin-top: var(--s-3);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid #c44;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: #c44;
+  cursor: pointer;
+}
+
+.dangerBtn:hover {
+  background: rgba(204, 68, 68, 0.1);
+}
