@@ -1,5 +1,60 @@
 # Artdle Web — Handover
 
+## v2.0 — Visual redesign shipped (on `feat/v2-redesign`, tag `v2.0`)
+
+**Status:** v2.0 complete. All 4 routes rebuilt to match the handoff aesthetic. Pure visual adapt — no new gameplay features (per the v2.0 spec rule). Ready to merge to `main`.
+
+### What v2.0 is
+
+A pure visual redesign of v1.1, ground-up:
+- Tailwind dropped → CSS Modules + `tokens.css` (semantic design tokens).
+- All 4 routes rebuilt with inline-SVG scenes + CSS Grid layouts: **Tree** (canopy + ground + glowing leaf), **Painting** (vignetted canvas + gilded frame + room rail + workshop side panel), **Ascension** (animated stone-arch portal + cavern with floating crystals + past-runs ledger), **Constellation** (star-map with 5 nodes + edges + selectable NodeCard + minimap).
+- New persisted field: `pastRuns` ledger on `metaSlice`. SAVE_VERSION 5 → 7.
+- All v1.1 mechanics preserved: 4 currencies (Gold / Inspiration / Fame / Paint Mastery), canvas tiers (gold = 10 × tier² × multipliers), 5-node skill tree, workshop crafting, ascend.
+
+### Visual deviations from handoff (per "pure adapt" rule)
+
+- Keep IndexedDB persistence (handoff suggested localStorage).
+- 4 currencies (handoff used 3); PM teal `#7adcd6` token added.
+- 3-stage tree (handoff showed many stages).
+- 1-tile canvas-upgrades strip (handoff showed 5).
+- 5-node constellation (no fake locked future-nodes).
+- 1 cluster only ("Starters") — no fake clusters.
+- No pan/zoom on the constellation (5 nodes fit one viewBox).
+- React 19 + lucide-react icons (handoff suggested emoji glyphs).
+
+### Reduced-motion
+
+`prefers-reduced-motion: reduce` honored across every animated component:
+- `TreeScene` — SVG `<animate>` paused.
+- `Cavern` — crystal float paused, opacity locked.
+- `Portal` — float + shimmer paused.
+- `StarCanvas` — twinkles paused.
+- `index.css` — `fame-pulse-anim` paused.
+- `FloatingGoldText` — programmatic suppress + onComplete still fires.
+
+### Round breakdown
+
+- **R0** (foundation): Tailwind drop, `tokens.css`, react-router-dom, lucide-react, top-bar nav, currency chips.
+- **R1**: Tree route (TreeScene + GroundLine + EnergyMeter + tree-stage interactivity).
+- **R2**: Painting route (CanvasStage + TierCard + WorkshopRoom side panel; legacy popup retired).
+- **R3**: Ascension route (Cavern + Portal + ThresholdPanel + FamePreviewCard + PastRunsLedger; pastRuns ledger added to save).
+- **R4**: Constellation route (StarCanvas + NodeCard + MiniMap + ClusterList).
+
+Each round: own plan in `docs/superpowers/plans/`, executed via subagent-driven-development with TDD per task. Tagged `v2.0-round-{0..4}` for rollback.
+
+### Tests + build (final)
+
+- **470 tests passing** (442 baseline + 28 new across R4).
+- tsc clean. Lint clean (only pre-existing `main.tsx` fast-refresh warning).
+- Bundle: 144.91 KB gzipped JS / 4.86 KB gzipped CSS / **~149.77 KB total gzipped**.
+
+### Next
+
+Merge `feat/v2-redesign` → `main`. After merge, the v1.2 Quality-axis content work (currently parked per memory) is the natural next thread.
+
+---
+
 ## v2.0 Round 4 — Constellation route (complete on `feat/v2-redesign`)
 
 **Status:** Round 4 complete. Polish pass + v2.0 tag pending.
