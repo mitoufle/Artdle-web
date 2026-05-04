@@ -1,5 +1,44 @@
 # Artdle Web — Handover
 
+## v2.0 Round 2 — Painting route (complete on `feat/v2-redesign`)
+
+**Status:** Round 2 complete. Round 3 (Ascension) pending.
+
+### What landed
+
+- New `src/components/painting/` directory:
+  - `<CanvasStage>` — vignetted canvas frame + gilded picture frame + pixel landscape SVG inside + animated paint-fill overlay (height = progressPct%) + easel cap + thin gold progress bar + bottom info row.
+  - `<TierCard>` — primary tile in the canvas upgrades strip. Gold border + gold glow + Roman numerals current → next + Upgrade button.
+  - `<CanvasUpgradesStrip>` — 5-cell layout container. v2.0 fills 1 cell (TierCard); 4 are empty layout slots reserved for future upgrades.
+  - `<RoomRail>` — 64px vertical nav with 4 tabs (Workshop active; Office/School/Lab disabled with "Coming soon"). lucide-react icons.
+  - `<WorkshopRoom>` — 340px right panel replacing legacy WorkshopPopup. Same v1.1 craft/equip/unequip/discard logic, restyled.
+- `src/routes/PaintingRoute.tsx` rebuilt: CSS Grid `1fr 340px 64px / 1fr auto` with named areas (stage / upgrades / room / rail).
+
+### Retired
+
+- `src/ui/widgets/TierUpgradeButton.tsx` (replaced by TierCard).
+- `src/ui/popups/WorkshopPopup.tsx` (replaced by WorkshopRoom panel; popup state removed).
+- `src/store/uiSlice.ts` (workshopPopupOpen field + open/close actions no longer needed).
+- `<WorkshopPopup />` mount in `App.tsx`.
+
+### Visual state
+
+- Painting route: matches handoff aesthetic (vignetted canvas + gilded frame + tier card + room rail with workshop side panel).
+- Tree: complete (Round 1).
+- Ascension / Constellation: still degraded; Rounds 3-4 rebuild.
+
+### Tests + build
+
+- 411 tests passing.
+- tsc clean. Lint clean.
+- Bundle: 141.15 KB gzipped JS / 3.60 KB gzipped CSS / ~145.19 KB total gzipped.
+
+### Next
+
+Round 3: Ascension route. Per spec §8 Round 3.
+
+---
+
 ## v2.0 Round 1 — Tree route (complete on `feat/v2-redesign`)
 
 **Status:** Round 1 complete. Round 2 (Painting) pending.
