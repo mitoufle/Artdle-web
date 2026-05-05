@@ -4,8 +4,11 @@ import { EDGES, FAME_HUB, NODE_POSITIONS, VIEWBOX, type EdgeFrom } from "./nodeL
 import styles from "./StarCanvas.module.css";
 
 export interface NodeState {
-  owned: boolean;
+  level: number;
+  maxLevel: number;
+  /** True iff every parent has level >= 1 (or this node is a root). */
   available: boolean;
+  /** True iff player can afford the next-level cost. */
   affordable: boolean;
 }
 
@@ -25,15 +28,16 @@ const TWINKLES: ReadonlyArray<{ x: number; y: number; r: number; dur: string }> 
   { x: 280, y: 30,  r: 1.5, dur: "3.7s" },
 ];
 
-function nodeStateOf(state: NodeState): "owned" | "available" | "locked" {
-  if (state.owned) return "owned";
+function nodeStateName(state: NodeState): "owned" | "maxed" | "available" | "locked" {
+  if (state.level >= state.maxLevel && state.maxLevel > 0) return "maxed";
+  if (state.level > 0) return "owned";
   if (state.available) return "available";
   return "locked";
 }
 
 function pointFor(id: EdgeFrom): { x: number; y: number } {
   if (id === "fame") return FAME_HUB;
-  return NODE_POSITIONS[id];
+  return NODE_POSITIONS[id] ?? FAME_HUB;
 }
 
 export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Element {
@@ -77,7 +81,7 @@ export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Ele
           {EDGES.map(({ from, to }) => {
             const a = pointFor(from);
             const b = pointFor(to);
-            const fromOwned = from === "fame" ? true : nodeStates[from].owned;
+            const fromOwned = from === "fame" ? true : (nodeStates[from]?.level ?? 0) > 0;
             return (
               <line
                 key={`${from}-${to}`}
@@ -116,8 +120,10 @@ export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Ele
         <g>
           {(Object.keys(NODE_POSITIONS) as SkillNodeId[]).map((id) => {
             const pos = NODE_POSITIONS[id];
+            if (!pos) return null;
             const state = nodeStates[id];
-            const stateName = nodeStateOf(state);
+            if (!state) return null;
+            const stateName = nodeStateName(state);
             const isSelected = selectedId === id;
             const r = isSelected ? 14 : 11;
 
@@ -130,7 +136,7 @@ export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Ele
                 style={{ cursor: "pointer" }}
                 onClick={() => onSelect(id)}
               >
-                {(stateName === "owned" || isSelected) && (
+                {(stateName === "owned" || stateName === "maxed" || isSelected) && (
                   <circle
                     cx={pos.x}
                     cy={pos.y}
@@ -138,7 +144,9 @@ export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Ele
                     fill={isSelected ? "rgba(155,108,214,0.25)" : "rgba(255,216,106,0.18)"}
                   />
                 )}
-                {stateName === "owned" ? (
+                {stateName === "maxed" ? (
+                  <circle cx={pos.x} cy={pos.y} r={r} fill="var(--gold)" stroke="var(--gold-d)" strokeWidth="2" />
+                ) : stateName === "owned" ? (
                   <circle cx={pos.x} cy={pos.y} r={r} fill="var(--gold)" stroke="var(--gold-d)" strokeWidth="1.5" />
                 ) : stateName === "available" ? (
                   <>
@@ -149,6 +157,19 @@ export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Ele
                   </>
                 ) : (
                   <circle cx={pos.x} cy={pos.y} r={r * 0.7} fill="var(--bg-2)" stroke="var(--ink-line)" strokeWidth="1" />
+                )}
+                {state.maxLevel > 1 && state.level > 0 && (
+                  <text
+                    x={pos.x}
+                    y={pos.y - r - 6}
+                    textAnchor="middle"
+                    fontFamily="var(--mono)"
+                    fontSize="10"
+                    fontWeight="700"
+                    fill="var(--gold)"
+                  >
+                    {state.level}/{state.maxLevel}
+                  </text>
                 )}
               </g>
             );

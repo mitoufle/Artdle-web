@@ -5,48 +5,53 @@ import styles from "./NodeCard.module.css";
 interface Props {
   nodeId: SkillNodeId;
   name: string;
-  cost: number;
+  description: string;
+  numericEffect: string;
+  currentLevel: number;
+  maxLevel: number;
+  /** Cost of buying the next level. null when maxed. */
+  nextCost: number | null;
   prereqMet: boolean;
   affordable: boolean;
-  owned: boolean;
-  description: string;
   onAcquire: () => void;
 }
 
 export function NodeCard({
   nodeId,
   name,
-  cost,
+  description,
+  numericEffect,
+  currentLevel,
+  maxLevel,
+  nextCost,
   prereqMet,
   affordable,
-  owned,
-  description,
   onAcquire,
 }: Props): JSX.Element {
-  const canAcquire = prereqMet && affordable && !owned;
+  const owned = currentLevel > 0;
+  const maxed = currentLevel >= maxLevel;
+  const canAcquire = !maxed && prereqMet && affordable;
+
+  const levelLabel = maxLevel > 1 ? `Level ${currentLevel} / ${maxLevel}` : (owned ? "Owned" : "Not owned");
 
   let prereqText: string;
-  if (owned) {
-    prereqText = "owned ✓";
-  } else if (prereqMet) {
-    prereqText = "prereq met ✓";
-  } else {
-    prereqText = "prereq locked";
-  }
+  if (maxed) prereqText = "maxed ✓";
+  else if (!prereqMet) prereqText = "prereq locked";
+  else if (!affordable) prereqText = "insufficient fame";
+  else prereqText = "ready";
 
   let buttonLabel: string;
-  if (owned) {
-    buttonLabel = "✦ Acquired";
-  } else {
-    buttonLabel = `✦ Acquire · ${cost} fame`;
-  }
+  if (maxed) buttonLabel = "✦ Maxed";
+  else if (currentLevel === 0) buttonLabel = `✦ Acquire · ${nextCost ?? "?"} fame`;
+  else buttonLabel = `✦ Upgrade · ${nextCost ?? "?"} fame`;
 
   return (
     <aside className={styles.card} aria-label={`Node detail · ${name}`} data-node-id={nodeId}>
       <h3 className={styles.title}>{name}</h3>
       <div className={styles.meta}>
-        {cost} fame · {prereqText}
+        {levelLabel} · {prereqText}
       </div>
+      <p className={styles.effect}>{numericEffect}</p>
       <p className={styles.description}>{description}</p>
       <button
         type="button"
