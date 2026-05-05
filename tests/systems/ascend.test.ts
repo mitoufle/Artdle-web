@@ -6,7 +6,7 @@ import {
 } from "@/systems/ascend";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
-import { palierAscend, fameOnAscend } from "@/core/balance";
+import { fameOnAscend } from "@/core/balance";
 
 describe("systems/ascend", () => {
   beforeEach(() => {
@@ -25,17 +25,6 @@ describe("systems/ascend", () => {
     expect(getEffectivePalier(useGameStore.getState(), 0).toNumber()).toBe(1000);
   });
 
-  it("getEffectivePalier(state, 0) with Faster Strokes returns big(900) (10% reduction)", () => {
-    useGameStore.setState({ purchasedNodes: { faster_strokes: true } });
-    expect(getEffectivePalier(useGameStore.getState(), 0).toNumber()).toBeCloseTo(900, 6);
-  });
-
-  it("getEffectivePalier(state, 5) with Faster Strokes returns palierAscend(5) * 0.9 (Big.pow precision: toBeCloseTo)", () => {
-    useGameStore.setState({ purchasedNodes: { faster_strokes: true } });
-    const expected = palierAscend(5).mul(0.9).toNumber();
-    expect(getEffectivePalier(useGameStore.getState(), 5).toNumber()).toBeCloseTo(expected, 3);
-  });
-
   // ============================================================================
   // canAscend
   // ============================================================================
@@ -47,13 +36,6 @@ describe("systems/ascend", () => {
 
   it("canAscend returns true at exact threshold (inspiration === palier)", () => {
     useGameStore.getState().add("inspiration", big(1000));
-    expect(canAscend(useGameStore.getState())).toBe(true);
-  });
-
-  it("canAscend becomes true earlier with Faster Strokes (palier reduced to 900)", () => {
-    useGameStore.getState().add("inspiration", big(900));
-    expect(canAscend(useGameStore.getState())).toBe(false);
-    useGameStore.setState({ purchasedNodes: { faster_strokes: true } });
     expect(canAscend(useGameStore.getState())).toBe(true);
   });
 
@@ -136,13 +118,13 @@ describe("systems/ascend", () => {
 
   it("performAscendOrchestrator on success: purchasedNodes UNCHANGED (preserved)", () => {
     useGameStore.setState({
-      purchasedNodes: { goldsmith: true, patient_eye: true },
+      purchasedNodes: { get_inspired: 2, black_white: 1 },
     });
     useGameStore.getState().add("inspiration", big(1500));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().purchasedNodes).toEqual({
-      goldsmith: true,
-      patient_eye: true,
+      get_inspired: 2,
+      black_white: 1,
     });
   });
 

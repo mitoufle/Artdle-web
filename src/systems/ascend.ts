@@ -5,14 +5,14 @@ import { palierAscend, fameOnAscend } from "@/core/balance";
 
 /**
  * Effective inspiration palier required to ascend at the given prior ascend count.
- * Faster Strokes (skill node) reduces by 10%.
  *
  * Lives here (not core/multipliers.ts) because it's a one-off domain-specific
  * reduction, not a tick-time multiplier following the `1 + Σ contributions` convention.
  */
 export const getEffectivePalier = (state: GameStore, count: number): Big => {
   const base = palierAscend(count);
-  const reduction = state.purchasedNodes.faster_strokes ? 0.10 : 0;
+  // faster_strokes node no longer exists in v3 skill tree.
+  const reduction = 0;
   return base.mul(1 - reduction);
 };
 
