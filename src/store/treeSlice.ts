@@ -1,7 +1,8 @@
 import type { StateCreator } from "zustand";
 import { TREE_STAGES, type TreePartConfig } from "@/config/treeStages";
 import { treePartCost, inspiPerSec } from "@/core/balance";
-import { getInspiMultiplier } from "@/core/multipliers";
+import { big } from "@/core/bigNumber";
+import { getInspiMultiplier, getTreeUpgradeCostMultiplier } from "@/core/multipliers";
 import type { GameStore } from "@/store";
 
 export interface TreeState {
@@ -61,7 +62,9 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
     const state = get();
     if (stageIdx > state.currentStage) return false;
     const currentLevel = state.partLevels[partId] ?? 0;
-    const cost = treePartCost(currentLevel, part.baseCost);
+    const baseCost = treePartCost(currentLevel, part.baseCost);
+    const discount = getTreeUpgradeCostMultiplier(state);
+    const cost = baseCost.mul(big(discount));
     if (!state.spend("gold", cost)) return false;
     set((s) => ({
       partLevels: { ...s.partLevels, [partId]: (s.partLevels[partId] ?? 0) + 1 },

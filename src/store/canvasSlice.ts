@@ -2,6 +2,7 @@ import type { StateCreator } from "zustand";
 import { canvasGold, canvasTime, tierUpgradeCost, MAX_TIER } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
+  getCanvasSpeedMultiplier,
   getPaintTimeMultiplier,
   getPmMultiplier,
 } from "@/core/multipliers";
@@ -68,7 +69,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
   canvasTick: (deltaSeconds) => {
     if (deltaSeconds <= 0) return;
     const state = get();
-    const paintTime = canvasTime(state.canvasTier) / getPaintTimeMultiplier(state);
+    const paintTime = canvasTime(state.canvasTier) / (getPaintTimeMultiplier(state) * getCanvasSpeedMultiplier(state));
     const newProgress = state.canvasProgress + deltaSeconds;
 
     if (newProgress < paintTime) {
