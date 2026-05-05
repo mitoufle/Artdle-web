@@ -1,109 +1,112 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useGameStore } from "@/store";
-import { hasNode, canBuyNode } from "@/store/skillTreeSlice";
+import { hasNode, canBuyNode, getNodeLevel, getNextCost } from "@/store/skillTreeSlice";
 import { big } from "@/core/bigNumber";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
 
-describe("skillTreeSlice", () => {
+describe("skillTreeSlice (multi-level + DAG)", () => {
   beforeEach(() => {
-    // skillTreeSlice has no resetSkillTree action (purchasedNodes survives ascend).
-    // Reset directly via setState.
-    useGameStore.setState({ purchasedNodes: {} });
-    // Reset fame to 0 so we can control test inputs.
-    useGameStore.setState({ fame: big(0) });
+    useGameStore.setState({ purchasedNodes: {}, pokeTreeTimer: 0, fame: big(0) });
   });
 
-  it("initializes with purchasedNodes = {}", () => {
+  it("initializes with empty purchasedNodes", () => {
     expect(useGameStore.getState().purchasedNodes).toEqual({});
   });
 
-  it("buyNode('goldsmith') with 1 fame succeeds; purchasedNodes.goldsmith === true; fame is 0", () => {
-    useGameStore.getState().add("fame", big(1));
-    expect(useGameStore.getState().buyNode("goldsmith")).toBe(true);
-    expect(useGameStore.getState().purchasedNodes.goldsmith).toBe(true);
-    expect(useGameStore.getState().fame.toNumber()).toBe(0);
+  it("getNodeLevel returns 0 for never-bought node", () => {
+    expect(getNodeLevel(useGameStore.getState(), "get_inspired")).toBe(0);
   });
 
-  it("buyNode('goldsmith') with 0 fame returns false; nothing changes", () => {
-    expect(useGameStore.getState().buyNode("goldsmith")).toBe(false);
-    expect(useGameStore.getState().purchasedNodes.goldsmith).toBeUndefined();
-    expect(useGameStore.getState().fame.toNumber()).toBe(0);
+  it("buyNode('get_inspired') with 1 fame: succeeds, level=1, fame=0", () => {
+    useGameStore.setState({ fame: big(1) });
+    expect(useGameStore.getState().buyNode("get_inspired")).toBe(true);
+    expect(getNodeLevel(useGameStore.getState(), "get_inspired")).toBe(1);
+    expect(useGameStore.getState().fame.eq(0)).toBe(true);
   });
 
-  it("buyNode('goldsmith') twice: second call returns false (already owned), no extra fame spent", () => {
-    useGameStore.getState().add("fame", big(2));
-    expect(useGameStore.getState().buyNode("goldsmith")).toBe(true);
-    expect(useGameStore.getState().fame.toNumber()).toBe(1);
-    expect(useGameStore.getState().buyNode("goldsmith")).toBe(false);
-    expect(useGameStore.getState().fame.toNumber()).toBe(1);
+  it("buyNode('get_inspired') 5 times spends [1,5,10,15,20] = 51 total fame", () => {
+    useGameStore.setState({ fame: big(51) });
+    for (let i = 0; i < 5; i++) {
+      expect(useGameStore.getState().buyNode("get_inspired")).toBe(true);
+    }
+    expect(getNodeLevel(useGameStore.getState(), "get_inspired")).toBe(5);
+    expect(useGameStore.getState().fame.eq(0)).toBe(true);
   });
 
-  it("buyNode('patient_eye') without goldsmith returns false; fame not spent", () => {
-    useGameStore.getState().add("fame", big(100));
-    expect(useGameStore.getState().buyNode("patient_eye")).toBe(false);
-    expect(useGameStore.getState().purchasedNodes.patient_eye).toBeUndefined();
-    expect(useGameStore.getState().fame.toNumber()).toBe(100);
+  it("buyNode at maxLevel returns false", () => {
+    useGameStore.setState({ fame: big(1000) });
+    for (let i = 0; i < 5; i++) useGameStore.getState().buyNode("get_inspired");
+    expect(useGameStore.getState().buyNode("get_inspired")).toBe(false);
+    expect(getNodeLevel(useGameStore.getState(), "get_inspired")).toBe(5);
   });
 
-  it("buyNode('patient_eye') after goldsmith + 3 fame succeeds", () => {
-    useGameStore.getState().add("fame", big(4)); // 1 for goldsmith + 3 for patient_eye
-    useGameStore.getState().buyNode("goldsmith");
-    expect(useGameStore.getState().buyNode("patient_eye")).toBe(true);
-    expect(useGameStore.getState().purchasedNodes.patient_eye).toBe(true);
-    expect(useGameStore.getState().fame.toNumber()).toBe(0);
+  it("buyNode without fame returns false", () => {
+    expect(useGameStore.getState().buyNode("get_inspired")).toBe(false);
   });
 
-  it("linear chain: buying all 5 nodes in order works given enough fame", () => {
-    useGameStore.getState().add("fame", big(144)); // 1+3+10+30+100
-    expect(useGameStore.getState().buyNode("goldsmith")).toBe(true);
-    expect(useGameStore.getState().buyNode("patient_eye")).toBe(true);
-    expect(useGameStore.getState().buyNode("second_slot")).toBe(true);
-    expect(useGameStore.getState().buyNode("faster_strokes")).toBe(true);
-    expect(useGameStore.getState().buyNode("better_brush")).toBe(true);
-    expect(useGameStore.getState().fame.toNumber()).toBe(0);
-    expect(useGameStore.getState().purchasedNodes).toEqual({
-      goldsmith: true,
-      patient_eye: true,
-      second_slot: true,
-      faster_strokes: true,
-      better_brush: true,
-    });
+  it("buyNode without all parents owned returns false", () => {
+    // 'red' has parents [magenta, yellow]. Owning only one is not enough.
+    useGameStore.setState({ fame: big(1000), purchasedNodes: { magenta: 1 } });
+    expect(useGameStore.getState().buyNode("red")).toBe(false);
+    useGameStore.setState({ purchasedNodes: { magenta: 1, yellow: 1 } });
+    expect(useGameStore.getState().buyNode("red")).toBe(true);
   });
 
-  it("skipping ahead: buying second_slot before patient_eye returns false", () => {
-    useGameStore.getState().add("fame", big(100));
-    useGameStore.getState().buyNode("goldsmith");
-    expect(useGameStore.getState().buyNode("second_slot")).toBe(false);
-    expect(useGameStore.getState().purchasedNodes.second_slot).toBeUndefined();
+  it("hasNode returns true iff level > 0", () => {
+    expect(hasNode(useGameStore.getState(), "get_inspired")).toBe(false);
+    useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
+    expect(hasNode(useGameStore.getState(), "get_inspired")).toBe(true);
   });
 
-  it("buyNode('nonexistent' as SkillNodeId) returns false", () => {
-    useGameStore.getState().add("fame", big(1000));
-    expect(useGameStore.getState().buyNode("nonexistent" as SkillNodeId)).toBe(false);
-    expect(useGameStore.getState().fame.toNumber()).toBe(1000);
+  it("canBuyNode false when prereq not met", () => {
+    useGameStore.setState({ fame: big(1000) });
+    expect(canBuyNode(useGameStore.getState(), "red")).toBe(false);
   });
 
-  it("hasNode returns true only for purchased nodes", () => {
-    useGameStore.getState().add("fame", big(4));
-    useGameStore.getState().buyNode("goldsmith");
-    useGameStore.getState().buyNode("patient_eye");
-    expect(hasNode(useGameStore.getState(), "goldsmith")).toBe(true);
-    expect(hasNode(useGameStore.getState(), "patient_eye")).toBe(true);
-    expect(hasNode(useGameStore.getState(), "second_slot")).toBe(false);
+  it("getNextCost returns the next-level cost; null if maxed", () => {
+    expect(getNextCost(useGameStore.getState(), "get_inspired")).toBe(1);
+    useGameStore.setState({ purchasedNodes: { get_inspired: 2 } });
+    expect(getNextCost(useGameStore.getState(), "get_inspired")).toBe(10);
+    useGameStore.setState({ purchasedNodes: { get_inspired: 5 } });
+    expect(getNextCost(useGameStore.getState(), "get_inspired")).toBe(null);
   });
 
-  it("canBuyNode('goldsmith') returns false at fame=0, true at fame=1, false again after purchase", () => {
-    expect(canBuyNode(useGameStore.getState(), "goldsmith")).toBe(false);
-    useGameStore.getState().add("fame", big(1));
-    expect(canBuyNode(useGameStore.getState(), "goldsmith")).toBe(true);
-    useGameStore.getState().buyNode("goldsmith");
-    expect(canBuyNode(useGameStore.getState(), "goldsmith")).toBe(false);
+  it("getNextCost returns null for unknown id", () => {
+    expect(getNextCost(useGameStore.getState(), "ghost" as SkillNodeId)).toBe(null);
   });
 
-  it("canBuyNode('patient_eye') returns false until goldsmith is owned", () => {
-    useGameStore.getState().add("fame", big(100));
-    expect(canBuyNode(useGameStore.getState(), "patient_eye")).toBe(false);
-    useGameStore.getState().buyNode("goldsmith");
-    expect(canBuyNode(useGameStore.getState(), "patient_eye")).toBe(true);
+  it("skillTreeTick: poke_tree level 0 → no inspi, timer stays 0", () => {
+    useGameStore.setState({ inspiration: big(0), purchasedNodes: {} });
+    useGameStore.getState().skillTreeTick(15);
+    expect(useGameStore.getState().inspiration.eq(0)).toBe(true);
+    expect(useGameStore.getState().pokeTreeTimer).toBe(0);
+  });
+
+  it("skillTreeTick: poke_tree level 1, 5s tick → 0 inspi, timer 5", () => {
+    useGameStore.setState({ inspiration: big(0), purchasedNodes: { poke_tree: 1 }, pokeTreeTimer: 0 });
+    useGameStore.getState().skillTreeTick(5);
+    expect(useGameStore.getState().inspiration.eq(0)).toBe(true);
+    expect(useGameStore.getState().pokeTreeTimer).toBeCloseTo(5, 5);
+  });
+
+  it("skillTreeTick: poke_tree level 1, 10s tick → +100 inspi, timer 0", () => {
+    useGameStore.setState({ inspiration: big(0), purchasedNodes: { poke_tree: 1 }, pokeTreeTimer: 0 });
+    useGameStore.getState().skillTreeTick(10);
+    expect(useGameStore.getState().inspiration.eq(100)).toBe(true);
+    expect(useGameStore.getState().pokeTreeTimer).toBeCloseTo(0, 5);
+  });
+
+  it("skillTreeTick: poke_tree level 3, 25s tick → +600 inspi (2 grants × 100×3), timer 5", () => {
+    useGameStore.setState({ inspiration: big(0), purchasedNodes: { poke_tree: 3 }, pokeTreeTimer: 0 });
+    useGameStore.getState().skillTreeTick(25);
+    expect(useGameStore.getState().inspiration.eq(600)).toBe(true);
+    expect(useGameStore.getState().pokeTreeTimer).toBeCloseTo(5, 5);
+  });
+
+  it("resetSkillTree clears purchasedNodes and pokeTreeTimer", () => {
+    useGameStore.setState({ purchasedNodes: { get_inspired: 3 }, pokeTreeTimer: 7 });
+    useGameStore.getState().resetSkillTree();
+    expect(useGameStore.getState().purchasedNodes).toEqual({});
+    expect(useGameStore.getState().pokeTreeTimer).toBe(0);
   });
 });

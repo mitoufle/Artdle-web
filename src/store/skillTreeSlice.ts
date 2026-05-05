@@ -1,63 +1,132 @@
 import type { StateCreator } from "zustand";
-import { SKILL_NODES, type SkillNodeId } from "@/config/skillTreeNodes";
+import { getSkillNodeConfig, type SkillNodeId } from "@/config/skillTreeNodes";
 import { big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
 
+const POKE_TREE_INTERVAL_S = 10;
+const POKE_TREE_BASE_INSPI = 100;
+
 export interface SkillTreeState {
   /**
-   * Purchased nodes by id. Partial<Record<SkillNodeId, true>> for O(1) lookup,
-   * clean JSON serialization, AND compile-time typo protection (only valid
-   * SkillNodeId keys are accepted at write/read sites).
+   * Per-node purchased level. `undefined` or `0` = not owned. Numbers store
+   * the current level (1..maxLevel). Multi-level nodes increment with each
+   * `buyNode` call until maxed.
    */
-  purchasedNodes: Partial<Record<SkillNodeId, true>>;
+  purchasedNodes: Partial<Record<SkillNodeId, number>>;
+  /**
+   * Seconds since the last Poke-the-Tree inspiration grant. Wraps every
+   * POKE_TREE_INTERVAL_S seconds while `level(poke_tree) > 0`.
+   */
+  pokeTreeTimer: number;
 }
 
 export const initialSkillTreeState: SkillTreeState = Object.freeze({
-  purchasedNodes: Object.freeze({}) as Partial<Record<SkillNodeId, true>>,
+  purchasedNodes: Object.freeze({}) as Partial<Record<SkillNodeId, number>>,
+  pokeTreeTimer: 0,
 }) as SkillTreeState;
 
 export interface SkillTreeSlice extends SkillTreeState {
   /**
-   * Spend SKILL_NODES[id].cost fame; mark node as purchased.
-   * Returns false if: unknown id, already owned, prereq not met, insufficient fame.
-   * Atomic via currencySlice.spend('fame', cost).
+   * Spend the cost at the CURRENT level (i.e., next-level cost) and
+   * increment that node's level by 1. Returns false if:
+   *   - unknown id
+   *   - already at maxLevel
+   *   - any parent has level 0
+   *   - insufficient fame
    */
   buyNode: (id: SkillNodeId) => boolean;
+  /**
+   * Per-frame Poke-the-Tree timer + grant. No-op on idle frames.
+   */
+  skillTreeTick: (deltaSeconds: number) => void;
+  /** For ascend orchestrator. Note: skill tree progress is permanent across
+   *  v1.1+ ascends, but resetting is supported for test cleanup and future
+   *  tree-wipe mechanics. */
+  resetSkillTree: () => void;
 }
 
 export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlice> = (set, get) => ({
   ...initialSkillTreeState,
 
   buyNode: (id) => {
-    const node = SKILL_NODES.find((n) => n.id === id);
+    const node = getSkillNodeConfig(id);
     if (!node) return false;
     const state = get();
-    if (state.purchasedNodes[id]) return false;
-    if (node.prereq !== null && !state.purchasedNodes[node.prereq]) return false;
-    if (!state.spend("fame", big(node.cost))) return false;
+    const currentLevel = state.purchasedNodes[id] ?? 0;
+    if (currentLevel >= node.maxLevel) return false;
+    for (const parentId of node.parentIds) {
+      if ((state.purchasedNodes[parentId] ?? 0) === 0) return false;
+    }
+    const cost = node.costs[currentLevel];
+    if (cost === undefined) return false;
+    if (!state.spend("fame", big(cost))) return false;
     set((s) => ({
-      purchasedNodes: { ...s.purchasedNodes, [id]: true },
+      purchasedNodes: { ...s.purchasedNodes, [id]: currentLevel + 1 },
     }));
     return true;
   },
+
+  skillTreeTick: (deltaSeconds) => {
+    if (deltaSeconds <= 0) return;
+    const state = get();
+    const pokeLevel = state.purchasedNodes.poke_tree ?? 0;
+    if (pokeLevel === 0) return;
+
+    const next = state.pokeTreeTimer + deltaSeconds;
+    const grants = Math.floor(next / POKE_TREE_INTERVAL_S);
+    if (grants > 0) {
+      const inspiGain = big(POKE_TREE_BASE_INSPI * pokeLevel * grants);
+      state.add("inspiration", inspiGain);
+    }
+    set({ pokeTreeTimer: next - grants * POKE_TREE_INTERVAL_S });
+  },
+
+  resetSkillTree: () => set(initialSkillTreeState),
 });
 
 // ============================================================================
 // Selectors — pure functions over GameStore.
 // ============================================================================
 
-/** True iff the player has purchased this node. */
+/** Current level (0..maxLevel). Returns 0 for unknown id or unbought node. */
+export const getNodeLevel = (state: GameStore, id: SkillNodeId): number =>
+  state.purchasedNodes[id] ?? 0;
+
+/** True iff the player has purchased this node at least once. */
 export const hasNode = (state: GameStore, id: SkillNodeId): boolean =>
-  state.purchasedNodes[id] === true;
+  getNodeLevel(state, id) > 0;
 
 /**
- * True iff buyNode(id) would succeed RIGHT NOW: not yet owned, prereq met, fame ≥ cost.
- * Phase 4 UI uses this to gate the "Buy" button.
+ * Cost of buying the NEXT level. Returns null if maxed, unknown, or
+ * cost array is malformed.
+ */
+export const getNextCost = (state: GameStore, id: SkillNodeId): number | null => {
+  const node = getSkillNodeConfig(id);
+  if (!node) return null;
+  const level = getNodeLevel(state, id);
+  if (level >= node.maxLevel) return null;
+  return node.costs[level] ?? null;
+};
+
+/**
+ * True iff buyNode(id) would succeed RIGHT NOW: not yet maxed, all parents
+ * owned at level≥1, fame ≥ next-level cost.
  */
 export const canBuyNode = (state: GameStore, id: SkillNodeId): boolean => {
-  const node = SKILL_NODES.find((n) => n.id === id);
+  const node = getSkillNodeConfig(id);
   if (!node) return false;
-  if (state.purchasedNodes[id]) return false;
-  if (node.prereq !== null && !state.purchasedNodes[node.prereq]) return false;
-  return state.fame.gte(big(node.cost));
+  const level = getNodeLevel(state, id);
+  if (level >= node.maxLevel) return false;
+  for (const parentId of node.parentIds) {
+    if (getNodeLevel(state, parentId) === 0) return false;
+  }
+  const cost = node.costs[level];
+  if (cost === undefined) return false;
+  return state.fame.gte(big(cost));
 };
+
+/** Sum of additive contributions from a list of node ids, multiplied by their levels. */
+export const sumLevels = (
+  state: GameStore,
+  ids: ReadonlyArray<SkillNodeId>,
+): number => ids.reduce((acc, id) => acc + getNodeLevel(state, id), 0);
