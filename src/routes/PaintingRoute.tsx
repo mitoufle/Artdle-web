@@ -2,7 +2,12 @@ import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import { canvasGold, canvasTime, tierUpgradeCost, MAX_TIER } from "@/core/balance";
-import { getCanvasGoldMultiplier, getPaintTimeMultiplier, getPmMultiplier } from "@/core/multipliers";
+import {
+  getCanvasGoldMultiplier,
+  getCanvasSpeedMultiplier,
+  getPaintTimeMultiplier,
+  getPmMultiplier,
+} from "@/core/multipliers";
 import { formatBig } from "@/core/formatter";
 import { big } from "@/core/bigNumber";
 import { CanvasStage } from "@/components/painting/CanvasStage";
@@ -31,7 +36,9 @@ export function PaintingRoute(): JSX.Element {
   } as unknown as GameStore;
 
   const baseTime = canvasTime(canvasTier);
-  const paintTimeSec = baseTime / getPaintTimeMultiplier(helperState);
+  const paintTimeSec =
+    baseTime /
+    (getPaintTimeMultiplier(helperState) * getCanvasSpeedMultiplier(helperState));
   const progressPct = paintTimeSec > 0 ? canvasProgress / paintTimeSec : 0;
   const goldMult = getCanvasGoldMultiplier(helperState) * getPmMultiplier(helperState);
   const nextSaleGold = canvasGold(canvasTier, goldMult);
