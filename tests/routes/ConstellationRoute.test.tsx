@@ -31,10 +31,10 @@ describe("ConstellationRoute (v2 visual)", () => {
     expect(screen.getByTestId("fame-hub")).toBeInTheDocument();
   });
 
-  it("renders all 5 skill nodes in the canvas", () => {
+  it("renders skill nodes in the canvas", () => {
     renderConstellationRoute();
-    expect(screen.getByTestId("node-goldsmith")).toBeInTheDocument();
-    expect(screen.getByTestId("node-better_brush")).toBeInTheDocument();
+    expect(screen.getByTestId("node-get_inspired")).toBeInTheDocument();
+    expect(screen.getByTestId("node-black_white")).toBeInTheDocument();
   });
 
   it("renders the right-rail Mini-map and ClusterList", () => {
@@ -45,16 +45,16 @@ describe("ConstellationRoute (v2 visual)", () => {
 
   it("clicking a skill node opens the NodeCard with that node's name", () => {
     renderConstellationRoute();
-    fireEvent.click(screen.getByTestId("node-goldsmith"));
-    expect(screen.getByRole("heading", { name: /Goldsmith/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("node-black_white"));
+    expect(screen.getByRole("heading", { name: /Black & White/i })).toBeInTheDocument();
   });
 
   it("clicking Acquire on a selected affordable node calls buyNode", () => {
-    useGameStore.setState({ fame: big(10) });
+    useGameStore.setState({ fame: big(1) });
     renderConstellationRoute();
-    fireEvent.click(screen.getByTestId("node-goldsmith"));
-    fireEvent.click(screen.getByTestId("node-acquire-goldsmith"));
-    expect(useGameStore.getState().purchasedNodes.goldsmith).toBe(true);
+    fireEvent.click(screen.getByTestId("node-black_white"));
+    fireEvent.click(screen.getByTestId("node-acquire-black_white"));
+    expect(useGameStore.getState().purchasedNodes.black_white).toBe(1);
   });
 
   it("renders the Fame to spend display in the right rail", () => {

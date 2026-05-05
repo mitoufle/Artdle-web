@@ -1,14 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MiniMap } from "@/components/constellation/MiniMap";
+import type { SkillNodeId } from "@/config/skillTreeNodes";
+import { SKILL_NODES } from "@/config/skillTreeNodes";
 
-const ALL_LOCKED = {
-  goldsmith: false,
-  patient_eye: false,
-  second_slot: false,
-  faster_strokes: false,
-  better_brush: false,
-} as const;
+// Build an all-locked map from the live SKILL_NODES list so it stays in sync.
+const ALL_LOCKED: Record<SkillNodeId, boolean> = Object.fromEntries(
+  SKILL_NODES.map((n) => [n.id, false]),
+) as Record<SkillNodeId, boolean>;
 
 describe("<MiniMap />", () => {
   it("renders an SVG", () => {
@@ -16,26 +15,27 @@ describe("<MiniMap />", () => {
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
-  it("renders 5 mini-nodes by data-testid='mini-node-{id}'", () => {
+  it("renders mini-nodes by data-testid='mini-node-{id}'", () => {
     render(<MiniMap ownedById={ALL_LOCKED} selectedId={null} />);
-    expect(screen.getByTestId("mini-node-goldsmith")).toBeInTheDocument();
-    expect(screen.getByTestId("mini-node-better_brush")).toBeInTheDocument();
+    expect(screen.getByTestId("mini-node-get_inspired")).toBeInTheDocument();
+    expect(screen.getByTestId("mini-node-black_white")).toBeInTheDocument();
   });
 
   it("owned node has data-state='owned'", () => {
-    const owned = { ...ALL_LOCKED, goldsmith: true } as const;
+    const owned = { ...ALL_LOCKED, get_inspired: true };
     render(<MiniMap ownedById={owned} selectedId={null} />);
-    expect(screen.getByTestId("mini-node-goldsmith")).toHaveAttribute("data-state", "owned");
+    expect(screen.getByTestId("mini-node-get_inspired")).toHaveAttribute("data-state", "owned");
   });
 
   it("selected node has data-selected='true'", () => {
-    render(<MiniMap ownedById={ALL_LOCKED} selectedId="patient_eye" />);
-    expect(screen.getByTestId("mini-node-patient_eye")).toHaveAttribute("data-selected", "true");
+    render(<MiniMap ownedById={ALL_LOCKED} selectedId="black_white" />);
+    expect(screen.getByTestId("mini-node-black_white")).toHaveAttribute("data-selected", "true");
   });
 
   it("renders a caption with owned/total counts", () => {
-    const owned = { ...ALL_LOCKED, goldsmith: true, patient_eye: true } as const;
+    const owned = { ...ALL_LOCKED, get_inspired: true, black_white: true };
     render(<MiniMap ownedById={owned} selectedId={null} />);
-    expect(screen.getByText(/2 \/ 5 owned/i)).toBeInTheDocument();
+    const total = SKILL_NODES.length;
+    expect(screen.getByText(new RegExp(`2 / ${total} owned`, "i"))).toBeInTheDocument();
   });
 });

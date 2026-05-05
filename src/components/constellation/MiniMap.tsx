@@ -26,6 +26,7 @@ export function MiniMap({ ownedById, selectedId }: Props): JSX.Element {
         <circle cx={FAME_HUB.x} cy={FAME_HUB.y} r="8" fill="var(--fame)" opacity="0.8" />
         {(Object.keys(NODE_POSITIONS) as SkillNodeId[]).map((id) => {
           const pos = NODE_POSITIONS[id];
+          if (!pos) return null;
           const owned = ownedById[id];
           const isSelected = selectedId === id;
           const fill = owned ? "var(--gold)" : "var(--inspi-d)";

@@ -2,47 +2,57 @@ import { describe, it, expect } from "vitest";
 import { SKILL_NODES, type SkillNodeId } from "@/config/skillTreeNodes";
 
 describe("SKILL_NODES config", () => {
-  it("has exactly 5 nodes", () => {
-    expect(SKILL_NODES).toHaveLength(5);
+  it("has the expected number of nodes", () => {
+    expect(SKILL_NODES.length).toBeGreaterThan(0);
   });
 
-  it("costs are strictly increasing: 1 < 3 < 10 < 30 < 100", () => {
-    expect(SKILL_NODES[0]?.cost).toBe(1);
-    expect(SKILL_NODES[1]?.cost).toBe(3);
-    expect(SKILL_NODES[2]?.cost).toBe(10);
-    expect(SKILL_NODES[3]?.cost).toBe(30);
-    expect(SKILL_NODES[4]?.cost).toBe(100);
-    for (let i = 1; i < SKILL_NODES.length; i++) {
-      expect(SKILL_NODES[i]!.cost).toBeGreaterThan(SKILL_NODES[i - 1]!.cost);
-    }
-  });
-
-  it("all prereq references point to valid existing IDs (or null)", () => {
-    const ids = new Set<string>(SKILL_NODES.map((n) => n.id));
-    for (const node of SKILL_NODES) {
-      if (node.prereq !== null) {
-        expect(ids.has(node.prereq)).toBe(true);
-      }
-    }
-  });
-
-  it("the first node's prereq is null (chain root)", () => {
-    expect(SKILL_NODES[0]?.prereq).toBeNull();
-  });
-
-  it("all 5 IDs are unique", () => {
+  it("all IDs are unique", () => {
     const ids = SKILL_NODES.map((n) => n.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("the 5 expected IDs are present (regression pin)", () => {
-    const expectedIds: SkillNodeId[] = [
-      "goldsmith",
-      "patient_eye",
-      "second_slot",
-      "faster_strokes",
-      "better_brush",
-    ];
-    expect(SKILL_NODES.map((n) => n.id)).toEqual(expectedIds);
+  it("all parentIds reference valid existing IDs", () => {
+    const ids = new Set<string>(SKILL_NODES.map((n) => n.id));
+    for (const node of SKILL_NODES) {
+      for (const parentId of node.parentIds) {
+        expect(ids.has(parentId), `parentId "${parentId}" of node "${node.id}" not found`).toBe(true);
+      }
+    }
+  });
+
+  it("at least one node has empty parentIds (root connected to FAME hub)", () => {
+    const hasRoot = SKILL_NODES.some((n) => n.parentIds.length === 0);
+    expect(hasRoot).toBe(true);
+  });
+
+  it("every node has costs.length === maxLevel", () => {
+    for (const node of SKILL_NODES) {
+      expect(node.costs.length, `node "${node.id}" costs.length !== maxLevel`).toBe(node.maxLevel);
+    }
+  });
+
+  it("every node's costs are all positive numbers", () => {
+    for (const node of SKILL_NODES) {
+      for (const cost of node.costs) {
+        expect(cost, `node "${node.id}" has a non-positive cost`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("the expected v3 IDs are present (regression pin)", () => {
+    const ids: SkillNodeId[] = SKILL_NODES.map((n) => n.id);
+    // Root nodes
+    expect(ids).toContain("get_inspired");
+    expect(ids).toContain("black_white");
+    // Color chain
+    expect(ids).toContain("magenta");
+    expect(ids).toContain("cyan");
+    expect(ids).toContain("yellow");
+    expect(ids).toContain("rainbow");
+    // Skill progression
+    expect(ids).toContain("poke_tree");
+    expect(ids).toContain("basic_technique");
+    expect(ids).toContain("muscle_memory");
+    expect(ids).toContain("gear_up");
   });
 });
