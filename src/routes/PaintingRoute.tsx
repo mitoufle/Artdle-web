@@ -53,7 +53,7 @@ export function PaintingRoute(): JSX.Element {
         <CanvasStage
           tier={canvasTier}
           progressPct={progressPct}
-          timeRemaining={(paintTimeSec - canvasProgress).toFixed(1)}
+          timeElapsed={canvasProgress.toFixed(1)}
           timeTotal={paintTimeSec.toFixed(1)}
           nextSaleGold={formatBig(nextSaleGold)}
         />

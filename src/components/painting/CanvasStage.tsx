@@ -4,7 +4,7 @@ import styles from "./CanvasStage.module.css";
 interface Props {
   tier: number;
   progressPct: number;       // 0..1, drives the paint-fill overlay height
-  timeRemaining: string;     // formatted seconds, e.g., "3.7"
+  timeElapsed: string;       // formatted seconds elapsed, e.g., "1.5"
   timeTotal: string;         // formatted seconds, e.g., "6.0"
   nextSaleGold: string;      // formatted gold preview, e.g., "184" or "1.2K"
 }
@@ -35,7 +35,7 @@ const STAGE_NAMES: Record<number, string> = {
 export function CanvasStage({
   tier,
   progressPct,
-  timeRemaining,
+  timeElapsed,
   timeTotal,
   nextSaleGold,
 }: Props): JSX.Element {
@@ -97,7 +97,7 @@ export function CanvasStage({
       {/* Bottom info row */}
       <div className={styles.bottomRow}>
         <span className={styles.painting}>
-          Painting · {timeRemaining}s / {timeTotal}s
+          Painting · {timeElapsed}s / {timeTotal}s
         </span>
         <span className={styles.goldPreview}>+{nextSaleGold}g on next sale</span>
         <span className={styles.tierBadge}>Tier {tier}</span>

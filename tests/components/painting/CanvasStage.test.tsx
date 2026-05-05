@@ -8,7 +8,7 @@ describe("<CanvasStage />", () => {
       <CanvasStage
         tier={1}
         progressPct={0}
-        timeRemaining="2.0"
+        timeElapsed="0.0"
         timeTotal="2.0"
         nextSaleGold="10"
       />,
@@ -21,7 +21,7 @@ describe("<CanvasStage />", () => {
       <CanvasStage
         tier={5}
         progressPct={0.6}
-        timeRemaining="4.0"
+        timeElapsed="6.0"
         timeTotal="10.0"
         nextSaleGold="250"
       />,
@@ -29,17 +29,17 @@ describe("<CanvasStage />", () => {
     expect(screen.getByText(/Masterpiece/i)).toBeInTheDocument();
   });
 
-  it("displays painting time as 'remaining / total'", () => {
+  it("displays painting time as 'elapsed / total' (counts up to total)", () => {
     render(
       <CanvasStage
         tier={5}
         progressPct={0.6}
-        timeRemaining="4.0"
+        timeElapsed="6.0"
         timeTotal="10.0"
         nextSaleGold="250"
       />,
     );
-    expect(screen.getByText(/4\.0.*10\.0/)).toBeInTheDocument();
+    expect(screen.getByText(/6\.0.*10\.0/)).toBeInTheDocument();
   });
 
   it("displays next sale gold preview", () => {
@@ -47,7 +47,7 @@ describe("<CanvasStage />", () => {
       <CanvasStage
         tier={1}
         progressPct={0}
-        timeRemaining="2.0"
+        timeElapsed="0.0"
         timeTotal="2.0"
         nextSaleGold="184"
       />,
@@ -60,7 +60,7 @@ describe("<CanvasStage />", () => {
       <CanvasStage
         tier={1}
         progressPct={0.4}
-        timeRemaining="1.2"
+        timeElapsed="0.8"
         timeTotal="2.0"
         nextSaleGold="10"
       />,
