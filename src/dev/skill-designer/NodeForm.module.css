@@ -94,3 +94,48 @@
 .dangerBtn:hover {
   background: rgba(204, 68, 68, 0.1);
 }
+
+.parentList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: var(--s-1);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+}
+
+.parentRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.parentRow:hover {
+  background: var(--bg-1);
+}
+
+.parentLabel {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink-1);
+}
+
+.stackingRow {
+  display: flex;
+  gap: var(--s-3);
+}
+
+.stackingOption {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-1);
+  cursor: pointer;
+}

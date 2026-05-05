@@ -36,11 +36,11 @@ describe("useDesignerState", () => {
     const aId = result.current.design.nodes[0]!.id;
     act(() => result.current.actions.addNode());
     const bId = result.current.design.nodes[1]!.id;
-    act(() => result.current.actions.updateNode(bId, { parentId: aId }));
+    act(() => result.current.actions.updateNode(bId, { parentIds: [aId] }));
     act(() => result.current.actions.deleteNode(aId));
     expect(result.current.design.nodes).toHaveLength(1);
     expect(result.current.design.nodes[0]!.id).toBe(bId);
-    expect(result.current.design.nodes[0]!.parentId).toBeNull();
+    expect(result.current.design.nodes[0]!.parentIds).toEqual([]);
   });
 
   it("selectNode sets selectedId", () => {

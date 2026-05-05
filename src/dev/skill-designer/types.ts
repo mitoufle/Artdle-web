@@ -1,9 +1,12 @@
+export type StackingMode = "additive" | "multiplicative";
+
 export interface DesignNode {
   id: string;
   name: string;
   description: string;
   numericEffect: string;
-  parentId: string | null;
+  parentIds: ReadonlyArray<string>;
+  stacking: StackingMode;
   maxLevel: number;
   costs: ReadonlyArray<number>;
   position: { x: number; y: number } | null;

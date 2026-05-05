@@ -105,23 +105,26 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
         <rect width={CANVAS_WIDTH} height={VIEWBOX_HEIGHT} fill="var(--bg-0)" />
 
         <g>
-          {nodes.map((node) => {
-            const a = node.parentId === null ? pointFor("fame") : pointFor(node.parentId);
+          {nodes.flatMap((node) => {
             const b = pointFor(node.id);
-            const fromKey = node.parentId === null ? "fame" : node.parentId;
-            return (
-              <line
-                key={`${fromKey}-${node.id}`}
-                data-testid={`designer-edge-${fromKey}-${node.id}`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="var(--ink-line)"
-                strokeWidth={1.5}
-                opacity={0.6}
-              />
-            );
+            const parentKeys: ReadonlyArray<string> =
+              node.parentIds.length === 0 ? ["fame"] : node.parentIds;
+            return parentKeys.map((fromKey) => {
+              const a = fromKey === "fame" ? pointFor("fame") : pointFor(fromKey);
+              return (
+                <line
+                  key={`${fromKey}-${node.id}`}
+                  data-testid={`designer-edge-${fromKey}-${node.id}`}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke="var(--ink-line)"
+                  strokeWidth={1.5}
+                  opacity={0.6}
+                />
+              );
+            });
           })}
         </g>
 

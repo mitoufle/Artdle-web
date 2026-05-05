@@ -8,7 +8,8 @@ const baseNode: DesignNode = {
   name: "Test Node",
   description: "Test description",
   numericEffect: "+10%",
-  parentId: null,
+  parentIds: [],
+  stacking: "additive",
   maxLevel: 2,
   costs: [10, 25],
   position: null,
@@ -19,7 +20,8 @@ const otherNode: DesignNode = {
   name: "Other",
   description: "",
   numericEffect: "",
-  parentId: null,
+  parentIds: [],
+  stacking: "additive",
   maxLevel: 1,
   costs: [1],
   position: null,
@@ -60,12 +62,19 @@ describe("<NodeForm />", () => {
     expect(onChange).toHaveBeenCalledWith("test_node", { maxLevel: 3, costs: [10, 25, 0] });
   });
 
-  it("changing parent dropdown calls onChange with the new parentId", () => {
+  it("toggling a parent checkbox calls onChange with new parentIds", () => {
     const onChange = vi.fn();
     render(<NodeForm node={baseNode} allNodes={[baseNode, otherNode]} onChange={onChange} onDelete={() => {}} />);
-    const select = screen.getByLabelText(/parent/i) as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: "other" } });
-    expect(onChange).toHaveBeenCalledWith("test_node", { parentId: "other" });
+    const checkbox = screen.getByRole("checkbox", { name: /Other/i });
+    fireEvent.click(checkbox);
+    expect(onChange).toHaveBeenCalledWith("test_node", { parentIds: ["other"] });
+  });
+
+  it("toggling stacking radio to multiplicative calls onChange", () => {
+    const onChange = vi.fn();
+    render(<NodeForm node={baseNode} allNodes={[baseNode]} onChange={onChange} onDelete={() => {}} />);
+    fireEvent.click(screen.getByRole("radio", { name: /multiplicative/i }));
+    expect(onChange).toHaveBeenCalledWith("test_node", { stacking: "multiplicative" });
   });
 
   it("clicking Delete calls onDelete with the node id", () => {

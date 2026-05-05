@@ -13,12 +13,38 @@ export interface ValidationIssue {
   message: string;
 }
 
+/**
+ * DFS over the parents-DAG. Returns true if `start` can reach itself.
+ */
+function hasCycleFrom(
+  start: string,
+  byId: Map<string, DesignNode>,
+): boolean {
+  const stack: string[] = [];
+  const startNode = byId.get(start);
+  if (!startNode) return false;
+  for (const parent of startNode.parentIds) stack.push(parent);
+
+  const seen = new Set<string>();
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    if (current === start) return true;
+    if (seen.has(current)) continue;
+    seen.add(current);
+    const node = byId.get(current);
+    if (!node) continue;
+    for (const parent of node.parentIds) stack.push(parent);
+  }
+  return false;
+}
+
 export function validateDesign(
   nodes: ReadonlyArray<DesignNode>,
 ): ReadonlyArray<ValidationIssue> {
   const issues: ValidationIssue[] = [];
   const seen = new Set<string>();
   const idSet = new Set(nodes.map((n) => n.id));
+  const byId = new Map(nodes.map((n) => [n.id, n]));
 
   for (const node of nodes) {
     if (seen.has(node.id)) {
@@ -30,12 +56,14 @@ export function validateDesign(
     }
     seen.add(node.id);
 
-    if (node.parentId !== null && !idSet.has(node.parentId)) {
-      issues.push({
-        type: "missing_parent",
-        nodeId: node.id,
-        message: `Parent "${node.parentId}" does not exist`,
-      });
+    for (const parentId of node.parentIds) {
+      if (!idSet.has(parentId)) {
+        issues.push({
+          type: "missing_parent",
+          nodeId: node.id,
+          message: `Parent "${parentId}" does not exist`,
+        });
+      }
     }
 
     if (node.costs.length !== node.maxLevel) {
@@ -47,40 +75,30 @@ export function validateDesign(
     }
   }
 
-  // Cycle detection: walk parent chain from each node; if we revisit start id or any visited id, it's a cycle.
-  const cycleReported = new Set<string>();
-  for (const start of nodes) {
-    let current: string | null = start.parentId;
-    const visited = new Set<string>([start.id]);
-    while (current !== null) {
-      if (visited.has(current)) {
-        if (!cycleReported.has(start.id)) {
-          issues.push({
-            type: "cycle",
-            nodeId: start.id,
-            message: `Cycle detected involving "${start.id}"`,
-          });
-          cycleReported.add(start.id);
-        }
-        break;
-      }
-      visited.add(current);
-      const parent = nodes.find((n) => n.id === current);
-      current = parent ? parent.parentId : null;
+  // Cycle detection over the DAG.
+  for (const node of nodes) {
+    if (hasCycleFrom(node.id, byId)) {
+      issues.push({
+        type: "cycle",
+        nodeId: node.id,
+        message: `Cycle detected involving "${node.id}"`,
+      });
     }
   }
 
-  // Orphan: parentId === null AND no children.
+  // Orphan: no parents AND no children.
   const hasChildren = new Set<string>();
   for (const node of nodes) {
-    if (node.parentId !== null) hasChildren.add(node.parentId);
+    for (const parentId of node.parentIds) {
+      hasChildren.add(parentId);
+    }
   }
   for (const node of nodes) {
-    if (node.parentId === null && !hasChildren.has(node.id)) {
+    if (node.parentIds.length === 0 && !hasChildren.has(node.id)) {
       issues.push({
         type: "orphan",
         nodeId: node.id,
-        message: `Node "${node.id}" has no parent and no children`,
+        message: `Node "${node.id}" has no parents and no children`,
       });
     }
   }

@@ -50,7 +50,8 @@ export function useDesignerState(): DesignerState {
         name: "New Node",
         description: "",
         numericEffect: "",
-        parentId: null,
+        parentIds: [],
+        stacking: "additive",
         maxLevel: 1,
         costs: [0],
         position: null,
@@ -74,7 +75,11 @@ export function useDesignerState(): DesignerState {
       ...d,
       nodes: d.nodes
         .filter((n) => n.id !== id)
-        .map((n) => (n.parentId === id ? { ...n, parentId: null } : n)),
+        .map((n) =>
+          n.parentIds.includes(id)
+            ? { ...n, parentIds: n.parentIds.filter((p) => p !== id) }
+            : n,
+        ),
     }));
     setSelectedId((cur) => (cur === id ? null : cur));
   }, []);

@@ -12,7 +12,8 @@ const sample: DesignFile = {
       name: "A",
       description: "desc",
       numericEffect: "+10%",
-      parentId: null,
+      parentIds: [],
+      stacking: "additive",
       maxLevel: 1,
       costs: [1],
       position: null,
@@ -48,5 +49,24 @@ describe("skill-designer storage", () => {
     saveDraft(sample);
     clearDraft();
     expect(loadDraft()).toBeNull();
+  });
+
+  it("loadDraft migrates legacy parentId to parentIds and defaults stacking to additive", () => {
+    const legacy = {
+      version: 1,
+      title: "Legacy",
+      designedAt: "",
+      nodes: [
+        { id: "a", name: "A", description: "", numericEffect: "", parentId: null,    maxLevel: 1, costs: [1], position: null },
+        { id: "b", name: "B", description: "", numericEffect: "", parentId: "a",     maxLevel: 1, costs: [1], position: null },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy));
+    const loaded = loadDraft();
+    expect(loaded).not.toBeNull();
+    expect(loaded!.nodes[0]!.parentIds).toEqual([]);
+    expect(loaded!.nodes[0]!.stacking).toBe("additive");
+    expect(loaded!.nodes[1]!.parentIds).toEqual(["a"]);
+    expect(loaded!.nodes[1]!.stacking).toBe("additive");
   });
 });

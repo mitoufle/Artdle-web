@@ -12,6 +12,13 @@ export interface Position {
   readonly y: number;
 }
 
+/**
+ * Compute positions for any node whose `position === null`. Manually-positioned
+ * nodes are returned as-is.
+ *
+ * For multi-parent nodes, the BFS uses the FIRST parent for positioning.
+ * Visually the canvas draws an edge to each parent.
+ */
 export function computeAutoLayout(
   nodes: ReadonlyArray<DesignNode>,
 ): Record<string, Position> {
@@ -26,7 +33,7 @@ export function computeAutoLayout(
   const ROOT_KEY = "__root__";
   const childrenOf: Record<string, string[]> = {};
   for (const node of nodes) {
-    const key = node.parentId ?? ROOT_KEY;
+    const key = node.parentIds.length === 0 ? ROOT_KEY : node.parentIds[0]!;
     if (!childrenOf[key]) childrenOf[key] = [];
     const children = childrenOf[key];
     if (children) children.push(node.id);

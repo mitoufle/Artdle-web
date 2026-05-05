@@ -1,6 +1,282 @@
 {
   "version": 1,
-  "title": "Empty draft",
-  "designedAt": "",
-  "nodes": []
+  "title": "Untitled draft",
+  "designedAt": "2026-05-05T20:39:58.107Z",
+  "nodes": [
+    {
+      "id": "get_inspired",
+      "name": "Get Inspired",
+      "description": "each level increase inspiration gain by 5%",
+      "numericEffect": "5%",
+      "maxLevel": 5,
+      "costs": [
+        1,
+        5,
+        10,
+        15,
+        20
+      ],
+      "position": null,
+      "parentIds": [],
+      "stacking": "additive"
+    },
+    {
+      "id": "black_white",
+      "name": "Black & White",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        1
+      ],
+      "position": null,
+      "parentIds": [],
+      "stacking": "additive"
+    },
+    {
+      "id": "magenta",
+      "name": "Magenta",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        5
+      ],
+      "position": null,
+      "parentIds": [
+        "black_white"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "cyan",
+      "name": "Cyan",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        5
+      ],
+      "position": null,
+      "parentIds": [
+        "black_white"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "yellow",
+      "name": "Yellow",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        5
+      ],
+      "position": null,
+      "parentIds": [
+        "black_white"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "red",
+      "name": "Red",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        10
+      ],
+      "position": null,
+      "parentIds": [
+        "magenta"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "green",
+      "name": "Green",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        10
+      ],
+      "position": null,
+      "parentIds": [
+        "yellow"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "blue",
+      "name": "Blue",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        10
+      ],
+      "position": null,
+      "parentIds": [
+        "cyan"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "purple",
+      "name": "Purple",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        20
+      ],
+      "position": null,
+      "parentIds": [
+        "blue"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "brown",
+      "name": "Brown",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        20
+      ],
+      "position": null,
+      "parentIds": [
+        "green"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "description": "canvas sell price increase by 10%",
+      "numericEffect": "10%",
+      "maxLevel": 1,
+      "costs": [
+        20
+      ],
+      "position": null,
+      "parentIds": [
+        "red"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "rainbow",
+      "name": "Rainbow",
+      "description": "canvas sell price increase by 20%",
+      "numericEffect": "20%",
+      "maxLevel": 5,
+      "costs": [
+        50,
+        100,
+        200,
+        400,
+        800
+      ],
+      "position": null,
+      "parentIds": [
+        "orange"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "poke_tree",
+      "name": "Poke the Tree",
+      "description": "Get 100 inspiration every 10 secondes.\nEach level gives 100 more.",
+      "numericEffect": "100",
+      "maxLevel": 5,
+      "costs": [
+        5,
+        10,
+        20,
+        40,
+        80
+      ],
+      "position": null,
+      "parentIds": [
+        "get_inspired"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "basic_technique",
+      "name": "Basic Technique",
+      "description": "canvas completion time is 1% faster.",
+      "numericEffect": "1%",
+      "maxLevel": 5,
+      "costs": [
+        2,
+        4,
+        8,
+        16,
+        32
+      ],
+      "position": null,
+      "parentIds": [
+        "black_white"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "muscle_memory",
+      "name": "Muscle Memory",
+      "description": "canvas completion time is 1% faster.",
+      "numericEffect": "1%",
+      "maxLevel": 5,
+      "costs": [
+        5,
+        10,
+        20,
+        40,
+        80
+      ],
+      "position": null,
+      "parentIds": [
+        "basic_technique"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "gear_up",
+      "name": "Gear Up",
+      "description": "get 1 additionnal item slot",
+      "numericEffect": "1",
+      "maxLevel": 1,
+      "costs": [
+        100
+      ],
+      "position": null,
+      "parentIds": [
+        "muscle_memory"
+      ],
+      "stacking": "additive"
+    },
+    {
+      "id": "Bargain",
+      "name": "Bargain",
+      "description": "Each level decreases inspiration tree upgrade cost by 1%",
+      "numericEffect": "1%",
+      "maxLevel": 5,
+      "costs": [
+        5,
+        10,
+        20,
+        40,
+        80
+      ],
+      "position": null,
+      "parentIds": [
+        "get_inspired"
+      ],
+      "stacking": "additive"
+    }
+  ]
 }

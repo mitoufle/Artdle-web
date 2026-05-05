@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { DesignNode } from "./types";
+import type { DesignNode, StackingMode } from "./types";
 import styles from "./NodeForm.module.css";
 
 interface Props {
@@ -62,23 +62,60 @@ export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Ele
         />
       </label>
 
-      <label className={styles.field}>
-        <span className={styles.label}>Parent</span>
-        <select
-          className={styles.input}
-          value={node.parentId ?? ""}
-          onChange={(e) => patch({ parentId: e.target.value === "" ? null : e.target.value })}
-        >
-          <option value="">(FAME root)</option>
+      <div className={styles.field}>
+        <span className={styles.label}>Parents (multi-select)</span>
+        <div className={styles.parentList}>
           {allNodes
             .filter((n) => n.id !== node.id)
-            .map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.name} ({n.id})
-              </option>
-            ))}
-        </select>
-      </label>
+            .map((n) => {
+              const isParent = node.parentIds.includes(n.id);
+              return (
+                <label key={n.id} className={styles.parentRow}>
+                  <input
+                    type="checkbox"
+                    checked={isParent}
+                    onChange={(e) => {
+                      const next = e.target.checked
+                        ? [...node.parentIds, n.id]
+                        : node.parentIds.filter((p) => p !== n.id);
+                      patch({ parentIds: next });
+                    }}
+                  />
+                  <span className={styles.parentLabel}>
+                    {n.name} <span className={styles.subLabel}>({n.id})</span>
+                  </span>
+                </label>
+              );
+            })}
+        </div>
+        {node.parentIds.length === 0 && (
+          <span className={styles.subLabel}>No parents — this node is a root (child of FAME).</span>
+        )}
+      </div>
+
+      <div className={styles.field}>
+        <span className={styles.label}>Stacking</span>
+        <div className={styles.stackingRow}>
+          <label className={styles.stackingOption}>
+            <input
+              type="radio"
+              name={`stacking-${node.id}`}
+              checked={node.stacking === "additive"}
+              onChange={() => patch({ stacking: "additive" as StackingMode })}
+            />
+            <span>Additive</span>
+          </label>
+          <label className={styles.stackingOption}>
+            <input
+              type="radio"
+              name={`stacking-${node.id}`}
+              checked={node.stacking === "multiplicative"}
+              onChange={() => patch({ stacking: "multiplicative" as StackingMode })}
+            />
+            <span>Multiplicative</span>
+          </label>
+        </div>
+      </div>
 
       <label className={styles.field}>
         <span className={styles.label}>Max level</span>
