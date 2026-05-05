@@ -11,6 +11,7 @@ import {
 import { big } from "@/core/bigNumber";
 import { rngPick, rngInt } from "@/core/rng";
 import type { GameStore } from "@/store";
+import { getNodeLevel } from "@/store/skillTreeSlice";
 
 export interface Item {
   /** Affix produced by this craft. */
@@ -47,9 +48,9 @@ export interface WorkshopSlice extends WorkshopState {
 // potential TDZ issues if the module is ever analyzed statically).
 // ============================================================================
 
-/** 1 (default) or 2 (after Second Slot). */
+/** 1 (default) or 2 (after gear_up). */
 export const getCurrentSlotCount = (state: GameStore): number =>
-  state.purchasedNodes.second_slot ? 2 : 1;
+  getNodeLevel(state, "gear_up") > 0 ? 2 : 1;
 
 /**
  * Sum the magnitude (as fraction) of equipped items matching the given affix kind.
@@ -69,7 +70,8 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     if (state.inventory.length >= MAX_INVENTORY_SLOTS) return false;
     if (!state.spend("gold", big(CRAFT_COST_GOLD))) return false;
     const kind = rngPick(AFFIX_KINDS);
-    const brushBonus = state.purchasedNodes.better_brush ? BETTER_BRUSH_BONUS_PCT : 0;
+    // better_brush no longer exists in v3 skill tree (no replacement effect).
+    const brushBonus = 0;
     const magnitude = rngInt(MAGNITUDE_MIN_PCT + brushBonus, MAGNITUDE_MAX_PCT + brushBonus);
     set((s) => ({ inventory: [...s.inventory, { kind, magnitude }] }));
     return true;

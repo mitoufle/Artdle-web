@@ -63,20 +63,6 @@ describe("workshopSlice", () => {
     expect(item2.magnitude).toBe(item.magnitude);
   });
 
-  it("craft() with Better Brush purchased: magnitude is in [6, 16]", () => {
-    useGameStore.setState({ purchasedNodes: { better_brush: true } });
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD * 50));
-    for (let i = 0; i < 50; i++) {
-      useGameStore.getState().craft();
-    }
-    const items = useGameStore.getState().inventory.slice();
-    expect(items.length).toBeGreaterThan(0);
-    for (const item of items) {
-      expect(item.magnitude).toBeGreaterThanOrEqual(MAGNITUDE_MIN_PCT + 1);
-      expect(item.magnitude).toBeLessThanOrEqual(MAGNITUDE_MAX_PCT + 1);
-    }
-  });
-
   it("craft() with full inventory returns false; gold NOT deducted (atomic)", () => {
     useGameStore.getState().add("gold", big(CRAFT_COST_GOLD * 4));
     for (let i = 0; i < 3; i++) {
@@ -117,8 +103,8 @@ describe("workshopSlice", () => {
     expect(useGameStore.getState().inventory).toHaveLength(1);
   });
 
-  it("equip(0) with Second Slot purchased + 1 item already equipped: succeeds", () => {
-    useGameStore.setState({ purchasedNodes: { second_slot: true } });
+  it("equip(0) with gear_up purchased + 1 item already equipped: succeeds", () => {
+    useGameStore.setState({ purchasedNodes: { gear_up: 1 } });
     useGameStore.getState().add("gold", big(CRAFT_COST_GOLD * 2));
     useGameStore.getState().craft();
     useGameStore.getState().equip(0);
@@ -187,9 +173,9 @@ describe("workshopSlice", () => {
     expect(useGameStore.getState().discard(99)).toBe(false);
   });
 
-  it("getCurrentSlotCount returns 1 by default, 2 after Second Slot purchased", () => {
+  it("getCurrentSlotCount returns 1 by default, 2 after gear_up purchased", () => {
     expect(getCurrentSlotCount(useGameStore.getState())).toBe(1);
-    useGameStore.setState({ purchasedNodes: { second_slot: true } });
+    useGameStore.setState({ purchasedNodes: { gear_up: 1 } });
     expect(getCurrentSlotCount(useGameStore.getState())).toBe(2);
   });
 
