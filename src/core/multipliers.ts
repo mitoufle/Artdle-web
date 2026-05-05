@@ -1,45 +1,93 @@
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
+import { getNodeLevel, sumLevels } from "@/store/skillTreeSlice";
 import { pmMult } from "./balance";
+
+/**
+ * 10 color nodes whose levels each contribute +10% additive to canvas gold.
+ * Order: black_white (root) + 3 primaries + 3 secondaries + 3 tertiaries.
+ */
+const COLOR_NODES = [
+  "black_white",
+  "magenta",
+  "cyan",
+  "yellow",
+  "red",
+  "green",
+  "blue",
+  "purple",
+  "brown",
+  "orange",
+] as const;
+
+const COLOR_PER_LEVEL = 0.10;
+const RAINBOW_PER_LEVEL = 0.20;
+const GET_INSPIRED_PER_LEVEL = 0.05;
+const BASIC_TECHNIQUE_PER_LEVEL = 0.01;
+const MUSCLE_MEMORY_PER_LEVEL = 0.01;
+const BARGAIN_PER_LEVEL = 0.01;
+const BARGAIN_DISCOUNT_FLOOR = 0.5; // never reduce tree costs below 50% of base
 
 /**
  * Aggregate multiplier on inspiration accrual rate.
  *
- * Workshop items do NOT contribute here — items are painting-only by design
- * (see `src/config/workshopAffixes.ts` JSDoc). Tree-side bonuses come from
- * the skill tree only.
- *
- * Convention: result is `1 + Σ contributions`, where each contribution is
- * an additive percentage (e.g., `+10%` = `0.10`).
+ * Wiring:
+ *   - get_inspired: +5% per level (additive). 5 levels = +25%.
+ *   - workshop items: do NOT contribute (painting-only by design).
  */
 export const getInspiMultiplier = (state: GameStore): number => {
-  let bonus = 0;
-  if (state.purchasedNodes.patient_eye) bonus += 0.15;
+  const bonus = getNodeLevel(state, "get_inspired") * GET_INSPIRED_PER_LEVEL;
   return 1 + bonus;
 };
 
 /**
  * Aggregate multiplier on gold credited per canvas sale.
- * Phase 3: reads `+canvas_gold%` equipped items + "Goldsmith" skill node.
+ *
+ * Wiring:
+ *   - 10 color nodes (each level): +10% additive. All 10 = +100%.
+ *   - rainbow (per level): +20% additive (per design file's `stacking: additive`).
+ *   - Equipped items: existing `+canvas_gold%` contribution.
  */
 export const getCanvasGoldMultiplier = (state: GameStore): number => {
   let bonus = 0;
   bonus += getEquippedContribution(state, "+canvas_gold%");
-  if (state.purchasedNodes.goldsmith) bonus += 0.10;
+  bonus += sumLevels(state, [...COLOR_NODES]) * COLOR_PER_LEVEL;
+  bonus += getNodeLevel(state, "rainbow") * RAINBOW_PER_LEVEL;
   return 1 + bonus;
 };
 
 /**
- * Paint-speed multiplier — `effectivePaintTime = canvasTime(tier) / multiplier`.
- * Higher = faster.
+ * Aggregate multiplier on canvas SPEED. Higher = faster.
  *
- * Convention here is the same as the other two functions (`1 + Σ contributions`),
- * but contributions are paint-SPEED deltas, NOT paint-time reductions.
- * Per-item conversion: an affix labeled `-paint_time% v` contributes `v/(1-v)`
- * to the speed multiplier. So 10% time-reduction → +0.111 contribution → multiplier
- * = 1.111 → effective time = base / 1.111 ≈ 0.9 * base.
+ * Wiring:
+ *   - basic_technique (per level): +1% additive
+ *   - muscle_memory (per level): +1% additive
  *
- * No skill node directly affects paint speed in v1.
+ * Composes multiplicatively at the call site with `getPaintTimeMultiplier`
+ * (the item-driven speed multiplier).
+ */
+export const getCanvasSpeedMultiplier = (state: GameStore): number => {
+  let bonus = 0;
+  bonus += getNodeLevel(state, "basic_technique") * BASIC_TECHNIQUE_PER_LEVEL;
+  bonus += getNodeLevel(state, "muscle_memory") * MUSCLE_MEMORY_PER_LEVEL;
+  return 1 + bonus;
+};
+
+/**
+ * Multiplier on tree-part upgrade costs (spark/bud/leaf/branch). 1.0 = no
+ * discount; <1.0 = discounted. Floored at BARGAIN_DISCOUNT_FLOOR.
+ *
+ * Wiring:
+ *   - Bargain (per level): -1% additive.
+ */
+export const getTreeUpgradeCostMultiplier = (state: GameStore): number => {
+  const reduction = getNodeLevel(state, "Bargain") * BARGAIN_PER_LEVEL;
+  return Math.max(BARGAIN_DISCOUNT_FLOOR, 1 - reduction);
+};
+
+/**
+ * Paint-speed multiplier from items only — `effectivePaintTime = canvasTime / multiplier`.
+ * Skill-tree speed contributions live in `getCanvasSpeedMultiplier`.
  */
 export const getPaintTimeMultiplier = (state: GameStore): number => {
   let bonus = 0;
@@ -52,16 +100,6 @@ export const getPaintTimeMultiplier = (state: GameStore): number => {
   return 1 + bonus;
 };
 
-/**
- * Paint Mastery multiplier on canvas gold output.
- * Wraps `pmMult(state.paintMastery)` so call sites only need the state.
- *
- * Composes multiplicatively with `getCanvasGoldMultiplier` at the call site:
- *
- *   const gain = canvasGold(tier, getCanvasGoldMultiplier(state) * getPmMultiplier(state));
- *
- * NOT folded into `getCanvasGoldMultiplier` because PM follows multiplicative
- * convention while item / skill bonuses follow additive `1 + Σ` convention.
- */
+/** Paint Mastery multiplier on canvas gold output. */
 export const getPmMultiplier = (state: GameStore): number =>
   pmMult(state.paintMastery);

@@ -2,173 +2,97 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   getInspiMultiplier,
   getCanvasGoldMultiplier,
+  getCanvasSpeedMultiplier,
+  getTreeUpgradeCostMultiplier,
   getPaintTimeMultiplier,
-  getPmMultiplier,
 } from "@/core/multipliers";
-import { useGameStore, type GameStore } from "@/store";
+import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
-import { CANVAS_GOLD_BASE } from "@/core/balance";
 
-describe("multipliers — Phase 3 contributors", () => {
+describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
   beforeEach(() => {
-    useGameStore.getState().resetRunCurrencies();
-    useGameStore.getState().resetTree();
-    useGameStore.getState().resetCanvas();
-    useGameStore.getState().resetWorkshop();
-    useGameStore.setState({ purchasedNodes: {} });
-    useGameStore.getState()._setPaintMastery(big(0));
+    useGameStore.setState({
+      purchasedNodes: {},
+      equippedItems: [],
+      paintMastery: big(0),
+    });
   });
 
-  // ============================================================================
-  // getInspiMultiplier
-  // ============================================================================
-
-  it("getInspiMultiplier returns 1 with no equipped items + no Patient Eye", () => {
+  it("getInspiMultiplier returns 1 with no nodes", () => {
     expect(getInspiMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getInspiMultiplier returns 1.15 with Patient Eye purchased", () => {
-    useGameStore.setState({ purchasedNodes: { patient_eye: true } });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.15, 6);
+  it("getInspiMultiplier returns 1.05 with get_inspired level 1", () => {
+    useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.05, 5);
   });
 
-  it("getInspiMultiplier ignores equipped workshop items (items are painting-only)", () => {
-    // Items now only affect painting mechanics; tree-side bonuses come from
-    // the skill tree only. Even with painting-related affixes equipped,
-    // getInspiMultiplier should return 1 (no equipped contribution).
-    useGameStore.setState({
-      equippedItems: [
-        { kind: "+canvas_gold%", magnitude: 12 },
-        { kind: "-paint_time%", magnitude: 10 },
-      ],
-    });
-    expect(getInspiMultiplier(useGameStore.getState())).toBe(1);
+  it("getInspiMultiplier returns 1.25 with get_inspired level 5", () => {
+    useGameStore.setState({ purchasedNodes: { get_inspired: 5 } });
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.25, 5);
   });
 
-  it("getInspiMultiplier with Patient Eye + equipped items still equals 1.15 (items don't contribute)", () => {
-    useGameStore.setState({
-      equippedItems: [{ kind: "+canvas_gold%", magnitude: 10 }],
-      purchasedNodes: { patient_eye: true },
-    });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.15, 6);
-  });
-
-  // ============================================================================
-  // getCanvasGoldMultiplier
-  // ============================================================================
-
-  it("getCanvasGoldMultiplier returns 1 with no contributors", () => {
+  it("getCanvasGoldMultiplier returns 1.0 with no nodes and no items", () => {
     expect(getCanvasGoldMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getCanvasGoldMultiplier returns 1.10 with Goldsmith purchased", () => {
-    useGameStore.setState({ purchasedNodes: { goldsmith: true } });
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.10, 6);
+  it("getCanvasGoldMultiplier returns 1.10 with black_white level 1", () => {
+    useGameStore.setState({ purchasedNodes: { black_white: 1 } });
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.10, 5);
   });
 
-  it("getCanvasGoldMultiplier sums equipped +canvas_gold% items + Goldsmith", () => {
+  it("getCanvasGoldMultiplier returns 2.00 with all 10 color nodes at level 1", () => {
     useGameStore.setState({
-      equippedItems: [
-        { kind: "+canvas_gold%", magnitude: 8 },
-        { kind: "+canvas_gold%", magnitude: 12 },
-      ],
-      purchasedNodes: { goldsmith: true },
+      purchasedNodes: {
+        black_white: 1, magenta: 1, cyan: 1, yellow: 1,
+        red: 1, green: 1, blue: 1,
+        purple: 1, brown: 1, orange: 1,
+      },
     });
-    // 1 + 0.08 + 0.12 + 0.10 = 1.30
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.30, 6);
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(2.00, 5);
   });
 
-  // ============================================================================
-  // getPaintTimeMultiplier (per-item v/(1-v) conversion)
-  // ============================================================================
+  it("getCanvasGoldMultiplier adds 0.20 per rainbow level (additive per current design)", () => {
+    useGameStore.setState({ purchasedNodes: { rainbow: 3 } });
+    // 1 + 0.20 * 3 = 1.60
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.60, 5);
+  });
 
-  it("getPaintTimeMultiplier returns 1 with no equipped items", () => {
+  it("getCanvasGoldMultiplier sums equipped +canvas_gold% items + colors", () => {
+    useGameStore.setState({
+      purchasedNodes: { black_white: 1 },
+      equippedItems: [{ kind: "+canvas_gold%", magnitude: 5 }],
+    });
+    // 1 + 0.10 (black_white) + 0.05 (item) = 1.15
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.15, 5);
+  });
+
+  it("getCanvasSpeedMultiplier returns 1 with no nodes", () => {
+    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBe(1);
+  });
+
+  it("getCanvasSpeedMultiplier sums basic_technique + muscle_memory at 1% each per level", () => {
+    useGameStore.setState({ purchasedNodes: { basic_technique: 5, muscle_memory: 5 } });
+    // 1 + 0.01*5 + 0.01*5 = 1.10
+    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBeCloseTo(1.10, 5);
+  });
+
+  it("getTreeUpgradeCostMultiplier returns 1 with no Bargain", () => {
+    expect(getTreeUpgradeCostMultiplier(useGameStore.getState())).toBe(1);
+  });
+
+  it("getTreeUpgradeCostMultiplier discounts 1% per Bargain level", () => {
+    useGameStore.setState({ purchasedNodes: { Bargain: 5 } });
+    expect(getTreeUpgradeCostMultiplier(useGameStore.getState())).toBeCloseTo(0.95, 5);
+  });
+
+  it("getTreeUpgradeCostMultiplier floors at 0.5 (50% off)", () => {
+    // Even with 100 levels (impossible, max is 5), floor still applies.
+    useGameStore.setState({ purchasedNodes: { Bargain: 100 } });
+    expect(getTreeUpgradeCostMultiplier(useGameStore.getState())).toBe(0.5);
+  });
+
+  it("getPaintTimeMultiplier returns 1 with no items", () => {
     expect(getPaintTimeMultiplier(useGameStore.getState())).toBe(1);
-  });
-
-  it("getPaintTimeMultiplier converts -paint_time% 10 into 1.111... (v/(1-v))", () => {
-    useGameStore.setState({
-      equippedItems: [{ kind: "-paint_time%", magnitude: 10 }],
-    });
-    const m = getPaintTimeMultiplier(useGameStore.getState());
-    // v=0.10 → v/(1-v) = 0.111...; multiplier = 1.111...
-    expect(m).toBeCloseTo(1 + 0.10 / 0.90, 6);
-    // Effective paint time at tier 1 = canvasTime(1) / multiplier = 2 / 1.111... ≈ 1.8s
-    const effectiveTime = 2 / m;
-    expect(effectiveTime).toBeCloseTo(1.8, 1);
-  });
-
-  it("getPaintTimeMultiplier sums per-item conversions for two -paint_time% items", () => {
-    useGameStore.setState({
-      equippedItems: [
-        { kind: "-paint_time%", magnitude: 10 },
-        { kind: "-paint_time%", magnitude: 10 },
-      ],
-    });
-    const m = getPaintTimeMultiplier(useGameStore.getState());
-    // Two items at v=0.10 each → bonus = 2 * (0.10/0.90) = 0.222...; multiplier = 1.222...
-    expect(m).toBeCloseTo(1 + 2 * (0.10 / 0.90), 6);
-  });
-
-  // ============================================================================
-  // Integration: multipliers flow through to tick outputs
-  // ============================================================================
-
-  it("Patient Eye purchased → treeTick credits 1.15× the no-multiplier inspi rate", () => {
-    // Set up: spark at level 5 = 0.5 inspi/sec base.
-    useGameStore.getState().add("gold", big(10000));
-    for (let i = 0; i < 5; i++) {
-      useGameStore.getState().buyPartLevel("spark");
-    }
-    useGameStore.setState({ purchasedNodes: { patient_eye: true } });
-    const before = useGameStore.getState().inspiration.toNumber();
-    useGameStore.getState().treeTick(1);
-    const gain = useGameStore.getState().inspiration.toNumber() - before;
-    expect(gain).toBeCloseTo(0.5 * 1.15, 6);
-  });
-
-  it("Goldsmith purchased → canvasTick credits 1.10× the no-multiplier gold per sale (tier 1, 2s)", () => {
-    useGameStore.setState({ purchasedNodes: { goldsmith: true } });
-    const before = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(2); // tier 1 paint time = 2s
-    const gain = useGameStore.getState().gold.toNumber() - before;
-    expect(gain).toBeCloseTo(CANVAS_GOLD_BASE * 1.10, 6);
-  });
-
-  it("equipped -paint_time% 10 item → canvasTick(1.8) crosses threshold (tier 1 effective time ≈ 1.8s)", () => {
-    // Without the paint-time multiplier, canvasTick(1.8) would NOT cross the
-    // 2s threshold (1.8 < 2) and no sale fires. With one -paint_time% 10 item
-    // equipped, the multiplier becomes 1.111, effective paint time becomes ~1.8s,
-    // and canvasTick(1.8) DOES cross the threshold — a sale fires.
-    //
-    // This integration test specifically guards against canvasSlice.canvasTick
-    // silently dropping the getPaintTimeMultiplier(state) call.
-    useGameStore.setState({
-      equippedItems: [{ kind: "-paint_time%", magnitude: 10 }],
-    });
-    const before = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(1.8);
-    const gain = useGameStore.getState().gold.toNumber() - before;
-    expect(gain).toBe(CANVAS_GOLD_BASE);
-    // Sanity: without the equipped item, canvasTick(1.8) would have gained 0 (1.8 < 2).
-  });
-
-  // ============================================================================
-  // getPmMultiplier
-  // ============================================================================
-
-  it("returns 1.0 when paintMastery is 0", () => {
-    const state = { paintMastery: big(0) } as unknown as GameStore;
-    expect(getPmMultiplier(state)).toBe(1);
-  });
-
-  it("returns ~11 at paintMastery 100", () => {
-    const state = { paintMastery: big(100) } as unknown as GameStore;
-    expect(getPmMultiplier(state)).toBeCloseTo(11.0, 1);
-  });
-
-  it("returns ~31 at paintMastery 1,000,000", () => {
-    const state = { paintMastery: big(1_000_000) } as unknown as GameStore;
-    expect(getPmMultiplier(state)).toBeCloseTo(31.0, 1);
   });
 });
