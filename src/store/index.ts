@@ -32,7 +32,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 7;
+const SAVE_VERSION = 8;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -57,6 +57,9 @@ const SAVE_KEY = "artdle-save";
  *
  * v6 → v7 (2026-05-04): v2.0 Round 3 adds pastRuns ledger to metaSlice.
  * Existing saves get default pastRuns: [] so the AscensionRoute ledger starts empty.
+ *
+ * v7 → v8 (2026-05-05): skill-tree rewrite. Wipe purchasedNodes; reset
+ * pokeTreeTimer.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -115,6 +118,18 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     };
   }
 
+  if (fromVersion < 8) {
+    // v7 → v8 (2026-05-05): full skill-tree rewrite from `skillTreeDesign.json`.
+    // The v1.1 node IDs (goldsmith, patient_eye, second_slot, faster_strokes,
+    // better_brush) no longer exist in the new tree. Wipe purchasedNodes;
+    // existing fame is preserved so players can re-spend on the new tree.
+    state = {
+      ...state,
+      purchasedNodes: {},
+      pokeTreeTimer: 0,
+    };
+  }
+
   return state as unknown as GameStore;
 };
 
@@ -162,6 +177,7 @@ export const useGameStore = create<GameStore>()(
         const s = get();
         s.treeTick(deltaSeconds);
         s.canvasTick(deltaSeconds);
+        s.skillTreeTick(deltaSeconds);
       },
     }),
     {

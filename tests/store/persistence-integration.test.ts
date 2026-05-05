@@ -149,7 +149,7 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
       equippedItems: [
         { kind: "-paint_time%", magnitude: 10 },
       ],
-      purchasedNodes: { goldsmith: true, patient_eye: true },
+      purchasedNodes: { get_inspired: 3, black_white: 1 },
     });
 
     const beforeInventory = [...useGameStore.getState().inventory];
@@ -164,7 +164,7 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
     useGameStore.setState({
       inventory: [{ kind: "+canvas_gold%", magnitude: 99 }],
       equippedItems: [],
-      purchasedNodes: { better_brush: true }, // Use a real SkillNodeId; we just want a different value than seeded.
+      purchasedNodes: { rainbow: 2 }, // Use a real SkillNodeId; we just want a different value than seeded.
     });
 
     // Force-rehydrate from IDB.
@@ -230,13 +230,14 @@ describe("save schema migration", () => {
       gold: { __big: "1234" },
       inventory: [],
       equippedItems: [],
-      purchasedNodes: { goldsmith: true },
+      purchasedNodes: { get_inspired: 1 },
       currentStage: 1,
     };
     const result = migrate(v1State, 1) as unknown as Record<string, unknown>;
     expect(result.playerId).toBe("preserved-uuid");
     expect(result.gold).toEqual({ __big: "1234" });
-    expect(result.purchasedNodes).toEqual({ goldsmith: true });
+    // v8 migration wipes purchasedNodes (skill-tree rewrite), so old IDs don't survive.
+    expect(result.purchasedNodes).toEqual({});
     expect(result.currentStage).toBe(1);
   });
 
@@ -307,7 +308,7 @@ describe("save migration v2 → v3", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.canvasTier).toBe(7);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(7);
+    expect(parsed.version).toBe(8);
   });
 });
 
@@ -360,7 +361,7 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     expect(parsed.state.canvasTier).toBe(3);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(7);
+    expect(parsed.version).toBe(8);
   });
 });
 
@@ -431,5 +432,48 @@ describe("save migration v6 → v7 (add pastRuns)", () => {
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
     expect(migrated.pastRuns).toEqual([]);
+  });
+});
+
+describe("save migration v7 → v8 (skill-tree rewrite)", () => {
+  it("v7 save wipes purchasedNodes and resets pokeTreeTimer on migrate", () => {
+    const v7State = {
+      gold: { __big: "0" },
+      inspiration: { __big: "0" },
+      fame: { __big: "10" },
+      ascendCount: 2,
+      playerId: "test-id-v7",
+      canvasTier: 1,
+      paintMastery: { __big: "0" },
+      lifetimeGold: { __big: "0" },
+      pastRuns: [],
+      purchasedNodes: { goldsmith: true, patient_eye: true },
+      pokeTreeTimer: 99,
+    };
+    const migrated = migrate(v7State, 7) as unknown as Record<string, unknown>;
+    // purchasedNodes wiped — old IDs no longer valid.
+    expect(migrated.purchasedNodes).toEqual({});
+    // pokeTreeTimer reset.
+    expect(migrated.pokeTreeTimer).toBe(0);
+    // fame and playerId preserved.
+    expect((migrated.fame as { __big: string }).__big).toBe("10");
+    expect(migrated.playerId).toBe("test-id-v7");
+  });
+
+  it("full chain v1 → v8 produces all defaults including empty purchasedNodes", () => {
+    const v1State = {
+      gold: { __big: "0" },
+      inventory: [],
+      equippedItems: [],
+      playerId: "v1-test-v8",
+      purchasedNodes: { goldsmith: true },
+    };
+    const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
+    expect(migrated.canvasTier).toBe(1);
+    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect(migrated.pastRuns).toEqual([]);
+    expect(migrated.purchasedNodes).toEqual({});
+    expect(migrated.pokeTreeTimer).toBe(0);
   });
 });
