@@ -1,5 +1,37 @@
 # Artdle Web — Handover
 
+## v3.0 — Skill tree rewrite from designer JSON (shipped on `main`)
+
+**Status:** Shipped. The v1.1 5-node tree has been replaced by the user's designed 17-node DAG (multi-level, multi-parent). `src/config/skillTreeDesign.json` is the source of truth; `skillTreeNodes.ts` derives `SKILL_NODES` from it at module load. Save schema v7 → v8 wipes `purchasedNodes` (game unreleased — no save migration needed).
+
+### What landed
+
+- **Schema:** `purchasedNodes: Partial<Record<string, number>>` (level count). New selectors: `getNodeLevel`, `getNextCost`, `sumLevels`. `hasNode` / `canBuyNode` API names preserved with new semantics. `SkillNodeId = string` (typo protection sacrificed for data-driven config).
+- **DAG prereqs:** `node.parentIds` (array). `canBuyNode` requires every parent owned at level ≥ 1.
+- **Multi-level purchases:** `buyNode` spends `costs[currentLevel]` and increments. Maxed at `maxLevel`.
+- **New effects:**
+  - **Get Inspired** (5%/lvl × 5 = +25%) — inspi rate mult, replaces v1.1 Patient Eye
+  - **10 colors** (B&W + 9 chroma, 10% additive each = +100% all bought) + **Rainbow** (20%/lvl additive × 5 = +100%) — canvas gold mult, replaces v1.1 Goldsmith
+  - **Basic Technique + Muscle Memory** (1%/lvl additive each, max +10%) — NEW canvas speed multiplier in `canvasTick`
+  - **Poke the Tree** (auto +100×lvl inspi every 10s) — NEW periodic timer (`pokeTreeTimer` + `skillTreeTick`)
+  - **Bargain** (-1%/lvl tree-cost, floored at 50% off) — NEW discount on tree-part upgrades in `treeSlice.buyPartLevel`
+  - **Gear Up** (1 → 2 workshop slots) — replaces v1.1 Second Slot
+  - **Dropped without replacement:** v1.1 Faster Strokes (-10% palier) and Better Brush (+1 affix magnitude). No equivalent in the new tree.
+- **Constellation visuals:** `<StarCanvas>` shows level badges for multi-level nodes, "maxed" state. `<NodeCard>` shows "Level N / M" + button cycles through Acquire / Upgrade · cost / Maxed. Multi-parent edges drawn from each parent.
+- **Designer integration:** `nodeLayout.ts` derives `NODE_POSITIONS` and `EDGES` from `skillTreeDesign.json` at module load via `computeAutoLayout`. The `/dev/skill-designer` route remains the authoring tool.
+
+### Tests + build
+
+- 541 tests passing (was 536 baseline; net +5 from added skill-tree config tests).
+- tsc clean. Lint clean (only pre-existing main.tsx fast-refresh warning).
+- Bundle: 150.19 KB gzipped JS / 5.74 KB gzipped CSS / **~156 KB total** (was ~150 KB pre-T1; +6 KB for new effect plumbing + multi-level UI).
+
+### Next
+
+The skill tree is content-driven now. Authoring loop: open `/dev/skill-designer`, design, Save to file, restart dev server, see new tree. To wire a new effect type, the implementer (Claude) reads the `numericEffect` text and adds the appropriate multiplier/system. Currently all 17 nodes' effects are wired.
+
+---
+
 ## v2.0 — Visual redesign shipped (on `feat/v2-redesign`, tag `v2.0`)
 
 **Status:** v2.0 complete. All 4 routes rebuilt to match the handoff aesthetic. Pure visual adapt — no new gameplay features (per the v2.0 spec rule). Ready to merge to `main`.
