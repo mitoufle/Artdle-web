@@ -3,67 +3,112 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { WorkshopRoom } from "@/components/painting/WorkshopRoom";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
+import { setSeed } from "@/core/rng";
+import type { Item } from "@/store/workshopSlice";
 
-/** Escape regex special characters so item.kind values like "+canvas_gold%" are safe. */
-const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const sampleBrush: Item = {
+  id: "test-brush-1",
+  slot: "brush",
+  tier: "magic",
+  affixes: [
+    { kind: "+canvas_gold%", magnitude: 12 },
+    { kind: "-paint_time%", magnitude: 8 },
+  ],
+};
+
+beforeEach(() => {
+  useGameStore.setState({
+    gold: big(0),
+    inventory: [],
+    equipped: {},
+    workshopLevel: 1,
+    workshopXp: 0,
+    purchasedNodes: {},
+  });
+  setSeed(42);
+});
 
 describe("<WorkshopRoom />", () => {
-  beforeEach(() => {
-    useGameStore.getState().resetWorkshop();
-    useGameStore.getState().resetRunCurrencies();
+  it("renders the workshop level header (Lv 1)", () => {
+    render(<WorkshopRoom />);
+    expect(screen.getByText(/Lv\s*1/i)).toBeInTheDocument();
   });
 
-  it("renders the room header 'Workshop'", () => {
+  it("renders the XP progress (0 / 8 at L1)", () => {
     render(<WorkshopRoom />);
-    expect(screen.getByRole("heading", { name: /workshop/i })).toBeInTheDocument();
+    expect(screen.getByText(/0\s*\/\s*8/)).toBeInTheDocument();
   });
 
-  it("renders Craft button (disabled when player has no gold)", () => {
+  it("renders craft button with current cost (100g at L1)", () => {
     render(<WorkshopRoom />);
-    expect(screen.getByRole("button", { name: /craft/i })).toBeDisabled();
+    const btn = screen.getByTestId("craft-button");
+    expect(btn).toHaveTextContent(/100/);
   });
 
-  it("Craft button is enabled when gold ≥ craft cost", () => {
-    useGameStore.setState({ gold: big(10000) });
+  it("craft button disabled when gold insufficient", () => {
+    useGameStore.setState({ gold: big(50) });
     render(<WorkshopRoom />);
-    expect(screen.getByRole("button", { name: /craft/i })).not.toBeDisabled();
+    expect(screen.getByTestId("craft-button")).toBeDisabled();
   });
 
-  it("clicking Craft adds an item to inventory", () => {
-    useGameStore.setState({ gold: big(10000) });
+  it("craft button enabled when gold sufficient and inventory not full", () => {
+    useGameStore.setState({ gold: big(200) });
     render(<WorkshopRoom />);
-    fireEvent.click(screen.getByRole("button", { name: /craft/i }));
+    expect(screen.getByTestId("craft-button")).not.toBeDisabled();
+  });
+
+  it("clicking craft adds an item to inventory", () => {
+    useGameStore.setState({ gold: big(200) });
+    render(<WorkshopRoom />);
+    fireEvent.click(screen.getByTestId("craft-button"));
     expect(useGameStore.getState().inventory.length).toBe(1);
   });
 
-  it("renders 'Inventory' and 'Equipped' section headings", () => {
+  it("inventory item card shows tier label + slot kind badge + affix list", () => {
+    useGameStore.setState({ inventory: [sampleBrush] });
     render(<WorkshopRoom />);
-    expect(screen.getByText(/inventory/i)).toBeInTheDocument();
-    expect(screen.getByText(/equipped/i)).toBeInTheDocument();
+    expect(screen.getByText(/magic/i)).toBeInTheDocument();
+    expect(screen.getByText(/brush/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+canvas_gold%.*12/i)).toBeInTheDocument();
+    expect(screen.getByText(/-paint_time%.*8/i)).toBeInTheDocument();
   });
 
-  it("displays an inventory item that can be equipped via click", () => {
-    useGameStore.setState({ gold: big(10000) });
-    useGameStore.getState().craft();
+  it("inventory item has data-tier matching its tier", () => {
+    useGameStore.setState({ inventory: [sampleBrush] });
     render(<WorkshopRoom />);
-    const item = useGameStore.getState().inventory[0]!;
-    const equipButton = screen.getByRole("button", { name: new RegExp(`${escapeRegex(item.kind)}.*${item.magnitude}`) });
-    fireEvent.click(equipButton);
-    expect(useGameStore.getState().equippedItems.length).toBe(1);
+    expect(screen.getByTestId(`inventory-item-${sampleBrush.id}`)).toHaveAttribute("data-tier", "magic");
   });
 
-  it("equipped items can be unequipped via click", () => {
-    useGameStore.setState({ gold: big(10000) });
-    useGameStore.getState().craft();
-    useGameStore.getState().equip(0);
+  it("equipped panel shows one row per unlocked slot kind (only 'brush' default)", () => {
     render(<WorkshopRoom />);
-    const equipped = useGameStore.getState().equippedItems[0]!;
-    const buttons = screen.getAllByRole("button", {
-      name: new RegExp(`${escapeRegex(equipped.kind)}.*${equipped.magnitude}`),
-    });
-    // The equipped button (in the equipped section) — click whichever is enabled
-    const target = buttons.find((b) => !b.hasAttribute("disabled")) ?? buttons[0]!;
-    fireEvent.click(target);
-    expect(useGameStore.getState().inventory.length).toBe(1);
+    expect(screen.getByTestId("slot-brush")).toBeInTheDocument();
+    expect(screen.queryByTestId("slot-palette")).not.toBeInTheDocument();
+  });
+
+  it("equipped panel shows palette slot when gear_up purchased", () => {
+    useGameStore.setState({ purchasedNodes: { gear_up: 1 } });
+    render(<WorkshopRoom />);
+    expect(screen.getByTestId("slot-palette")).toBeInTheDocument();
+  });
+
+  it("clicking an inventory item with matching slot equips it", () => {
+    useGameStore.setState({ inventory: [sampleBrush] });
+    render(<WorkshopRoom />);
+    fireEvent.click(screen.getByTestId(`inventory-equip-${sampleBrush.id}`));
+    expect(useGameStore.getState().equipped.brush?.id).toBe(sampleBrush.id);
+  });
+
+  it("clicking an equipped slot unequips that slot", () => {
+    useGameStore.setState({ equipped: { brush: sampleBrush } });
+    render(<WorkshopRoom />);
+    fireEvent.click(screen.getByTestId("slot-unequip-brush"));
+    expect(useGameStore.getState().equipped.brush).toBeUndefined();
+  });
+
+  it("discarding an inventory item removes it", () => {
+    useGameStore.setState({ inventory: [sampleBrush] });
+    render(<WorkshopRoom />);
+    fireEvent.click(screen.getByTestId(`inventory-discard-${sampleBrush.id}`));
+    expect(useGameStore.getState().inventory).toEqual([]);
   });
 });

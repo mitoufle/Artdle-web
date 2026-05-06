@@ -1,45 +1,57 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
-import { big } from "@/core/bigNumber";
-import { CRAFT_COST_GOLD, MAX_INVENTORY_SLOTS } from "@/config/workshopAffixes";
-import { getCurrentSlotCount } from "@/store/workshopSlice";
+import { craftCost, xpToNext } from "@/core/balance";
+import { MAX_INVENTORY_SLOTS } from "@/config/workshopAffixes";
+import { getUnlockedSlotKinds } from "@/store/workshopSlice";
+import { formatBig } from "@/core/formatter";
+import type { Item, ItemTier } from "@/store/workshopSlice";
 import styles from "./WorkshopRoom.module.css";
 
-/**
- * 340px right panel — Workshop room content. Replaces the legacy WorkshopPopup
- * modal: same craft / equip / unequip / discard logic, restyled per handoff
- * aesthetic. Always visible alongside CanvasStage on the painting route in v2.0
- * (no popup state, no auto-close).
- */
+const TIER_LABEL: Record<ItemTier, string> = {
+  normal: "Normal",
+  magic: "Magic",
+  rare: "Rare",
+  epic: "Epic",
+  legendary: "Legendary",
+};
+
 export function WorkshopRoom(): JSX.Element {
   const inventory = useGameStore((s) => s.inventory);
-  const equippedItems = useGameStore((s) => s.equippedItems);
+  const equipped = useGameStore((s) => s.equipped);
   const gold = useGameStore((s) => s.gold);
+  const workshopLevel = useGameStore((s) => s.workshopLevel);
+  const workshopXp = useGameStore((s) => s.workshopXp);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const craft = useGameStore((s) => s.craft);
-  const equip = useGameStore((s) => s.equip);
-  const unequip = useGameStore((s) => s.unequip);
+  const equipItem = useGameStore((s) => s.equipItem);
+  const unequipSlot = useGameStore((s) => s.unequipSlot);
   const discard = useGameStore((s) => s.discard);
 
   const helperState = { purchasedNodes } as unknown as GameStore;
-  const slotCount = getCurrentSlotCount(helperState);
-  const canCraft = gold.gte(big(CRAFT_COST_GOLD)) && inventory.length < MAX_INVENTORY_SLOTS;
-  const canEquipMore = equippedItems.length < slotCount;
-  const canUnequip = inventory.length < MAX_INVENTORY_SLOTS;
+  const unlockedSlots = getUnlockedSlotKinds(helperState);
+  const cost = craftCost(workshopLevel);
+  const xpMax = xpToNext(workshopLevel);
+  const xpPct = Math.max(0, Math.min(100, (workshopXp / xpMax) * 100));
+
+  const canCraft = gold.gte(cost) && inventory.length < MAX_INVENTORY_SLOTS;
 
   return (
     <section className={styles.room} aria-label="Workshop room">
       <header className={styles.header}>
         <h2 className={styles.title}>Workshop</h2>
-        <span className={styles.crumb}>Craft · Equip</span>
+        <div className={styles.levelStrip}>
+          <span className={styles.levelLabel}>Lv {workshopLevel}</span>
+          <div className={styles.xpBar}>
+            <div className={styles.xpFill} style={{ width: `${xpPct}%` }} />
+          </div>
+          <span className={styles.xpReadout}>
+            {workshopXp} / {xpMax}
+          </span>
+        </div>
       </header>
 
       <section className={styles.craftStation}>
-        <div className={styles.subhead}>Craft station</div>
-        <div className={styles.craftMeta}>
-          Roll an item · Random affix · 5–15% magnitude
-        </div>
         <button
           type="button"
           className={styles.craftBtn}
@@ -47,33 +59,38 @@ export function WorkshopRoom(): JSX.Element {
           onClick={() => craft()}
           data-testid="craft-button"
         >
-          Craft · {CRAFT_COST_GOLD}g
+          Craft · {formatBig(cost)} g
         </button>
       </section>
 
       <section className={styles.section}>
         <div className={styles.subhead}>
-          Equipped <span className={styles.count}>{equippedItems.length}/{slotCount}</span>
+          Equipped{" "}
+          <span className={styles.count}>
+            {Object.keys(equipped).length}/{unlockedSlots.length}
+          </span>
         </div>
-        {equippedItems.length === 0 ? (
-          <div className={styles.empty}>No items in slots.</div>
-        ) : (
-          <ul className={styles.list}>
-            {equippedItems.map((item, idx) => (
-              <li key={idx} className={styles.row}>
+        <ul className={styles.list}>
+          {unlockedSlots.map((slot) => (
+            <li key={slot} className={styles.row} data-testid={`slot-${slot}`}>
+              {equipped[slot] ? (
                 <button
                   type="button"
                   className={styles.itemBtn}
-                  disabled={!canUnequip}
-                  onClick={() => unequip(idx)}
-                  data-testid={`equipped-item-${idx}`}
+                  data-tier={equipped[slot]!.tier}
+                  onClick={() => unequipSlot(slot)}
+                  data-testid={`slot-unequip-${slot}`}
                 >
-                  {item.kind} {item.magnitude}%
+                  <span className={styles.tierTag}>{TIER_LABEL[equipped[slot]!.tier]}</span>
+                  <span className={styles.slotBadge}>{slot}</span>
+                  <ItemAffixList affixes={equipped[slot]!.affixes} />
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
+              ) : (
+                <div className={styles.emptySlot}>(empty)</div>
+              )}
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className={styles.section}>
@@ -84,22 +101,30 @@ export function WorkshopRoom(): JSX.Element {
           <div className={styles.empty}>Empty — click Craft to roll an item.</div>
         ) : (
           <ul className={styles.list}>
-            {inventory.map((item, idx) => (
-              <li key={idx} className={styles.row}>
+            {inventory.map((item) => (
+              <li
+                key={item.id}
+                className={styles.row}
+                data-testid={`inventory-item-${item.id}`}
+                data-tier={item.tier}
+              >
                 <button
                   type="button"
                   className={styles.itemBtn}
-                  disabled={!canEquipMore}
-                  onClick={() => equip(idx)}
-                  data-testid={`inventory-item-${idx}`}
+                  data-tier={item.tier}
+                  onClick={() => equipItem(item.id)}
+                  data-testid={`inventory-equip-${item.id}`}
                 >
-                  {item.kind} {item.magnitude}%
+                  <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
+                  <span className={styles.slotBadge}>{item.slot}</span>
+                  <ItemAffixList affixes={item.affixes} />
                 </button>
                 <button
                   type="button"
                   className={styles.discardBtn}
-                  onClick={() => discard(idx)}
-                  aria-label={`Remove item ${idx + 1} from inventory`}
+                  onClick={() => discard(item.id)}
+                  data-testid={`inventory-discard-${item.id}`}
+                  aria-label={`Discard ${item.id}`}
                 >
                   ✕
                 </button>
@@ -109,5 +134,17 @@ export function WorkshopRoom(): JSX.Element {
         )}
       </section>
     </section>
+  );
+}
+
+function ItemAffixList({ affixes }: { affixes: Item["affixes"] }): JSX.Element {
+  return (
+    <ul className={styles.affixList}>
+      {affixes.map((a, i) => (
+        <li key={i} className={styles.affixRow}>
+          {a.kind} {a.magnitude}%
+        </li>
+      ))}
+    </ul>
   );
 }
