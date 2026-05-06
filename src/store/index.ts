@@ -32,7 +32,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 8;
+const SAVE_VERSION = 9;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -60,6 +60,9 @@ const SAVE_KEY = "artdle-save";
  *
  * v7 → v8 (2026-05-05): skill-tree rewrite. Wipe purchasedNodes; reset
  * pokeTreeTimer.
+ *
+ * v8 → v9 (2026-05-06): workshop rework. Wipe inventory + equipped; initialize
+ * workshopLevel=1, workshopXp=0.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -127,6 +130,21 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       ...state,
       purchasedNodes: {},
       pokeTreeTimer: 0,
+    };
+  }
+
+  if (fromVersion < 9) {
+    // v8 → v9 (2026-05-06): workshop rework. Items change shape (single-affix
+    // → multi-affix). equippedItems array → equipped: Partial<Record<SlotKind, Item>>.
+    // Game is unreleased; wipe inventory + equipped and initialize workshop level/xp.
+    const { equippedItems: _ei, ...rest } = state;
+    void _ei;
+    state = {
+      ...rest,
+      inventory: [],
+      equipped: {},
+      workshopLevel: 1,
+      workshopXp: 0,
     };
   }
 

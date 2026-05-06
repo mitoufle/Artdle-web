@@ -139,21 +139,23 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
     useGameStore.setState({ purchasedNodes: {} });
   });
 
-  it("inventory + equippedItems + purchasedNodes all round-trip through save", async () => {
+  it("inventory + equipped + purchasedNodes all round-trip through save", async () => {
     // Seed known state.
     useGameStore.setState({
-      inventory: [
-        { kind: "+canvas_gold%", magnitude: 12 },
-        { kind: "-paint_time%", magnitude: 8 },
-      ],
-      equippedItems: [
-        { kind: "-paint_time%", magnitude: 10 },
-      ],
+      inventory: [],
+      equipped: {
+        brush: {
+          id: "p-1",
+          slot: "brush",
+          tier: "normal",
+          affixes: [{ kind: "+canvas_gold%", magnitude: 12 }],
+        },
+      },
       purchasedNodes: { get_inspired: 3, black_white: 1 },
     });
 
     const beforeInventory = [...useGameStore.getState().inventory];
-    const beforeEquipped = [...useGameStore.getState().equippedItems];
+    const beforeEquipped = { ...useGameStore.getState().equipped };
     const beforeNodes = { ...useGameStore.getState().purchasedNodes };
 
     // Force the throttle to flush the latest persist write.
@@ -162,8 +164,8 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
     // Stomp in-memory state with bogus values so we can prove rehydration
     // restored from IDB rather than just observing in-memory.
     useGameStore.setState({
-      inventory: [{ kind: "+canvas_gold%", magnitude: 99 }],
-      equippedItems: [],
+      inventory: [],
+      equipped: {},
       purchasedNodes: { rainbow: 2 }, // Use a real SkillNodeId; we just want a different value than seeded.
     });
 
@@ -173,7 +175,7 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
     // Assert the seeded values were restored.
     const after = useGameStore.getState();
     expect(after.inventory).toEqual(beforeInventory);
-    expect(after.equippedItems).toEqual(beforeEquipped);
+    expect(after.equipped).toEqual(beforeEquipped);
     expect(after.purchasedNodes).toEqual(beforeNodes);
   });
 });
@@ -218,10 +220,13 @@ describe("save schema migration", () => {
         { kind: "+inspiration_rate%", magnitude: 10 },
       ],
     };
-    const result = migrate(v1State, 1);
-    expect(result.inventory).toHaveLength(2);
-    expect(result.inventory.map((i) => i.kind)).toEqual(["+canvas_gold%", "-paint_time%"]);
-    expect(result.equippedItems).toHaveLength(0);
+    const result = migrate(v1State, 1) as unknown as Record<string, unknown>;
+    // v9 migration wipes inventory (workshop rework); the v1→v2 filtering
+    // still ran correctly, but the full chain ends with inventory=[].
+    expect(result.inventory).toEqual([]);
+    // equippedItems array is removed by v9 migration (replaced by equipped: {}).
+    expect("equippedItems" in result).toBe(false);
+    expect(result.equipped).toEqual({});
   });
 
   it("migrate v1 → v2 preserves all other fields verbatim (only inventory + equippedItems are filtered)", () => {
@@ -241,21 +246,26 @@ describe("save schema migration", () => {
     expect(result.currentStage).toBe(1);
   });
 
-  it("migrate from version 2 (legacy) leaves inventory and equipped items untouched", () => {
+  it("migrate from version 2 (legacy): v9 wipes inventory and drops equippedItems", () => {
     const v2State = {
       inventory: [{ kind: "+canvas_gold%", magnitude: 10 }],
       equippedItems: [{ kind: "-paint_time%", magnitude: 7 }],
     };
-    const result = migrate(v2State, 2);
-    expect(result.inventory).toHaveLength(1);
-    expect(result.equippedItems).toHaveLength(1);
+    const result = migrate(v2State, 2) as unknown as Record<string, unknown>;
+    // v9 migration wipes inventory (workshop rework).
+    expect(result.inventory).toEqual([]);
+    // equippedItems is removed by v9; equipped: {} is initialized instead.
+    expect("equippedItems" in result).toBe(false);
+    expect(result.equipped).toEqual({});
   });
 
   it("migrate handles missing inventory/equippedItems gracefully (defaults to empty)", () => {
     const v1State = { playerId: "x" };
-    const result = migrate(v1State, 1);
+    const result = migrate(v1State, 1) as unknown as Record<string, unknown>;
+    // v9 migration initializes inventory=[] and equipped={} (equippedItems array dropped).
     expect(result.inventory).toEqual([]);
-    expect(result.equippedItems).toEqual([]);
+    expect(result.equipped).toEqual({});
+    expect("equippedItems" in result).toBe(false);
   });
 });
 
@@ -289,9 +299,9 @@ describe("save migration v2 → v3", () => {
       playerId: "test-player-id-v1",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v1→v2: inspiration_rate% removed.
-    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(1);
-    expect((migrated.inventory as Array<{ kind: string }>)[0]!.kind).toBe("+canvas_gold%");
+    // v9 migration wipes inventory (workshop rework); v1→v2 filtering ran
+    // correctly mid-chain but the final state has inventory=[].
+    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
     // v2→v3: defaults added.
     expect(migrated.canvasTier).toBe(1);
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
@@ -308,7 +318,7 @@ describe("save migration v2 → v3", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.canvasTier).toBe(7);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(8);
+    expect(parsed.version).toBe(9);
   });
 });
 
@@ -343,7 +353,8 @@ describe("save migration v3 → v4 (PM redesign)", () => {
       playerId: "test-player-id-v1",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(1);
+    // v9 migration wipes inventory (workshop rework).
+    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
     expect(migrated.canvasTier).toBe(1);
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
@@ -361,7 +372,7 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     expect(parsed.state.canvasTier).toBe(3);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(8);
+    expect(parsed.version).toBe(9);
   });
 });
 
@@ -394,7 +405,8 @@ describe("save migration v5 → v6 (drop currentView)", () => {
       currentView: "home",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(1);
+    // v9 migration wipes inventory (workshop rework).
+    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
     expect(migrated.canvasTier).toBe(1);
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
@@ -475,5 +487,28 @@ describe("save migration v7 → v8 (skill-tree rewrite)", () => {
     expect(migrated.pastRuns).toEqual([]);
     expect(migrated.purchasedNodes).toEqual({});
     expect(migrated.pokeTreeTimer).toBe(0);
+  });
+});
+
+describe("save migration v8 → v9 (workshop rework)", () => {
+  it("v8 → v9 migration: wipes inventory and equipped, initializes workshopLevel/Xp", () => {
+    const v8State = {
+      fame: { __big: "10" },
+      gold: { __big: "100" },
+      inventory: [{ kind: "+canvas_gold%", magnitude: 12 }],
+      equippedItems: [{ kind: "-paint_time%", magnitude: 8 }],
+      purchasedNodes: { gear_up: 1 },
+      pokeTreeTimer: 0,
+      pastRuns: [],
+      canvasTier: 5,
+      paintMastery: { __big: "100" },
+      lifetimeGold: { __big: "10000" },
+    };
+    const result = migrate(v8State, 8);
+    expect(result.inventory).toEqual([]);
+    expect(result.equipped).toEqual({});
+    expect(result.workshopLevel).toBe(1);
+    expect(result.workshopXp).toBe(0);
+    expect(result.purchasedNodes).toEqual({ gear_up: 1 });
   });
 });
