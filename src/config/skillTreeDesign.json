@@ -269,9 +269,9 @@
     },
     {
       "id": "gear_up",
-      "name": "Gear Up",
-      "description": "get 1 additionnal item slot",
-      "numericEffect": "1",
+      "name": "Unlock Palette Slot",
+      "description": "Unlocks a second equipment slot for palette items.",
+      "numericEffect": "+1 palette slot",
       "parentIds": [
         "muscle_memory"
       ],
