@@ -2,8 +2,7 @@ import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import { craftCost, xpToNext } from "@/core/balance";
-import { MAX_INVENTORY_SLOTS } from "@/config/workshopAffixes";
-import { getUnlockedSlotKinds } from "@/store/workshopSlice";
+import { getUnlockedSlotKinds, getMaxInventorySlots } from "@/store/workshopSlice";
 import { formatBig } from "@/core/formatter";
 import type { Item, ItemTier } from "@/store/workshopSlice";
 import styles from "./WorkshopRoom.module.css";
@@ -30,11 +29,14 @@ export function WorkshopRoom(): JSX.Element {
 
   const helperState = { purchasedNodes } as unknown as GameStore;
   const unlockedSlots = getUnlockedSlotKinds(helperState);
+  const maxSlots = getMaxInventorySlots(helperState);
+  const hasShredder = (purchasedNodes.shredder ?? 0) > 0;
   const cost = craftCost(workshopLevel);
   const xpMax = xpToNext(workshopLevel);
   const xpPct = Math.max(0, Math.min(100, (workshopXp / xpMax) * 100));
 
-  const canCraft = gold.gte(cost) && inventory.length < MAX_INVENTORY_SLOTS;
+  // Shredder lets the craft proceed when inventory is full (oldest gets shredded).
+  const canCraft = gold.gte(cost) && (inventory.length < maxSlots || hasShredder);
 
   return (
     <section className={styles.room} aria-label="Workshop room">
@@ -95,7 +97,7 @@ export function WorkshopRoom(): JSX.Element {
 
       <section className={styles.section}>
         <div className={styles.subhead}>
-          Inventory <span className={styles.count}>{inventory.length}/{MAX_INVENTORY_SLOTS}</span>
+          Inventory <span className={styles.count}>{inventory.length}/{maxSlots}</span>
         </div>
         {inventory.length === 0 ? (
           <div className={styles.empty}>Empty — click Craft to roll an item.</div>

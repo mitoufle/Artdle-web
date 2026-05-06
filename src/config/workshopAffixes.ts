@@ -20,6 +20,6 @@ export const MAGNITUDE_MAX_PCT = 15;
 export const MAX_INVENTORY_SLOTS = 3;
 
 /** Slot kind — distinct equipment families. Each unlocked kind = one equipped slot. */
-export type SlotKind = "brush" | "palette";
+export type SlotKind = "brush" | "palette" | "easel";
 
-export const ALL_SLOT_KINDS: ReadonlyArray<SlotKind> = ["brush", "palette"];
+export const ALL_SLOT_KINDS: ReadonlyArray<SlotKind> = ["brush", "palette", "easel"];

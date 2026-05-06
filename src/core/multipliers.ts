@@ -21,12 +21,13 @@ const COLOR_NODES = [
 ] as const;
 
 const COLOR_PER_LEVEL = 0.10;
-const RAINBOW_PER_LEVEL = 0.20;
+const RAINBOW_PER_LEVEL = 0.50;
 const GET_INSPIRED_PER_LEVEL = 0.05;
 const BASIC_TECHNIQUE_PER_LEVEL = 0.01;
 const MUSCLE_MEMORY_PER_LEVEL = 0.01;
 const BARGAIN_PER_LEVEL = 0.01;
 const BARGAIN_DISCOUNT_FLOOR = 0.5; // never reduce tree costs below 50% of base
+const CRAFTSMANSHIP_PER_LEVEL = 1; // +1 percentage point to affix min/max per level
 
 /**
  * Aggregate multiplier on inspiration accrual rate.
@@ -106,3 +107,10 @@ export const getPaintTimeMultiplier = (state: GameStore): number => {
 /** Paint Mastery multiplier on canvas gold output. */
 export const getPmMultiplier = (state: GameStore): number =>
   pmMult(state.paintMastery);
+
+/**
+ * Bonus added to BOTH affix min and max magnitude at roll time.
+ * Wiring: Craftsmanship (+1 pp per level, 5 levels = +5 pp).
+ */
+export const getAffixMagnitudeBonus = (state: GameStore): number =>
+  getNodeLevel(state, "craftsmanship") * CRAFTSMANSHIP_PER_LEVEL;

@@ -87,13 +87,21 @@ export function rollTier(level: number): ItemTier {
   return "normal"; // floating-point fallback
 }
 
-/** Roll the affixes for an item of the given tier. Duplicate kinds allowed. */
-export function rollAffixes(tier: ItemTier): ReadonlyArray<Affix> {
+/**
+ * Roll the affixes for an item of the given tier. Duplicate kinds allowed.
+ *
+ * `magnitudeBonus` shifts BOTH the min and max magnitude bounds by the same
+ * amount (so the spread stays MAX - MIN). Skill-tree Craftsmanship contributes
+ * via `getAffixMagnitudeBonus(state)`.
+ */
+export function rollAffixes(tier: ItemTier, magnitudeBonus = 0): ReadonlyArray<Affix> {
   const count = TIER_AFFIX_COUNT[tier];
   const out: Affix[] = [];
   for (let i = 0; i < count; i++) {
     const kind = rngPick(AFFIX_KINDS);
-    const magnitude = rngInt(MAGNITUDE_MIN_PCT, MAGNITUDE_MAX_PCT);
+    const min = MAGNITUDE_MIN_PCT + magnitudeBonus;
+    const max = MAGNITUDE_MAX_PCT + magnitudeBonus;
+    const magnitude = rngInt(min, max);
     out.push({ kind, magnitude });
   }
   return out;

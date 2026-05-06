@@ -42,10 +42,24 @@ describe("workshopSlice — selectors", () => {
     expect(getUnlockedSlotKinds(useGameStore.getState())).toEqual(["brush", "palette"]);
   });
 
+  it("getUnlockedSlotKinds: includes 'easel' when forget_pain purchased", () => {
+    useGameStore.setState({ purchasedNodes: { gear_up: 1, forget_pain: 1 } });
+    expect(getUnlockedSlotKinds(useGameStore.getState())).toEqual(["brush", "palette", "easel"]);
+  });
+
   it("getCurrentSlotCount: total of unlocked kinds", () => {
     expect(getCurrentSlotCount(useGameStore.getState())).toBe(1);
     useGameStore.setState({ purchasedNodes: { gear_up: 1 } });
     expect(getCurrentSlotCount(useGameStore.getState())).toBe(2);
+  });
+
+  it("getMaxInventorySlots: base 3, +2 per chest", async () => {
+    const { getMaxInventorySlots } = await import("@/store/workshopSlice");
+    expect(getMaxInventorySlots(useGameStore.getState())).toBe(3);
+    useGameStore.setState({ purchasedNodes: { wooden_chest: 1 } });
+    expect(getMaxInventorySlots(useGameStore.getState())).toBe(5);
+    useGameStore.setState({ purchasedNodes: { wooden_chest: 1, steel_chest: 1 } });
+    expect(getMaxInventorySlots(useGameStore.getState())).toBe(7);
   });
 
   it("getEquippedContribution: sums affixes of matching kind across all equipped items", () => {
@@ -141,6 +155,71 @@ describe("workshopSlice — craft", () => {
     useGameStore.setState({ gold: big(1e15), workshopLevel: 100, workshopXp: 0 });
     useGameStore.getState().craft();
     expect(useGameStore.getState().workshopLevel).toBe(100);
+  });
+
+  it("shredder: when inventory full, oldest item is dropped on craft", () => {
+    const fullInv = Array.from({ length: 3 }, (_, i) => ({
+      id: `pre-${i}`,
+      slot: "brush" as const,
+      tier: "normal" as const,
+      affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+    }));
+    useGameStore.setState({
+      gold: big(1_000),
+      inventory: fullInv,
+      purchasedNodes: { shredder: 1 },
+    });
+    expect(useGameStore.getState().craft()).toBe(true);
+    const inv = useGameStore.getState().inventory;
+    expect(inv.length).toBe(3);
+    // Oldest (pre-0) is gone; pre-1 + pre-2 remain + new item.
+    expect(inv.find((i) => i.id === "pre-0")).toBeUndefined();
+    expect(inv.find((i) => i.id === "pre-1")).toBeDefined();
+    expect(inv.find((i) => i.id === "pre-2")).toBeDefined();
+  });
+
+  it("no shredder + full inventory: craft returns false", () => {
+    const fullInv = Array.from({ length: 3 }, (_, i) => ({
+      id: `pre-${i}`,
+      slot: "brush" as const,
+      tier: "normal" as const,
+      affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+    }));
+    useGameStore.setState({ gold: big(1_000), inventory: fullInv });
+    expect(useGameStore.getState().craft()).toBe(false);
+  });
+});
+
+describe("workshopSlice — workshopTick (Taylorism)", () => {
+  beforeEach(() => {
+    freshState();
+    setSeed(42);
+  });
+
+  it("no taylorism: tick is a no-op", () => {
+    useGameStore.getState().workshopTick(15);
+    expect(useGameStore.getState().inventory).toEqual([]);
+    expect(useGameStore.getState().autoCraftTimer).toBe(0);
+  });
+
+  it("taylorism owned + 10s tick + enough gold: auto-crafts one item", () => {
+    useGameStore.setState({
+      gold: big(1_000),
+      purchasedNodes: { taylorsim: 1 },
+    });
+    useGameStore.getState().workshopTick(10);
+    expect(useGameStore.getState().inventory.length).toBe(1);
+    expect(useGameStore.getState().autoCraftTimer).toBeCloseTo(0, 5);
+  });
+
+  it("taylorism + 5s tick: no auto-craft yet, timer accumulates", () => {
+    useGameStore.setState({
+      gold: big(1_000),
+      purchasedNodes: { taylorsim: 1 },
+    });
+    useGameStore.getState().workshopTick(5);
+    expect(useGameStore.getState().inventory.length).toBe(0);
+    expect(useGameStore.getState().autoCraftTimer).toBeCloseTo(5, 5);
   });
 });
 

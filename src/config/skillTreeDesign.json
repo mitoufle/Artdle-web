@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-05T20:55:26.002Z",
+  "designedAt": "2026-05-06T18:38:18.083Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -10,6 +10,7 @@
       "numericEffect": "5%",
       "parentIds": [],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 5,
       "costs": [
         1,
@@ -18,22 +19,23 @@
         15,
         20
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "black_white",
       "name": "Black & White",
       "description": "canvas sell price increase by 10%",
       "numericEffect": "10%",
-      "parentIds": [],
+      "parentIds": [
+        "basic_technique"
+      ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         1
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "magenta",
@@ -44,12 +46,12 @@
         "black_white"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         5
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "cyan",
@@ -60,12 +62,12 @@
         "black_white"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         5
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "yellow",
@@ -76,12 +78,12 @@
         "black_white"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         5
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "red",
@@ -93,12 +95,12 @@
         "yellow"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         10
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "green",
@@ -110,12 +112,12 @@
         "cyan"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         10
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "blue",
@@ -127,12 +129,12 @@
         "magenta"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         10
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "purple",
@@ -144,12 +146,12 @@
         "red"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         20
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "brown",
@@ -161,12 +163,12 @@
         "blue"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         20
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "orange",
@@ -178,34 +180,30 @@
         "green"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 1,
       "costs": [
         20
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "rainbow",
       "name": "Rainbow",
-      "description": "Canvas sell price increase by 20%",
-      "numericEffect": "20%",
+      "description": "Canvas sell price increase by 50%",
+      "numericEffect": "50%",
       "parentIds": [
         "orange",
         "brown",
         "purple"
       ],
       "stacking": "additive",
-      "maxLevel": 5,
+      "kind": "major",
+      "maxLevel": 1,
       "costs": [
-        50,
-        100,
-        200,
-        400,
-        800
+        100
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "poke_tree",
@@ -216,6 +214,7 @@
         "get_inspired"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 5,
       "costs": [
         5,
@@ -224,18 +223,16 @@
         40,
         80
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "basic_technique",
       "name": "Basic Technique",
       "description": "canvas completion time is 1% faster.",
       "numericEffect": "1%",
-      "parentIds": [
-        "black_white"
-      ],
+      "parentIds": [],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 5,
       "costs": [
         2,
@@ -244,8 +241,7 @@
         16,
         32
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "muscle_memory",
@@ -256,6 +252,7 @@
         "basic_technique"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 5,
       "costs": [
         5,
@@ -264,24 +261,23 @@
         40,
         80
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "gear_up",
-      "name": "Unlock Palette Slot",
+      "name": "Gear Up",
       "description": "Unlocks a second equipment slot for palette items.",
       "numericEffect": "+1 palette slot",
       "parentIds": [
         "muscle_memory"
       ],
       "stacking": "additive",
+      "kind": "major",
       "maxLevel": 1,
       "costs": [
         100
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
     },
     {
       "id": "Bargain",
@@ -292,6 +288,7 @@
         "get_inspired"
       ],
       "stacking": "additive",
+      "kind": "minor",
       "maxLevel": 5,
       "costs": [
         5,
@@ -300,8 +297,111 @@
         40,
         80
       ],
-      "position": null,
-      "kind": "minor"
+      "position": null
+    },
+    {
+      "id": "craftsmanship",
+      "name": "Craftsmanship",
+      "description": "Each level add %1 to min and max item rollable affix magnitude.",
+      "numericEffect": "1%",
+      "parentIds": [
+        "gear_up"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "position": null
+    },
+    {
+      "id": "wooden_chest",
+      "name": "Wooden Chest",
+      "description": "adds 2 item storage slots",
+      "numericEffect": "2",
+      "parentIds": [
+        "craftsmanship"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        100
+      ],
+      "position": null
+    },
+    {
+      "id": "shredder",
+      "name": "shredder",
+      "description": "you can craft when inventory is full, it will destroy the oldest crafted item inside.",
+      "numericEffect": "1",
+      "parentIds": [
+        "craftsmanship"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        150
+      ],
+      "position": null
+    },
+    {
+      "id": "taylorsim",
+      "name": "Taylorism",
+      "description": "Autocraft an Item every 10s. ",
+      "numericEffect": "1",
+      "parentIds": [
+        "shredder"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        150
+      ],
+      "position": null
+    },
+    {
+      "id": "steel_chest",
+      "name": "Steel Chest",
+      "description": "adds 2 item storage slots",
+      "numericEffect": "2",
+      "parentIds": [
+        "wooden_chest"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        200
+      ],
+      "position": null
+    },
+    {
+      "id": "forget_pain",
+      "name": "Forget your back pain",
+      "description": "Unlock Easel item slot",
+      "numericEffect": "1",
+      "parentIds": [
+        "steel_chest",
+        "taylorsim"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        0
+      ],
+      "position": {
+        "x": 565.4098388429961,
+        "y": 35.60387779039152
+      }
     }
   ]
 }

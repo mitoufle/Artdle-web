@@ -31,10 +31,12 @@ describe("SKILL_NODES config", () => {
     }
   });
 
-  it("every node's costs are all positive numbers", () => {
+  it("every node's costs are non-negative numbers", () => {
+    // Free nodes (cost 0) are intentional — e.g., milestone unlocks at the
+    // end of a long prereq chain. Costs are >= 0 (never negative).
     for (const node of SKILL_NODES) {
       for (const cost of node.costs) {
-        expect(cost, `node "${node.id}" has a non-positive cost`).toBeGreaterThan(0);
+        expect(cost, `node "${node.id}" has a negative cost`).toBeGreaterThanOrEqual(0);
       }
     }
   });

@@ -45,16 +45,17 @@ describe("ConstellationRoute (v2 visual)", () => {
 
   it("clicking a skill node opens the NodeCard with that node's name", () => {
     renderConstellationRoute();
-    fireEvent.click(screen.getByTestId("node-black_white"));
-    expect(screen.getByRole("heading", { name: /Black & White/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("node-get_inspired"));
+    expect(screen.getByRole("heading", { name: /Get Inspired/i })).toBeInTheDocument();
   });
 
   it("clicking Acquire on a selected affordable node calls buyNode", () => {
+    // get_inspired is a root (no prereqs) costing 1 fame for level 1.
     useGameStore.setState({ fame: big(1) });
     renderConstellationRoute();
-    fireEvent.click(screen.getByTestId("node-black_white"));
-    fireEvent.click(screen.getByTestId("node-acquire-black_white"));
-    expect(useGameStore.getState().purchasedNodes.black_white).toBe(1);
+    fireEvent.click(screen.getByTestId("node-get_inspired"));
+    fireEvent.click(screen.getByTestId("node-acquire-get_inspired"));
+    expect(useGameStore.getState().purchasedNodes.get_inspired).toBe(1);
   });
 
   it("renders the Fame to spend display in the right rail", () => {

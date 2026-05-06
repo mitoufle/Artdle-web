@@ -196,6 +196,7 @@ export const useGameStore = create<GameStore>()(
         s.treeTick(deltaSeconds);
         s.canvasTick(deltaSeconds);
         s.skillTreeTick(deltaSeconds);
+        s.workshopTick(deltaSeconds);
       },
     }),
     {

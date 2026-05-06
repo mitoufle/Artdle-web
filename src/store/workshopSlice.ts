@@ -15,6 +15,9 @@ import { getNodeLevel } from "@/store/skillTreeSlice";
 export type { AffixKind, SlotKind } from "@/config/workshopAffixes";
 export type { ItemTier, Affix } from "@/core/workshopRoll";
 
+const STORAGE_PER_CHEST = 2;
+const TAYLORISM_INTERVAL_S = 10;
+
 let _itemCounter = 0;
 function nextItemId(): string {
   _itemCounter += 1;
@@ -33,6 +36,8 @@ export interface WorkshopState {
   readonly workshopXp: number;
   readonly inventory: ReadonlyArray<Item>;
   readonly equipped: Partial<Record<SlotKind, Item>>;
+  /** Seconds since the last Taylorism auto-craft. Wraps every TAYLORISM_INTERVAL_S. */
+  readonly autoCraftTimer: number;
 }
 
 export const initialWorkshopState: WorkshopState = Object.freeze({
@@ -40,6 +45,7 @@ export const initialWorkshopState: WorkshopState = Object.freeze({
   workshopXp: 0,
   inventory: Object.freeze([]) as ReadonlyArray<Item>,
   equipped: Object.freeze({}) as Partial<Record<SlotKind, Item>>,
+  autoCraftTimer: 0,
 }) as WorkshopState;
 
 export interface WorkshopSlice extends WorkshopState {
@@ -47,6 +53,7 @@ export interface WorkshopSlice extends WorkshopState {
   equipItem: (itemId: string) => boolean;
   unequipSlot: (slot: SlotKind) => boolean;
   discard: (itemId: string) => boolean;
+  workshopTick: (deltaSeconds: number) => void;
   resetWorkshop: () => void;
 }
 
@@ -54,16 +61,32 @@ export interface WorkshopSlice extends WorkshopState {
 // Selectors — pure functions over GameStore.
 // ============================================================================
 
-/** List of slot kinds the player has unlocked. Always includes "brush". */
+/**
+ * List of slot kinds the player has unlocked. Always includes "brush".
+ * Skill-tree wiring:
+ *   - gear_up        → palette
+ *   - forget_pain    → easel
+ */
 export const getUnlockedSlotKinds = (state: GameStore): ReadonlyArray<SlotKind> => {
   const out: SlotKind[] = ["brush"];
   if (getNodeLevel(state, "gear_up") > 0) out.push("palette");
+  if (getNodeLevel(state, "forget_pain") > 0) out.push("easel");
   return out;
 };
 
 /** Total equip-slot capacity = number of unlocked slot kinds. */
 export const getCurrentSlotCount = (state: GameStore): number =>
   getUnlockedSlotKinds(state).length;
+
+/**
+ * Maximum inventory size. Base 3 + 2 per chest node (wooden + steel).
+ */
+export const getMaxInventorySlots = (state: GameStore): number => {
+  let cap = MAX_INVENTORY_SLOTS;
+  if (getNodeLevel(state, "wooden_chest") > 0) cap += STORAGE_PER_CHEST;
+  if (getNodeLevel(state, "steel_chest") > 0) cap += STORAGE_PER_CHEST;
+  return cap;
+};
 
 /**
  * Sum the magnitude (as fraction) of equipped affixes matching the given kind,
@@ -81,44 +104,63 @@ export const getEquippedContribution = (state: GameStore, kind: AffixKind): numb
 };
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Run one craft attempt: spend gold, roll item, push to inventory, award XP,
+ * level up if threshold crossed. Returns false if cost can't be paid OR the
+ * inventory is full and shredder isn't unlocked.
+ *
+ * Shredder note: when inventory is full AND shredder ≥ 1, we drop the OLDEST
+ * (index 0) inventory item before pushing the new one (keeps inventory bounded).
+ */
+function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<GameStore>) => void): boolean {
+  const cap = getMaxInventorySlots(state);
+  const hasShredder = getNodeLevel(state, "shredder") > 0;
+  if (state.inventory.length >= cap && !hasShredder) return false;
+
+  const cost = craftCost(state.workshopLevel);
+  if (!state.spend("gold", cost)) return false;
+
+  const unlocked = getUnlockedSlotKinds(state);
+  const slot = rngPick(unlocked);
+  const tier = rollTier(state.workshopLevel);
+  const magnitudeBonus = getNodeLevel(state, "craftsmanship");
+  const affixes = rollAffixes(tier, magnitudeBonus);
+  const item: Item = {
+    id: nextItemId(),
+    slot,
+    tier,
+    affixes,
+  };
+
+  set((s) => {
+    let newLevel = s.workshopLevel;
+    let newXp = s.workshopXp + XP_PER_CRAFT;
+    while (newLevel < MAX_WORKSHOP_LEVEL && newXp >= xpToNext(newLevel)) {
+      newXp -= xpToNext(newLevel);
+      newLevel += 1;
+    }
+    // If full + shredder, drop oldest before pushing new.
+    const trimmed = s.inventory.length >= cap ? s.inventory.slice(1) : s.inventory;
+    return {
+      inventory: [...trimmed, item],
+      workshopLevel: newLevel,
+      workshopXp: newXp,
+    };
+  });
+  return true;
+}
+
+// ============================================================================
 // Slice
 // ============================================================================
 
 export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice> = (set, get) => ({
   ...initialWorkshopState,
 
-  craft: () => {
-    const state = get();
-    if (state.inventory.length >= MAX_INVENTORY_SLOTS) return false;
-    const cost = craftCost(state.workshopLevel);
-    if (!state.spend("gold", cost)) return false;
-
-    const unlocked = getUnlockedSlotKinds(state);
-    const slot = rngPick(unlocked);
-    const tier = rollTier(state.workshopLevel);
-    const affixes = rollAffixes(tier);
-    const item: Item = {
-      id: nextItemId(),
-      slot,
-      tier,
-      affixes,
-    };
-
-    set((s) => {
-      let newLevel = s.workshopLevel;
-      let newXp = s.workshopXp + XP_PER_CRAFT;
-      while (newLevel < MAX_WORKSHOP_LEVEL && newXp >= xpToNext(newLevel)) {
-        newXp -= xpToNext(newLevel);
-        newLevel += 1;
-      }
-      return {
-        inventory: [...s.inventory, item],
-        workshopLevel: newLevel,
-        workshopXp: newXp,
-      };
-    });
-    return true;
-  },
+  craft: () => performCraft(get(), set),
 
   equipItem: (itemId) => {
     const state = get();
@@ -141,7 +183,7 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     const state = get();
     const item = state.equipped[slot];
     if (!item) return false;
-    if (state.inventory.length >= MAX_INVENTORY_SLOTS) return false;
+    if (state.inventory.length >= getMaxInventorySlots(state)) return false;
     set((s) => {
       const { [slot]: _removed, ...rest } = s.equipped;
       void _removed;
@@ -163,11 +205,31 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     return true;
   },
 
+  workshopTick: (deltaSeconds) => {
+    if (deltaSeconds <= 0) return;
+    const state = get();
+    const taylorismLevel = getNodeLevel(state, "taylorsim");
+    if (taylorismLevel === 0) return;
+
+    const next = state.autoCraftTimer + deltaSeconds;
+    const grants = Math.floor(next / TAYLORISM_INTERVAL_S);
+    if (grants > 0) {
+      // Attempt one craft per interval crossed. If a craft fails (no gold,
+      // full + no shredder, etc.), keep the timer accumulated for the next try.
+      for (let i = 0; i < grants; i++) {
+        const ok = performCraft(get(), set);
+        if (!ok) break;
+      }
+    }
+    set({ autoCraftTimer: next - grants * TAYLORISM_INTERVAL_S });
+  },
+
   resetWorkshop: () =>
     set((s) => ({
       // Inventory + equipped wiped (run-state). Workshop level + XP survive ascend.
       inventory: [],
       equipped: {},
+      autoCraftTimer: 0,
       workshopLevel: s.workshopLevel,
       workshopXp: 0,
     })),

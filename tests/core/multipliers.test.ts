@@ -52,10 +52,21 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(2.00, 5);
   });
 
-  it("getCanvasGoldMultiplier adds 0.20 per rainbow level (additive per current design)", () => {
-    useGameStore.setState({ purchasedNodes: { rainbow: 3 } });
-    // 1 + 0.20 * 3 = 1.60
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.60, 5);
+  it("getCanvasGoldMultiplier adds 0.50 per rainbow level (single-level major node)", () => {
+    useGameStore.setState({ purchasedNodes: { rainbow: 1 } });
+    // 1 + 0.50 * 1 = 1.50
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
+  });
+
+  it("getAffixMagnitudeBonus: 0 with no Craftsmanship", async () => {
+    const { getAffixMagnitudeBonus } = await import("@/core/multipliers");
+    expect(getAffixMagnitudeBonus(useGameStore.getState())).toBe(0);
+  });
+
+  it("getAffixMagnitudeBonus: +N per Craftsmanship level", async () => {
+    const { getAffixMagnitudeBonus } = await import("@/core/multipliers");
+    useGameStore.setState({ purchasedNodes: { craftsmanship: 5 } });
+    expect(getAffixMagnitudeBonus(useGameStore.getState())).toBe(5);
   });
 
   it("getCanvasGoldMultiplier sums equipped +canvas_gold% items + colors", () => {
