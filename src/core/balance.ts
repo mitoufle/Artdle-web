@@ -18,6 +18,13 @@ export const TIER_UPGRADE_RATIO = 2.78;
 export const MAX_TIER = 10;
 export const PM_LOG_FACTOR = 5.0;
 
+// Workshop leveling — see docs/superpowers/specs/2026-05-06-workshop-leveling-design.md
+export const MAX_WORKSHOP_LEVEL = 100;
+export const CRAFT_COST_BASE = 100;
+export const CRAFT_COST_EARLY_GROWTH = 1.05;  // L1..L5 — gentle ramp
+export const CRAFT_COST_LATE_GROWTH = 1.20;   // L5+   — exponential climb
+export const XP_PER_CRAFT = 1;
+
 // ============================================================================
 // Formulas
 // ============================================================================
@@ -191,3 +198,21 @@ export const pmThreshold = (lifetimeGold: Big): Big => {
   const exp = Math.max(3, 3 * phase);
   return big(10).pow(exp);
 };
+
+/**
+ * Cost in gold per craft attempt at the given workshop level.
+ * Piecewise: gentle 1.05 ramp through L5; 1.20 climb afterward.
+ */
+export const craftCost = (level: number): Big => {
+  if (level <= 5) {
+    return big(CRAFT_COST_BASE).mul(big(CRAFT_COST_EARLY_GROWTH).pow(level - 1));
+  }
+  const costAtL5 = big(CRAFT_COST_BASE).mul(big(CRAFT_COST_EARLY_GROWTH).pow(4));
+  return costAtL5.mul(big(CRAFT_COST_LATE_GROWTH).pow(level - 5));
+};
+
+/**
+ * XP needed to advance from `currentLevel` to `currentLevel + 1`.
+ * Linear in level: `4 * (currentLevel + 1)`. Cumulative to L70 ≈ 9,936 crafts.
+ */
+export const xpToNext = (currentLevel: number): number => 4 * (currentLevel + 1);

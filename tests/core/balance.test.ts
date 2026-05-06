@@ -12,6 +12,8 @@ import {
   pmThreshold,
   MAX_TIER,
   PM_LOG_FACTOR,
+  craftCost,
+  xpToNext,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -308,5 +310,62 @@ describe("pmThreshold (v1.1 PM redesign)", () => {
 
   it("at lifetime 1e12, threshold is 1e12", () => {
     expect(pmThreshold(big(1e12)).toNumber()).toBe(1e12);
+  });
+});
+
+// ============================================================================
+// Workshop leveling
+// ============================================================================
+describe("craftCost (workshop level)", () => {
+  it("returns 100 at level 1", () => {
+    expect(craftCost(1).toNumber()).toBeCloseTo(100, 5);
+  });
+
+  it("scales by 1.05 per level for L1..L5", () => {
+    expect(craftCost(2).toNumber()).toBeCloseTo(105, 1);
+    expect(craftCost(5).toNumber()).toBeCloseTo(122, 0);
+  });
+
+  it("scales by 1.20 per level past L5", () => {
+    // costAtL5 = 100 * 1.05^4 ≈ 121.55
+    // L10 = 121.55 * 1.20^5 ≈ 302.45
+    expect(craftCost(10).toNumber()).toBeCloseTo(302.5, -1);
+    // L70 = 121.55 * 1.20^65 ≈ 17M+
+    expect(craftCost(70).gt(big(15_000_000))).toBe(true);
+    expect(craftCost(70).lt(big(20_000_000))).toBe(true);
+  });
+
+  it("monotonically increasing", () => {
+    let prev = craftCost(1);
+    for (let lvl = 2; lvl <= 100; lvl++) {
+      const cur = craftCost(lvl);
+      expect(cur.gt(prev)).toBe(true);
+      prev = cur;
+    }
+  });
+});
+
+describe("xpToNext", () => {
+  it("returns 8 at level 1 (= 4*(1+1))", () => {
+    expect(xpToNext(1)).toBe(8);
+  });
+
+  it("returns 280 at level 69 (last to reach L70)", () => {
+    expect(xpToNext(69)).toBe(280);
+  });
+
+  it("monotonically increasing", () => {
+    let prev = xpToNext(1);
+    for (let lvl = 2; lvl <= 99; lvl++) {
+      const cur = xpToNext(lvl);
+      expect(cur).toBeGreaterThan(prev);
+      prev = cur;
+    }
+  });
+
+  it("cumulative XP to reach L70 is ~9,936", () => {
+    let total = 0;
+    for (let lvl = 1; lvl <= 69; lvl++) total += xpToNext(lvl);
+    expect(total).toBe(9_936);
   });
 });
