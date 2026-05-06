@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { useState } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
-import { canAscend, getEffectivePalier } from "@/systems/ascend";
+import { canAscend } from "@/systems/ascend";
 import { fameOnAscend } from "@/core/balance";
 import { formatBig } from "@/core/formatter";
 import { Cavern } from "@/components/ascension/Cavern";
@@ -26,12 +26,8 @@ export function AscensionRoute(): JSX.Element {
     purchasedNodes,
   } as unknown as GameStore;
 
-  const palier = getEffectivePalier(helperState, ascendCount);
   const canDo = canAscend(helperState);
   const fameGain = fameOnAscend(inspiration);
-  const progressPct = palier.gt(0)
-    ? Math.min(1, inspiration.toNumber() / palier.toNumber())
-    : 0;
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -67,11 +63,7 @@ export function AscensionRoute(): JSX.Element {
       </div>
 
       <aside className={styles.rail}>
-        <ThresholdPanel
-          currentInspi={formatBig(inspiration)}
-          thresholdInspi={formatBig(palier)}
-          progressPct={progressPct}
-        />
+        <ThresholdPanel currentInspi={formatBig(inspiration)} />
         <FamePreviewCard fameGain={fameGain} />
         <PastRunsLedger runs={pastRuns} totalFame={fame.toNumber()} />
       </aside>

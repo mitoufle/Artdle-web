@@ -24,22 +24,3 @@
   text-shadow: var(--inspi-glow);
 }
 
-.bar {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--bg-stone-d);
-  overflow: hidden;
-}
-
-.fill {
-  height: 100%;
-  background: var(--inspi);
-  box-shadow: var(--inspi-glow);
-  transition: width 200ms ease;
-}
-
-.caption {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--ink-2);
-}

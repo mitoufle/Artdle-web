@@ -4,8 +4,6 @@ import { big, type Big } from "./bigNumber";
 // Tuning constants — touchable in the v1 balance pass (Phase 6).
 // ============================================================================
 
-export const PALIER_BASE = 1000;
-export const PALIER_GROWTH = 2;
 /** Fame curve scale. `(log10(inspi) - threshold)^2 * K`. */
 export const FAME_LOG_K = 10;
 /** Below 10^FAME_THRESHOLD_LOG10 inspi, the quadratic term goes negative; we
@@ -25,29 +23,22 @@ export const PM_LOG_FACTOR = 5.0;
 // ============================================================================
 
 /**
- * Inspiration palier required to ascend at the given prior ascend count.
- * count=0 → 1000, count=1 → 2000, count=10 → ~1.024M.
- */
-export const palierAscend = (count: number): Big =>
-  big(PALIER_BASE).mul(big(PALIER_GROWTH).pow(count));
-
-/**
  * Fame gained from converting a given inspiration amount.
  *
  * `max(1, floor((log10(inspi) - threshold)^2 * K))` — quadratic-in-log above
- * the threshold, clamped to 1. The clamp ensures any successful ascend (which
- * already required reaching the palier) yields at least one fame point;
- * the goal of ascending is to spend fame, so a 0-fame ascend would be pointless.
+ * the threshold, clamped to 1. The clamp ensures any ascend yields at least
+ * one fame point (the goal of ascending is to spend fame in the skill tree).
  *
  * Curve shape:
- *   - 1,000 inspi (palier 0): 1 fame (token, but enough to buy the cheapest node)
- *   - 4,000 inspi (palier 2): 8 fame
- *   - 32,000 inspi (palier 5): 32 fame
- *   - 1,000,000 inspi (palier 10): 109 fame
- *   - 1,000,000,000 inspi (palier 20): 436 fame
+ *   - 100 inspi:    1 fame (clamp)
+ *   - 1,000 inspi:  1 fame
+ *   - 10,000 inspi: 16 fame
+ *   - 100,000 inspi: 52 fame
+ *   - 1,000,000 inspi: 108 fame
+ *   - 1,000,000,000 inspi: 396 fame
  *
- * Per-ascend Δ accelerates from +2 → +50+ over 20 runs (vs the old flat +3).
- * Over-capping by 10× past palier no longer dominates two extra normal ascends.
+ * No fixed palier gate — players choose when to ascend. Lower inspi at the
+ * moment of ascend yields proportionally less fame; longer runs yield more.
  */
 export const fameOnAscend = (inspi: Big): number => {
   const n = inspi.toNumber();

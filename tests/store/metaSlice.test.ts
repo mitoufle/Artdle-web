@@ -78,12 +78,13 @@ describe("metaSlice — performAscend wrapper", () => {
     useGameStore.setState({ purchasedNodes: {}, ascendCount: 0 });
   });
 
-  it("performAscend() returns false when canAscend is false; no state changes", () => {
-    expect(useGameStore.getState().performAscend()).toBe(false);
-    expect(useGameStore.getState().ascendCount).toBe(0);
+  it("performAscend() returns true even at 0 inspi (no palier gate; 1-fame clamp)", () => {
+    expect(useGameStore.getState().performAscend()).toBe(true);
+    expect(useGameStore.getState().ascendCount).toBe(1);
+    expect(useGameStore.getState().fame.toNumber()).toBe(1);
   });
 
-  it("performAscend() returns true and increments ascendCount when canAscend is true", () => {
+  it("performAscend() returns true and increments ascendCount", () => {
     useGameStore.getState().add("inspiration", big(1500));
     const beforeCount = useGameStore.getState().ascendCount;
     expect(useGameStore.getState().performAscend()).toBe(true);

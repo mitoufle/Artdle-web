@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
-  getEffectivePalier,
   canAscend,
   performAscendOrchestrator,
 } from "@/systems/ascend";
@@ -18,46 +17,20 @@ describe("systems/ascend", () => {
   });
 
   // ============================================================================
-  // getEffectivePalier
+  // canAscend — always true (no palier gate)
   // ============================================================================
 
-  it("getEffectivePalier(state, 0) returns big(1000) (base, no Faster Strokes)", () => {
-    expect(getEffectivePalier(useGameStore.getState(), 0).toNumber()).toBe(1000);
-  });
-
-  // ============================================================================
-  // canAscend
-  // ============================================================================
-
-  it("canAscend returns false when inspiration < palier", () => {
+  it("canAscend returns true regardless of inspiration", () => {
+    expect(canAscend(useGameStore.getState())).toBe(true);
     useGameStore.getState().add("inspiration", big(999));
-    expect(canAscend(useGameStore.getState())).toBe(false);
-  });
-
-  it("canAscend returns true at exact threshold (inspiration === palier)", () => {
-    useGameStore.getState().add("inspiration", big(1000));
+    expect(canAscend(useGameStore.getState())).toBe(true);
+    useGameStore.getState().add("inspiration", big(1));
     expect(canAscend(useGameStore.getState())).toBe(true);
   });
 
   // ============================================================================
   // performAscendOrchestrator
   // ============================================================================
-
-  it("performAscendOrchestrator returns false when canAscend is false; state unchanged", () => {
-    useGameStore.getState().add("gold", big(50));
-    useGameStore.getState().add("inspiration", big(500));
-    const beforeGold = useGameStore.getState().gold.toNumber();
-    const beforeInsp = useGameStore.getState().inspiration.toNumber();
-    const beforeCount = useGameStore.getState().ascendCount;
-
-    expect(
-      performAscendOrchestrator(useGameStore.setState, useGameStore.getState),
-    ).toBe(false);
-
-    expect(useGameStore.getState().gold.toNumber()).toBe(beforeGold);
-    expect(useGameStore.getState().inspiration.toNumber()).toBe(beforeInsp);
-    expect(useGameStore.getState().ascendCount).toBe(beforeCount);
-  });
 
   it("performAscendOrchestrator on success: gold → 0, inspiration → 0", () => {
     useGameStore.getState().add("gold", big(500));
@@ -135,22 +108,22 @@ describe("systems/ascend", () => {
     expect(useGameStore.getState().playerId).toBe(beforeId);
   });
 
-  it("performAscendOrchestrator second time: ascendCount goes 1→2; palier doubles per the formula", () => {
+  it("performAscendOrchestrator multiple times: ascendCount increments each time", () => {
     useGameStore.getState().add("inspiration", big(1500));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().ascendCount).toBe(1);
     useGameStore.getState().add("inspiration", big(2500));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().ascendCount).toBe(2);
-    useGameStore.getState().add("inspiration", big(3999));
-    expect(canAscend(useGameStore.getState())).toBe(false);
   });
 
-  it("performAscendOrchestrator with inspi=0: returns false (palier > 0)", () => {
+  it("performAscendOrchestrator with inspi=0: still succeeds, gives 1 fame (clamp)", () => {
     expect(useGameStore.getState().inspiration.toNumber()).toBe(0);
     expect(
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState),
-    ).toBe(false);
+    ).toBe(true);
+    // 1-fame clamp: even a 0-inspi ascend gives 1 fame.
+    expect(useGameStore.getState().fame.toNumber()).toBe(1);
   });
 
   describe("performAscendOrchestrator — pastRuns ledger (v2.0 Round 3)", () => {
@@ -173,12 +146,12 @@ describe("systems/ascend", () => {
       expect(typeof runs[runs.length - 1]!.ascendedAt).toBe("number");
     });
 
-    it("does NOT append on failed ascend (below palier)", () => {
+    it("appends a pastRun even when ascending at 0 inspi (1-fame clamp)", () => {
       useGameStore.setState({ inspiration: big(0) });
       const before = useGameStore.getState().pastRuns.length;
       const ok = useGameStore.getState().performAscend();
-      expect(ok).toBe(false);
-      expect(useGameStore.getState().pastRuns.length).toBe(before);
+      expect(ok).toBe(true);
+      expect(useGameStore.getState().pastRuns.length).toBe(before + 1);
     });
   });
 

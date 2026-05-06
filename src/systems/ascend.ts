@@ -1,27 +1,15 @@
 import type { GameStore } from "@/store";
 import type { StoreApi } from "zustand";
-import { big, type Big } from "@/core/bigNumber";
-import { palierAscend, fameOnAscend } from "@/core/balance";
+import { big } from "@/core/bigNumber";
+import { fameOnAscend } from "@/core/balance";
 
 /**
- * Effective inspiration palier required to ascend at the given prior ascend count.
- *
- * Lives here (not core/multipliers.ts) because it's a one-off domain-specific
- * reduction, not a tick-time multiplier following the `1 + Σ contributions` convention.
+ * True iff the player can ascend right now. Always true — there is no
+ * inspiration palier gate. The fame formula clamps to 1 minimum, so any
+ * ascend yields at least one fame point. Players choose when to ascend
+ * based on the fame curve and their willingness to lose run state.
  */
-export const getEffectivePalier = (state: GameStore, count: number): Big => {
-  const base = palierAscend(count);
-  // faster_strokes node no longer exists in v3 skill tree.
-  const reduction = 0;
-  return base.mul(1 - reduction);
-};
-
-/**
- * True iff the player has accumulated enough inspiration to ascend right now.
- * Pure function over GameStore — Phase 4 UI and tests call it directly.
- */
-export const canAscend = (state: GameStore): boolean =>
-  state.inspiration.gte(getEffectivePalier(state, state.ascendCount));
+export const canAscend = (_state: GameStore): boolean => true;
 
 /**
  * Atomic ascend orchestrator. Returns true on success; false if canAscend is false.

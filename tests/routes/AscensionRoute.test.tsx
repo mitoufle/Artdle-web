@@ -44,13 +44,13 @@ describe("AscensionRoute (v2 visual)", () => {
     expect(screen.getByText(/Past ascensions/i)).toBeInTheDocument();
   });
 
-  it("Step Through button is disabled below palier", () => {
+  it("Step Through button is always enabled (no palier gate)", () => {
     useGameStore.setState({ inspiration: big(0) });
     renderAscensionRoute();
-    expect(screen.getByRole("button", { name: /step through/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /step through/i })).not.toBeDisabled();
   });
 
-  it("Step Through button is enabled at-or-above palier", () => {
+  it("Step Through button is enabled at any inspiration level", () => {
     useGameStore.setState({ inspiration: big(2_000) });
     renderAscensionRoute();
     expect(screen.getByRole("button", { name: /step through/i })).not.toBeDisabled();

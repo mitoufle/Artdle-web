@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  palierAscend,
   fameOnAscend,
   treePartCost,
   canvasGold,
@@ -11,28 +10,10 @@ import {
   pmFromLifetime,
   pmMult,
   pmThreshold,
-  PALIER_BASE,
-  PALIER_GROWTH,
   MAX_TIER,
   PM_LOG_FACTOR,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
-
-describe("palierAscend", () => {
-  it("base palier at count=0", () => {
-    expect(palierAscend(0).toNumber()).toBeCloseTo(PALIER_BASE, 5);
-  });
-
-  it("doubles each ascend", () => {
-    expect(palierAscend(1).toNumber()).toBeCloseTo(PALIER_BASE * PALIER_GROWTH, 5);
-    expect(palierAscend(5).toNumber()).toBeCloseTo(PALIER_BASE * Math.pow(PALIER_GROWTH, 5), 5);
-  });
-
-  it("scales to large counts without overflow", () => {
-    const p = palierAscend(50);
-    expect(p.gt(big("1e15"))).toBe(true);
-  });
-});
 
 describe("fameOnAscend (quadratic-in-log, clamp ≥ 1)", () => {
   // Formula: max(1, floor((log10(inspi) - 2.7)^2 * 10))

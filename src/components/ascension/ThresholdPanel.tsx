@@ -3,23 +3,17 @@ import styles from "./ThresholdPanel.module.css";
 
 interface Props {
   currentInspi: string;
-  thresholdInspi: string;
-  progressPct: number;
 }
 
-export function ThresholdPanel({ currentInspi, thresholdInspi, progressPct }: Props): JSX.Element {
-  const pct = Math.max(0, Math.min(100, progressPct * 100));
-  const pctText = pct.toFixed(0);
+/**
+ * Right-rail readout of the current inspiration. There is no fixed palier;
+ * players ascend whenever they want and the fame formula determines reward.
+ */
+export function ThresholdPanel({ currentInspi }: Props): JSX.Element {
   return (
-    <section className={styles.panel} aria-label="Threshold">
+    <section className={styles.panel} aria-label="Inspiration">
       <div className={styles.subhead}>Current inspiration</div>
       <div className={styles.value}>{currentInspi}</div>
-      <div className={styles.bar}>
-        <div className={styles.fill} data-testid="threshold-fill" style={{ width: `${pct}%` }} />
-      </div>
-      <div className={styles.caption}>
-        {pctText}% to threshold · {thresholdInspi} inspi
-      </div>
     </section>
   );
 }
