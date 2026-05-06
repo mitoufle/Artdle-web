@@ -20,7 +20,7 @@ export function TreeRoute(): JSX.Element {
   const currentStage = useGameStore((s) => s.currentStage);
   const partLevels = useGameStore((s) => s.partLevels);
   const gold = useGameStore((s) => s.gold);
-  const equippedItems = useGameStore((s) => s.equippedItems);
+  const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const buyPartLevel = useGameStore((s) => s.buyPartLevel);
   const growSapling = useGameStore((s) => s.growSapling);
@@ -28,7 +28,7 @@ export function TreeRoute(): JSX.Element {
   const helperState = {
     currentStage,
     partLevels,
-    equippedItems,
+    equipped,
     purchasedNodes,
   } as unknown as GameStore;
 

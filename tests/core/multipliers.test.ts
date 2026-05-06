@@ -13,7 +13,7 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
   beforeEach(() => {
     useGameStore.setState({
       purchasedNodes: {},
-      equippedItems: [],
+      equipped: {},
       paintMastery: big(0),
     });
   });
@@ -61,7 +61,14 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
   it("getCanvasGoldMultiplier sums equipped +canvas_gold% items + colors", () => {
     useGameStore.setState({
       purchasedNodes: { black_white: 1 },
-      equippedItems: [{ kind: "+canvas_gold%", magnitude: 5 }],
+      equipped: {
+        brush: {
+          id: "test-1",
+          slot: "brush",
+          tier: "normal",
+          affixes: [{ kind: "+canvas_gold%", magnitude: 5 }],
+        },
+      },
     });
     // 1 + 0.10 (black_white) + 0.05 (item) = 1.15
     expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.15, 5);

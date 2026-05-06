@@ -1,65 +1,88 @@
 import type { StateCreator } from "zustand";
 import {
-  AFFIX_KINDS,
-  MAGNITUDE_MIN_PCT,
-  MAGNITUDE_MAX_PCT,
   MAX_INVENTORY_SLOTS,
-  CRAFT_COST_GOLD,
   type AffixKind,
+  type SlotKind,
 } from "@/config/workshopAffixes";
-import { big } from "@/core/bigNumber";
-import { rngPick, rngInt } from "@/core/rng";
+import { craftCost, xpToNext, MAX_WORKSHOP_LEVEL, XP_PER_CRAFT } from "@/core/balance";
+import { rngPick } from "@/core/rng";
+import { rollTier, rollAffixes } from "@/core/workshopRoll";
+import type { ItemTier } from "@/core/workshopRoll";
+import type { Affix } from "@/core/workshopRoll";
 import type { GameStore } from "@/store";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 
+export type { AffixKind, SlotKind } from "@/config/workshopAffixes";
+export type { ItemTier, Affix } from "@/core/workshopRoll";
+
+let _itemCounter = 0;
+function nextItemId(): string {
+  _itemCounter += 1;
+  return `it-${Date.now().toString(36)}-${_itemCounter}`;
+}
+
 export interface Item {
-  /** Affix produced by this craft. */
-  readonly kind: AffixKind;
-  /** Integer percent magnitude (e.g., 12 means +12% / -12%). */
-  readonly magnitude: number;
+  readonly id: string;
+  readonly slot: SlotKind;
+  readonly tier: ItemTier;
+  readonly affixes: ReadonlyArray<Affix>;
 }
 
 export interface WorkshopState {
-  /** Crafted-but-unequipped items. Bounded by MAX_INVENTORY_SLOTS = 3. */
-  inventory: ReadonlyArray<Item>;
-  /** Currently-equipped items. Bounded by getCurrentSlotCount(state) (1 or 2). */
-  equippedItems: ReadonlyArray<Item>;
+  readonly workshopLevel: number;
+  readonly workshopXp: number;
+  readonly inventory: ReadonlyArray<Item>;
+  readonly equipped: Partial<Record<SlotKind, Item>>;
 }
 
 export const initialWorkshopState: WorkshopState = Object.freeze({
+  workshopLevel: 1,
+  workshopXp: 0,
   inventory: Object.freeze([]) as ReadonlyArray<Item>,
-  equippedItems: Object.freeze([]) as ReadonlyArray<Item>,
+  equipped: Object.freeze({}) as Partial<Record<SlotKind, Item>>,
 }) as WorkshopState;
 
 export interface WorkshopSlice extends WorkshopState {
   craft: () => boolean;
-  equip: (invIdx: number) => boolean;
-  unequip: (equipIdx: number) => boolean;
-  swap: (invIdx: number, equipIdx: number) => boolean;
-  discard: (invIdx: number) => boolean;
+  equipItem: (itemId: string) => boolean;
+  unequipSlot: (slot: SlotKind) => boolean;
+  discard: (itemId: string) => boolean;
   resetWorkshop: () => void;
 }
 
 // ============================================================================
 // Selectors — pure functions over GameStore.
-// Defined before createWorkshopSlice so they can be referenced in action bodies
-// (const closures capture by reference, but defining them first avoids any
-// potential TDZ issues if the module is ever analyzed statically).
 // ============================================================================
 
-/** 1 (default) or 2 (after gear_up). */
+/** List of slot kinds the player has unlocked. Always includes "brush". */
+export const getUnlockedSlotKinds = (state: GameStore): ReadonlyArray<SlotKind> => {
+  const out: SlotKind[] = ["brush"];
+  if (getNodeLevel(state, "gear_up") > 0) out.push("palette");
+  return out;
+};
+
+/** Total equip-slot capacity = number of unlocked slot kinds. */
 export const getCurrentSlotCount = (state: GameStore): number =>
-  getNodeLevel(state, "gear_up") > 0 ? 2 : 1;
+  getUnlockedSlotKinds(state).length;
 
 /**
- * Sum the magnitude (as fraction) of equipped items matching the given affix kind.
- * Used by core/multipliers.ts for the additive (gold, inspi) cases.
- * NOT used for paint-time (which needs per-item v/(1-v) conversion — see multipliers.ts).
+ * Sum the magnitude (as fraction) of equipped affixes matching the given kind,
+ * walking every equipped item across all slot kinds.
  */
-export const getEquippedContribution = (state: GameStore, kind: AffixKind): number =>
-  state.equippedItems
-    .filter((i) => i.kind === kind)
-    .reduce((sum, i) => sum + i.magnitude / 100, 0);
+export const getEquippedContribution = (state: GameStore, kind: AffixKind): number => {
+  let total = 0;
+  for (const item of Object.values(state.equipped)) {
+    if (!item) continue;
+    for (const affix of item.affixes) {
+      if (affix.kind === kind) total += affix.magnitude / 100;
+    }
+  }
+  return total;
+};
+
+// ============================================================================
+// Slice
+// ============================================================================
 
 export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice> = (set, get) => ({
   ...initialWorkshopState,
@@ -67,59 +90,85 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
   craft: () => {
     const state = get();
     if (state.inventory.length >= MAX_INVENTORY_SLOTS) return false;
-    if (!state.spend("gold", big(CRAFT_COST_GOLD))) return false;
-    const kind = rngPick(AFFIX_KINDS);
-    // better_brush no longer exists in v3 skill tree (no replacement effect).
-    const brushBonus = 0;
-    const magnitude = rngInt(MAGNITUDE_MIN_PCT + brushBonus, MAGNITUDE_MAX_PCT + brushBonus);
-    set((s) => ({ inventory: [...s.inventory, { kind, magnitude }] }));
+    const cost = craftCost(state.workshopLevel);
+    if (!state.spend("gold", cost)) return false;
+
+    const unlocked = getUnlockedSlotKinds(state);
+    const slot = rngPick(unlocked);
+    const tier = rollTier(state.workshopLevel);
+    const affixes = rollAffixes(tier);
+    const item: Item = {
+      id: nextItemId(),
+      slot,
+      tier,
+      affixes,
+    };
+
+    set((s) => {
+      let newLevel = s.workshopLevel;
+      let newXp = s.workshopXp + XP_PER_CRAFT;
+      while (newLevel < MAX_WORKSHOP_LEVEL && newXp >= xpToNext(newLevel)) {
+        newXp -= xpToNext(newLevel);
+        newLevel += 1;
+      }
+      return {
+        inventory: [...s.inventory, item],
+        workshopLevel: newLevel,
+        workshopXp: newXp,
+      };
+    });
     return true;
   },
 
-  equip: (invIdx) => {
+  equipItem: (itemId) => {
     const state = get();
-    if (invIdx < 0 || invIdx >= state.inventory.length) return false;
-    const slotCount = getCurrentSlotCount(state);
-    if (state.equippedItems.length >= slotCount) return false;
-    const item = state.inventory[invIdx]!;
-    set((s) => ({
-      inventory: s.inventory.filter((_, i) => i !== invIdx),
-      equippedItems: [...s.equippedItems, item],
-    }));
+    const item = state.inventory.find((i) => i.id === itemId);
+    if (!item) return false;
+    if (!getUnlockedSlotKinds(state).includes(item.slot)) return false;
+
+    set((s) => {
+      const previous = s.equipped[item.slot];
+      const inventory = s.inventory.filter((i) => i.id !== itemId);
+      return {
+        inventory: previous ? [...inventory, previous] : inventory,
+        equipped: { ...s.equipped, [item.slot]: item },
+      };
+    });
     return true;
   },
 
-  unequip: (equipIdx) => {
+  unequipSlot: (slot) => {
     const state = get();
-    if (equipIdx < 0 || equipIdx >= state.equippedItems.length) return false;
+    const item = state.equipped[slot];
+    if (!item) return false;
     if (state.inventory.length >= MAX_INVENTORY_SLOTS) return false;
-    const item = state.equippedItems[equipIdx]!;
+    set((s) => {
+      const { [slot]: _removed, ...rest } = s.equipped;
+      void _removed;
+      return {
+        inventory: [...s.inventory, item],
+        equipped: rest,
+      };
+    });
+    return true;
+  },
+
+  discard: (itemId) => {
+    const state = get();
+    const exists = state.inventory.some((i) => i.id === itemId);
+    if (!exists) return false;
     set((s) => ({
-      equippedItems: s.equippedItems.filter((_, i) => i !== equipIdx),
-      inventory: [...s.inventory, item],
+      inventory: s.inventory.filter((i) => i.id !== itemId),
     }));
     return true;
   },
 
-  swap: (invIdx, equipIdx) => {
-    const state = get();
-    if (invIdx < 0 || invIdx >= state.inventory.length) return false;
-    if (equipIdx < 0 || equipIdx >= state.equippedItems.length) return false;
-    const invItem = state.inventory[invIdx]!;
-    const equipItem = state.equippedItems[equipIdx]!;
+  resetWorkshop: () =>
     set((s) => ({
-      inventory: s.inventory.map((it, i) => (i === invIdx ? equipItem : it)),
-      equippedItems: s.equippedItems.map((it, i) => (i === equipIdx ? invItem : it)),
-    }));
-    return true;
-  },
-
-  discard: (invIdx) => {
-    const state = get();
-    if (invIdx < 0 || invIdx >= state.inventory.length) return false;
-    set((s) => ({ inventory: s.inventory.filter((_, i) => i !== invIdx) }));
-    return true;
-  },
-
-  resetWorkshop: () => set(initialWorkshopState),
+      // Inventory + equipped wiped (run-state). Workshop level + XP survive ascend.
+      inventory: [],
+      equipped: {},
+      workshopLevel: s.workshopLevel,
+      workshopXp: 0,
+    })),
 });

@@ -91,10 +91,13 @@ export const getTreeUpgradeCostMultiplier = (state: GameStore): number => {
  */
 export const getPaintTimeMultiplier = (state: GameStore): number => {
   let bonus = 0;
-  for (const item of state.equippedItems) {
-    if (item.kind === "-paint_time%") {
-      const v = item.magnitude / 100;
-      bonus += v / (1 - v);
+  for (const item of Object.values(state.equipped)) {
+    if (!item) continue;
+    for (const affix of item.affixes) {
+      if (affix.kind === "-paint_time%") {
+        const v = affix.magnitude / 100;
+        bonus += v / (1 - v);
+      }
     }
   }
   return 1 + bonus;

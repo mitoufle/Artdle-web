@@ -22,7 +22,7 @@ export function PaintingRoute(): JSX.Element {
   const canvasProgress = useGameStore((s) => s.canvasProgress);
   const canvasTier = useGameStore((s) => s.canvasTier);
   const gold = useGameStore((s) => s.gold);
-  const equippedItems = useGameStore((s) => s.equippedItems);
+  const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const paintMastery = useGameStore((s) => s.paintMastery);
   const upgradeTier = useGameStore((s) => s.upgradeTier);
@@ -30,7 +30,7 @@ export function PaintingRoute(): JSX.Element {
   const clearLastSale = useGameStore((s) => s.clearLastSale);
 
   const helperState = {
-    equippedItems,
+    equipped,
     purchasedNodes,
     paintMastery,
   } as unknown as GameStore;

@@ -1,206 +1,246 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useGameStore } from "@/store";
-import { getCurrentSlotCount, getEquippedContribution } from "@/store/workshopSlice";
-import { big } from "@/core/bigNumber";
-import { setSeed } from "@/core/rng";
 import {
-  AFFIX_KINDS,
-  MAGNITUDE_MIN_PCT,
-  MAGNITUDE_MAX_PCT,
-  CRAFT_COST_GOLD,
-} from "@/config/workshopAffixes";
+  getCurrentSlotCount,
+  getEquippedContribution,
+  getUnlockedSlotKinds,
+} from "@/store/workshopSlice";
+import { setSeed } from "@/core/rng";
+import { big } from "@/core/bigNumber";
+import type { Item } from "@/store/workshopSlice";
 
-describe("workshopSlice", () => {
-  beforeEach(() => {
-    useGameStore.getState().resetRunCurrencies();
-    useGameStore.getState().resetWorkshop();
-    useGameStore.setState({ purchasedNodes: {} });
-    setSeed(42); // deterministic RNG for craft tests
+function freshState() {
+  useGameStore.setState({
+    inventory: [],
+    equipped: {},
+    workshopLevel: 1,
+    workshopXp: 0,
+    purchasedNodes: {},
+    gold: big(0),
+  });
+}
+
+const sampleBrush: Item = {
+  id: "test-brush-1",
+  slot: "brush",
+  tier: "magic",
+  affixes: [
+    { kind: "+canvas_gold%", magnitude: 12 },
+    { kind: "-paint_time%", magnitude: 8 },
+  ],
+};
+
+describe("workshopSlice — selectors", () => {
+  beforeEach(freshState);
+
+  it("getUnlockedSlotKinds: only 'brush' by default", () => {
+    expect(getUnlockedSlotKinds(useGameStore.getState())).toEqual(["brush"]);
   });
 
-  it("initializes with empty inventory and equippedItems", () => {
-    const s = useGameStore.getState();
-    expect(s.inventory).toEqual([]);
-    expect(s.equippedItems).toEqual([]);
-  });
-
-  it("craft() with insufficient gold returns false; nothing changes", () => {
-    expect(useGameStore.getState().craft()).toBe(false);
-    const s = useGameStore.getState();
-    expect(s.gold.toNumber()).toBe(0);
-    expect(s.inventory).toEqual([]);
-  });
-
-  it("craft() with sufficient gold: gold deducted, inventory grows by 1, item has valid kind + magnitude in [5,15]", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD));
-    expect(useGameStore.getState().craft()).toBe(true);
-    const s = useGameStore.getState();
-    expect(s.gold.toNumber()).toBe(0);
-    expect(s.inventory).toHaveLength(1);
-    const item = s.inventory[0]!;
-    expect(AFFIX_KINDS).toContain(item.kind);
-    expect(item.magnitude).toBeGreaterThanOrEqual(MAGNITUDE_MIN_PCT);
-    expect(item.magnitude).toBeLessThanOrEqual(MAGNITUDE_MAX_PCT);
-  });
-
-  it("craft() with setSeed(42) produces a deterministic (kind, magnitude)", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD));
-    useGameStore.getState().craft();
-    const item = useGameStore.getState().inventory[0]!;
-    expect(typeof item.kind).toBe("string");
-    expect(AFFIX_KINDS).toContain(item.kind);
-    expect(Number.isInteger(item.magnitude)).toBe(true);
-    expect(item.magnitude).toBeGreaterThanOrEqual(MAGNITUDE_MIN_PCT);
-    expect(item.magnitude).toBeLessThanOrEqual(MAGNITUDE_MAX_PCT);
-    // Determinism: re-seed and re-craft should reproduce.
-    useGameStore.getState().resetWorkshop();
-    useGameStore.getState().resetRunCurrencies();
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD));
-    setSeed(42);
-    useGameStore.getState().craft();
-    const item2 = useGameStore.getState().inventory[0]!;
-    expect(item2.kind).toBe(item.kind);
-    expect(item2.magnitude).toBe(item.magnitude);
-  });
-
-  it("craft() with full inventory returns false; gold NOT deducted (atomic)", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD * 4));
-    for (let i = 0; i < 3; i++) {
-      expect(useGameStore.getState().craft()).toBe(true);
-    }
-    const goldBefore = useGameStore.getState().gold.toNumber();
-    expect(useGameStore.getState().craft()).toBe(false);
-    const goldAfter = useGameStore.getState().gold.toNumber();
-    expect(goldAfter).toBe(goldBefore);
-    expect(useGameStore.getState().inventory).toHaveLength(3);
-  });
-
-  it("equip(0) from a 1-item inventory + 0 equipped: inventory becomes empty, equippedItems has 1 item", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD));
-    useGameStore.getState().craft();
-    const item = useGameStore.getState().inventory[0]!;
-    expect(useGameStore.getState().equip(0)).toBe(true);
-    const s = useGameStore.getState();
-    expect(s.inventory).toEqual([]);
-    expect(s.equippedItems).toEqual([item]);
-  });
-
-  it("equip(invalidIdx) returns false", () => {
-    expect(useGameStore.getState().equip(0)).toBe(false);
-    expect(useGameStore.getState().equip(99)).toBe(false);
-    expect(useGameStore.getState().equip(-1)).toBe(false);
-  });
-
-  it("equip(0) when equipped is full (slotCount=1, 1 item already equipped) returns false", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD * 2));
-    useGameStore.getState().craft();
-    useGameStore.getState().equip(0);
-    useGameStore.getState().craft();
-    expect(useGameStore.getState().equippedItems).toHaveLength(1);
-    expect(useGameStore.getState().inventory).toHaveLength(1);
-    expect(useGameStore.getState().equip(0)).toBe(false);
-    expect(useGameStore.getState().equippedItems).toHaveLength(1);
-    expect(useGameStore.getState().inventory).toHaveLength(1);
-  });
-
-  it("equip(0) with gear_up purchased + 1 item already equipped: succeeds", () => {
+  it("getUnlockedSlotKinds: includes 'palette' when gear_up purchased", () => {
     useGameStore.setState({ purchasedNodes: { gear_up: 1 } });
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD * 2));
-    useGameStore.getState().craft();
-    useGameStore.getState().equip(0);
-    useGameStore.getState().craft();
-    expect(useGameStore.getState().equip(0)).toBe(true);
-    expect(useGameStore.getState().equippedItems).toHaveLength(2);
-    expect(useGameStore.getState().inventory).toHaveLength(0);
+    expect(getUnlockedSlotKinds(useGameStore.getState())).toEqual(["brush", "palette"]);
   });
 
-  it("unequip(0) moves item back to inventory; equippedItems shrinks", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD));
-    useGameStore.getState().craft();
-    useGameStore.getState().equip(0);
-    expect(useGameStore.getState().equippedItems).toHaveLength(1);
-    expect(useGameStore.getState().inventory).toHaveLength(0);
-    expect(useGameStore.getState().unequip(0)).toBe(true);
-    expect(useGameStore.getState().equippedItems).toHaveLength(0);
-    expect(useGameStore.getState().inventory).toHaveLength(1);
-  });
-
-  it("unequip(0) when inventory is full returns false (item stays equipped)", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD * 4));
-    useGameStore.getState().craft();
-    useGameStore.getState().equip(0);
-    for (let i = 0; i < 3; i++) useGameStore.getState().craft();
-    expect(useGameStore.getState().inventory).toHaveLength(3);
-    expect(useGameStore.getState().equippedItems).toHaveLength(1);
-    expect(useGameStore.getState().unequip(0)).toBe(false);
-    expect(useGameStore.getState().equippedItems).toHaveLength(1);
-    expect(useGameStore.getState().inventory).toHaveLength(3);
-  });
-
-  it("swap(0, 0) exchanges inventory[0] and equippedItems[0]; counts unchanged", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD * 2));
-    useGameStore.getState().craft();
-    useGameStore.getState().equip(0);
-    useGameStore.getState().craft();
-    const inventoryItem = useGameStore.getState().inventory[0]!;
-    const equippedItem = useGameStore.getState().equippedItems[0]!;
-    expect(useGameStore.getState().swap(0, 0)).toBe(true);
-    const s = useGameStore.getState();
-    expect(s.inventory).toEqual([equippedItem]);
-    expect(s.equippedItems).toEqual([inventoryItem]);
-  });
-
-  it("swap with invalid indices returns false", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD));
-    useGameStore.getState().craft();
-    expect(useGameStore.getState().swap(0, 0)).toBe(false);
-    expect(useGameStore.getState().swap(99, 0)).toBe(false);
-    expect(useGameStore.getState().swap(0, 99)).toBe(false);
-  });
-
-  it("discard(0) removes inventory[0]; no gold refund", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD));
-    useGameStore.getState().craft();
-    expect(useGameStore.getState().inventory).toHaveLength(1);
-    const goldBefore = useGameStore.getState().gold.toNumber();
-    expect(useGameStore.getState().discard(0)).toBe(true);
-    expect(useGameStore.getState().inventory).toHaveLength(0);
-    expect(useGameStore.getState().gold.toNumber()).toBe(goldBefore);
-  });
-
-  it("discard(invalidIdx) returns false", () => {
-    expect(useGameStore.getState().discard(0)).toBe(false);
-    expect(useGameStore.getState().discard(99)).toBe(false);
-  });
-
-  it("getCurrentSlotCount returns 1 by default, 2 after gear_up purchased", () => {
+  it("getCurrentSlotCount: total of unlocked kinds", () => {
     expect(getCurrentSlotCount(useGameStore.getState())).toBe(1);
     useGameStore.setState({ purchasedNodes: { gear_up: 1 } });
     expect(getCurrentSlotCount(useGameStore.getState())).toBe(2);
   });
 
-  it("getEquippedContribution sums magnitude/100 across matching equipped items", () => {
-    useGameStore.setState({
-      equippedItems: [
-        { kind: "+canvas_gold%", magnitude: 10 },
-        { kind: "+canvas_gold%", magnitude: 5 },
-        { kind: "-paint_time%", magnitude: 12 },
-      ],
-    });
-    expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBeCloseTo(0.15, 6);
-    expect(getEquippedContribution(useGameStore.getState(), "-paint_time%")).toBeCloseTo(0.12, 6);
+  it("getEquippedContribution: sums affixes of matching kind across all equipped items", () => {
+    useGameStore.setState({ equipped: { brush: sampleBrush } });
+    expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBeCloseTo(0.12, 5);
+    expect(getEquippedContribution(useGameStore.getState(), "-paint_time%")).toBeCloseTo(0.08, 5);
   });
 
-  it("resetWorkshop() restores initialWorkshopState", () => {
-    useGameStore.getState().add("gold", big(CRAFT_COST_GOLD * 2));
+  it("getEquippedContribution: returns 0 when nothing equipped", () => {
+    expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBe(0);
+  });
+
+  it("getEquippedContribution: works across multiple slot kinds", () => {
+    const palette: Item = {
+      id: "test-palette-1",
+      slot: "palette",
+      tier: "rare",
+      affixes: [
+        { kind: "+canvas_gold%", magnitude: 7 },
+      ],
+    };
+    useGameStore.setState({ equipped: { brush: sampleBrush, palette } });
+    // brush has +12% canvas gold + palette has +7% = 0.19
+    expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBeCloseTo(0.19, 5);
+  });
+
+  it("getEquippedContribution: handles duplicate affix kinds on a single item", () => {
+    const itemWithDupes: Item = {
+      id: "test-dupes",
+      slot: "brush",
+      tier: "rare",
+      affixes: [
+        { kind: "+canvas_gold%", magnitude: 10 },
+        { kind: "+canvas_gold%", magnitude: 5 },
+        { kind: "-paint_time%", magnitude: 6 },
+      ],
+    };
+    useGameStore.setState({ equipped: { brush: itemWithDupes } });
+    expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBeCloseTo(0.15, 5);
+  });
+});
+
+describe("workshopSlice — craft", () => {
+  beforeEach(() => {
+    freshState();
+    setSeed(42);
+  });
+
+  it("returns false when inventory is full", () => {
+    useGameStore.setState({
+      inventory: Array.from({ length: 3 }, (_, i) => ({
+        id: `pre-${i}`,
+        slot: "brush" as const,
+        tier: "normal" as const,
+        affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+      })),
+      gold: big(1_000_000),
+    });
+    expect(useGameStore.getState().craft()).toBe(false);
+  });
+
+  it("returns false when not enough gold", () => {
+    useGameStore.setState({ gold: big(50) });
+    expect(useGameStore.getState().craft()).toBe(false);
+  });
+
+  it("on success: spends craftCost(1)=100, adds 1 item, grants 1 XP", () => {
+    useGameStore.setState({ gold: big(100) });
+    expect(useGameStore.getState().craft()).toBe(true);
+    expect(useGameStore.getState().gold.toNumber()).toBe(0);
+    expect(useGameStore.getState().inventory.length).toBe(1);
+    expect(useGameStore.getState().workshopXp).toBe(1);
+  });
+
+  it("crafted item has slot from unlocked kinds, tier from rollTier, affixes per tier", () => {
+    useGameStore.setState({ gold: big(100) });
     useGameStore.getState().craft();
-    useGameStore.getState().equip(0);
+    const item = useGameStore.getState().inventory[0]!;
+    expect(["brush"]).toContain(item.slot); // only brush unlocked
+    expect(["normal", "magic", "rare", "epic", "legendary"]).toContain(item.tier);
+    expect(item.affixes.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("levels up when XP threshold reached: e.g., 8 XP = L1 → L2", () => {
+    useGameStore.setState({ gold: big(10_000), workshopXp: 7 });
+    expect(useGameStore.getState().workshopLevel).toBe(1);
     useGameStore.getState().craft();
-    expect(useGameStore.getState().inventory).toHaveLength(1);
-    expect(useGameStore.getState().equippedItems).toHaveLength(1);
+    expect(useGameStore.getState().workshopLevel).toBe(2);
+    expect(useGameStore.getState().workshopXp).toBe(0); // 7 + 1 - 8 = 0
+  });
+
+  it("does not level up past MAX_WORKSHOP_LEVEL (100)", () => {
+    useGameStore.setState({ gold: big(1e15), workshopLevel: 100, workshopXp: 0 });
+    useGameStore.getState().craft();
+    expect(useGameStore.getState().workshopLevel).toBe(100);
+  });
+});
+
+describe("workshopSlice — equip / unequip", () => {
+  beforeEach(freshState);
+
+  it("equipItem: unknown id returns false", () => {
+    expect(useGameStore.getState().equipItem("nonexistent")).toBe(false);
+  });
+
+  it("equipItem: locked slot kind returns false", () => {
+    const palette: Item = {
+      id: "p1",
+      slot: "palette",
+      tier: "normal",
+      affixes: [{ kind: "+canvas_gold%", magnitude: 10 }],
+    };
+    useGameStore.setState({ inventory: [palette] });
+    // palette slot not unlocked
+    expect(useGameStore.getState().equipItem("p1")).toBe(false);
+  });
+
+  it("equipItem: success moves item from inventory to equipped[slot]", () => {
+    useGameStore.setState({ inventory: [sampleBrush] });
+    expect(useGameStore.getState().equipItem(sampleBrush.id)).toBe(true);
+    expect(useGameStore.getState().inventory).toEqual([]);
+    expect(useGameStore.getState().equipped.brush?.id).toBe(sampleBrush.id);
+  });
+
+  it("equipItem: replacing slot occupant returns previous to inventory", () => {
+    const newBrush: Item = {
+      id: "b2",
+      slot: "brush",
+      tier: "rare",
+      affixes: [{ kind: "+canvas_gold%", magnitude: 9 }],
+    };
+    useGameStore.setState({
+      inventory: [newBrush],
+      equipped: { brush: sampleBrush },
+    });
+    expect(useGameStore.getState().equipItem("b2")).toBe(true);
+    expect(useGameStore.getState().equipped.brush?.id).toBe("b2");
+    // sampleBrush returned to inventory
+    expect(useGameStore.getState().inventory.find((i) => i.id === sampleBrush.id)).toBeDefined();
+  });
+
+  it("unequipSlot: empty slot returns false", () => {
+    expect(useGameStore.getState().unequipSlot("brush")).toBe(false);
+  });
+
+  it("unequipSlot: full inventory returns false", () => {
+    useGameStore.setState({
+      inventory: Array.from({ length: 3 }, (_, i) => ({
+        id: `inv-${i}`,
+        slot: "brush" as const,
+        tier: "normal" as const,
+        affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+      })),
+      equipped: { brush: sampleBrush },
+    });
+    expect(useGameStore.getState().unequipSlot("brush")).toBe(false);
+  });
+
+  it("unequipSlot: success moves item from equipped to inventory", () => {
+    useGameStore.setState({ equipped: { brush: sampleBrush } });
+    expect(useGameStore.getState().unequipSlot("brush")).toBe(true);
+    expect(useGameStore.getState().equipped.brush).toBeUndefined();
+    expect(useGameStore.getState().inventory[0]?.id).toBe(sampleBrush.id);
+  });
+});
+
+describe("workshopSlice — discard", () => {
+  beforeEach(freshState);
+
+  it("discard removes the item from inventory by id", () => {
+    useGameStore.setState({ inventory: [sampleBrush] });
+    expect(useGameStore.getState().discard(sampleBrush.id)).toBe(true);
+    expect(useGameStore.getState().inventory).toEqual([]);
+  });
+
+  it("discard returns false for unknown id", () => {
+    expect(useGameStore.getState().discard("nonexistent")).toBe(false);
+  });
+});
+
+describe("workshopSlice — resetWorkshop", () => {
+  beforeEach(freshState);
+
+  it("resets inventory + equipped + workshopXp to initial state, preserves workshopLevel", () => {
+    useGameStore.setState({
+      inventory: [sampleBrush],
+      equipped: { brush: sampleBrush },
+      workshopLevel: 25,
+      workshopXp: 50,
+    });
     useGameStore.getState().resetWorkshop();
-    const s = useGameStore.getState();
-    expect(s.inventory).toEqual([]);
-    expect(s.equippedItems).toEqual([]);
+    expect(useGameStore.getState().inventory).toEqual([]);
+    expect(useGameStore.getState().equipped).toEqual({});
+    // Workshop level survives ascend (it's a long-tail achievement, like skill tree).
+    expect(useGameStore.getState().workshopLevel).toBe(25);
+    expect(useGameStore.getState().workshopXp).toBe(0);
   });
 });

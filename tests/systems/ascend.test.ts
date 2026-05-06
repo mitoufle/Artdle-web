@@ -77,16 +77,30 @@ describe("systems/ascend", () => {
     expect(useGameStore.getState().canvasProgress).toBe(0);
   });
 
-  it("performAscendOrchestrator on success: workshop resets (inventory empty, equippedItems empty)", () => {
+  it("performAscendOrchestrator on success: workshop resets (inventory empty, equipped empty)", () => {
     useGameStore.setState({
-      inventory: [{ kind: "+canvas_gold%", magnitude: 10 }],
-      equippedItems: [{ kind: "-paint_time%", magnitude: 8 }],
+      inventory: [
+        {
+          id: "inv-1",
+          slot: "brush" as const,
+          tier: "normal" as const,
+          affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+        },
+      ],
+      equipped: {
+        brush: {
+          id: "eq-1",
+          slot: "brush" as const,
+          tier: "magic" as const,
+          affixes: [{ kind: "-paint_time%" as const, magnitude: 8 }],
+        },
+      },
     });
     useGameStore.getState().add("inspiration", big(1500));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     const s = useGameStore.getState();
     expect(s.inventory).toEqual([]);
-    expect(s.equippedItems).toEqual([]);
+    expect(s.equipped).toEqual({});
   });
 
   it("performAscendOrchestrator on success: purchasedNodes UNCHANGED (preserved)", () => {
