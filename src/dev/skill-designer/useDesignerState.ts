@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { DesignFile, DesignNode } from "./types";
+import type { DesignFile, DesignNode, NodeKind, StackingMode } from "./types";
 import { EMPTY_DESIGN } from "./types";
 import { loadDraft, saveDraft, clearDraft } from "./storage";
+import designJson from "@/config/skillTreeDesign.json";
 
 const SAVE_DEBOUNCE_MS = 500;
 
@@ -27,8 +28,34 @@ function uniqueId(existing: ReadonlyArray<DesignNode>, base: string): string {
   return `${base}_${i}`;
 }
 
+/**
+ * Read the on-disk design JSON as a fallback when localStorage has no draft.
+ * Coerces JSON-string types to the union types our DesignNode interface expects.
+ */
+function loadFileBaseline(): DesignFile {
+  return {
+    version: 1,
+    title: designJson.title ?? "From file",
+    designedAt: designJson.designedAt ?? "",
+    nodes: designJson.nodes.map((n) => ({
+      id: n.id,
+      name: n.name,
+      description: n.description,
+      numericEffect: n.numericEffect,
+      parentIds: n.parentIds,
+      stacking: ((n as { stacking?: string }).stacking ?? "additive") as StackingMode,
+      kind: ((n as { kind?: string }).kind ?? "minor") as NodeKind,
+      maxLevel: n.maxLevel,
+      costs: n.costs,
+      position: n.position,
+    })),
+  };
+}
+
 export function useDesignerState(): DesignerState {
-  const [design, setDesign] = useState<DesignFile>(() => loadDraft() ?? EMPTY_DESIGN);
+  const [design, setDesign] = useState<DesignFile>(
+    () => loadDraft() ?? loadFileBaseline(),
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const saveTimer = useRef<number | null>(null);
 
