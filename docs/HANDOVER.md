@@ -1,5 +1,33 @@
 # Artdle Web — Handover
 
+## v3.1 — Workshop leveling + tiered items (shipped on `main`)
+
+**Status:** Shipped. Workshop now levels via 1 XP per craft. Items have a tier (Normal..Legendary) determining affix count (1..5). Slot kinds (brush, palette) gate inventory rolls and are unlocked via skill-tree fame nodes.
+
+### What landed
+
+- **Schema:** `Item = { id, slot, tier, affixes[] }` (was single-affix). `WorkshopState` adds `workshopLevel`, `workshopXp`; `equippedItems[]` becomes `equipped: Partial<Record<SlotKind, Item>>`.
+- **Slot kinds:** `"brush"` always unlocked; `"palette"` unlocks via the `gear_up` skill-tree node (renamed in `skillTreeDesign.json` to "Unlock Palette Slot"). Each unlocked kind = 1 equip slot of that kind.
+- **Tier system:** Hard gates per tier — Normal=L1, Magic=L5, Rare=L15, Epic=L35, Legendary=L70. Affix counts: 1/2/3/4/5. Probability formula: linear interp from `(unlock_level, min)` to `(L100, max)` per tier; normal fills remainder. Legendary 0.01% at L70, 1% at L100.
+- **Cost curve:** piecewise growth — 1.05 per level for L1–L5, 1.20 per level past L5. L1 = 100g, L5 = 122g, L70 = 21M g, L100 = 5B g.
+- **XP curve:** `xpToNext(level) = 4 × (level + 1)`. 1 XP per craft. Cumulative L70 ≈ 9,936 crafts.
+- **Affix rolling:** Flat 5–15% magnitude per affix, regardless of tier. Duplicate affix kinds allowed on the same item. Future skill-tree nodes can multiply at read time.
+- **`<WorkshopRoom>` UI:** level header with XP bar + dynamic-cost craft button + tiered item cards (color-bordered by tier, with slot-kind badge + affix list) + per-slot equipped panel (one row per unlocked slot kind only).
+- **Save migration v8 → v9:** wipes inventory + equipped (game unreleased; no real cost).
+- **Workshop level + XP survive ascend** (long-tail meta, like skill tree). Inventory + equipped wiped on ascend (run-state).
+
+### Tests + build
+
+- **573 tests passing.**
+- tsc clean. Lint clean (only pre-existing main.tsx warning).
+- Bundle: 151.63 KB gzipped JS (~+2 KB from v3.0).
+
+### Next
+
+Skill-tree nodes for affix magnitude multipliers, legendary chance bonuses, workshop XP boosts — designer-driven; the read-time multiplier pattern from v3.0 carries forward without engine changes.
+
+---
+
 ## v3.0 — Skill tree rewrite from designer JSON (shipped on `main`)
 
 **Status:** Shipped. The v1.1 5-node tree has been replaced by the user's designed 17-node DAG (multi-level, multi-parent). `src/config/skillTreeDesign.json` is the source of truth; `skillTreeNodes.ts` derives `SKILL_NODES` from it at module load. Save schema v7 → v8 wipes `purchasedNodes` (game unreleased — no save migration needed).
