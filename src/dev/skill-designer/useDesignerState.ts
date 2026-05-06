@@ -52,6 +52,7 @@ export function useDesignerState(): DesignerState {
         numericEffect: "",
         parentIds: [],
         stacking: "additive",
+        kind: "minor",
         maxLevel: 1,
         costs: [0],
         position: null,

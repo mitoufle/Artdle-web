@@ -11,7 +11,8 @@ import {
 import styles from "./DesignerCanvas.module.css";
 
 const DRAG_THRESHOLD_PX = 5;
-const NODE_R = 12;
+const NODE_R_MINOR = 12;
+const NODE_R_MAJOR = 18;
 const ZOOM_FACTOR = 1.2;
 const MIN_VIEW_W = 100;
 const MAX_VIEW_W = 4000;
@@ -260,33 +261,42 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
           {nodes.map((node) => {
             const pos = pointFor(node.id);
             const isSelected = selectedId === node.id;
+            const isMajor = node.kind === "major";
+            const r = isMajor ? NODE_R_MAJOR : NODE_R_MINOR;
+            const fill = isMajor ? "var(--gold)" : "var(--bg-1)";
+            const strokeWidth = isMajor ? 3 : 2;
             return (
               <g
                 key={node.id}
                 data-testid={`designer-node-${node.id}`}
                 data-selected={isSelected ? "true" : undefined}
+                data-kind={node.kind}
                 style={{ cursor: "grab" }}
                 onPointerDown={(e) => handleNodePointerDown(e, node)}
                 onClick={() => handleNodeClick(node)}
               >
+                {isMajor && (
+                  <circle cx={pos.x} cy={pos.y} r={r + 8} fill="rgba(255,216,106,0.20)" />
+                )}
                 {isSelected && (
-                  <circle cx={pos.x} cy={pos.y} r={NODE_R + 6} fill="rgba(155,108,214,0.3)" />
+                  <circle cx={pos.x} cy={pos.y} r={r + 6} fill="rgba(155,108,214,0.3)" />
                 )}
                 <circle
                   cx={pos.x}
                   cy={pos.y}
-                  r={NODE_R}
-                  fill="var(--bg-1)"
+                  r={r}
+                  fill={fill}
                   stroke="var(--gold)"
-                  strokeWidth={2}
+                  strokeWidth={strokeWidth}
                 />
                 <text
                   x={pos.x}
-                  y={pos.y + NODE_R + 14}
+                  y={pos.y + r + 14}
                   textAnchor="middle"
                   fontFamily="var(--mono)"
-                  fontSize="10"
-                  fill="var(--ink-2)"
+                  fontSize={isMajor ? 11 : 10}
+                  fontWeight={isMajor ? 700 : 400}
+                  fill={isMajor ? "var(--ink-1)" : "var(--ink-2)"}
                 >
                   {node.name}
                 </text>

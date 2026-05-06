@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { DesignNode, StackingMode } from "./types";
+import type { DesignNode, NodeKind, StackingMode } from "./types";
 import styles from "./NodeForm.module.css";
 
 interface Props {
@@ -113,6 +113,30 @@ export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Ele
               onChange={() => patch({ stacking: "multiplicative" as StackingMode })}
             />
             <span>Multiplicative</span>
+          </label>
+        </div>
+      </div>
+
+      <div className={styles.field}>
+        <span className={styles.label}>Kind</span>
+        <div className={styles.stackingRow}>
+          <label className={styles.stackingOption}>
+            <input
+              type="radio"
+              name={`kind-${node.id}`}
+              checked={node.kind === "minor"}
+              onChange={() => patch({ kind: "minor" as NodeKind })}
+            />
+            <span>Minor</span>
+          </label>
+          <label className={styles.stackingOption}>
+            <input
+              type="radio"
+              name={`kind-${node.id}`}
+              checked={node.kind === "major"}
+              onChange={() => patch({ kind: "major" as NodeKind })}
+            />
+            <span>Major</span>
           </label>
         </div>
       </div>

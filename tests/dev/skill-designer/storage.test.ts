@@ -14,6 +14,7 @@ const sample: DesignFile = {
       numericEffect: "+10%",
       parentIds: [],
       stacking: "additive",
+      kind: "minor",
       maxLevel: 1,
       costs: [1],
       position: null,
@@ -68,5 +69,22 @@ describe("skill-designer storage", () => {
     expect(loaded!.nodes[0]!.stacking).toBe("additive");
     expect(loaded!.nodes[1]!.parentIds).toEqual(["a"]);
     expect(loaded!.nodes[1]!.stacking).toBe("additive");
+  });
+
+  it("loadDraft defaults kind to 'minor' when missing on legacy nodes", () => {
+    const legacy = {
+      version: 1,
+      title: "Legacy",
+      designedAt: "",
+      nodes: [
+        { id: "a", name: "A", description: "", numericEffect: "", parentIds: [], stacking: "additive", maxLevel: 1, costs: [1], position: null },
+        { id: "b", name: "B", description: "", numericEffect: "", parentIds: [], stacking: "additive", kind: "major", maxLevel: 1, costs: [1], position: null },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy));
+    const loaded = loadDraft();
+    expect(loaded).not.toBeNull();
+    expect(loaded!.nodes[0]!.kind).toBe("minor");
+    expect(loaded!.nodes[1]!.kind).toBe("major");
   });
 });

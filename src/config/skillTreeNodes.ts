@@ -4,6 +4,7 @@ import designJson from "./skillTreeDesign.json";
 export type SkillNodeId = string;
 
 export type StackingMode = "additive" | "multiplicative";
+export type NodeKind = "minor" | "major";
 
 export interface SkillNodeConfig {
   readonly id: SkillNodeId;
@@ -17,6 +18,8 @@ export interface SkillNodeConfig {
   readonly costs: ReadonlyArray<number>;
   readonly maxLevel: number;
   readonly stacking: StackingMode;
+  /** Visual prominence on the constellation. Major nodes render bigger + brighter. */
+  readonly kind: NodeKind;
 }
 
 /**
@@ -27,16 +30,20 @@ export interface SkillNodeConfig {
  * restart the dev server (Vite caches JSON imports).
  */
 export const SKILL_NODES: ReadonlyArray<SkillNodeConfig> = designJson.nodes.map(
-  (n) => ({
-    id: n.id,
-    name: n.name,
-    description: n.description,
-    numericEffect: n.numericEffect,
-    parentIds: n.parentIds,
-    costs: n.costs,
-    maxLevel: n.maxLevel,
-    stacking: n.stacking as StackingMode,
-  }),
+  (n) => {
+    const raw = n as Record<string, unknown>;
+    return {
+      id: n.id,
+      name: n.name,
+      description: n.description,
+      numericEffect: n.numericEffect,
+      parentIds: n.parentIds,
+      costs: n.costs,
+      maxLevel: n.maxLevel,
+      stacking: n.stacking as StackingMode,
+      kind: (raw.kind as NodeKind | undefined) ?? "minor",
+    };
+  },
 );
 
 /** Lookup helper. Returns null if id unknown. */

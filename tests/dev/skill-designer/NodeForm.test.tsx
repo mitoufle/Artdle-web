@@ -10,6 +10,7 @@ const baseNode: DesignNode = {
   numericEffect: "+10%",
   parentIds: [],
   stacking: "additive",
+  kind: "minor",
   maxLevel: 2,
   costs: [10, 25],
   position: null,
@@ -22,6 +23,7 @@ const otherNode: DesignNode = {
   numericEffect: "",
   parentIds: [],
   stacking: "additive",
+  kind: "minor",
   maxLevel: 1,
   costs: [1],
   position: null,
@@ -75,6 +77,13 @@ describe("<NodeForm />", () => {
     render(<NodeForm node={baseNode} allNodes={[baseNode]} onChange={onChange} onDelete={() => {}} />);
     fireEvent.click(screen.getByRole("radio", { name: /multiplicative/i }));
     expect(onChange).toHaveBeenCalledWith("test_node", { stacking: "multiplicative" });
+  });
+
+  it("toggling kind radio to major calls onChange", () => {
+    const onChange = vi.fn();
+    render(<NodeForm node={baseNode} allNodes={[baseNode]} onChange={onChange} onDelete={() => {}} />);
+    fireEvent.click(screen.getByRole("radio", { name: /^major/i }));
+    expect(onChange).toHaveBeenCalledWith("test_node", { kind: "major" });
   });
 
   it("clicking Delete calls onDelete with the node id", () => {

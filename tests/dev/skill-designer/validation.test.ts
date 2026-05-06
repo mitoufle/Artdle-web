@@ -10,6 +10,7 @@ function n(id: string, parentId: string | null = null, maxLevel = 1, costs: numb
     numericEffect: "",
     parentIds: parentId === null ? [] : [parentId],
     stacking: "additive",
+    kind: "minor",
     maxLevel,
     costs,
     position: null,

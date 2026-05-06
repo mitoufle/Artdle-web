@@ -11,6 +11,7 @@ function n(id: string, name = id, maxLevel = 1): DesignNode {
     numericEffect: "",
     parentIds: [],
     stacking: "additive",
+    kind: "minor",
     maxLevel,
     costs: Array(maxLevel).fill(1),
     position: null,

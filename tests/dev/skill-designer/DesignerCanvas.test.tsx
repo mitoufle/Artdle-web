@@ -11,6 +11,7 @@ function n(id: string, parentId: string | null = null, position: { x: number; y:
     numericEffect: "",
     parentIds: parentId === null ? [] : [parentId],
     stacking: "additive",
+    kind: "minor",
     maxLevel: 1,
     costs: [1],
     position,

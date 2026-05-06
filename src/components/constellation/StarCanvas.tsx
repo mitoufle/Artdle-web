@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
+import { getSkillNodeConfig } from "@/config/skillTreeNodes";
 import { EDGES, FAME_HUB, NODE_POSITIONS, VIEWBOX, type EdgeFrom } from "./nodeLayout";
 import styles from "./StarCanvas.module.css";
 
@@ -125,7 +126,9 @@ export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Ele
             if (!state) return null;
             const stateName = nodeStateName(state);
             const isSelected = selectedId === id;
-            const r = isSelected ? 14 : 11;
+            const isMajor = getSkillNodeConfig(id)?.kind === "major";
+            const baseR = isMajor ? 16 : 11;
+            const r = isSelected ? baseR + 3 : baseR;
 
             return (
               <g
@@ -133,9 +136,13 @@ export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Ele
                 data-testid={`node-${id}`}
                 data-state={stateName}
                 data-selected={isSelected ? "true" : undefined}
+                data-kind={isMajor ? "major" : "minor"}
                 style={{ cursor: "pointer" }}
                 onClick={() => onSelect(id)}
               >
+                {isMajor && (
+                  <circle cx={pos.x} cy={pos.y} r={r + 10} fill="rgba(255,216,106,0.18)" />
+                )}
                 {(stateName === "owned" || stateName === "maxed" || isSelected) && (
                   <circle
                     cx={pos.x}

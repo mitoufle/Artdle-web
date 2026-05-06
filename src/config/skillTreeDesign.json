@@ -18,7 +18,8 @@
         15,
         20
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "black_white",
@@ -31,7 +32,8 @@
       "costs": [
         1
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "magenta",
@@ -46,7 +48,8 @@
       "costs": [
         5
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "cyan",
@@ -61,7 +64,8 @@
       "costs": [
         5
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "yellow",
@@ -76,7 +80,8 @@
       "costs": [
         5
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "red",
@@ -92,7 +97,8 @@
       "costs": [
         10
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "green",
@@ -108,7 +114,8 @@
       "costs": [
         10
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "blue",
@@ -124,7 +131,8 @@
       "costs": [
         10
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "purple",
@@ -140,7 +148,8 @@
       "costs": [
         20
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "brown",
@@ -156,7 +165,8 @@
       "costs": [
         20
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "orange",
@@ -172,7 +182,8 @@
       "costs": [
         20
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "rainbow",
@@ -193,7 +204,8 @@
         400,
         800
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "poke_tree",
@@ -212,7 +224,8 @@
         40,
         80
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "basic_technique",
@@ -231,7 +244,8 @@
         16,
         32
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "muscle_memory",
@@ -250,7 +264,8 @@
         40,
         80
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "gear_up",
@@ -265,7 +280,8 @@
       "costs": [
         100
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     },
     {
       "id": "Bargain",
@@ -284,7 +300,8 @@
         40,
         80
       ],
-      "position": null
+      "position": null,
+      "kind": "minor"
     }
   ]
 }

@@ -1,5 +1,8 @@
 export type StackingMode = "additive" | "multiplicative";
 
+/** Visual prominence on the constellation. Minor = small + dim; Major = big + bright. */
+export type NodeKind = "minor" | "major";
+
 export interface DesignNode {
   id: string;
   name: string;
@@ -7,6 +10,7 @@ export interface DesignNode {
   numericEffect: string;
   parentIds: ReadonlyArray<string>;
   stacking: StackingMode;
+  kind: NodeKind;
   maxLevel: number;
   costs: ReadonlyArray<number>;
   position: { x: number; y: number } | null;

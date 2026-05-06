@@ -10,6 +10,7 @@ interface LegacyDesignNode {
   parentId?: string | null;
   parentIds?: ReadonlyArray<string>;
   stacking?: "additive" | "multiplicative";
+  kind?: "minor" | "major";
   maxLevel: number;
   costs: ReadonlyArray<number>;
   position: { x: number; y: number } | null;
@@ -35,6 +36,7 @@ function migrateNode(raw: LegacyDesignNode): DesignNode {
     numericEffect: raw.numericEffect,
     parentIds,
     stacking: raw.stacking ?? "additive",
+    kind: raw.kind ?? "minor",
     maxLevel: raw.maxLevel,
     costs: raw.costs,
     position: raw.position,
