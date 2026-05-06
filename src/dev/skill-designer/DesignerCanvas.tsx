@@ -1,12 +1,20 @@
 import type { JSX } from "react";
 import { useState, useRef } from "react";
 import type { DesignNode } from "./types";
-import { computeAutoLayout, FAME_HUB_X, FAME_HUB_Y, CANVAS_WIDTH } from "./autoLayout";
+import {
+  computeAutoLayout,
+  FAME_HUB_X,
+  FAME_HUB_Y,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+} from "./autoLayout";
 import styles from "./DesignerCanvas.module.css";
 
-const VIEWBOX_HEIGHT = 600;
 const DRAG_THRESHOLD_PX = 5;
 const NODE_R = 12;
+const ZOOM_FACTOR = 1.2;
+const MIN_VIEW_W = 100;
+const MAX_VIEW_W = 4000;
 
 interface Props {
   nodes: ReadonlyArray<DesignNode>;
@@ -15,18 +23,39 @@ interface Props {
   onMove: (id: string, position: { x: number; y: number }) => void;
 }
 
-interface DragState {
+interface NodeDragState {
   nodeId: string;
   startClientX: number;
   startClientY: number;
-  startNodeX: number;
-  startNodeY: number;
   moved: boolean;
 }
 
+interface PanState {
+  startClientX: number;
+  startClientY: number;
+  startViewX: number;
+  startViewY: number;
+}
+
+interface ViewBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+const INITIAL_VIEWBOX: ViewBox = {
+  x: 0,
+  y: 0,
+  w: CANVAS_WIDTH,
+  h: CANVAS_HEIGHT,
+};
+
 export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [drag, setDrag] = useState<DragState | null>(null);
+  const [drag, setDrag] = useState<NodeDragState | null>(null);
+  const [pan, setPan] = useState<PanState | null>(null);
+  const [viewBox, setViewBox] = useState<ViewBox>(INITIAL_VIEWBOX);
   const justDragged = useRef(false);
   const positions = computeAutoLayout(nodes);
 
@@ -35,26 +64,83 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
     return positions[id] ?? { x: FAME_HUB_X, y: FAME_HUB_Y };
   }
 
+  /** Convert client (screen) pixels to SVG-space coordinates, honoring pan + zoom. */
   function clientToSvg(clientX: number, clientY: number): { x: number; y: number } {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
     const rect = svg.getBoundingClientRect();
-    const scaleX = CANVAS_WIDTH / rect.width;
-    const scaleY = VIEWBOX_HEIGHT / rect.height;
+    const fracX = (clientX - rect.left) / rect.width;
+    const fracY = (clientY - rect.top) / rect.height;
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
+      x: viewBox.x + fracX * viewBox.w,
+      y: viewBox.y + fracY * viewBox.h,
     };
   }
 
-  function handlePointerDown(e: React.PointerEvent, node: DesignNode) {
-    const pos = positions[node.id] ?? { x: 0, y: 0 };
+  function handleWheel(e: React.WheelEvent) {
+    if (!svgRef.current) return;
+    const svg = svgRef.current;
+    const rect = svg.getBoundingClientRect();
+    const fracX = (e.clientX - rect.left) / rect.width;
+    const fracY = (e.clientY - rect.top) / rect.height;
+    const cursorSvg = {
+      x: viewBox.x + fracX * viewBox.w,
+      y: viewBox.y + fracY * viewBox.h,
+    };
+    const factor = e.deltaY > 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR;
+    const newW = Math.max(MIN_VIEW_W, Math.min(MAX_VIEW_W, viewBox.w * factor));
+    const newH = (newW / viewBox.w) * viewBox.h;
+    const newX = cursorSvg.x - (cursorSvg.x - viewBox.x) * (newW / viewBox.w);
+    const newY = cursorSvg.y - (cursorSvg.y - viewBox.y) * (newH / viewBox.h);
+    setViewBox({ x: newX, y: newY, w: newW, h: newH });
+  }
+
+  function handleBackgroundPointerDown(e: React.PointerEvent) {
+    setPan({
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startViewX: viewBox.x,
+      startViewY: viewBox.y,
+    });
+    if (typeof (e.currentTarget as Element).setPointerCapture === "function") {
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    }
+  }
+
+  function handleBackgroundPointerMove(e: React.PointerEvent) {
+    if (pan === null) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const dxScreen = e.clientX - pan.startClientX;
+    const dyScreen = e.clientY - pan.startClientY;
+    const dxSvg = (dxScreen / rect.width) * viewBox.w;
+    const dySvg = (dyScreen / rect.height) * viewBox.h;
+    setViewBox({
+      ...viewBox,
+      x: pan.startViewX - dxSvg,
+      y: pan.startViewY - dySvg,
+    });
+  }
+
+  function handleBackgroundPointerUp(e: React.PointerEvent) {
+    if (pan === null) return;
+    if (typeof (e.currentTarget as Element).releasePointerCapture === "function") {
+      try {
+        (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    }
+    setPan(null);
+  }
+
+  function handleNodePointerDown(e: React.PointerEvent, node: DesignNode) {
+    e.stopPropagation(); // don't start a pan when clicking a node
     setDrag({
       nodeId: node.id,
       startClientX: e.clientX,
       startClientY: e.clientY,
-      startNodeX: pos.x,
-      startNodeY: pos.y,
       moved: false,
     });
     if (typeof (e.currentTarget as Element).setPointerCapture === "function") {
@@ -62,7 +148,7 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
     }
   }
 
-  function handlePointerMove(e: React.PointerEvent) {
+  function handleNodePointerMove(e: React.PointerEvent) {
     if (drag === null) return;
     const dx = Math.abs(e.clientX - drag.startClientX);
     const dy = Math.abs(e.clientY - drag.startClientY);
@@ -72,18 +158,19 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
     if (!drag.moved) setDrag({ ...drag, moved: true });
   }
 
-  function handlePointerUp(e: React.PointerEvent) {
+  function handleNodePointerUp(e: React.PointerEvent) {
     if (drag === null) return;
     if (drag.moved) {
       justDragged.current = true;
-      // Reset on next tick so onClick (if any) sees true and skips, then resets.
-      window.setTimeout(() => { justDragged.current = false; }, 0);
+      window.setTimeout(() => {
+        justDragged.current = false;
+      }, 0);
     }
     if (typeof (e.currentTarget as Element).releasePointerCapture === "function") {
       try {
         (e.currentTarget as Element).releasePointerCapture(e.pointerId);
       } catch {
-        // Some browsers throw if pointer wasn't captured.
+        // ignore
       }
     }
     setDrag(null);
@@ -94,15 +181,41 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
     onSelect(node.id);
   }
 
+  function handleResetView() {
+    setViewBox(INITIAL_VIEWBOX);
+  }
+
+  const cursorStyle = pan !== null ? "grabbing" : "grab";
+
   return (
     <div className={styles.canvas}>
+      <button
+        type="button"
+        className={styles.resetViewBtn}
+        onClick={handleResetView}
+        title="Reset pan + zoom"
+      >
+        ⟲ Reset view
+      </button>
       <svg
         ref={svgRef}
         className={styles.svg}
-        viewBox={`0 0 ${CANVAS_WIDTH} ${VIEWBOX_HEIGHT}`}
+        viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
         xmlns="http://www.w3.org/2000/svg"
+        onWheel={handleWheel}
+        style={{ cursor: cursorStyle }}
       >
-        <rect width={CANVAS_WIDTH} height={VIEWBOX_HEIGHT} fill="var(--bg-0)" />
+        {/* Background — also catches pan events. Sized big enough that pan never reaches an edge. */}
+        <rect
+          x={-CANVAS_WIDTH * 5}
+          y={-CANVAS_HEIGHT * 5}
+          width={CANVAS_WIDTH * 11}
+          height={CANVAS_HEIGHT * 11}
+          fill="var(--bg-0)"
+          onPointerDown={handleBackgroundPointerDown}
+          onPointerMove={handleBackgroundPointerMove}
+          onPointerUp={handleBackgroundPointerUp}
+        />
 
         <g>
           {nodes.flatMap((node) => {
@@ -143,7 +256,7 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
           </text>
         </g>
 
-        <g onPointerMove={handlePointerMove} onPointerUp={handlePointerUp}>
+        <g onPointerMove={handleNodePointerMove} onPointerUp={handleNodePointerUp}>
           {nodes.map((node) => {
             const pos = pointFor(node.id);
             const isSelected = selectedId === node.id;
@@ -153,7 +266,7 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
                 data-testid={`designer-node-${node.id}`}
                 data-selected={isSelected ? "true" : undefined}
                 style={{ cursor: "grab" }}
-                onPointerDown={(e) => handlePointerDown(e, node)}
+                onPointerDown={(e) => handleNodePointerDown(e, node)}
                 onClick={() => handleNodeClick(node)}
               >
                 {isSelected && (
