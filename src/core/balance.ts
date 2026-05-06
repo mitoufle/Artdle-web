@@ -6,7 +6,12 @@ import { big, type Big } from "./bigNumber";
 
 export const PALIER_BASE = 1000;
 export const PALIER_GROWTH = 2;
+/** Fame curve scale. `(log10(inspi) - threshold)^2 * K`. */
 export const FAME_LOG_K = 10;
+/** Below 10^FAME_THRESHOLD_LOG10 inspi, the quadratic term goes negative; we
+ *  then clamp to a floor of 1 (so any successful ascend gives at least 1 fame).
+ *  At threshold ≈ 501 inspi. */
+export const FAME_THRESHOLD_LOG10 = 2.7;
 export const TREE_PART_COST_GROWTH = 1.15;
 export const CANVAS_GOLD_BASE = 10;
 export const PAINT_TIME_BASE_SECONDS = 10;
@@ -28,11 +33,28 @@ export const palierAscend = (count: number): Big =>
 
 /**
  * Fame gained from converting a given inspiration amount.
- * floor(log10(max(1, inspi)) * K). Always non-negative.
+ *
+ * `max(1, floor((log10(inspi) - threshold)^2 * K))` — quadratic-in-log above
+ * the threshold, clamped to 1. The clamp ensures any successful ascend (which
+ * already required reaching the palier) yields at least one fame point;
+ * the goal of ascending is to spend fame, so a 0-fame ascend would be pointless.
+ *
+ * Curve shape:
+ *   - 1,000 inspi (palier 0): 1 fame (token, but enough to buy the cheapest node)
+ *   - 4,000 inspi (palier 2): 8 fame
+ *   - 32,000 inspi (palier 5): 32 fame
+ *   - 1,000,000 inspi (palier 10): 109 fame
+ *   - 1,000,000,000 inspi (palier 20): 436 fame
+ *
+ * Per-ascend Δ accelerates from +2 → +50+ over 20 runs (vs the old flat +3).
+ * Over-capping by 10× past palier no longer dominates two extra normal ascends.
  */
 export const fameOnAscend = (inspi: Big): number => {
   const n = inspi.toNumber();
-  return Math.floor(Math.log10(Math.max(1, n)) * FAME_LOG_K);
+  const log = Math.log10(Math.max(1, n));
+  const x = log - FAME_THRESHOLD_LOG10;
+  if (x <= 0) return 1;
+  return Math.max(1, Math.floor(x * x * FAME_LOG_K));
 };
 
 /**

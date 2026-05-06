@@ -34,33 +34,57 @@ describe("palierAscend", () => {
   });
 });
 
-describe("fameOnAscend", () => {
-  it("returns 0 at inspi = 1 (log10(1) = 0)", () => {
-    expect(fameOnAscend(big(1))).toBe(0);
+describe("fameOnAscend (quadratic-in-log, clamp ≥ 1)", () => {
+  // Formula: max(1, floor((log10(inspi) - 2.7)^2 * 10))
+
+  it("clamps to 1 at very low inspi (no zero-fame ascends)", () => {
+    expect(fameOnAscend(big(1))).toBe(1);
+    expect(fameOnAscend(big(10))).toBe(1);
+    expect(fameOnAscend(big(100))).toBe(1);
   });
 
-  it("ramps smoothly: returns 9 at inspi = 9 (floor(log10(9)*10))", () => {
-    expect(fameOnAscend(big(9))).toBe(9);
+  it("clamps to 1 at the threshold (10^2.7 ≈ 501 inspi)", () => {
+    expect(fameOnAscend(big(500))).toBe(1);
   });
 
-  it("returns 10 at inspi = 10", () => {
-    expect(fameOnAscend(big(10))).toBe(10);
+  it("returns 1 at palier 0 (inspi = 1000)", () => {
+    // (3 - 2.7)^2 * 10 = 0.9 → floor 0 → clamp to 1
+    expect(fameOnAscend(big(1000))).toBe(1);
   });
 
-  it("returns 30 at inspi = 1000", () => {
-    expect(fameOnAscend(big(1000))).toBe(30);
+  it("returns 3 at inspi = 2000 (palier 1)", () => {
+    // (3.301 - 2.7)^2 * 10 ≈ 3.61 → 3
+    expect(fameOnAscend(big(2000))).toBe(3);
   });
 
-  it("returns 60 at inspi = 1e6", () => {
-    expect(fameOnAscend(big(1e6))).toBe(60);
+  it("returns 8 at inspi = 4000 (palier 2)", () => {
+    expect(fameOnAscend(big(4000))).toBe(8);
   });
 
-  it("returns 0 (not negative) when inspi is 0", () => {
-    expect(fameOnAscend(big(0))).toBe(0);
+  it("returns 32 at inspi = 32000 (palier 5)", () => {
+    expect(fameOnAscend(big(32000))).toBe(32);
   });
 
-  it("returns 0 (not negative) when inspi is fractional below 1", () => {
-    expect(fameOnAscend(big(0.5))).toBe(0);
+  it("returns 108 at inspi = 1e6 (palier 10)", () => {
+    // (6 - 2.7)^2 * 10 = 108.9 → 108
+    expect(fameOnAscend(big(1e6))).toBe(108);
+  });
+
+  it("returns 1 (clamped, not negative) when inspi is 0", () => {
+    expect(fameOnAscend(big(0))).toBe(1);
+  });
+
+  it("returns 1 (clamped) when inspi is fractional below 1", () => {
+    expect(fameOnAscend(big(0.5))).toBe(1);
+  });
+
+  it("monotonically non-decreasing: each doubling yields ≥ previous fame", () => {
+    let prev = fameOnAscend(big(1000));
+    for (let inspi = 2000; inspi <= 1e9; inspi *= 2) {
+      const cur = fameOnAscend(big(inspi));
+      expect(cur).toBeGreaterThanOrEqual(prev);
+      prev = cur;
+    }
   });
 });
 
