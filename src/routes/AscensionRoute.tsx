@@ -56,7 +56,9 @@ export function AscensionRoute(): JSX.Element {
               disabled={!canDo}
               onClick={onStepThroughClick}
             >
-              ✦ Step Through · +{fameGain} fame ✦
+              {canDo
+                ? `✦ Step Through · +${fameGain} fame ✦`
+                : "✦ Step Through · need 10,000 inspiration ✦"}
             </button>
           </div>
         </Cavern>

@@ -44,27 +44,33 @@ describe("AscensionRoute (v2 visual)", () => {
     expect(screen.getByText(/Past ascensions/i)).toBeInTheDocument();
   });
 
-  it("Step Through button is always enabled (no palier gate)", () => {
+  it("Step Through button is disabled below the 10k inspi gate", () => {
     useGameStore.setState({ inspiration: big(0) });
     renderAscensionRoute();
-    expect(screen.getByRole("button", { name: /step through/i })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /step through/i })).toBeDisabled();
   });
 
-  it("Step Through button is enabled at any inspiration level", () => {
-    useGameStore.setState({ inspiration: big(2_000) });
+  it("Step Through button is disabled at 9,999 inspi (just below gate)", () => {
+    useGameStore.setState({ inspiration: big(9_999) });
+    renderAscensionRoute();
+    expect(screen.getByRole("button", { name: /step through/i })).toBeDisabled();
+  });
+
+  it("Step Through button is enabled at 10,000 inspi (gate reached)", () => {
+    useGameStore.setState({ inspiration: big(10_000) });
     renderAscensionRoute();
     expect(screen.getByRole("button", { name: /step through/i })).not.toBeDisabled();
   });
 
   it("clicking Step Through shows the confirmation modal", () => {
-    useGameStore.setState({ inspiration: big(2_000) });
+    useGameStore.setState({ inspiration: big(12_000) });
     renderAscensionRoute();
     fireEvent.click(screen.getByRole("button", { name: /step through/i }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("confirmation Cancel button closes the modal without ascending", () => {
-    useGameStore.setState({ inspiration: big(2_000) });
+    useGameStore.setState({ inspiration: big(12_000) });
     renderAscensionRoute();
     fireEvent.click(screen.getByRole("button", { name: /step through/i }));
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
@@ -73,7 +79,7 @@ describe("AscensionRoute (v2 visual)", () => {
   });
 
   it("confirmation Ascend button performs the ascend", () => {
-    useGameStore.setState({ inspiration: big(2_000) });
+    useGameStore.setState({ inspiration: big(12_000) });
     renderAscensionRoute();
     fireEvent.click(screen.getByRole("button", { name: /step through/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Ascend\s+\+/i }));
@@ -81,7 +87,7 @@ describe("AscensionRoute (v2 visual)", () => {
   });
 
   it("ledger reflects past ascends after performing one", () => {
-    useGameStore.setState({ inspiration: big(2_000) });
+    useGameStore.setState({ inspiration: big(12_000) });
     renderAscensionRoute();
     fireEvent.click(screen.getByRole("button", { name: /step through/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Ascend\s+\+/i }));

@@ -17,53 +17,50 @@ import {
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
-describe("fameOnAscend (quadratic-in-log, clamp ≥ 1)", () => {
-  // Formula: max(1, floor((log10(inspi) - 2.7)^2 * 10))
+describe("fameOnAscend (quintic-in-log, gated at 10k inspi)", () => {
+  // Formula: max(1, floor((log10(inspi) - 4)^5 * 3.2)) for inspi ≥ 10k; 0 below.
 
-  it("clamps to 1 at very low inspi (no zero-fame ascends)", () => {
-    expect(fameOnAscend(big(1))).toBe(1);
-    expect(fameOnAscend(big(10))).toBe(1);
-    expect(fameOnAscend(big(100))).toBe(1);
+  it("returns 0 below the 10k threshold", () => {
+    expect(fameOnAscend(big(0))).toBe(0);
+    expect(fameOnAscend(big(1))).toBe(0);
+    expect(fameOnAscend(big(1000))).toBe(0);
+    expect(fameOnAscend(big(9999))).toBe(0);
   });
 
-  it("clamps to 1 at the threshold (10^2.7 ≈ 501 inspi)", () => {
-    expect(fameOnAscend(big(500))).toBe(1);
+  it("returns exactly 1 at 10,000 inspi (first viable ascend, clamped)", () => {
+    // x = 0 → x^5 = 0 → max(1, floor(0)) = 1
+    expect(fameOnAscend(big(10_000))).toBe(1);
   });
 
-  it("returns 1 at palier 0 (inspi = 1000)", () => {
-    // (3 - 2.7)^2 * 10 = 0.9 → floor 0 → clamp to 1
-    expect(fameOnAscend(big(1000))).toBe(1);
+  it("returns 1 between 10k and ~100k (sub-integer formula values clamp to 1)", () => {
+    // 30k: x≈0.477, x^5 ≈ 0.0247, *3.2 ≈ 0.079 → floor 0 → clamp to 1
+    expect(fameOnAscend(big(30_000))).toBe(1);
+    // 50k: x≈0.699, x^5 ≈ 0.166, *3.2 ≈ 0.531 → floor 0 → clamp to 1
+    expect(fameOnAscend(big(50_000))).toBe(1);
   });
 
-  it("returns 3 at inspi = 2000 (palier 1)", () => {
-    // (3.301 - 2.7)^2 * 10 ≈ 3.61 → 3
-    expect(fameOnAscend(big(2000))).toBe(3);
+  it("returns 3 at inspi = 100,000", () => {
+    // x = 1 → x^5 = 1 → 3.2 → floor 3
+    expect(fameOnAscend(big(100_000))).toBe(3);
   });
 
-  it("returns 8 at inspi = 4000 (palier 2)", () => {
-    expect(fameOnAscend(big(4000))).toBe(8);
+  it("returns 102 at inspi = 1,000,000", () => {
+    // x = 2 → 2^5 = 32 → *3.2 = 102.4 → floor 102
+    expect(fameOnAscend(big(1_000_000))).toBe(102);
   });
 
-  it("returns 32 at inspi = 32000 (palier 5)", () => {
-    expect(fameOnAscend(big(32000))).toBe(32);
+  it("returns exactly 10,000 at inspi = 1e9", () => {
+    // x = 5 → 5^5 = 3125 → *3.2 = 10000.0 → floor 10000
+    expect(fameOnAscend(big(1e9))).toBe(10_000);
   });
 
-  it("returns 108 at inspi = 1e6 (palier 10)", () => {
-    // (6 - 2.7)^2 * 10 = 108.9 → 108
-    expect(fameOnAscend(big(1e6))).toBe(108);
-  });
-
-  it("returns 1 (clamped, not negative) when inspi is 0", () => {
-    expect(fameOnAscend(big(0))).toBe(1);
-  });
-
-  it("returns 1 (clamped) when inspi is fractional below 1", () => {
-    expect(fameOnAscend(big(0.5))).toBe(1);
+  it("returns 0 (not negative) when inspi is fractional below 1", () => {
+    expect(fameOnAscend(big(0.5))).toBe(0);
   });
 
   it("monotonically non-decreasing: each doubling yields ≥ previous fame", () => {
-    let prev = fameOnAscend(big(1000));
-    for (let inspi = 2000; inspi <= 1e9; inspi *= 2) {
+    let prev = fameOnAscend(big(10_000));
+    for (let inspi = 20_000; inspi <= 1e9; inspi *= 2) {
       const cur = fameOnAscend(big(inspi));
       expect(cur).toBeGreaterThanOrEqual(prev);
       prev = cur;

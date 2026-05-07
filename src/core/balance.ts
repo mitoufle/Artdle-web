@@ -4,12 +4,11 @@ import { big, type Big } from "./bigNumber";
 // Tuning constants — touchable in the v1 balance pass (Phase 6).
 // ============================================================================
 
-/** Fame curve scale. `(log10(inspi) - threshold)^2 * K`. */
-export const FAME_LOG_K = 10;
-/** Below 10^FAME_THRESHOLD_LOG10 inspi, the quadratic term goes negative; we
- *  then clamp to a floor of 1 (so any successful ascend gives at least 1 fame).
- *  At threshold ≈ 501 inspi. */
-export const FAME_THRESHOLD_LOG10 = 2.7;
+/** Fame curve: `max(1, floor((log10(inspi) - threshold)^FAME_POWER * FAME_SCALE))`,
+ *  hard 0 below threshold. Threshold = 4 → 10,000 inspi gate. */
+export const FAME_THRESHOLD_LOG10 = 4;
+export const FAME_POWER = 5;
+export const FAME_SCALE = 3.2;
 export const TREE_PART_COST_GROWTH = 1.15;
 export const CANVAS_GOLD_BASE = 10;
 export const PAINT_TIME_BASE_SECONDS = 10;
@@ -32,27 +31,25 @@ export const XP_PER_CRAFT = 1;
 /**
  * Fame gained from converting a given inspiration amount.
  *
- * `max(1, floor((log10(inspi) - threshold)^2 * K))` — quadratic-in-log above
- * the threshold, clamped to 1. The clamp ensures any ascend yields at least
- * one fame point (the goal of ascending is to spend fame in the skill tree).
+ * `max(1, floor((log10(inspi) - 4)^5 * 3.2))` for inspi ≥ 10,000; hard 0 below.
+ * Quintic-in-log over the 10k threshold — slows in log-log so end-game fame
+ * stays in a tractable range while early ascends still feel meaningful.
  *
  * Curve shape:
- *   - 100 inspi:    1 fame (clamp)
- *   - 1,000 inspi:  1 fame
- *   - 10,000 inspi: 16 fame
- *   - 100,000 inspi: 52 fame
- *   - 1,000,000 inspi: 108 fame
- *   - 1,000,000,000 inspi: 396 fame
- *
- * No fixed palier gate — players choose when to ascend. Lower inspi at the
- * moment of ascend yields proportionally less fame; longer runs yield more.
+ *   - 9,999 inspi:    0 fame (blocked by canAscend)
+ *   - 10,000 inspi:   1 fame  (first viable ascend, clamped)
+ *   - 100,000 inspi:  3 fame
+ *   - 1,000,000 inspi: 102 fame
+ *   - 10,000,000 inspi: 777 fame
+ *   - 100,000,000 inspi: 3,276 fame
+ *   - 1,000,000,000 inspi: 10,000 fame
  */
 export const fameOnAscend = (inspi: Big): number => {
   const n = inspi.toNumber();
   const log = Math.log10(Math.max(1, n));
   const x = log - FAME_THRESHOLD_LOG10;
-  if (x <= 0) return 1;
-  return Math.max(1, Math.floor(x * x * FAME_LOG_K));
+  if (x < 0) return 0;
+  return Math.max(1, Math.floor(Math.pow(x, FAME_POWER) * FAME_SCALE));
 };
 
 /**

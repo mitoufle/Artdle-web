@@ -4,12 +4,12 @@ import { big } from "@/core/bigNumber";
 import { fameOnAscend } from "@/core/balance";
 
 /**
- * True iff the player can ascend right now. Always true — there is no
- * inspiration palier gate. The fame formula clamps to 1 minimum, so any
- * ascend yields at least one fame point. Players choose when to ascend
- * based on the fame curve and their willingness to lose run state.
+ * True iff the current inspiration would yield at least 1 fame. Below
+ * 10^FAME_THRESHOLD_LOG10 (10,000 inspi) the curve returns 0, so the
+ * ascend button is gated until the player crosses that threshold.
  */
-export const canAscend = (_state: GameStore): boolean => true;
+export const canAscend = (state: GameStore): boolean =>
+  fameOnAscend(state.inspiration) >= 1;
 
 /**
  * Atomic ascend orchestrator. Returns true on success; false if canAscend is false.

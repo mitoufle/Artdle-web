@@ -17,13 +17,13 @@ describe("systems/ascend", () => {
   });
 
   // ============================================================================
-  // canAscend — always true (no palier gate)
+  // canAscend — gated at 10,000 inspi (first fame point)
   // ============================================================================
 
-  it("canAscend returns true regardless of inspiration", () => {
-    expect(canAscend(useGameStore.getState())).toBe(true);
-    useGameStore.getState().add("inspiration", big(999));
-    expect(canAscend(useGameStore.getState())).toBe(true);
+  it("canAscend returns false below 10k inspi, true at/above", () => {
+    expect(canAscend(useGameStore.getState())).toBe(false);
+    useGameStore.getState().add("inspiration", big(9_999));
+    expect(canAscend(useGameStore.getState())).toBe(false);
     useGameStore.getState().add("inspiration", big(1));
     expect(canAscend(useGameStore.getState())).toBe(true);
   });
@@ -34,7 +34,7 @@ describe("systems/ascend", () => {
 
   it("performAscendOrchestrator on success: gold → 0, inspiration → 0", () => {
     useGameStore.getState().add("gold", big(500));
-    useGameStore.getState().add("inspiration", big(1500));
+    useGameStore.getState().add("inspiration", big(12_000));
     expect(
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState),
     ).toBe(true);
@@ -43,15 +43,15 @@ describe("systems/ascend", () => {
   });
 
   it("performAscendOrchestrator on success: fame increases by fameOnAscend(inspirationBeforeReset)", () => {
-    useGameStore.getState().add("inspiration", big(1500));
-    const expectedFameGain = fameOnAscend(big(1500));
+    useGameStore.getState().add("inspiration", big(12_000));
+    const expectedFameGain = fameOnAscend(big(12_000));
     const beforeFame = useGameStore.getState().fame.toNumber();
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().fame.toNumber()).toBe(beforeFame + expectedFameGain);
   });
 
   it("performAscendOrchestrator on success: ascendCount increments by 1", () => {
-    useGameStore.getState().add("inspiration", big(1500));
+    useGameStore.getState().add("inspiration", big(12_000));
     const beforeCount = useGameStore.getState().ascendCount;
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().ascendCount).toBe(beforeCount + 1);
@@ -62,7 +62,7 @@ describe("systems/ascend", () => {
     useGameStore.getState().buyPartLevel("spark");
     useGameStore.getState().buyPartLevel("bud");
     useGameStore.setState({ currentStage: 1 });
-    useGameStore.getState().add("inspiration", big(1500));
+    useGameStore.getState().add("inspiration", big(12_000));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     const s = useGameStore.getState();
     expect(s.currentStage).toBe(0);
@@ -72,7 +72,7 @@ describe("systems/ascend", () => {
 
   it("performAscendOrchestrator on success: canvas resets (canvasProgress=0)", () => {
     useGameStore.setState({ canvasProgress: 7.5 });
-    useGameStore.getState().add("inspiration", big(1500));
+    useGameStore.getState().add("inspiration", big(12_000));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().canvasProgress).toBe(0);
   });
@@ -96,7 +96,7 @@ describe("systems/ascend", () => {
         },
       },
     });
-    useGameStore.getState().add("inspiration", big(1500));
+    useGameStore.getState().add("inspiration", big(12_000));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     const s = useGameStore.getState();
     expect(s.inventory).toEqual([]);
@@ -107,7 +107,7 @@ describe("systems/ascend", () => {
     useGameStore.setState({
       purchasedNodes: { get_inspired: 2, black_white: 1 },
     });
-    useGameStore.getState().add("inspiration", big(1500));
+    useGameStore.getState().add("inspiration", big(12_000));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().purchasedNodes).toEqual({
       get_inspired: 2,
@@ -117,27 +117,29 @@ describe("systems/ascend", () => {
 
   it("performAscendOrchestrator on success: playerId UNCHANGED", () => {
     const beforeId = useGameStore.getState().playerId;
-    useGameStore.getState().add("inspiration", big(1500));
+    useGameStore.getState().add("inspiration", big(12_000));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().playerId).toBe(beforeId);
   });
 
   it("performAscendOrchestrator multiple times: ascendCount increments each time", () => {
-    useGameStore.getState().add("inspiration", big(1500));
+    useGameStore.getState().add("inspiration", big(12_000));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().ascendCount).toBe(1);
-    useGameStore.getState().add("inspiration", big(2500));
+    useGameStore.getState().add("inspiration", big(15_000));
     performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
     expect(useGameStore.getState().ascendCount).toBe(2);
   });
 
-  it("performAscendOrchestrator with inspi=0: still succeeds, gives 1 fame (clamp)", () => {
+  it("performAscendOrchestrator with inspi=0: returns false, no fame, no state change", () => {
     expect(useGameStore.getState().inspiration.toNumber()).toBe(0);
+    const beforeFame = useGameStore.getState().fame.toNumber();
+    const beforeCount = useGameStore.getState().ascendCount;
     expect(
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState),
-    ).toBe(true);
-    // 1-fame clamp: even a 0-inspi ascend gives 1 fame.
-    expect(useGameStore.getState().fame.toNumber()).toBe(1);
+    ).toBe(false);
+    expect(useGameStore.getState().fame.toNumber()).toBe(beforeFame);
+    expect(useGameStore.getState().ascendCount).toBe(beforeCount);
   });
 
   describe("performAscendOrchestrator — pastRuns ledger (v2.0 Round 3)", () => {
@@ -150,7 +152,7 @@ describe("systems/ascend", () => {
     });
 
     it("appends a pastRun entry on successful ascend with the captured fame gain", () => {
-      useGameStore.setState({ inspiration: big(2_000) });
+      useGameStore.setState({ inspiration: big(12_000) });
       const before = useGameStore.getState().pastRuns.length;
       const ok = useGameStore.getState().performAscend();
       expect(ok).toBe(true);
@@ -160,12 +162,12 @@ describe("systems/ascend", () => {
       expect(typeof runs[runs.length - 1]!.ascendedAt).toBe("number");
     });
 
-    it("appends a pastRun even when ascending at 0 inspi (1-fame clamp)", () => {
+    it("does not append a pastRun when ascend is blocked (below 10k inspi)", () => {
       useGameStore.setState({ inspiration: big(0) });
       const before = useGameStore.getState().pastRuns.length;
       const ok = useGameStore.getState().performAscend();
-      expect(ok).toBe(true);
-      expect(useGameStore.getState().pastRuns.length).toBe(before + 1);
+      expect(ok).toBe(false);
+      expect(useGameStore.getState().pastRuns.length).toBe(before);
     });
   });
 
@@ -183,7 +185,7 @@ describe("systems/ascend", () => {
 
     it("ascend resets canvasTier to 1", () => {
       // Set up an ascendable state.
-      useGameStore.setState({ canvasTier: 7, inspiration: big(2_000) });
+      useGameStore.setState({ canvasTier: 7, inspiration: big(12_000) });
       const ok = performAscendOrchestrator(
         useGameStore.setState,
         useGameStore.getState,
@@ -193,7 +195,7 @@ describe("systems/ascend", () => {
     });
 
     it("ascend preserves paintMastery exactly (no reset)", () => {
-      useGameStore.setState({ inspiration: big(2_000) });
+      useGameStore.setState({ inspiration: big(12_000) });
       useGameStore.getState()._setPaintMastery(big(12_345));
       useGameStore.getState()._setLifetimeGold(big(99_999));
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
@@ -203,7 +205,7 @@ describe("systems/ascend", () => {
 
     it("multi-ascend accumulates paintMastery additively across runs", () => {
       // Run 1: set 100 PM directly, ascend.
-      useGameStore.setState({ inspiration: big(2_000) });
+      useGameStore.setState({ inspiration: big(12_000) });
       useGameStore.getState()._setPaintMastery(big(100));
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
       expect(useGameStore.getState().paintMastery.toNumber()).toBe(100);
@@ -215,7 +217,7 @@ describe("systems/ascend", () => {
       useGameStore.getState()._setLifetimeGold(big(5_000));
 
       // Ascend run 2 (count 1 → palier 2000).
-      useGameStore.setState({ inspiration: big(4_000) });
+      useGameStore.setState({ inspiration: big(12_000) });
       performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
       // PM accumulates and survives across ascends (not reset).
       expect(useGameStore.getState().paintMastery.toNumber()).toBe(105);
