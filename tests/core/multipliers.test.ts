@@ -22,26 +22,26 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getInspiMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getInspiMultiplier returns 1.05 with get_inspired level 1", () => {
+  it("getInspiMultiplier returns 1.25 with get_inspired level 1", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.05, 5);
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.25, 5);
   });
 
-  it("getInspiMultiplier returns 1.25 with get_inspired level 5", () => {
+  it("getInspiMultiplier returns 2.25 with get_inspired level 5 (5 × 0.25)", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 5 } });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.25, 5);
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.25, 5);
   });
 
   it("getCanvasGoldMultiplier returns 1.0 with no nodes and no items", () => {
     expect(getCanvasGoldMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getCanvasGoldMultiplier returns 1.10 with black_white level 1", () => {
+  it("getCanvasGoldMultiplier returns 1.20 with black_white level 1 (root tier 20%)", () => {
     useGameStore.setState({ purchasedNodes: { black_white: 1 } });
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.10, 5);
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.20, 5);
   });
 
-  it("getCanvasGoldMultiplier returns 2.00 with all 10 color nodes at level 1", () => {
+  it("getCanvasGoldMultiplier returns 4.80 with all 10 color nodes (tiered: 20+3×30+3×40+3×50)", () => {
     useGameStore.setState({
       purchasedNodes: {
         black_white: 1, magenta: 1, cyan: 1, yellow: 1,
@@ -49,13 +49,26 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
         purple: 1, brown: 1, orange: 1,
       },
     });
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(2.00, 5);
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(4.80, 5);
   });
 
-  it("getCanvasGoldMultiplier adds 0.50 per rainbow level (single-level major node)", () => {
+  it("getCanvasGoldMultiplier applies rainbow multiplicatively (× 1.50 at level 1)", () => {
     useGameStore.setState({ purchasedNodes: { rainbow: 1 } });
-    // 1 + 0.50 * 1 = 1.50
+    // (1 + 0) * (1 + 0.50) = 1.50 — alone, indistinguishable from old additive form
     expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
+  });
+
+  it("getCanvasGoldMultiplier composes rainbow multiplicatively over color sum", () => {
+    useGameStore.setState({
+      purchasedNodes: {
+        black_white: 1, magenta: 1, cyan: 1, yellow: 1,
+        red: 1, green: 1, blue: 1,
+        purple: 1, brown: 1, orange: 1,
+        rainbow: 1,
+      },
+    });
+    // (1 + 3.80) × (1 + 0.50) = 4.80 × 1.50 = 7.20
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(7.20, 5);
   });
 
   it("getAffixMagnitudeBonus: 0 with no Craftsmanship", async () => {
@@ -63,10 +76,10 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getAffixMagnitudeBonus(useGameStore.getState())).toBe(0);
   });
 
-  it("getAffixMagnitudeBonus: +N per Craftsmanship level", async () => {
+  it("getAffixMagnitudeBonus: +5 per Craftsmanship level (5 levels = +25 pp)", async () => {
     const { getAffixMagnitudeBonus } = await import("@/core/multipliers");
     useGameStore.setState({ purchasedNodes: { craftsmanship: 5 } });
-    expect(getAffixMagnitudeBonus(useGameStore.getState())).toBe(5);
+    expect(getAffixMagnitudeBonus(useGameStore.getState())).toBe(25);
   });
 
   it("getCanvasGoldMultiplier sums equipped +canvas_gold% items + colors", () => {
@@ -81,27 +94,27 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
         },
       },
     });
-    // 1 + 0.10 (black_white) + 0.05 (item) = 1.15
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.15, 5);
+    // 1 + 0.20 (black_white) + 0.05 (item) = 1.25
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.25, 5);
   });
 
   it("getCanvasSpeedMultiplier returns 1 with no nodes", () => {
     expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getCanvasSpeedMultiplier sums basic_technique + muscle_memory at 1% each per level", () => {
+  it("getCanvasSpeedMultiplier sums basic_technique 2%/lvl + muscle_memory 5%/lvl", () => {
     useGameStore.setState({ purchasedNodes: { basic_technique: 5, muscle_memory: 5 } });
-    // 1 + 0.01*5 + 0.01*5 = 1.10
-    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBeCloseTo(1.10, 5);
+    // 1 + 0.02*5 + 0.05*5 = 1 + 0.10 + 0.25 = 1.35
+    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBeCloseTo(1.35, 5);
   });
 
   it("getTreeUpgradeCostMultiplier returns 1 with no Bargain", () => {
     expect(getTreeUpgradeCostMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getTreeUpgradeCostMultiplier discounts 1% per Bargain level", () => {
+  it("getTreeUpgradeCostMultiplier discounts 5% per Bargain level (5 levels = 25%)", () => {
     useGameStore.setState({ purchasedNodes: { Bargain: 5 } });
-    expect(getTreeUpgradeCostMultiplier(useGameStore.getState())).toBeCloseTo(0.95, 5);
+    expect(getTreeUpgradeCostMultiplier(useGameStore.getState())).toBeCloseTo(0.75, 5);
   });
 
   it("getTreeUpgradeCostMultiplier floors at 0.5 (50% off)", () => {

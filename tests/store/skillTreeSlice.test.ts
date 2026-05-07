@@ -96,11 +96,18 @@ describe("skillTreeSlice (multi-level + DAG)", () => {
     expect(useGameStore.getState().pokeTreeTimer).toBeCloseTo(0, 5);
   });
 
-  it("skillTreeTick: poke_tree level 3, 25s tick → +600 inspi (2 grants × 100×3), timer 5", () => {
+  it("skillTreeTick: poke_tree level 3, 25s tick → +800 inspi (2 grants × 100×2^2), timer 5", () => {
+    // L3 doubling: 100 × 2^(3-1) = 400 per grant. 2 grants in 25s → 800.
     useGameStore.setState({ inspiration: big(0), purchasedNodes: { poke_tree: 3 }, pokeTreeTimer: 0 });
     useGameStore.getState().skillTreeTick(25);
-    expect(useGameStore.getState().inspiration.eq(600)).toBe(true);
+    expect(useGameStore.getState().inspiration.eq(800)).toBe(true);
     expect(useGameStore.getState().pokeTreeTimer).toBeCloseTo(5, 5);
+  });
+
+  it("skillTreeTick: poke_tree level 5, 10s tick → +1600 inspi (100 × 2^4)", () => {
+    useGameStore.setState({ inspiration: big(0), purchasedNodes: { poke_tree: 5 }, pokeTreeTimer: 0 });
+    useGameStore.getState().skillTreeTick(10);
+    expect(useGameStore.getState().inspiration.eq(1600)).toBe(true);
   });
 
   it("resetSkillTree clears purchasedNodes and pokeTreeTimer", () => {

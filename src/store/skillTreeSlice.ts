@@ -75,7 +75,9 @@ export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlic
     const next = state.pokeTreeTimer + deltaSeconds;
     const grants = Math.floor(next / POKE_TREE_INTERVAL_S);
     if (grants > 0) {
-      const inspiGain = big(POKE_TREE_BASE_INSPI * pokeLevel * grants);
+      // Exponential doubling per level: L1=100, L2=200, L3=400, L4=800, L5=1600.
+      const inspiPerTick = POKE_TREE_BASE_INSPI * Math.pow(2, pokeLevel - 1);
+      const inspiGain = big(inspiPerTick * grants);
       state.add("inspiration", inspiGain);
     }
     set({ pokeTreeTimer: next - grants * POKE_TREE_INTERVAL_S });
