@@ -1,5 +1,8 @@
 import type { JSX } from "react";
 import styles from "./UpgradeRow.module.css";
+import { Hoverable } from "@/ui/widgets/Hoverable";
+import { useGameStore } from "@/store";
+import { getInspiMultiplier } from "@/core/multipliers";
 
 interface Props {
   partId: string;
@@ -9,6 +12,19 @@ interface Props {
   cost: string;
   canAfford: boolean;
   onBuy: () => void;
+}
+
+function rowHoverBody(level: number, rate: number, cost: string): JSX.Element {
+  const inspiMult = getInspiMultiplier(useGameStore.getState());
+  const contribution = level * rate * inspiMult;
+  return (
+    <>
+      <div>Level: {level}</div>
+      <div>Next cost: {cost} g</div>
+      <div>───</div>
+      <div>Contribution: +{contribution.toFixed(1)} inspi/sec</div>
+    </>
+  );
 }
 
 /**
@@ -38,15 +54,21 @@ export function UpgradeRow({
           Lv {level} · +{rate.toFixed(1)} inspi/s
         </span>
       </span>
-      <button
-        type="button"
-        className={styles.cost}
-        disabled={!canAfford}
-        onClick={canAfford ? onBuy : undefined}
-        data-testid={`upgrade-buy-${partId}`}
+      <Hoverable
+        title={name}
+        body={() => rowHoverBody(level, rate, cost)}
+        footer="Inspi/sec scales with the global inspi multiplier."
       >
-        ⬢ {cost}g
-      </button>
+        <button
+          type="button"
+          className={styles.cost}
+          disabled={!canAfford}
+          onClick={canAfford ? onBuy : undefined}
+          data-testid={`upgrade-buy-${partId}`}
+        >
+          ⬢ {cost}g
+        </button>
+      </Hoverable>
     </li>
   );
 }
