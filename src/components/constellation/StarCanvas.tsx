@@ -1,8 +1,24 @@
 import type { JSX } from "react";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
 import { getSkillNodeConfig } from "@/config/skillTreeNodes";
+import { useGameStore } from "@/store";
+import { big } from "@/core/bigNumber";
+import { formatBig } from "@/core/formatter";
 import { EDGES, FAME_HUB, NODE_POSITIONS, VIEWBOX, type EdgeFrom } from "./nodeLayout";
 import styles from "./StarCanvas.module.css";
+
+function fameHubBody(): JSX.Element {
+  const s = useGameStore.getState();
+  const lifetimeBonus = s.pastRuns.reduce((acc, r) => acc + r.fame, 0);
+  const lifetime = s.fame.add(big(lifetimeBonus));
+  return (
+    <>
+      <div>To spend: {formatBig(s.fame)}</div>
+      <div>Lifetime earned: {formatBig(lifetime)}</div>
+      <div>Ascends: {s.ascendCount}</div>
+    </>
+  );
+}
 
 export interface NodeState {
   level: number;
@@ -42,6 +58,8 @@ function pointFor(id: EdgeFrom): { x: number; y: number } {
 }
 
 export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Element {
+  const pushHoverInfo = useGameStore((s) => s.pushHoverInfo);
+  const clearHoverInfo = useGameStore((s) => s.clearHoverInfo);
   return (
     <div className={styles.canvas}>
       <svg
@@ -100,7 +118,11 @@ export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Ele
           })}
         </g>
 
-        <g data-testid="fame-hub">
+        <g
+          data-testid="fame-hub"
+          onMouseEnter={() => pushHoverInfo("FAME", fameHubBody(), "Permanent currency. Spent in the constellation.")}
+          onMouseLeave={() => clearHoverInfo()}
+        >
           <circle cx={FAME_HUB.x} cy={FAME_HUB.y} r="32" fill="rgba(255,216,106,0.12)" />
           <circle cx={FAME_HUB.x} cy={FAME_HUB.y} r="20" fill="var(--fame)" />
           <text
