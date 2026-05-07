@@ -1,5 +1,36 @@
 import type { JSX } from "react";
 import styles from "./CanvasStage.module.css";
+import { Hoverable } from "@/ui/widgets/Hoverable";
+import { useGameStore } from "@/store";
+import { canvasGold } from "@/core/balance";
+import { getCanvasGoldMultiplier, getPmMultiplier } from "@/core/multipliers";
+import { getEquippedContribution } from "@/store/workshopSlice";
+import { getNodeLevel } from "@/store/skillTreeSlice";
+import { formatBig } from "@/core/formatter";
+
+function sellHoverBody(tier: number): JSX.Element {
+  const state = useGameStore.getState();
+  const goldMult = getCanvasGoldMultiplier(state);
+  const pmMult = getPmMultiplier(state);
+  const itemBonus = getEquippedContribution(state, "+canvas_gold%");
+  const rainbowLvl = getNodeLevel(state, "rainbow");
+  const rainbowFactor = 1 + 0.50 * rainbowLvl;
+  const colorPlusItems = goldMult / rainbowFactor - 1;
+  const colorSum = colorPlusItems - itemBonus;
+  const total = canvasGold(tier, goldMult * pmMult);
+  return (
+    <>
+      <div>Base × tier²: 10 × {tier}² = {10 * tier * tier}</div>
+      <div>───</div>
+      <div>Colors:        ×{(1 + colorSum).toFixed(2)}</div>
+      <div>Items:         ×{(1 + itemBonus).toFixed(2)}</div>
+      <div>Rainbow:       ×{rainbowFactor.toFixed(2)}</div>
+      <div>Paint Mastery: ×{pmMult.toFixed(2)}</div>
+      <div>───</div>
+      <div>Total: {formatBig(total)} g per canvas</div>
+    </>
+  );
+}
 
 interface Props {
   tier: number;
@@ -99,7 +130,13 @@ export function CanvasStage({
         <span className={styles.painting}>
           Painting · {timeElapsed}s / {timeTotal}s
         </span>
-        <span className={styles.goldPreview}>+{nextSaleGold}g on next sale</span>
+        <Hoverable
+          title="Sell Canvas"
+          body={() => sellHoverBody(tier)}
+          footer="Auto-sells when paint progress reaches 100%."
+        >
+          <span className={styles.goldPreview} data-testid="canvas-sell-preview">+{nextSaleGold}g on next sale</span>
+        </Hoverable>
         <span className={styles.tierBadge}>Tier {tier}</span>
       </div>
     </section>
