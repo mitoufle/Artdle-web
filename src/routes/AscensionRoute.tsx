@@ -10,7 +10,28 @@ import { Portal } from "@/components/ascension/Portal";
 import { ThresholdPanel } from "@/components/ascension/ThresholdPanel";
 import { FamePreviewCard } from "@/components/ascension/FamePreviewCard";
 import { PastRunsLedger } from "@/components/ascension/PastRunsLedger";
+import { Hoverable } from "@/ui/widgets/Hoverable";
 import styles from "./AscensionRoute.module.css";
+
+function ascendHoverBody(): JSX.Element {
+  const state = useGameStore.getState();
+  if (!canAscend(state)) {
+    return <div>Need 10,000 inspiration to gain your first fame point.</div>;
+  }
+  const gain = fameOnAscend(state.inspiration);
+  return (
+    <>
+      <div>Current inspi: {state.inspiration.toNumber().toLocaleString("en-US")}</div>
+      <div>Fame gain: +{gain}</div>
+      <div>───</div>
+      <div>Formula: max(1, ⌊(log₁₀(inspi)−4)⁵ × 3.2⌋)</div>
+      <div>Milestones:</div>
+      <div>  100k inspi → 3 fame</div>
+      <div>  1M inspi → 102 fame</div>
+      <div>  1B inspi → 10,000 fame</div>
+    </>
+  );
+}
 
 export function AscensionRoute(): JSX.Element {
   const inspiration = useGameStore((s) => s.inspiration);
@@ -50,16 +71,23 @@ export function AscensionRoute(): JSX.Element {
           </div>
           <div className={styles.cta}>
             <div className={styles.ctaLabel}>— Step Through —</div>
-            <button
-              type="button"
-              className={styles.stepThroughBtn}
-              disabled={!canDo}
-              onClick={onStepThroughClick}
+            <Hoverable
+              title="Ascend"
+              body={() => ascendHoverBody()}
+              footer="Ascending resets gold, inspi, tree, canvas, workshop. Fame and skill tree persist."
             >
-              {canDo
-                ? `✦ Step Through · +${fameGain} fame ✦`
-                : "✦ Step Through · need 10,000 inspiration ✦"}
-            </button>
+              <button
+                type="button"
+                className={styles.stepThroughBtn}
+                disabled={!canDo}
+                onClick={onStepThroughClick}
+                data-testid="step-through-btn"
+              >
+                {canDo
+                  ? `✦ Step Through · +${fameGain} fame ✦`
+                  : "✦ Step Through · need 10,000 inspiration ✦"}
+              </button>
+            </Hoverable>
           </div>
         </Cavern>
       </div>
