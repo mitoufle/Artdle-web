@@ -46,4 +46,26 @@ describe("WorkshopRoom hover wiring", () => {
     fireEvent.mouseLeave(screen.getByTestId("craft-button"));
     expect(useGameStore.getState().hoverTitle).toBe("");
   });
+
+  it("Workshop level header hover shows current XP and tier unlock list", () => {
+    useGameStore.setState({ workshopLevel: 7, workshopXp: 12 });
+    render(<WorkshopRoom />);
+    fireEvent.mouseEnter(screen.getByTestId("workshop-level-header"));
+    expect(useGameStore.getState().hoverTitle).toBe("Workshop Lv 7");
+    const { container } = render(<>{useGameStore.getState().hoverBody}</>);
+    expect(container.textContent).toMatch(/XP:.*12.*\//);
+    expect(container.textContent).toMatch(/Magic.*5/);
+    expect(container.textContent).toMatch(/Legendary.*70/);
+  });
+
+  it("Workshop level header at Lv 35+ marks Magic, Rare, Epic with check, Legendary unmarked", () => {
+    useGameStore.setState({ workshopLevel: 35, workshopXp: 0 });
+    render(<WorkshopRoom />);
+    fireEvent.mouseEnter(screen.getByTestId("workshop-level-header"));
+    const { container } = render(<>{useGameStore.getState().hoverBody}</>);
+    expect(container.textContent).toMatch(/Magic at Lv 5 ✓/);
+    expect(container.textContent).toMatch(/Rare at Lv 15 ✓/);
+    expect(container.textContent).toMatch(/Epic at Lv 35 ✓/);
+    expect(container.textContent).toMatch(/Legendary at Lv 70(?! ✓)/);
+  });
 });

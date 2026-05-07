@@ -44,6 +44,23 @@ function craftHoverBody(): JSX.Element {
   );
 }
 
+function levelHoverBody(): JSX.Element {
+  const s = useGameStore.getState();
+  const lvl = s.workshopLevel;
+  const xp = s.workshopXp;
+  return (
+    <>
+      <div>XP: {xp} / {xpToNext(lvl)}</div>
+      <div>───</div>
+      <div>Tier unlocks:</div>
+      {ALL_ITEM_TIERS.filter((t) => t !== "normal").map((t) => {
+        const unlock = TIER_UNLOCK_LEVEL[t];
+        return <div key={t}>{TIER_LABEL[t]} at Lv {unlock}{lvl >= unlock ? " ✓" : ""}</div>;
+      })}
+    </>
+  );
+}
+
 export function WorkshopRoom(): JSX.Element {
   const inventory = useGameStore((s) => s.inventory);
   const equipped = useGameStore((s) => s.equipped);
@@ -69,18 +86,25 @@ export function WorkshopRoom(): JSX.Element {
 
   return (
     <section className={styles.room} aria-label="Workshop room">
-      <header className={styles.header}>
-        <h2 className={styles.title}>Workshop</h2>
-        <div className={styles.levelStrip}>
-          <span className={styles.levelLabel}>Lv {workshopLevel}</span>
-          <div className={styles.xpBar}>
-            <div className={styles.xpFill} style={{ width: `${xpPct}%` }} />
+      <Hoverable
+        as="div"
+        title={() => `Workshop Lv ${useGameStore.getState().workshopLevel}`}
+        body={() => levelHoverBody()}
+        footer="+1 XP per craft."
+      >
+        <header className={styles.header} data-testid="workshop-level-header">
+          <h2 className={styles.title}>Workshop</h2>
+          <div className={styles.levelStrip}>
+            <span className={styles.levelLabel}>Lv {workshopLevel}</span>
+            <div className={styles.xpBar}>
+              <div className={styles.xpFill} style={{ width: `${xpPct}%` }} />
+            </div>
+            <span className={styles.xpReadout}>
+              {workshopXp} / {xpMax}
+            </span>
           </div>
-          <span className={styles.xpReadout}>
-            {workshopXp} / {xpMax}
-          </span>
-        </div>
-      </header>
+        </header>
+      </Hoverable>
 
       <section className={styles.craftStation}>
         <Hoverable
