@@ -98,4 +98,37 @@ describe("WorkshopRoom hover wiring", () => {
     fireEvent.mouseEnter(screen.getByTestId("inventory-equip-x-1"));
     expect(String(useGameStore.getState().hoverFooter)).toBe("Click to equip.");
   });
+
+  it("Equipped slot hover shows item details and 'Click to unequip' footer", () => {
+    useGameStore.setState({
+      purchasedNodes: { gear_up: 1 },
+      equipped: {
+        brush: {
+          id: "eq-1", slot: "brush", tier: "magic",
+          affixes: [{ kind: "+canvas_gold%", magnitude: 5 }],
+        },
+      },
+    });
+    render(<WorkshopRoom />);
+    fireEvent.mouseEnter(screen.getByTestId("slot-unequip-brush"));
+    expect(useGameStore.getState().hoverTitle).toBe("Magic brush — equipped");
+    const { container } = render(<>{useGameStore.getState().hoverBody}</>);
+    expect(container.textContent).toMatch(/\+5% canvas gold/);
+    expect(String(useGameStore.getState().hoverFooter)).toBe("Click to unequip.");
+  });
+
+  it("Empty slot hover shows '(empty)' title and a hint body", () => {
+    useGameStore.setState({ purchasedNodes: { gear_up: 1 }, equipped: {} });
+    render(<WorkshopRoom />);
+    // Both brush and palette slots are unlocked at this point — pick brush.
+    // The hover target is the <li data-testid="slot-brush">'s child (the empty div).
+    // Since Hoverable wraps the empty div, we must hover the wrapping element.
+    // The slot <li> contains exactly the wrapper, so hovering the <li>'s only
+    // child (which is now the Hoverable's <div>) propagates onto it.
+    // Use within() to find the wrapper inside slot-brush and hover it.
+    const slotLi = screen.getByTestId("slot-brush");
+    fireEvent.mouseEnter(slotLi.firstElementChild!);
+    expect(useGameStore.getState().hoverTitle).toBe("brush (empty)");
+    expect(String(useGameStore.getState().hoverBody)).toBe("Equip an item from your inventory.");
+  });
 });

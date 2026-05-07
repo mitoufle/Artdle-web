@@ -151,19 +151,37 @@ export function WorkshopRoom(): JSX.Element {
           {unlockedSlots.map((slot) => (
             <li key={slot} className={styles.row} data-testid={`slot-${slot}`}>
               {equipped[slot] ? (
-                <button
-                  type="button"
-                  className={styles.itemBtn}
-                  data-tier={equipped[slot]!.tier}
-                  onClick={() => unequipSlot(slot)}
-                  data-testid={`slot-unequip-${slot}`}
+                <Hoverable
+                  title={() => {
+                    const eq = useGameStore.getState().equipped[slot];
+                    return eq ? `${TIER_LABEL[eq.tier]} ${slot} — equipped` : `${slot}`;
+                  }}
+                  body={() => {
+                    const eq = useGameStore.getState().equipped[slot];
+                    return eq ? affixHoverBody(eq.affixes) : "";
+                  }}
+                  footer="Click to unequip."
                 >
-                  <span className={styles.tierTag}>{TIER_LABEL[equipped[slot]!.tier]}</span>
-                  <span className={styles.slotBadge}>{slot}</span>
-                  <ItemAffixList affixes={equipped[slot]!.affixes} />
-                </button>
+                  <button
+                    type="button"
+                    className={styles.itemBtn}
+                    data-tier={equipped[slot]!.tier}
+                    onClick={() => unequipSlot(slot)}
+                    data-testid={`slot-unequip-${slot}`}
+                  >
+                    <span className={styles.tierTag}>{TIER_LABEL[equipped[slot]!.tier]}</span>
+                    <span className={styles.slotBadge}>{slot}</span>
+                    <ItemAffixList affixes={equipped[slot]!.affixes} />
+                  </button>
+                </Hoverable>
               ) : (
-                <div className={styles.emptySlot}>(empty)</div>
+                <Hoverable
+                  as="div"
+                  title={`${slot} (empty)`}
+                  body="Equip an item from your inventory."
+                >
+                  <div className={styles.emptySlot}>(empty)</div>
+                </Hoverable>
               )}
             </li>
           ))}
