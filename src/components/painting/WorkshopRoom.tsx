@@ -5,6 +5,12 @@ import { craftCost, xpToNext } from "@/core/balance";
 import { getUnlockedSlotKinds, getMaxInventorySlots } from "@/store/workshopSlice";
 import { formatBig } from "@/core/formatter";
 import type { Item, ItemTier } from "@/store/workshopSlice";
+import { Hoverable } from "@/ui/widgets/Hoverable";
+import {
+  computeTierProbabilities,
+  ALL_ITEM_TIERS,
+  TIER_UNLOCK_LEVEL,
+} from "@/core/workshopRoll";
 import styles from "./WorkshopRoom.module.css";
 
 const TIER_LABEL: Record<ItemTier, string> = {
@@ -14,6 +20,29 @@ const TIER_LABEL: Record<ItemTier, string> = {
   epic: "Epic",
   legendary: "Legendary",
 };
+
+function craftHoverBody(): JSX.Element {
+  const s = useGameStore.getState();
+  const level = s.workshopLevel;
+  const cost = craftCost(level);
+  const probs = computeTierProbabilities(level);
+  return (
+    <>
+      <div>Cost: {formatBig(cost)} g</div>
+      <div>───</div>
+      {ALL_ITEM_TIERS.map((t) => {
+        const unlock = TIER_UNLOCK_LEVEL[t];
+        const locked = level < unlock;
+        return (
+          <div key={t}>
+            {TIER_LABEL[t]}: {locked ? "—" : (probs[t] * 100).toFixed(2) + "%"}
+            {locked ? `  (unlocks Lv ${unlock})` : ""}
+          </div>
+        );
+      })}
+    </>
+  );
+}
 
 export function WorkshopRoom(): JSX.Element {
   const inventory = useGameStore((s) => s.inventory);
@@ -54,15 +83,21 @@ export function WorkshopRoom(): JSX.Element {
       </header>
 
       <section className={styles.craftStation}>
-        <button
-          type="button"
-          className={styles.craftBtn}
-          disabled={!canCraft}
-          onClick={() => craft()}
-          data-testid="craft-button"
+        <Hoverable
+          title="Craft Item"
+          body={() => craftHoverBody()}
+          footer="Craft consumes gold + 1 XP."
         >
-          Craft · {formatBig(cost)} g
-        </button>
+          <button
+            type="button"
+            className={styles.craftBtn}
+            disabled={!canCraft}
+            onClick={() => craft()}
+            data-testid="craft-button"
+          >
+            Craft · {formatBig(cost)} g
+          </button>
+        </Hoverable>
       </section>
 
       <section className={styles.section}>
