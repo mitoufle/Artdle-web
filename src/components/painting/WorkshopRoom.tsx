@@ -5,6 +5,7 @@ import { craftCost, xpToNext } from "@/core/balance";
 import { getUnlockedSlotKinds, getMaxInventorySlots } from "@/store/workshopSlice";
 import { formatBig } from "@/core/formatter";
 import type { Item, ItemTier } from "@/store/workshopSlice";
+import type { AffixKind } from "@/config/workshopAffixes";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import {
   computeTierProbabilities,
@@ -20,6 +21,21 @@ const TIER_LABEL: Record<ItemTier, string> = {
   epic: "Epic",
   legendary: "Legendary",
 };
+
+const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
+  "+canvas_gold%": (m) => `+${m}% canvas gold`,
+  "-paint_time%": (m) => `-${m}% paint time`,
+};
+
+function affixHoverBody(affixes: Item["affixes"]): JSX.Element {
+  return (
+    <>
+      {affixes.map((a, i) => (
+        <div key={i}>{AFFIX_LABEL[a.kind](a.magnitude)}</div>
+      ))}
+    </>
+  );
+}
 
 function craftHoverBody(): JSX.Element {
   const s = useGameStore.getState();
@@ -169,17 +185,23 @@ export function WorkshopRoom(): JSX.Element {
                 data-testid={`inventory-item-${item.id}`}
                 data-tier={item.tier}
               >
-                <button
-                  type="button"
-                  className={styles.itemBtn}
-                  data-tier={item.tier}
-                  onClick={() => equipItem(item.id)}
-                  data-testid={`inventory-equip-${item.id}`}
+                <Hoverable
+                  title={() => `${TIER_LABEL[item.tier]} ${item.slot}`}
+                  body={() => affixHoverBody(item.affixes)}
+                  footer="Click to equip."
                 >
-                  <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
-                  <span className={styles.slotBadge}>{item.slot}</span>
-                  <ItemAffixList affixes={item.affixes} />
-                </button>
+                  <button
+                    type="button"
+                    className={styles.itemBtn}
+                    data-tier={item.tier}
+                    onClick={() => equipItem(item.id)}
+                    data-testid={`inventory-equip-${item.id}`}
+                  >
+                    <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
+                    <span className={styles.slotBadge}>{item.slot}</span>
+                    <ItemAffixList affixes={item.affixes} />
+                  </button>
+                </Hoverable>
                 <button
                   type="button"
                   className={styles.discardBtn}

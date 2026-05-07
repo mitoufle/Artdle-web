@@ -68,4 +68,34 @@ describe("WorkshopRoom hover wiring", () => {
     expect(container.textContent).toMatch(/Epic at Lv 35 ✓/);
     expect(container.textContent).toMatch(/Legendary at Lv 70(?! ✓)/);
   });
+
+  it("Inventory item hover shows tier + slot in title and affix effects in body", () => {
+    useGameStore.setState({
+      inventory: [{
+        id: "test-1", slot: "brush", tier: "rare",
+        affixes: [
+          { kind: "+canvas_gold%", magnitude: 12 },
+          { kind: "-paint_time%", magnitude: 8 },
+        ],
+      }],
+    });
+    render(<WorkshopRoom />);
+    fireEvent.mouseEnter(screen.getByTestId("inventory-equip-test-1"));
+    expect(useGameStore.getState().hoverTitle).toBe("Rare brush");
+    const { container } = render(<>{useGameStore.getState().hoverBody}</>);
+    expect(container.textContent).toMatch(/\+12% canvas gold/);
+    expect(container.textContent).toMatch(/-8% paint time/);
+  });
+
+  it("Inventory item hover footer reads 'Click to equip.'", () => {
+    useGameStore.setState({
+      inventory: [{
+        id: "x-1", slot: "palette", tier: "normal",
+        affixes: [{ kind: "+canvas_gold%", magnitude: 3 }],
+      }],
+    });
+    render(<WorkshopRoom />);
+    fireEvent.mouseEnter(screen.getByTestId("inventory-equip-x-1"));
+    expect(String(useGameStore.getState().hoverFooter)).toBe("Click to equip.");
+  });
 });
