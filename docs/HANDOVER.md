@@ -1,5 +1,56 @@
 # Artdle Web — Handover
 
+## Affix pool rework + capability tags (shipped on `main`, 2026-05-10)
+
+**Status:** Shipped. Subproject 2 of 3 in the Painter's Office decomposition. The workshop affix pool is rewritten to match the canvas-depth axes; the 3 advanced affixes are gated at craft-time by capability tags on user-authored skill-tree nodes (so node IDs are free-form game-design choices, not engine constraints).
+
+**Plan:** `docs/superpowers/plans/2026-05-10-affix-pool-rework.md`. **Spec contract:** §6 of `docs/superpowers/specs/2026-05-10-canvas-depth-design.md`.
+
+### What landed
+
+- **`AffixKind` enum** rewritten: `+canvas_gold% / -paint_time%` → `+sell_price% / +speed% / +crit_chance% / +combo_chance% / +size_gold_per_level%` (5 kinds total). Magnitude range still 5–15% per affix; Craftsmanship skill-tree node still shifts both bounds.
+- **Multiplier consumers** all wired:
+  - `+sell_price%` → `getCanvasGoldMultiplier` (additive, alongside item bonus + colors + sell-price level + rainbow)
+  - `+speed%` → `getCanvasSpeedMultiplier` (additive, alongside basic_technique / muscle_memory / speed level)
+  - `+crit_chance%` → `getCritChance` (additive, clamped at 1.0)
+  - `+combo_chance%` → `getComboBaseChance` (additive, clamped at 1.0)
+  - `+size_gold_per_level%` → new `getSizeGoldPerLevelMultiplier` (multiplicative on `SIZE_GOLD_PER_LEVEL` inside `canvasGold(sizeLevel, mult, sizeGoldMult)` — extended with optional 3rd arg)
+- **`getPaintTimeMultiplier` deleted** entirely — its non-linear `v / (1 - v)` magnitude conversion was unintuitive; new `+speed%` stacks additively. canvasTick + PaintingRoute simplified accordingly.
+- **Roll-time gating via capability tags:** `rollAffixes(tier, state, magnitudeBonus)` takes state, filters the pool by `getCanvasTrackUnlocked`. The 3 advanced affixes only roll when the corresponding canvas track is unlocked. No wasted rolls.
+- **Capability-tag system** (the architectural unlock):
+  - `SkillNodeConfig` gains `readonly unlocks: ReadonlyArray<string>`. Default `[]` for nodes without the field.
+  - New selector `hasCapability(state, capability)` — scans purchased nodes (level ≥ 1) for any whose `unlocks` array contains the capability string.
+  - `getCanvasTrackUnlocked(state, "size" | "crit" | "combo")` → delegates to `hasCapability(state, "canvas_<trackId>")`. Sell price + speed return `true` unconditionally (always-unlocked tracks).
+  - Engine reads capability strings, never node IDs. **Node naming is now a pure game-design decision.**
+- **Existing user-authored nodes tagged:**
+  - `size_matters` → `unlocks: ["canvas_size"]`
+  - `genius_episode` → `unlocks: ["canvas_crit"]`
+  - `unrelentless` → `unlocks: ["canvas_combo"]`
+  - `gear_up` continues to use its hardcoded ID for the palette slot — left untouched in this subproject (could be migrated to `unlocks: ["palette_slot"]` later for consistency).
+- **`/dev/skill-designer` UI** updated: each node form exposes the `unlocks` field as a comma-separated text input + 4 quick-add chips (`canvas_size`, `canvas_crit`, `canvas_combo`, `palette_slot`). Storage migrates legacy nodes to `unlocks: []` automatically.
+- **Workshop UI:** `WorkshopRoom` affix label map updated for the 5 new kinds (`+X% sell price`, `+X% speed`, `+X% crit chance`, `+X% combo chance`, `+X% size gold/level`).
+- **Canvas hover body:** `<CanvasStage>` `sellHoverBody` references the new affix names; the gold breakdown now includes a separate "Sell Price (Lv N)" line and the base-gold formula factors in `sizeGoldMult`. Combo line appears when chain > 0.
+- **Save migration v10 → v11:** wipes inventory + equipped (game unreleased; magnitudes from `-paint_time%` don't translate cleanly to `+speed%`). Workshop level + XP preserved (long-tail meta).
+
+### Tests + build
+
+- **671 tests passing across 76 files** (was 653 after canvas-depth; +18 net for affix pool + capability tags).
+- tsc clean. Lint clean (only pre-existing `main.tsx` warning).
+- Bundle: **157.30 KB gzipped JS** (was 156.37 KB; +0.93 KB). Under the 250 KB DoD budget.
+- 14 commits from `5b568a3` (plan) → `3a7b5d7` (capability-tag refactor).
+
+### Lessons preserved
+
+- **Node IDs are game-design, not engine concerns.** When the user pointed out that the engine's hardcoded `unlock_canvas_*` IDs forced their node naming, the right fix was to introduce a capability-tag layer — the engine reads what it needs, the designer names nodes thematically. The `unlocks: string[]` field is the API.
+- **`getEquippedContribution(state, kind)` already returns fractional sums.** Five new consumers added; none accidentally double-divides by 100. The convention is documented inline in `workshopSlice.ts` at the function definition.
+- **Migration wipes are fine pre-release.** Magnitudes from `-paint_time%` (where `v / (1 - v)` math applied) don't translate to `+speed%` (where additive applies). Wipe is the practical move; v9 → v10 (canvas-depth) and v10 → v11 (this subproject) both wipe with rationale.
+
+### Next
+
+Subproject 3 — Painter's Office. Sketch design at `docs/superpowers/specs/2026-05-10-painters-office-design.md`; numbers TBD until this subproject's affix pool is in production. Now that pool exists, the Office spec can resolve its TBDs and become plan-ready.
+
+---
+
 ## Canvas depth — 5 upgrade tracks (shipped on `main`, 2026-05-10)
 
 **Status:** Shipped. Subproject 1 of 3 in the Painter's Office decomposition (see `docs/superpowers/specs/2026-05-10-painters-office-design.md` for the parked Office sketch). The canvas's single `canvasTier` upgrade is replaced by **5 independent upgrade tracks**, each levelled in gold; sell-price + speed unlocked from start, size + crit + combo gated by user-authored fame skill-tree nodes.
