@@ -8,10 +8,10 @@ import {
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
-  getPaintTimeMultiplier,
   getPmMultiplier,
   getCritChance,
   getComboBaseChance,
+  getSizeGoldPerLevelMultiplier,
 } from "@/core/multipliers";
 import type { GameStore } from "@/store";
 import type { Big } from "@/core/bigNumber";
@@ -102,7 +102,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
     }
 
     const baseTime = canvasTime(state.sizeLevel);
-    const speedMult = getCanvasSpeedMultiplier(state) * getPaintTimeMultiplier(state);
+    const speedMult = getCanvasSpeedMultiplier(state);
     const critFactor = critFlag ? CRIT_SPEED_FACTOR : 1;
     const effectiveTime = baseTime / (speedMult * critFactor);
 
@@ -115,7 +115,8 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
 
     // Threshold crossed — exactly one sale per tick.
     const goldMult = getCanvasGoldMultiplier(state) * getPmMultiplier(state);
-    const baseGold = canvasGold(state.sizeLevel, goldMult);
+    const sizeGoldMult = getSizeGoldPerLevelMultiplier(state);
+    const baseGold = canvasGold(state.sizeLevel, goldMult, sizeGoldMult);
     // Apply combo bonus from PRIOR chain state — chain mutation happens AFTER pay-out.
     const gain = baseGold.mul(comboBonusFactor(state.comboChain));
 

@@ -93,15 +93,19 @@ export const treePartCost = (level: number, baseCost: number): Big =>
 /**
  * Gold awarded when a canvas is sold, before equipped-item modifiers.
  *
- * v3.x canvas-depth: `BASE × (1 + SIZE_GOLD_PER_LEVEL × sizeLevel) × multiplier`.
- * Replaces the tier² form.
+ * v3.x canvas-depth: `BASE × (1 + SIZE_GOLD_PER_LEVEL × sizeGoldMult × sizeLevel) × multiplier`.
  *
- * `multiplier` is the aggregated canvas-gold multiplier from skill tree + items
- * + sell-price level + PM mult (composed by the caller in `canvasTick`).
+ * `sizeGoldMult` defaults to 1.0 — it scales the per-level gold rate from the
+ * size track. Equipped +size_gold_per_level% affixes contribute via
+ * `getSizeGoldPerLevelMultiplier(state)`. The caller in canvasTick passes it.
  */
-export const canvasGold = (sizeLevel: number, multiplier: number): Big =>
+export const canvasGold = (
+  sizeLevel: number,
+  multiplier: number,
+  sizeGoldMult = 1,
+): Big =>
   big(CANVAS_GOLD_BASE)
-    .mul(1 + SIZE_GOLD_PER_LEVEL * sizeLevel)
+    .mul(1 + SIZE_GOLD_PER_LEVEL * sizeGoldMult * sizeLevel)
     .mul(multiplier);
 
 /**

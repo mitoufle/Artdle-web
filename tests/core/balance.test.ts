@@ -123,6 +123,20 @@ describe("canvasGold (size-driven)", () => {
   });
 });
 
+describe("canvasGold (with sizeGoldMult)", () => {
+  it("default sizeGoldMult = 1 leaves formula unchanged", () => {
+    expect(canvasGold(5, 1).toNumber()).toBeCloseTo(canvasGold(5, 1, 1).toNumber(), 5);
+  });
+
+  it("sizeGoldMult scales the per-level rate multiplicatively", () => {
+    // BASE × (1 + 0.30 × sizeGoldMult × sizeLevel) × mult
+    // sizeLevel 10, sizeGoldMult 2.0, mult 1: 10 × (1 + 0.30 × 2 × 10) × 1 = 10 × 7 = 70
+    expect(canvasGold(10, 1, 2).toNumber()).toBeCloseTo(70, 5);
+    // sizeLevel 0, sizeGoldMult 2.0: still 10 (no per-level effect)
+    expect(canvasGold(0, 1, 2).toNumber()).toBeCloseTo(10, 5);
+  });
+});
+
 describe("inspiPerSec", () => {
   it("zero parts produces zero", () => {
     expect(inspiPerSec([], 1).toNumber()).toBe(0);
