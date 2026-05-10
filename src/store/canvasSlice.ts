@@ -131,9 +131,12 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
 
     const leftover = newProgress - effectiveTime;
     const prevId = state.lastSale?.id ?? 0;
+    // Roll crit for the NEXT canvas now (don't wait for next tick — leftover > 0
+    // would skip the canvasProgress === 0 check at tick top).
+    const nextCrit = rng() < getCritChance(state);
     set({
       canvasProgress: leftover < effectiveTime ? leftover : 0,
-      isCritThisCanvas: false, // reset; next tick re-rolls for the new canvas
+      isCritThisCanvas: nextCrit,
       comboChain: newChain,
       lastSale: { id: prevId + 1, amount: gain },
     });
