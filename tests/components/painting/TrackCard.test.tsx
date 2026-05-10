@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { TrackCard } from "@/components/painting/TrackCard";
+import { useGameStore } from "@/store";
 
 describe("<TrackCard>", () => {
   it("renders track name + level + cost label when unlocked", () => {
@@ -74,5 +75,50 @@ describe("<TrackCard>", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /Upgrade/i }));
     expect(fn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("<TrackCard> — hover info", () => {
+  beforeEach(() => {
+    useGameStore.setState({ hoverTitle: "", hoverBody: "", hoverFooter: "" });
+  });
+
+  it("hover on upgrade button pushes title with track label", () => {
+    render(
+      <TrackCard
+        trackId="sell_price"
+        label="Sell Price"
+        level={1}
+        effectLine="+10% gold/level"
+        costLabel="100g"
+        canAfford={true}
+        locked={false}
+        onUpgrade={() => {}}
+      />,
+    );
+    fireEvent.mouseEnter(screen.getByTestId("track-card-upgrade-sell_price"));
+    expect(useGameStore.getState().hoverTitle).toMatch(/Sell Price.*Level 1/i);
+    const { container } = render(<>{useGameStore.getState().hoverBody}</>);
+    expect(container.textContent).toMatch(/Current effect/);
+    expect(container.textContent).toMatch(/100g/);
+  });
+
+  it("hover on locked card pushes title with 'Locked'", () => {
+    render(
+      <TrackCard
+        trackId="size"
+        label="Size"
+        level={0}
+        effectLine="—"
+        costLabel="—"
+        canAfford={false}
+        locked={true}
+        onUpgrade={() => {}}
+      />,
+    );
+    fireEvent.mouseEnter(screen.getByTestId("track-card-upgrade-size"));
+    expect(useGameStore.getState().hoverTitle).toMatch(/Size.*Locked/i);
+    const { container } = render(<>{useGameStore.getState().hoverBody}</>);
+    expect(container.textContent).toMatch(/Unlocks via/i);
   });
 });
