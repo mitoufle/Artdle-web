@@ -14,6 +14,22 @@ import {
   PM_LOG_FACTOR,
   craftCost,
   xpToNext,
+  SELL_PRICE_PER_LEVEL,
+  SPEED_PER_LEVEL,
+  SIZE_GOLD_PER_LEVEL,
+  SIZE_TIME_PER_LEVEL,
+  CRIT_PER_LEVEL,
+  CRIT_SPEED_FACTOR,
+  COMBO_PER_LEVEL,
+  COMBO_PER_LINK,
+  COMBO_DECAY_PER_LINK,
+  SELL_PRICE_COST_BASE,
+  SPEED_COST_BASE,
+  SIZE_COST_BASE,
+  CRIT_COST_BASE,
+  COMBO_COST_BASE,
+  TRACK_COST_GROWTH,
+  CANVAS_TIME_BASE,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -370,25 +386,6 @@ describe("xpToNext", () => {
 // ============================================================================
 // Canvas depth — tuning constants (spec §10 defaults)
 // ============================================================================
-import {
-  SELL_PRICE_PER_LEVEL,
-  SPEED_PER_LEVEL,
-  SIZE_GOLD_PER_LEVEL,
-  SIZE_TIME_PER_LEVEL,
-  CRIT_PER_LEVEL,
-  CRIT_SPEED_FACTOR,
-  COMBO_PER_LEVEL,
-  COMBO_PER_LINK,
-  COMBO_DECAY_PER_LINK,
-  SELL_PRICE_COST_BASE,
-  SPEED_COST_BASE,
-  SIZE_COST_BASE,
-  CRIT_COST_BASE,
-  COMBO_COST_BASE,
-  TRACK_COST_GROWTH,
-  CANVAS_TIME_BASE,
-} from "@/core/balance";
-
 describe("canvas-depth tuning constants", () => {
   it("exposes per-level rates matching spec §10 defaults", () => {
     expect(SELL_PRICE_PER_LEVEL).toBeCloseTo(0.10, 5);
