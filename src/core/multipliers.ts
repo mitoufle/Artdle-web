@@ -47,12 +47,12 @@ export const getInspiMultiplier = (state: GameStore): number => {
  *
  * Wiring:
  *   - 10 color nodes: tier-scaled additive (20/30/40/50%). Full tree = +380%.
- *   - Equipped items: `+canvas_gold%` additive contribution.
+ *   - Equipped items: `+sell_price%` additive contribution.
  *   - Rainbow: multiplicative on the additive base (× (1 + 0.50 × level)).
  */
 export const getCanvasGoldMultiplier = (state: GameStore): number => {
   let bonus = 0;
-  bonus += getEquippedContribution(state, "+canvas_gold%");
+  bonus += getEquippedContribution(state, "+sell_price%");
   for (const [id, perLevel] of Object.entries(COLOR_PER_LEVEL)) {
     bonus += getNodeLevel(state, id) * perLevel;
   }

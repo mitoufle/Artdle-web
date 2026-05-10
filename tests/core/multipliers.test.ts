@@ -109,7 +109,7 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getAffixMagnitudeBonus(useGameStore.getState())).toBe(25);
   });
 
-  it("getCanvasGoldMultiplier sums equipped +canvas_gold% items + colors", () => {
+  it("getCanvasGoldMultiplier sums equipped +sell_price% items + colors", () => {
     useGameStore.setState({
       purchasedNodes: { black_white: 1 },
       equipped: {
@@ -117,7 +117,7 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
           id: "test-1",
           slot: "brush",
           tier: "normal",
-          affixes: [{ kind: "+canvas_gold%", magnitude: 5 }],
+          affixes: [{ kind: "+sell_price%", magnitude: 5 }],
         },
       },
     });
