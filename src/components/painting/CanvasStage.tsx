@@ -8,7 +8,7 @@ import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 
-function sellHoverBody(tier: number): JSX.Element {
+function sellHoverBody(sizeLevel: number): JSX.Element {
   const state = useGameStore.getState();
   const goldMult = getCanvasGoldMultiplier(state);
   const pmMult = getPmMultiplier(state);
@@ -17,10 +17,10 @@ function sellHoverBody(tier: number): JSX.Element {
   const rainbowFactor = 1 + 0.50 * rainbowLvl;
   const colorPlusItems = goldMult / rainbowFactor - 1;
   const colorSum = colorPlusItems - itemBonus;
-  const total = canvasGold(tier, goldMult * pmMult);
+  const total = canvasGold(sizeLevel, goldMult * pmMult);
   return (
     <>
-      <div>Base × tier²: 10 × {tier}² = {10 * tier * tier}</div>
+      <div>Base × tier²: 10 × {sizeLevel}² = {10 * sizeLevel * sizeLevel}</div>
       <div>───</div>
       <div>Colors:        ×{(1 + colorSum).toFixed(2)}</div>
       <div>Items:         ×{(1 + itemBonus).toFixed(2)}</div>
@@ -33,11 +33,15 @@ function sellHoverBody(tier: number): JSX.Element {
 }
 
 interface Props {
-  tier: number;
+  sizeLevel: number;
   progressPct: number;       // 0..1, drives the paint-fill overlay height
   timeElapsed: string;       // formatted seconds elapsed, e.g., "1.5"
   timeTotal: string;         // formatted seconds, e.g., "6.0"
   nextSaleGold: string;      // formatted gold preview, e.g., "184" or "1.2K"
+  /** T14: combo chain depth for badge display. */
+  comboChain?: number;
+  /** T14: whether the current canvas is a crit. */
+  isCrit?: boolean;
 }
 
 const STAGE_NAMES: Record<number, string> = {
@@ -61,23 +65,26 @@ const STAGE_NAMES: Record<number, string> = {
  * Below: thin gold progress bar.
  * Bottom row: "Painting · {remaining}s / {total}s" (left), "+{gold}g on next sale"
  * (gold-glowing center), tier label (right, decorative — actual upgrade UI is
- * the TierCard in the upgrades strip below).
+ * the TrackCards in the upgrades strip below).
  */
 export function CanvasStage({
-  tier,
+  sizeLevel,
   progressPct,
   timeElapsed,
   timeTotal,
   nextSaleGold,
+  // comboChain and isCrit accepted but not visually wired until T14
+  comboChain: _comboChain,
+  isCrit: _isCrit,
 }: Props): JSX.Element {
-  const stageName = STAGE_NAMES[tier] ?? `Tier ${tier}`;
+  const stageName = STAGE_NAMES[sizeLevel] ?? `Tier ${sizeLevel}`;
   const fillHeight = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
   const barWidth = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
 
   return (
     <section className={styles.stage} aria-label="Canvas stage">
       <div className={styles.title}>
-        — Tier {tier} · {stageName} —
+        — Tier {sizeLevel} · {stageName} —
       </div>
       <div className={styles.frame}>
         {/* Pixel landscape inside the frame */}
@@ -86,7 +93,7 @@ export function CanvasStage({
           xmlns="http://www.w3.org/2000/svg"
           preserveAspectRatio="xMidYMid slice"
           className={styles.canvasArt}
-          aria-label={`Tier ${tier} pixel landscape`}
+          aria-label={`Tier ${sizeLevel} pixel landscape`}
         >
           <defs>
             <linearGradient id="cs-sky" x1="0" y1="0" x2="0" y2="1">
@@ -132,12 +139,12 @@ export function CanvasStage({
         </span>
         <Hoverable
           title="Sell Canvas"
-          body={() => sellHoverBody(tier)}
+          body={() => sellHoverBody(sizeLevel)}
           footer="Auto-sells when paint progress reaches 100%."
         >
           <span className={styles.goldPreview} data-testid="canvas-sell-preview">+{nextSaleGold}g on next sale</span>
         </Hoverable>
-        <span className={styles.tierBadge}>Tier {tier}</span>
+        <span className={styles.tierBadge}>Tier {sizeLevel}</span>
       </div>
     </section>
   );

@@ -6,7 +6,7 @@ describe("<CanvasStage />", () => {
   it("renders the canvas SVG inside the frame", () => {
     const { container } = render(
       <CanvasStage
-        tier={1}
+        sizeLevel={1}
         progressPct={0}
         timeElapsed="0.0"
         timeTotal="2.0"
@@ -19,7 +19,7 @@ describe("<CanvasStage />", () => {
   it("displays the tier in the title row", () => {
     render(
       <CanvasStage
-        tier={5}
+        sizeLevel={5}
         progressPct={0.6}
         timeElapsed="6.0"
         timeTotal="10.0"
@@ -32,7 +32,7 @@ describe("<CanvasStage />", () => {
   it("displays painting time as 'elapsed / total' (counts up to total)", () => {
     render(
       <CanvasStage
-        tier={5}
+        sizeLevel={5}
         progressPct={0.6}
         timeElapsed="6.0"
         timeTotal="10.0"
@@ -45,7 +45,7 @@ describe("<CanvasStage />", () => {
   it("displays next sale gold preview", () => {
     render(
       <CanvasStage
-        tier={1}
+        sizeLevel={1}
         progressPct={0}
         timeElapsed="0.0"
         timeTotal="2.0"
@@ -58,7 +58,7 @@ describe("<CanvasStage />", () => {
   it("paint-fill overlay reflects progressPct via inline height style", () => {
     const { container } = render(
       <CanvasStage
-        tier={1}
+        sizeLevel={1}
         progressPct={0.4}
         timeElapsed="0.8"
         timeTotal="2.0"

@@ -1,17 +1,25 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
-import { canvasGold, canvasTime, tierUpgradeCost, MAX_TIER } from "@/core/balance";
+import {
+  canvasGold, canvasTime,
+  sellPriceUpgradeCost, speedUpgradeCost,
+  sizeUpgradeCost, critUpgradeCost, comboUpgradeCost,
+  SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL,
+  SIZE_GOLD_PER_LEVEL, SIZE_TIME_PER_LEVEL,
+  CRIT_PER_LEVEL, COMBO_PER_LEVEL, COMBO_PER_LINK,
+  CRIT_SPEED_FACTOR,
+} from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
   getPaintTimeMultiplier,
   getPmMultiplier,
 } from "@/core/multipliers";
+import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
-import { big } from "@/core/bigNumber";
 import { CanvasStage } from "@/components/painting/CanvasStage";
-import { TierCard } from "@/components/painting/TierCard";
+import { TrackCard } from "@/components/painting/TrackCard";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
 import { RoomRail } from "@/components/painting/RoomRail";
 import { WorkshopRoom } from "@/components/painting/WorkshopRoom";
@@ -20,42 +28,63 @@ import styles from "./PaintingRoute.module.css";
 
 export function PaintingRoute(): JSX.Element {
   const canvasProgress = useGameStore((s) => s.canvasProgress);
-  const canvasTier = useGameStore((s) => s.canvasTier);
+  const sellPriceLevel = useGameStore((s) => s.sellPriceLevel);
+  const speedLevel = useGameStore((s) => s.speedLevel);
+  const sizeLevel = useGameStore((s) => s.sizeLevel);
+  const critLevel = useGameStore((s) => s.critLevel);
+  const comboLevel = useGameStore((s) => s.comboLevel);
+  const comboChain = useGameStore((s) => s.comboChain);
+  const isCritThisCanvas = useGameStore((s) => s.isCritThisCanvas);
   const gold = useGameStore((s) => s.gold);
   const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const paintMastery = useGameStore((s) => s.paintMastery);
-  const upgradeTier = useGameStore((s) => s.upgradeTier);
+  const upgradeSellPrice = useGameStore((s) => s.upgradeSellPrice);
+  const upgradeSpeed = useGameStore((s) => s.upgradeSpeed);
+  const upgradeSize = useGameStore((s) => s.upgradeSize);
+  const upgradeCrit = useGameStore((s) => s.upgradeCrit);
+  const upgradeCombo = useGameStore((s) => s.upgradeCombo);
   const lastSale = useGameStore((s) => s.lastSale);
   const clearLastSale = useGameStore((s) => s.clearLastSale);
 
   const helperState = {
-    equipped,
-    purchasedNodes,
-    paintMastery,
+    equipped, purchasedNodes, paintMastery,
+    sellPriceLevel, speedLevel, critLevel, comboLevel,
   } as unknown as GameStore;
 
-  const baseTime = canvasTime(canvasTier);
-  const paintTimeSec =
-    baseTime /
-    (getPaintTimeMultiplier(helperState) * getCanvasSpeedMultiplier(helperState));
+  const baseTime = canvasTime(sizeLevel);
+  const speedMult = getPaintTimeMultiplier(helperState) * getCanvasSpeedMultiplier(helperState);
+  const critFactor = isCritThisCanvas ? CRIT_SPEED_FACTOR : 1;
+  const paintTimeSec = baseTime / (speedMult * critFactor);
   const progressPct = paintTimeSec > 0 ? canvasProgress / paintTimeSec : 0;
   const goldMult = getCanvasGoldMultiplier(helperState) * getPmMultiplier(helperState);
-  const nextSaleGold = canvasGold(canvasTier, goldMult);
+  const baseGold = canvasGold(sizeLevel, goldMult);
+  const comboFactor = 1 + COMBO_PER_LINK * comboChain;
+  const nextSaleGold = baseGold.mul(comboFactor);
 
-  const isMax = canvasTier >= MAX_TIER;
-  const upgradeCost = isMax ? big(0) : tierUpgradeCost(canvasTier);
-  const canAffordUpgrade = !isMax && gold.gte(upgradeCost);
+  const sizeLocked = !getCanvasTrackUnlocked(helperState, "size");
+  const critLocked = !getCanvasTrackUnlocked(helperState, "crit");
+  const comboLocked = !getCanvasTrackUnlocked(helperState, "combo");
+
+  const sellCost = sellPriceUpgradeCost(sellPriceLevel);
+  const speedCost = speedUpgradeCost(speedLevel);
+  const sizeCost = sizeUpgradeCost(sizeLevel);
+  const critCost = critUpgradeCost(critLevel);
+  const comboCost = comboUpgradeCost(comboLevel);
+
+  const fmtPct = (x: number, frac = 0): string => `${(x * 100).toFixed(frac)}%`;
 
   return (
     <div className={styles.layout}>
       <div className={styles.stageArea}>
         <CanvasStage
-          tier={canvasTier}
+          sizeLevel={sizeLevel}
           progressPct={progressPct}
           timeElapsed={canvasProgress.toFixed(1)}
           timeTotal={paintTimeSec.toFixed(1)}
           nextSaleGold={formatBig(nextSaleGold)}
+          comboChain={comboChain}
+          isCrit={isCritThisCanvas}
         />
         {lastSale && (
           <FloatingGoldText
@@ -68,12 +97,55 @@ export function PaintingRoute(): JSX.Element {
 
       <div className={styles.upgradesArea}>
         <CanvasUpgradesStrip>
-          <TierCard
-            tier={canvasTier}
-            cost={formatBig(upgradeCost)}
-            canAfford={canAffordUpgrade}
-            isMax={isMax}
-            onUpgrade={upgradeTier}
+          <TrackCard
+            trackId="sell_price"
+            label="Sell Price"
+            level={sellPriceLevel}
+            effectLine={`+${fmtPct(SELL_PRICE_PER_LEVEL, 0)} gold/level`}
+            costLabel={`${formatBig(sellCost)}g`}
+            canAfford={gold.gte(sellCost)}
+            locked={false}
+            onUpgrade={upgradeSellPrice}
+          />
+          <TrackCard
+            trackId="speed"
+            label="Speed"
+            level={speedLevel}
+            effectLine={`+${fmtPct(SPEED_PER_LEVEL, 0)} speed/level`}
+            costLabel={`${formatBig(speedCost)}g`}
+            canAfford={gold.gte(speedCost)}
+            locked={false}
+            onUpgrade={upgradeSpeed}
+          />
+          <TrackCard
+            trackId="size"
+            label="Size"
+            level={sizeLevel}
+            effectLine={sizeLocked ? "—" : `+${fmtPct(SIZE_GOLD_PER_LEVEL, 0)} gold / +${fmtPct(SIZE_TIME_PER_LEVEL, 0)} time`}
+            costLabel={sizeLocked ? "—" : `${formatBig(sizeCost)}g`}
+            canAfford={gold.gte(sizeCost)}
+            locked={sizeLocked}
+            onUpgrade={upgradeSize}
+          />
+          <TrackCard
+            trackId="crit"
+            label="Crit"
+            level={critLevel}
+            effectLine={critLocked ? "—" : `+${fmtPct(CRIT_PER_LEVEL, 0)} crit chance/level (90% faster on hit)`}
+            costLabel={critLocked ? "—" : `${formatBig(critCost)}g`}
+            canAfford={gold.gte(critCost)}
+            locked={critLocked}
+            onUpgrade={upgradeCrit}
+          />
+          <TrackCard
+            trackId="combo"
+            label="Combo"
+            level={comboLevel}
+            effectLine={comboLocked ? "—" : `+${fmtPct(COMBO_PER_LEVEL, 0)} chain chance/level`}
+            costLabel={comboLocked ? "—" : `${formatBig(comboCost)}g`}
+            canAfford={gold.gte(comboCost)}
+            locked={comboLocked}
+            onUpgrade={upgradeCombo}
           />
         </CanvasUpgradesStrip>
       </div>
