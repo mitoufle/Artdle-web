@@ -6,8 +6,31 @@ import {
   getTreeUpgradeCostMultiplier,
   getPaintTimeMultiplier,
 } from "@/core/multipliers";
-import { useGameStore } from "@/store";
+import { useGameStore, type GameStore } from "@/store";
 import { big } from "@/core/bigNumber";
+
+describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
+  // Helper: minimal state-shape stub. The selectors only read certain fields.
+  const stub = (over: Partial<GameStore> = {}): GameStore => ({
+    purchasedNodes: {},
+    equipped: {},
+    sellPriceLevel: 1,
+    speedLevel: 1,
+    paintMastery: big(0),
+    ...over,
+  } as GameStore);
+
+  it("getCanvasGoldMultiplier: includes (1 + 0.10 × sellPriceLevel) additive", () => {
+    expect(getCanvasGoldMultiplier(stub({ sellPriceLevel: 1 }))).toBeCloseTo(1.10, 5);
+    expect(getCanvasGoldMultiplier(stub({ sellPriceLevel: 5 }))).toBeCloseTo(1.50, 5);
+    expect(getCanvasGoldMultiplier(stub({ sellPriceLevel: 10 }))).toBeCloseTo(2.00, 5);
+  });
+
+  it("getCanvasSpeedMultiplier: includes (1 + 0.05 × speedLevel) additive", () => {
+    expect(getCanvasSpeedMultiplier(stub({ speedLevel: 1 }))).toBeCloseTo(1.05, 5);
+    expect(getCanvasSpeedMultiplier(stub({ speedLevel: 10 }))).toBeCloseTo(1.50, 5);
+  });
+});
 
 describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
   beforeEach(() => {
@@ -15,6 +38,8 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
       purchasedNodes: {},
       equipped: {},
       paintMastery: big(0),
+      sellPriceLevel: 0,
+      speedLevel: 0,
     });
   });
 

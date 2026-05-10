@@ -1,7 +1,7 @@
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
-import { pmMult } from "./balance";
+import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL } from "./balance";
 
 /**
  * Per-color additive bonus to canvas gold. Tier-scaled per the v3.2 design:
@@ -56,6 +56,7 @@ export const getCanvasGoldMultiplier = (state: GameStore): number => {
   for (const [id, perLevel] of Object.entries(COLOR_PER_LEVEL)) {
     bonus += getNodeLevel(state, id) * perLevel;
   }
+  bonus += SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
   const additive = 1 + bonus;
   const rainbowMul = 1 + getNodeLevel(state, "rainbow") * RAINBOW_PER_LEVEL;
   return additive * rainbowMul;
@@ -75,6 +76,7 @@ export const getCanvasSpeedMultiplier = (state: GameStore): number => {
   let bonus = 0;
   bonus += getNodeLevel(state, "basic_technique") * BASIC_TECHNIQUE_PER_LEVEL;
   bonus += getNodeLevel(state, "muscle_memory") * MUSCLE_MEMORY_PER_LEVEL;
+  bonus += SPEED_PER_LEVEL * state.speedLevel;
   return 1 + bonus;
 };
 
