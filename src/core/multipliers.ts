@@ -68,15 +68,15 @@ export const getCanvasGoldMultiplier = (state: GameStore): number => {
  * Wiring:
  *   - basic_technique (per level): +1% additive
  *   - muscle_memory (per level): +1% additive
- *
- * Composes multiplicatively at the call site with `getPaintTimeMultiplier`
- * (the item-driven speed multiplier).
+ *   - speedLevel (canvas-depth track): +5% per level additive
+ *   - equipped +speed% affixes: additive (each magnitude is fractional via getEquippedContribution)
  */
 export const getCanvasSpeedMultiplier = (state: GameStore): number => {
   let bonus = 0;
   bonus += getNodeLevel(state, "basic_technique") * BASIC_TECHNIQUE_PER_LEVEL;
   bonus += getNodeLevel(state, "muscle_memory") * MUSCLE_MEMORY_PER_LEVEL;
   bonus += SPEED_PER_LEVEL * state.speedLevel;
+  bonus += getEquippedContribution(state, "+speed%"); // already fractional
   return 1 + bonus;
 };
 
@@ -90,24 +90,6 @@ export const getCanvasSpeedMultiplier = (state: GameStore): number => {
 export const getTreeUpgradeCostMultiplier = (state: GameStore): number => {
   const reduction = getNodeLevel(state, "Bargain") * BARGAIN_PER_LEVEL;
   return Math.max(BARGAIN_DISCOUNT_FLOOR, 1 - reduction);
-};
-
-/**
- * Paint-speed multiplier from items only — `effectivePaintTime = canvasTime / multiplier`.
- * Skill-tree speed contributions live in `getCanvasSpeedMultiplier`.
- */
-export const getPaintTimeMultiplier = (state: GameStore): number => {
-  let bonus = 0;
-  for (const item of Object.values(state.equipped)) {
-    if (!item) continue;
-    for (const affix of item.affixes) {
-      if (affix.kind === "-paint_time%") {
-        const v = affix.magnitude / 100;
-        bonus += v / (1 - v);
-      }
-    }
-  }
-  return 1 + bonus;
 };
 
 /** Paint Mastery multiplier on canvas gold output. */

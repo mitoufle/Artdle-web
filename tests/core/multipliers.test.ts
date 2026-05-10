@@ -4,11 +4,11 @@ import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
   getTreeUpgradeCostMultiplier,
-  getPaintTimeMultiplier,
   getCritChance,
   getComboBaseChance,
 } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
+import type { Item } from "@/store/workshopSlice";
 import { big } from "@/core/bigNumber";
 
 describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
@@ -149,10 +149,6 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     useGameStore.setState({ purchasedNodes: { Bargain: 100 } });
     expect(getTreeUpgradeCostMultiplier(useGameStore.getState())).toBe(0.5);
   });
-
-  it("getPaintTimeMultiplier returns 1 with no items", () => {
-    expect(getPaintTimeMultiplier(useGameStore.getState())).toBe(1);
-  });
 });
 
 describe("multipliers — crit + combo chances", () => {
@@ -182,5 +178,21 @@ describe("multipliers — crit + combo chances", () => {
 
   it("getComboBaseChance clamps at 1.0", () => {
     expect(getComboBaseChance(stub({ comboLevel: 100 }))).toBe(1.0);
+  });
+});
+
+describe("getCanvasSpeedMultiplier — equipped +speed% contribution", () => {
+  const stub = (over: Partial<GameStore> = {}): GameStore => ({
+    purchasedNodes: {}, equipped: {}, speedLevel: 1, ...over,
+  } as GameStore);
+
+  it("includes equipped +speed% magnitudes additively", () => {
+    const item: Item = {
+      id: "i1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+speed%", magnitude: 10 }, { kind: "+speed%", magnitude: 5 }],
+    };
+    const state = stub({ equipped: { brush: item } });
+    // bonus = SPEED_PER_LEVEL × speedLevel(1) + 0.10 + 0.05 = 0.05 + 0.15 = 0.20
+    expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.20, 5);
   });
 });
