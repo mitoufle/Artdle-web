@@ -1,7 +1,7 @@
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
-import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL } from "./balance";
+import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL } from "./balance";
 
 /**
  * Per-color additive bonus to canvas gold. Tier-scaled per the v3.2 design:
@@ -120,3 +120,18 @@ export const getPmMultiplier = (state: GameStore): number =>
  */
 export const getAffixMagnitudeBonus = (state: GameStore): number =>
   getNodeLevel(state, "craftsmanship") * CRAFTSMANSHIP_PER_LEVEL;
+
+/**
+ * Crit chance (0 to 1). Clamped at 1.0 — multi-crit is out of scope
+ * (canvas-depth spec §3.4). Currently only consumes critLevel; affix
+ * contributions from `+crit_chance%` add in subproject 2.
+ */
+export const getCritChance = (state: GameStore): number =>
+  Math.min(1.0, CRIT_PER_LEVEL * state.critLevel);
+
+/**
+ * Base combo trigger chance, BEFORE per-link decay. Clamped at 1.0.
+ * Decay is applied at use sites (canvasTick) via comboEffectiveChance.
+ */
+export const getComboBaseChance = (state: GameStore): number =>
+  Math.min(1.0, COMBO_PER_LEVEL * state.comboLevel);

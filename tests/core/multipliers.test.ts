@@ -5,6 +5,8 @@ import {
   getCanvasSpeedMultiplier,
   getTreeUpgradeCostMultiplier,
   getPaintTimeMultiplier,
+  getCritChance,
+  getComboBaseChance,
 } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
 import { big } from "@/core/bigNumber";
@@ -150,5 +152,35 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
 
   it("getPaintTimeMultiplier returns 1 with no items", () => {
     expect(getPaintTimeMultiplier(useGameStore.getState())).toBe(1);
+  });
+});
+
+describe("multipliers — crit + combo chances", () => {
+  const stub = (over: Partial<GameStore> = {}): GameStore => ({
+    purchasedNodes: {},
+    equipped: {},
+    critLevel: 0,
+    comboLevel: 0,
+    ...over,
+  } as GameStore);
+
+  it("getCritChance returns CRIT_PER_LEVEL × critLevel", () => {
+    expect(getCritChance(stub({ critLevel: 0 }))).toBeCloseTo(0, 5);
+    expect(getCritChance(stub({ critLevel: 1 }))).toBeCloseTo(0.01, 5);
+    expect(getCritChance(stub({ critLevel: 50 }))).toBeCloseTo(0.50, 5);
+  });
+
+  it("getCritChance clamps at 1.0 (no multi-crit in this spec)", () => {
+    expect(getCritChance(stub({ critLevel: 200 }))).toBe(1.0);
+  });
+
+  it("getComboBaseChance returns COMBO_PER_LEVEL × comboLevel", () => {
+    expect(getComboBaseChance(stub({ comboLevel: 0 }))).toBeCloseTo(0, 5);
+    expect(getComboBaseChance(stub({ comboLevel: 5 }))).toBeCloseTo(0.10, 5);
+    expect(getComboBaseChance(stub({ comboLevel: 30 }))).toBeCloseTo(0.60, 5);
+  });
+
+  it("getComboBaseChance clamps at 1.0", () => {
+    expect(getComboBaseChance(stub({ comboLevel: 100 }))).toBe(1.0);
   });
 });
