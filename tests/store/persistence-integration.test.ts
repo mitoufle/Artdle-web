@@ -148,7 +148,7 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
           id: "p-1",
           slot: "brush",
           tier: "normal",
-          affixes: [{ kind: "+canvas_gold%", magnitude: 12 }],
+          affixes: [{ kind: "+sell_price%", magnitude: 12 }],
         },
       },
       purchasedNodes: { get_inspired: 3, black_white: 1 },

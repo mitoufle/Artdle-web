@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-07T19:56:30.350Z",
+  "designedAt": "2026-05-10T20:40:07.751Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -261,10 +261,7 @@
         40,
         80
       ],
-      "position": {
-        "x": 359.37325516471253,
-        "y": 213.6837787154243
-      }
+      "position": null
     },
     {
       "id": "gear_up",
@@ -272,7 +269,7 @@
       "description": "Unlocks a second equipment slot for palette items.",
       "numericEffect": "+1 palette slot",
       "parentIds": [
-        "muscle_memory"
+        "basic_technique"
       ],
       "stacking": "additive",
       "kind": "major",
@@ -402,8 +399,27 @@
         0
       ],
       "position": {
-        "x": 565.4098388429961,
-        "y": 35.60387779039152
+        "x": 300.7077326343381,
+        "y": -13.107019562715777
+      }
+    },
+    {
+      "id": "size_matters",
+      "name": "Size matters",
+      "description": "unlocks Size dimension for your canvas (and associated affixes)",
+      "numericEffect": "1",
+      "parentIds": [
+        "muscle_memory"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        5
+      ],
+      "position": {
+        "x": 446.84141546526865,
+        "y": 152.60069044879168
       }
     }
   ]

@@ -84,7 +84,7 @@ describe("systems/ascend", () => {
           id: "inv-1",
           slot: "brush" as const,
           tier: "normal" as const,
-          affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+          affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
         },
       ],
       equipped: {
@@ -92,7 +92,7 @@ describe("systems/ascend", () => {
           id: "eq-1",
           slot: "brush" as const,
           tier: "magic" as const,
-          affixes: [{ kind: "-paint_time%" as const, magnitude: 8 }],
+          affixes: [{ kind: "+speed%" as const, magnitude: 8 }],
         },
       },
     });
