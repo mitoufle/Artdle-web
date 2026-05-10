@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import { formatBig } from "@/core/formatter";
-import { craftCost, tierUpgradeCost } from "@/core/balance";
+import { craftCost, sellPriceUpgradeCost, SIZE_GOLD_PER_LEVEL, SIZE_TIME_PER_LEVEL } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
@@ -12,9 +12,10 @@ import styles from "./ScalingMathPanel.module.css";
 
 export function ScalingMathPanel(): JSX.Element {
   const workshopLevel = useGameStore((s) => s.workshopLevel);
-  const canvasTier = useGameStore((s) => s.canvasTier);
+  const sizeLevel = useGameStore((s) => s.sizeLevel);
+  const sellPriceLevel = useGameStore((s) => s.sellPriceLevel);
   // Multiplier selectors are stable enough that one-shot reads here are fine —
-  // every state change that affects them also bumps workshopLevel/canvasTier
+  // every state change that affects them also bumps workshopLevel/sizeLevel
   // or another root subscription elsewhere in the app, so this panel re-renders
   // on the relevant ticks.
   const state = useGameStore.getState();
@@ -34,13 +35,13 @@ export function ScalingMathPanel(): JSX.Element {
 
       <section className={styles.section} data-testid="scaling-gold">
         <div className={styles.label}>Canvas Gold</div>
-        <div className={styles.formula}>10 × tier² × {goldMult.toFixed(2)}×</div>
+        <div className={styles.formula}>10 × (1 + {SIZE_GOLD_PER_LEVEL} × {sizeLevel}) × {goldMult.toFixed(2)}×</div>
         <div className={styles.note}>colors + items, × rainbow, × PM</div>
       </section>
 
       <section className={styles.section} data-testid="scaling-paint">
         <div className={styles.label}>Paint Time</div>
-        <div className={styles.formula}>tier × 2s ÷ {speedMult.toFixed(2)}×</div>
+        <div className={styles.formula}>2 × (1 + {SIZE_TIME_PER_LEVEL} × {sizeLevel})s ÷ {speedMult.toFixed(2)}×</div>
       </section>
 
       <section className={styles.section} data-testid="scaling-craft-cost">
@@ -48,9 +49,9 @@ export function ScalingMathPanel(): JSX.Element {
         <div className={styles.formula}>= {formatBig(craftCost(workshopLevel))} g</div>
       </section>
 
-      <section className={styles.section} data-testid="scaling-tier-cost">
-        <div className={styles.label}>Tier Upgrade Cost (tier {canvasTier})</div>
-        <div className={styles.formula}>= {formatBig(tierUpgradeCost(canvasTier))} g</div>
+      <section className={styles.section} data-testid="scaling-track-cost">
+        <div className={styles.label}>Sell Price Upgrade (Lv {sellPriceLevel})</div>
+        <div className={styles.formula}>= {formatBig(sellPriceUpgradeCost(sellPriceLevel))} g</div>
       </section>
 
       <section className={styles.section} data-testid="scaling-tree-cost">

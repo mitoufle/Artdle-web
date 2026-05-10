@@ -156,58 +156,6 @@ describe("canvasSlice — lastSale animation trigger", () => {
   });
 });
 
-describe("canvasSlice — canvasTier (v1.1)", () => {
-  beforeEach(() => {
-    useGameStore.getState().resetCanvas();
-  });
-
-  it("initializes with canvasTier = 1", () => {
-    expect(useGameStore.getState().canvasTier).toBe(1);
-  });
-
-  it("resetCanvas resets canvasTier to 1", () => {
-    useGameStore.setState({ canvasTier: 7 });
-    useGameStore.getState().resetCanvas();
-    expect(useGameStore.getState().canvasTier).toBe(1);
-  });
-});
-
-describe("canvasSlice — upgradeTier (v1.1)", () => {
-  beforeEach(() => {
-    useGameStore.getState().resetCanvas();
-    useGameStore.getState().resetRunCurrencies();
-  });
-
-  it("with sufficient gold, increments tier and spends cost", () => {
-    useGameStore.setState({ gold: big(500) });
-    useGameStore.getState().upgradeTier();
-    expect(useGameStore.getState().canvasTier).toBe(2);
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(400, 5);
-  });
-
-  it("with insufficient gold, no-op (state unchanged)", () => {
-    useGameStore.setState({ gold: big(50), canvasTier: 1 });
-    useGameStore.getState().upgradeTier();
-    expect(useGameStore.getState().canvasTier).toBe(1);
-    expect(useGameStore.getState().gold.toNumber()).toBe(50);
-  });
-
-  it("at MAX_TIER, no-op (no further upgrades)", () => {
-    useGameStore.setState({ gold: big(1e9), canvasTier: 10 });
-    useGameStore.getState().upgradeTier();
-    expect(useGameStore.getState().canvasTier).toBe(10);
-    expect(useGameStore.getState().gold.toNumber()).toBe(1e9);
-  });
-
-  it("upgrading from tier 5 costs ~5,983 g", () => {
-    useGameStore.setState({ gold: big(10_000), canvasTier: 5 });
-    useGameStore.getState().upgradeTier();
-    expect(useGameStore.getState().canvasTier).toBe(6);
-    // Actual computed value: 100 × 2.78^4 ≈ 5972.82. Loose tolerance.
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(10000 - 5973, 0);
-  });
-});
-
 describe("canvasSlice — size-aware tick (canvas-depth)", () => {
   beforeEach(() => {
     useGameStore.getState().resetCanvas();

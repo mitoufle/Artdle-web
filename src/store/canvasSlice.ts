@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import {
-  canvasGold, canvasTime, tierUpgradeCost, MAX_TIER,
+  canvasGold, canvasTime,
   sellPriceUpgradeCost, speedUpgradeCost,
   sizeUpgradeCost, critUpgradeCost, comboUpgradeCost,
   CRIT_SPEED_FACTOR, comboBonusFactor, comboEffectiveChance,
@@ -25,13 +25,6 @@ export interface CanvasState {
    * On threshold-cross, a sale fires and progress resets (with optional carry).
    */
   canvasProgress: number;
-  /**
-   * v1.1 tier (LEGACY — removed in canvas-depth Task 16).
-   * Current canvas tier (v1.1: 1..MAX_TIER). Determines per-sale gold (BASE × tier²)
-   * and base paint time (tier × 2 s). Reset to 1 on ascend (initialCanvasState
-   * is the source of truth for resetCanvas).
-   */
-  canvasTier: number;
   /** New canvas-depth: sell-price track level (unlocked from start). */
   sellPriceLevel: number;
   /** New canvas-depth: completion-speed track level (unlocked from start). */
@@ -61,7 +54,6 @@ export interface CanvasState {
 
 export const initialCanvasState: CanvasState = Object.freeze({
   canvasProgress: 0,
-  canvasTier: 1,
   sellPriceLevel: 1,
   speedLevel: 1,
   sizeLevel: 0,
@@ -80,14 +72,6 @@ export interface CanvasSlice extends CanvasState {
    * No-ops on `delta <= 0` (avoids spurious persist writes on idle frames).
    */
   canvasTick: (deltaSeconds: number) => void;
-  /**
-   * Atomic guard-spend-mutate tier upgrade. Validates:
-   *   1. canvasTier < MAX_TIER (otherwise no-op).
-   *   2. gold ≥ tierUpgradeCost(canvasTier) (otherwise no-op).
-   * On success: gold -= cost, canvasTier += 1.
-   * No partial state. No race window between gold check and tier mutation.
-   */
-  upgradeTier: () => void;
   /** Validate → spend → mutate sell-price upgrade. No-op if gold < cost. */
   upgradeSellPrice: () => void;
   /** Validate → spend → mutate speed upgrade. No-op if gold < cost. */
@@ -151,17 +135,6 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       isCritThisCanvas: false, // reset; next tick re-rolls for the new canvas
       comboChain: newChain,
       lastSale: { id: prevId + 1, amount: gain },
-    });
-  },
-
-  upgradeTier: () => {
-    const state = get();
-    if (state.canvasTier >= MAX_TIER) return;
-    const cost = tierUpgradeCost(state.canvasTier);
-    if (state.gold.lt(cost)) return;
-    set({
-      gold: state.gold.sub(cost),
-      canvasTier: state.canvasTier + 1,
     });
   },
 

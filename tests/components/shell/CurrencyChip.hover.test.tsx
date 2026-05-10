@@ -12,7 +12,7 @@ describe("CurrencyChip hover wiring", () => {
       inspiration: big(0), fame: big(0),
       paintMastery: big(0), ascendCount: 0, pastRuns: [],
       partLevels: { spark: 0, bud: 0, leaf: 0, branch: 0 },
-      purchasedNodes: {}, canvasTier: 1, equipped: {},
+      purchasedNodes: {}, equipped: {},
     });
   });
 

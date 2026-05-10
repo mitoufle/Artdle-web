@@ -307,16 +307,14 @@ describe("save migration v2 → v3", () => {
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 
-  it("v3 save with non-default canvasTier and paintMastery round-trips", async () => {
+  it("v3 save with non-default paintMastery round-trips", async () => {
     // Mutate the live store with non-defaults, flush, re-read.
-    useGameStore.setState({ canvasTier: 7 });
     useGameStore.getState()._setPaintMastery(big(54_321));
     await persistedAdapter.flush();
 
     const raw = await idbAdapter.getItem("artdle-save");
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
-    expect(parsed.state.canvasTier).toBe(7);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
     expect(parsed.version).toBe(9);
   });
@@ -361,7 +359,6 @@ describe("save migration v3 → v4 (PM redesign)", () => {
   });
 
   it("v4 save with non-default lifetimeGold round-trips", async () => {
-    useGameStore.setState({ canvasTier: 3 });
     useGameStore.getState()._setPaintMastery(big(100));
     useGameStore.getState()._setLifetimeGold(big(50_000));
     await persistedAdapter.flush();
@@ -369,7 +366,6 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     const raw = await idbAdapter.getItem("artdle-save");
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
-    expect(parsed.state.canvasTier).toBe(3);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
     expect(parsed.version).toBe(9);

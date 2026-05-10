@@ -172,7 +172,7 @@ describe("systems/ascend", () => {
   });
 
   // ============================================================================
-  // v1.1 reset semantics: canvasTier and paintMastery
+  // v1.1 reset semantics: paintMastery
   // ============================================================================
 
   describe("performAscendOrchestrator — v1.1 reset semantics", () => {
@@ -181,17 +181,6 @@ describe("systems/ascend", () => {
       useGameStore.getState().resetRunCurrencies();
       useGameStore.getState()._setPaintMastery(big(0));
       useGameStore.getState()._setLifetimeGold(big(0));
-    });
-
-    it("ascend resets canvasTier to 1", () => {
-      // Set up an ascendable state.
-      useGameStore.setState({ canvasTier: 7, inspiration: big(12_000) });
-      const ok = performAscendOrchestrator(
-        useGameStore.setState,
-        useGameStore.getState,
-      );
-      expect(ok).toBe(true);
-      expect(useGameStore.getState().canvasTier).toBe(1);
     });
 
     it("ascend preserves paintMastery exactly (no reset)", () => {

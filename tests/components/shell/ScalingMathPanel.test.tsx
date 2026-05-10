@@ -8,7 +8,8 @@ describe("ScalingMathPanel", () => {
   beforeEach(() => {
     useGameStore.setState({
       workshopLevel: 1,
-      canvasTier: 1,
+      sizeLevel: 0,
+      sellPriceLevel: 1,
       purchasedNodes: {},
       paintMastery: big(0),
       partLevels: { spark: 0, bud: 0, leaf: 0, branch: 0 },
@@ -37,10 +38,10 @@ describe("ScalingMathPanel", () => {
     expect(section.textContent).toMatch(/Lv 10/);
   });
 
-  it("Tier Upgrade Cost section reflects the current canvas tier", () => {
-    useGameStore.setState({ canvasTier: 5 });
+  it("Sell Price Upgrade section reflects the current sell-price level", () => {
+    useGameStore.setState({ sellPriceLevel: 5 });
     render(<ScalingMathPanel />);
-    const section = screen.getByTestId("scaling-tier-cost");
-    expect(section.textContent).toMatch(/tier 5/i);
+    const section = screen.getByTestId("scaling-track-cost");
+    expect(section.textContent).toMatch(/Lv 5/i);
   });
 });

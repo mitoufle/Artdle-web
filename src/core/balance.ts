@@ -12,9 +12,6 @@ export const FAME_SCALE = 3.2;
 export const TREE_PART_COST_GROWTH = 1.15;
 export const CANVAS_GOLD_BASE = 10;
 export const PAINT_TIME_BASE_SECONDS = 10;
-export const TIER_UPGRADE_BASE = 100;
-export const TIER_UPGRADE_RATIO = 2.78;
-export const MAX_TIER = 10;
 export const PM_LOG_FACTOR = 5.0;
 
 // Workshop leveling — see docs/superpowers/specs/2026-05-06-workshop-leveling-design.md
@@ -117,17 +114,6 @@ export const canvasGold = (sizeLevel: number, multiplier: number): Big =>
  */
 export const canvasTime = (sizeLevel: number): number =>
   CANVAS_TIME_BASE * (1 + SIZE_TIME_PER_LEVEL * sizeLevel);
-
-/**
- * Gold cost to upgrade canvas from `currentTier` to `currentTier + 1`.
- * Defined for currentTier ∈ [1, MAX_TIER - 1]; tier MAX_TIER has no upgrade.
- *
- * Calibration target (canvas-design.md §10): "100 → 1M g across 10 tiers".
- * `100 × 2.78^(currentTier - 1)` lands tier 1→2 at 100, tier 9→10 at ~357k.
- * Total path 1→10: ~558k.
- */
-export const tierUpgradeCost = (currentTier: number): Big =>
-  big(TIER_UPGRADE_BASE).mul(big(TIER_UPGRADE_RATIO).pow(currentTier - 1));
 
 /**
  * Total PM accumulated at a given lifetime canvas gold.
@@ -255,8 +241,7 @@ export const xpToNext = (currentLevel: number): number => 4 * (currentLevel + 1)
  * Gold cost to upgrade a track from `currentLevel` to `currentLevel + 1`.
  * Shared shape: `BASE × TRACK_COST_GROWTH^currentLevel`. Per-track BASEs differ.
  *
- * Mirrors the contract of the existing `tierUpgradeCost(currentTier)` and
- * `craftCost(level)` — the parameter is the CURRENT level (the player's
+ * Mirrors the contract of `craftCost(level)` — the parameter is the CURRENT level (the player's
  * stored value), and the function returns the cost of the NEXT step.
  *
  * For tracks starting at L0 (size/crit/combo), first buy uses formula(0) = base.
