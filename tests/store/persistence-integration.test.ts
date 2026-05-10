@@ -317,7 +317,7 @@ describe("save migration v2 → v3", () => {
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(10);
+    expect(parsed.version).toBe(11);
   });
 });
 
@@ -369,7 +369,7 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(10);
+    expect(parsed.version).toBe(11);
   });
 });
 
@@ -555,5 +555,35 @@ describe("migrate v9 → v10 (canvas depth)", () => {
     expect(migrated.canvasTier).toBeUndefined();
     expect(migrated.sellPriceLevel).toBe(1);
     expect(migrated.sizeLevel).toBe(0);
+  });
+});
+
+describe("migrate v10 → v11 (affix-pool rework)", () => {
+  it("wipes inventory + equipped (game unreleased; magnitudes don't translate cleanly)", () => {
+    const v10State: Record<string, unknown> = {
+      inventory: [
+        { id: "old1", slot: "brush", tier: "rare", affixes: [{ kind: "+canvas_gold%", magnitude: 12 }] },
+      ],
+      equipped: { brush: { id: "old2", slot: "brush", tier: "magic", affixes: [{ kind: "-paint_time%", magnitude: 10 }] } },
+      workshopLevel: 8,
+      workshopXp: 17,
+    };
+    const migrated = migrate(v10State, 10) as unknown as Record<string, unknown>;
+    expect(migrated.inventory).toEqual([]);
+    expect(migrated.equipped).toEqual({});
+    // Workshop level + XP preserved (long-tail meta).
+    expect(migrated.workshopLevel).toBe(8);
+    expect(migrated.workshopXp).toBe(17);
+  });
+
+  it("does not change saves at v11 (migrate is no-op when fromVersion >= 11)", () => {
+    const v11State: Record<string, unknown> = {
+      inventory: [{ id: "x", slot: "brush", tier: "magic", affixes: [{ kind: "+sell_price%", magnitude: 7 }] }],
+      equipped: {},
+      workshopLevel: 3,
+      workshopXp: 5,
+    };
+    const migrated = migrate(v11State, 11) as unknown as Record<string, unknown>;
+    expect(migrated.inventory).toEqual([{ id: "x", slot: "brush", tier: "magic", affixes: [{ kind: "+sell_price%", magnitude: 7 }] }]);
   });
 });

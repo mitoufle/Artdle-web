@@ -32,7 +32,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 10;
+const SAVE_VERSION = 11;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -67,6 +67,13 @@ const SAVE_KEY = "artdle-save";
  * v9 → v10 (2026-05-10): canvas-depth rework. Drop canvasTier; seed sellPriceLevel=1,
  * speedLevel=1, sizeLevel=0, critLevel=0, comboLevel=0, comboChain=0,
  * isCritThisCanvas=false.
+ *
+ * v10 → v11 (2026-05-10): affix pool rework. AffixKind enum renamed
+ * (+canvas_gold% → +sell_price%, -paint_time% → +speed%) and 3 new kinds
+ * added (+crit_chance%, +combo_chance%, +size_gold_per_level%). Magnitude
+ * semantics for the rename don't translate cleanly (-10% paint_time ≠
+ * +10% speed). Game unreleased — wipe inventory + equipped. Workshop
+ * level + XP preserved (long-tail meta progression).
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -168,6 +175,20 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       comboLevel: 0,
       comboChain: 0,
       isCritThisCanvas: false,
+    };
+  }
+
+  if (fromVersion < 11) {
+    // v10 → v11 (2026-05-10): affix pool rework. AffixKind enum renamed
+    // (+canvas_gold% → +sell_price%, -paint_time% → +speed%) and 3 new kinds
+    // added (+crit_chance%, +combo_chance%, +size_gold_per_level%). Magnitude
+    // semantics for the rename don't translate cleanly (-10% paint_time ≠
+    // +10% speed). Game unreleased — wipe inventory + equipped. Workshop
+    // level + XP preserved (long-tail meta progression).
+    state = {
+      ...state,
+      inventory: [],
+      equipped: {},
     };
   }
 

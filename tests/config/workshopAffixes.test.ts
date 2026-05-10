@@ -7,8 +7,8 @@ import {
 } from "@/config/workshopAffixes";
 
 describe("workshopAffixes config", () => {
-  it("AFFIX_KINDS has exactly 2 entries (painting-only pool)", () => {
-    expect(AFFIX_KINDS).toHaveLength(2);
+  it("AFFIX_KINDS has exactly 5 entries (painting-only pool: sell_price, speed, crit, combo, size)", () => {
+    expect(AFFIX_KINDS).toHaveLength(5);
   });
 
   it("the affix kinds are unique", () => {
