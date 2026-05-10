@@ -1,5 +1,53 @@
 # Artdle Web — Handover
 
+## Canvas depth — 5 upgrade tracks (shipped on `main`, 2026-05-10)
+
+**Status:** Shipped. Subproject 1 of 3 in the Painter's Office decomposition (see `docs/superpowers/specs/2026-05-10-painters-office-design.md` for the parked Office sketch). The canvas's single `canvasTier` upgrade is replaced by **5 independent upgrade tracks**, each levelled in gold; sell-price + speed unlocked from start, size + crit + combo gated by user-authored fame skill-tree nodes.
+
+**Spec:** `docs/superpowers/specs/2026-05-10-canvas-depth-design.md`. **Plan:** `docs/superpowers/plans/2026-05-10-canvas-depth.md`.
+
+### What landed
+
+- **5 tracks, each with its own gold-cost curve `BASE × 1.5^currentLevel`:**
+  - **Sell Price** (unlocked from L1, `+10%` gold per level, base cost 100g)
+  - **Speed** (unlocked from L1, `+5%` speed per level, base cost 100g)
+  - **Size** (gated, `+30%` gold AND `+15%` time per level — net positive, base cost 1000g, replaces the old tier² scaling)
+  - **Crit** (gated, `+1%` chance per level, fixed 10× speed on hit i.e. "90% faster", base cost 5000g)
+  - **Combo** (gated, `+2%` base chain chance per level, fixed `+10%` gold per chained link, decay -5pp per current link, base cost 5000g)
+- **Schema:** `CanvasState` drops `canvasTier`; adds `sellPriceLevel`, `speedLevel`, `sizeLevel`, `critLevel`, `comboLevel`, `comboChain`, `isCritThisCanvas`. All 5 levels + chain reset on ascend (Workshop pattern: only the institution survives, not the run-state).
+- **Track unlocks** read by `getCanvasTrackUnlocked(state, trackId)` from `skillTreeSlice`. Engine recognises 3 well-known fame node IDs the user authors via `/dev/skill-designer`:
+  - `unlock_canvas_size`
+  - `unlock_canvas_crit`
+  - `unlock_canvas_combo`
+  Each grants `+1 unlock` (level ≥ 1 = unlocked). Until purchased, the matching TrackCard renders Locked and the action no-ops.
+- **`canvasTick` rewrite:** Crit rolled at canvas start (when `canvasProgress === 0`) and stored in `isCritThisCanvas` for the canvas's lifetime; effective time = `canvasTime(sizeLevel) / (speedMult × critFactor)`. On sale, gold = `canvasGold(sizeLevel, mult) × comboBonusFactor(comboChain)` (combo applies the PRIOR chain). After sale, combo rolls with `comboEffectiveChance(base, chain)` decay; chain extends on hit, resets to 0 on miss. `isCritThisCanvas` resets to `false` on sale.
+- **Multipliers:** `getCanvasGoldMultiplier` adds `SELL_PRICE_PER_LEVEL × sellPriceLevel` to the additive bonus alongside item affixes + color tree. `getCanvasSpeedMultiplier` adds `SPEED_PER_LEVEL × speedLevel`. New: `getCritChance(state)` and `getComboBaseChance(state)`, both clamped at 1.0.
+- **`<TrackCard>`** parameterised tile renders 5 cells in `<CanvasUpgradesStrip>` (the 5-cell grid that v2.0 left empty for this). Locked variant for gated tracks. Hover info via `<Hoverable>` shows `<Track> — Level N` + current effect + next-level cost (or "Locked" + skill-tree prompt).
+- **`<CanvasStage>`** prop renamed `tier` → `sizeLevel`; gains `comboChain` + `isCrit` props. New badges: 🔥 ×N (top-left, when chain > 0) and CRIT pulse (top-right, when current canvas crits).
+- **`<TierCard>`** component deleted. `tierUpgradeCost`, `MAX_TIER`, `TIER_UPGRADE_BASE`, `TIER_UPGRADE_RATIO` removed from `balance.ts`. `upgradeTier` action removed from `canvasSlice`.
+- **`<ScalingMathPanel>`** updated for the new model: gold formula shows `10 × (1 + 0.30 × sizeLevel) × Xx`, time shows `2 × (1 + 0.15 × sizeLevel)s ÷ Xx`, "Tier Upgrade Cost" replaced by "Sell Price Upgrade (Lv N)".
+- **Save migration v9 → v10:** drops `canvasTier`, seeds the 7 new fields with defaults. Game unreleased; no translation of the old 1–10 tier onto the new tracks per spec §8.
+- **Affix pool unchanged** in this subproject. The §6 contract (sell_price / speed / crit_chance / combo_chance / size_gold_per_level affix kinds) is reserved for **subproject 2 (affix pool rework)**.
+
+### Tests + build
+
+- **653 tests passing across 76 files** (was 628 baseline; +25 net).
+- tsc clean. Lint clean (only pre-existing `main.tsx` warning).
+- Bundle: **156.37 KB gzipped JS** (was 156.34 KB; effectively flat). Well under the 250 KB DoD budget.
+- 19 commits from `7eb8766` (plan) → `fb65579` (final fix from end-of-impl review).
+
+### Post-merge actions
+
+1. **Author the 3 fame skill-tree unlock nodes** via `/dev/skill-designer`. Engine recognises `unlock_canvas_size` / `unlock_canvas_crit` / `unlock_canvas_combo` (any level ≥ 1 = unlocked). Set fame costs to taste — these gate the 3 advanced tracks.
+2. **Subproject 2 — Affix pool rework.** Spec handshake at `2026-05-10-canvas-depth-design.md` §6: rename `canvas_gold` → `sell_price`, `paint_time` → `speed`, add `crit_chance` / `combo_chance` / `size_gold_per_level` kinds. Update workshop affix rolling + `multipliers.ts` to consume the new kinds. New `SAVE_VERSION` bump.
+3. **Subproject 3 — Painter's Office.** Sketch design in `2026-05-10-painters-office-design.md`; numbers TBD until subproject 2 ships.
+
+### Next
+
+Subproject 2 (affix pool rework) — see §6 of the canvas-depth spec for the exact contract.
+
+---
+
 ## v3.1 — Workshop leveling + tiered items (shipped on `main`)
 
 **Status:** Shipped. Workshop now levels via 1 XP per craft. Items have a tier (Normal..Legendary) determining affix count (1..5). Slot kinds (brush, palette) gate inventory rolls and are unlocked via skill-tree fame nodes.
