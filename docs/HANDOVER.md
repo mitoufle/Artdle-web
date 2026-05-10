@@ -2,7 +2,7 @@
 
 ## Post-shipping polish (2026-05-10, after affix-pool-rework)
 
-Six commits of in-session playtest fixes after subprojects 1 + 2 landed. Each surfaced during browser testing.
+Seven commits of in-session playtest fixes after subprojects 1 + 2 landed. Each surfaced during browser testing.
 
 ### What landed
 
@@ -20,10 +20,11 @@ Six commits of in-session playtest fixes after subprojects 1 + 2 landed. Each su
   - `pmMult` called `pm.toNumber()` → saturated at `Number.MAX_SAFE_INTEGER` (~9e15) → multiplier capped at ~81.
   
   Fixes: loop bound 30 → 100 (covers ~10^303, practical infinity); `pmMult` switches to `pm.add(1).log10().toNumber()` (break_eternity's native `.log10()` operates on the Big directly, no precision loss). At PM = 1e20, mult ≈ 101. At 1e50, ≈ 251.
+- **PM scaling linearized** (`ab2db71`). Even with the cap removed, players hit PM ~1000 at lifetime gold 1M and saw it freeze: the phase-ratcheting design made each next +1 PM cost another 1M gold (then 1B, then 1T, ×1000 per phase). Replaced with **linear `PM = floor(lifetimeGold / 1000)`** forever. Continuous growth: every 1000 g of lifetime earnings → +1 PM, regardless of how high lifetime gold goes. Existing PM values preserved across the change; only the formula that grows PM changed. `pmFromLifetime` body collapsed from 30-iteration phase loop to a single `.div(1000).floor()`; `pmThreshold` now constant `1000`. The PM mult curve (`1 + 5 × log10(PM + 1)`) still does the smoothing — log of linear = log of lifetime gold, asymptotically gentle without phase plateaus.
 
 ### Tests + build
 
-- **680 tests passing** (was 671 after affix-pool-rework; +9 net for the fixes/tests).
+- **663 tests passing** (was 680; net –17 from removing phase-ratcheting test cases that no longer apply). All new linear-PM behavior covered.
 - tsc clean. Lint clean. Bundle: ~157 KB gzipped JS (negligible drift). Under the 250 KB DoD budget.
 
 ### Lessons
@@ -31,6 +32,7 @@ Six commits of in-session playtest fixes after subprojects 1 + 2 landed. Each su
 - **State transitions need explicit reset triggers.** The crit bug came from assuming "the next tick's canvasProgress === 0 check will fire" — but the sale path sets canvasProgress to `leftover` (positive). When state convention is "this flag triggers re-roll," the re-roll must happen at the boundary where the next-state is constructed (the sale path), not deferred to a future tick that depends on a fragile invariant.
 - **CSS transitions + React keys = clean visual reset.** When a value should "snap" on a discrete event but smoothly animate otherwise, key the element by an event counter. React replaces the DOM node, transitions restart. Cleaner than conditional transition disabling.
 - **`break_eternity.js` has Big-native log/exp/etc.** When stacking caps come from `pm.toNumber()` → JS-number saturation, switch to `pm.log10()` / `pm.exp()` etc. — the Big stays in precision through the operation, only the final return value drops to a JS number.
+- **Phase-ratcheting designs read as "capped" to players.** A 1000× ratchet between phases makes each phase boundary a wall — players hit it, watch PM stall, and call it broken. Two layers of curve-shaping (phase ratchet + log multiplier) double up on the smoothing and produce flat plateaus. One log-shaper is enough; let the underlying input grow linearly and let `pmMult`'s log do the rest.
 
 ---
 
