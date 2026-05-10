@@ -36,7 +36,7 @@ export function ScalingMathPanel(): JSX.Element {
       <section className={styles.section} data-testid="scaling-gold">
         <div className={styles.label}>Canvas Gold</div>
         <div className={styles.formula}>10 × (1 + {SIZE_GOLD_PER_LEVEL} × {sizeLevel}) × {goldMult.toFixed(2)}×</div>
-        <div className={styles.note}>colors + items, × rainbow, × PM</div>
+        <div className={styles.note}>sell price + colors + items, × rainbow, × PM</div>
       </section>
 
       <section className={styles.section} data-testid="scaling-paint">

@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
-import { canvasGold } from "@/core/balance";
+import { canvasGold, SIZE_GOLD_PER_LEVEL, SELL_PRICE_PER_LEVEL } from "@/core/balance";
 import { getCanvasGoldMultiplier, getPmMultiplier } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
@@ -15,13 +15,17 @@ function sellHoverBody(sizeLevel: number): JSX.Element {
   const itemBonus = getEquippedContribution(state, "+canvas_gold%");
   const rainbowLvl = getNodeLevel(state, "rainbow");
   const rainbowFactor = 1 + 0.50 * rainbowLvl;
-  const colorPlusItems = goldMult / rainbowFactor - 1;
-  const colorSum = colorPlusItems - itemBonus;
+  const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
+  // Reverse-engineer colors contribution (additive sum minus items minus sell-price)
+  const colorPlusItemsPlusSellPrice = goldMult / rainbowFactor - 1;
+  const colorSum = colorPlusItemsPlusSellPrice - itemBonus - sellPriceContribution;
+  const baseGold = 10 * (1 + SIZE_GOLD_PER_LEVEL * sizeLevel);
   const total = canvasGold(sizeLevel, goldMult * pmMult);
   return (
     <>
-      <div>Base × tier²: 10 × {sizeLevel}² = {10 * sizeLevel * sizeLevel}</div>
+      <div>Base × (1 + {SIZE_GOLD_PER_LEVEL} × {sizeLevel}) = {baseGold.toFixed(1)}</div>
       <div>───</div>
+      <div>Sell Price (Lv {state.sellPriceLevel}): ×{(1 + sellPriceContribution).toFixed(2)}</div>
       <div>Colors:        ×{(1 + colorSum).toFixed(2)}</div>
       <div>Items:         ×{(1 + itemBonus).toFixed(2)}</div>
       <div>Rainbow:       ×{rainbowFactor.toFixed(2)}</div>
@@ -45,6 +49,7 @@ interface Props {
 }
 
 const STAGE_NAMES: Record<number, string> = {
+  0: "Sketch",
   1: "Apprentice",
   2: "Journeyman",
   3: "Adept",
