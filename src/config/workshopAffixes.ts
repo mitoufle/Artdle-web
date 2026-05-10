@@ -1,13 +1,27 @@
 /**
  * Persisted affix identifier. Renames require a save migration.
  *
- * Items come from the Workshop and only boost painting-related mechanics.
+ * Items come from the Workshop. Each kind contributes additively to one
+ * canvas-derived multiplier:
+ *   +sell_price%            → getCanvasGoldMultiplier
+ *   +speed%                 → getCanvasSpeedMultiplier
+ *   +crit_chance%           → getCritChance         (gated by unlock_canvas_crit)
+ *   +combo_chance%          → getComboBaseChance    (gated by unlock_canvas_combo)
+ *   +size_gold_per_level%   → getSizeGoldPerLevelMultiplier (gated by unlock_canvas_size)
  */
-export type AffixKind = "+canvas_gold%" | "-paint_time%";
+export type AffixKind =
+  | "+sell_price%"
+  | "+speed%"
+  | "+crit_chance%"
+  | "+combo_chance%"
+  | "+size_gold_per_level%";
 
 export const AFFIX_KINDS: ReadonlyArray<AffixKind> = [
-  "+canvas_gold%",
-  "-paint_time%",
+  "+sell_price%",
+  "+speed%",
+  "+crit_chance%",
+  "+combo_chance%",
+  "+size_gold_per_level%",
 ];
 
 /** Inclusive lower bound on rolled magnitude (integer percent). */
