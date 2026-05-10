@@ -301,6 +301,21 @@ describe("pmMult (v1.1)", () => {
   });
 });
 
+describe("pmMult — uncapped via Big.log10", () => {
+  it("returns expected mult at PM beyond Number.MAX_SAFE_INTEGER", () => {
+    expect(pmMult(big("1e20"))).toBeCloseTo(101, 0); // 1 + 5 × 20
+    expect(pmMult(big("1e50"))).toBeCloseTo(251, 0); // 1 + 5 × 50
+  });
+});
+
+describe("pmFromLifetime — high lifetime gold", () => {
+  it("doesn't cap at 30,000 PM (loop bound bumped to 100)", () => {
+    // lt = 10^200: should yield ~66 phases × ~1000 PM = ~66k PM, not 30k cap
+    const pm = pmFromLifetime(big("1e200"));
+    expect(pm.gt(big(40000))).toBe(true);
+  });
+});
+
 describe("pmThreshold (v1.1 PM redesign)", () => {
   it("at lifetime 0, threshold is 1000", () => {
     expect(pmThreshold(big(0)).toNumber()).toBe(1000);

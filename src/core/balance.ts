@@ -139,8 +139,8 @@ export const pmFromLifetime = (lt: Big): Big => {
   let phaseStart = big(0);
   let threshold = big(1000);
   // Upper bound on phases — generous but bounded to keep the loop terminating.
-  // 30 phases covers lifetime gold up to 10^33; well past any reachable scenario.
-  for (let i = 0; i < 30; i++) {
+  // 100 phases covers lifetime gold up to ~10^303; practical infinity for any reachable game state.
+  for (let i = 0; i < 100; i++) {
     if (lt.lte(phaseStart)) break;
     const phaseEnd = threshold.mul(1000);
     if (lt.gte(phaseEnd)) {
@@ -180,11 +180,14 @@ export const pmGainPerSale = (saleGold: Big, lifetimeGold: Big): Big => {
  * At PM = 0: returns 1 exactly. At PM = 1e10: returns ~51. The log shape
  * preserves the rescope spec's "pas ×1000" intent even at factor 5.0.
  *
- * Saturates `pm.toNumber()` at Number.MAX_SAFE_INTEGER (~9e15); v1.1 stays
- * well below that.
+ * Uses Big.log10() natively — supports PM far beyond Number.MAX_SAFE_INTEGER
+ * without saturation.
  */
-export const pmMult = (pm: Big): number =>
-  1 + PM_LOG_FACTOR * Math.log10(pm.toNumber() + 1);
+export const pmMult = (pm: Big): number => {
+  // Big.log10() handles values far beyond Number.MAX_SAFE_INTEGER natively.
+  // For pm = 0, log10(1) = 0 → returns 1 exactly.
+  return 1 + PM_LOG_FACTOR * pm.add(1).log10().toNumber();
+};
 
 /**
  * Inspiration produced per second from a list of tree parts and an aggregate multiplier.
