@@ -32,7 +32,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 9;
+const SAVE_VERSION = 10;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -63,6 +63,10 @@ const SAVE_KEY = "artdle-save";
  *
  * v8 → v9 (2026-05-06): workshop rework. Wipe inventory + equipped; initialize
  * workshopLevel=1, workshopXp=0.
+ *
+ * v9 → v10 (2026-05-10): canvas-depth rework. Drop canvasTier; seed sellPriceLevel=1,
+ * speedLevel=1, sizeLevel=0, critLevel=0, comboLevel=0, comboChain=0,
+ * isCritThisCanvas=false.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -145,6 +149,25 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       equipped: {},
       workshopLevel: 1,
       workshopXp: 0,
+    };
+  }
+
+  if (fromVersion < 10) {
+    // v9 → v10 (2026-05-10): canvas-depth rework. Replace canvasTier with 5 track levels
+    // (sellPriceLevel + speedLevel unlocked at 1; sizeLevel + critLevel + comboLevel
+    // gated start at 0). Seed comboChain=0, isCritThisCanvas=false.
+    // Game is unreleased; no need to translate canvasTier 1-10 onto the new tracks.
+    const { canvasTier: _ct, ...rest } = state;
+    void _ct;
+    state = {
+      ...rest,
+      sellPriceLevel: 1,
+      speedLevel: 1,
+      sizeLevel: 0,
+      critLevel: 0,
+      comboLevel: 0,
+      comboChain: 0,
+      isCritThisCanvas: false,
     };
   }
 

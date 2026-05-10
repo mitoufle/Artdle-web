@@ -280,7 +280,8 @@ describe("save migration v2 → v3", () => {
       // ...other v2 fields would be here, but migrate doesn't depend on them
     };
     const migrated = migrate(v2State, 2) as unknown as Record<string, unknown>;
-    expect(migrated.canvasTier).toBe(1);
+    // v9→v10 drops canvasTier.
+    expect(migrated.canvasTier).toBeUndefined();
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     // playerId preserved.
     expect(migrated.playerId).toBe("test-player-id-v2");
@@ -302,8 +303,8 @@ describe("save migration v2 → v3", () => {
     // v9 migration wipes inventory (workshop rework); v1→v2 filtering ran
     // correctly mid-chain but the final state has inventory=[].
     expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
-    // v2→v3: defaults added.
-    expect(migrated.canvasTier).toBe(1);
+    // v2→v3: defaults added. v9→v10: canvasTier dropped.
+    expect(migrated.canvasTier).toBeUndefined();
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 
@@ -316,7 +317,7 @@ describe("save migration v2 → v3", () => {
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(9);
+    expect(parsed.version).toBe(10);
   });
 });
 
@@ -335,8 +336,8 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
     // Existing paintMastery preserved.
     expect((migrated.paintMastery as { __big: string }).__big).toBe("42");
-    // Other fields preserved.
-    expect(migrated.canvasTier).toBe(5);
+    // v9→v10 drops canvasTier.
+    expect(migrated.canvasTier).toBeUndefined();
     expect(migrated.playerId).toBe("test-player-id-v3");
   });
 
@@ -351,9 +352,9 @@ describe("save migration v3 → v4 (PM redesign)", () => {
       playerId: "test-player-id-v1",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v9 migration wipes inventory (workshop rework).
+    // v9 migration wipes inventory (workshop rework). v9→v10 drops canvasTier.
     expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
-    expect(migrated.canvasTier).toBe(1);
+    expect(migrated.canvasTier).toBeUndefined();
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
   });
@@ -368,7 +369,7 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(9);
+    expect(parsed.version).toBe(10);
   });
 });
 
@@ -401,9 +402,9 @@ describe("save migration v5 → v6 (drop currentView)", () => {
       currentView: "home",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v9 migration wipes inventory (workshop rework).
+    // v9 migration wipes inventory (workshop rework). v9→v10 drops canvasTier.
     expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
-    expect(migrated.canvasTier).toBe(1);
+    expect(migrated.canvasTier).toBeUndefined();
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
     expect("currentView" in migrated).toBe(false);
@@ -436,7 +437,8 @@ describe("save migration v6 → v7 (add pastRuns)", () => {
       playerId: "v1-test",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    expect(migrated.canvasTier).toBe(1);
+    // v9→v10 drops canvasTier.
+    expect(migrated.canvasTier).toBeUndefined();
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
     expect(migrated.pastRuns).toEqual([]);
@@ -477,7 +479,8 @@ describe("save migration v7 → v8 (skill-tree rewrite)", () => {
       purchasedNodes: { goldsmith: true },
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    expect(migrated.canvasTier).toBe(1);
+    // v9→v10 drops canvasTier.
+    expect(migrated.canvasTier).toBeUndefined();
     expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
     expect(migrated.pastRuns).toEqual([]);
@@ -506,5 +509,51 @@ describe("save migration v8 → v9 (workshop rework)", () => {
     expect(result.workshopLevel).toBe(1);
     expect(result.workshopXp).toBe(0);
     expect(result.purchasedNodes).toEqual({ gear_up: 1 });
+  });
+});
+
+describe("migrate v9 → v10 (canvas depth)", () => {
+  it("drops canvasTier and seeds new track fields with defaults", () => {
+    const v9State: Record<string, unknown> = {
+      canvasTier: 5,
+      canvasProgress: 0,
+      gold: { __big: "100" },
+    };
+    const migrated = migrate(v9State, 9) as unknown as Record<string, unknown>;
+    expect(migrated.canvasTier).toBeUndefined();
+    expect(migrated.sellPriceLevel).toBe(1);
+    expect(migrated.speedLevel).toBe(1);
+    expect(migrated.sizeLevel).toBe(0);
+    expect(migrated.critLevel).toBe(0);
+    expect(migrated.comboLevel).toBe(0);
+    expect(migrated.comboChain).toBe(0);
+    expect(migrated.isCritThisCanvas).toBe(false);
+  });
+
+  it("does not change saves at v10 (migrate is no-op when fromVersion >= 10)", () => {
+    const v10State: Record<string, unknown> = {
+      sellPriceLevel: 7,
+      speedLevel: 4,
+      sizeLevel: 5,
+      critLevel: 0, comboLevel: 0, comboChain: 0, isCritThisCanvas: false,
+      canvasProgress: 0,
+    };
+    const migrated = migrate(v10State, 10) as unknown as Record<string, unknown>;
+    expect(migrated.sellPriceLevel).toBe(7);
+    expect(migrated.speedLevel).toBe(4);
+    expect(migrated.sizeLevel).toBe(5);
+  });
+
+  it("chains correctly from earlier versions (v8 → v10)", () => {
+    const v8State: Record<string, unknown> = {
+      gold: { __big: "0" },
+    };
+    const migrated = migrate(v8State, 8) as unknown as Record<string, unknown>;
+    // v8 → v9 wipes inventory etc.
+    expect(migrated.workshopLevel).toBe(1);
+    // v9 → v10 strips canvasTier (none present in input — OK; migration safely deletes a missing key) and seeds new fields
+    expect(migrated.canvasTier).toBeUndefined();
+    expect(migrated.sellPriceLevel).toBe(1);
+    expect(migrated.sizeLevel).toBe(0);
   });
 });
