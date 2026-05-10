@@ -2,34 +2,36 @@ import type { JSX } from "react";
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
-import { canvasGold, SIZE_GOLD_PER_LEVEL, SELL_PRICE_PER_LEVEL } from "@/core/balance";
-import { getCanvasGoldMultiplier, getPmMultiplier } from "@/core/multipliers";
+import { canvasGold, SIZE_GOLD_PER_LEVEL, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK } from "@/core/balance";
+import { getCanvasGoldMultiplier, getPmMultiplier, getSizeGoldPerLevelMultiplier } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 
-function sellHoverBody(sizeLevel: number): JSX.Element {
+function sellHoverBody(sizeLevel: number, comboChain: number): JSX.Element {
   const state = useGameStore.getState();
   const goldMult = getCanvasGoldMultiplier(state);
   const pmMult = getPmMultiplier(state);
-  const itemBonus = getEquippedContribution(state, "+canvas_gold%");
+  const itemBonus = getEquippedContribution(state, "+sell_price%");
   const rainbowLvl = getNodeLevel(state, "rainbow");
   const rainbowFactor = 1 + 0.50 * rainbowLvl;
   const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
+  const sizeGoldMult = getSizeGoldPerLevelMultiplier(state);
   // Reverse-engineer colors contribution (additive sum minus items minus sell-price)
   const colorPlusItemsPlusSellPrice = goldMult / rainbowFactor - 1;
   const colorSum = colorPlusItemsPlusSellPrice - itemBonus - sellPriceContribution;
-  const baseGold = 10 * (1 + SIZE_GOLD_PER_LEVEL * sizeLevel);
-  const total = canvasGold(sizeLevel, goldMult * pmMult);
+  const baseGold = 10 * (1 + SIZE_GOLD_PER_LEVEL * sizeGoldMult * sizeLevel);
+  const total = canvasGold(sizeLevel, goldMult * pmMult, sizeGoldMult).mul(1 + COMBO_PER_LINK * comboChain);
   return (
     <>
-      <div>Base × (1 + {SIZE_GOLD_PER_LEVEL} × {sizeLevel}) = {baseGold.toFixed(1)}</div>
+      <div>Base × (1 + {SIZE_GOLD_PER_LEVEL.toFixed(2)} × {sizeGoldMult.toFixed(2)} × {sizeLevel}) = {baseGold.toFixed(1)}</div>
       <div>───</div>
       <div>Sell Price (Lv {state.sellPriceLevel}): ×{(1 + sellPriceContribution).toFixed(2)}</div>
+      <div>Items (sell):  ×{(1 + itemBonus).toFixed(2)}</div>
       <div>Colors:        ×{(1 + colorSum).toFixed(2)}</div>
-      <div>Items:         ×{(1 + itemBonus).toFixed(2)}</div>
       <div>Rainbow:       ×{rainbowFactor.toFixed(2)}</div>
       <div>Paint Mastery: ×{pmMult.toFixed(2)}</div>
+      {comboChain > 0 ? <div>Combo:        ×{(1 + COMBO_PER_LINK * comboChain).toFixed(2)}</div> : null}
       <div>───</div>
       <div>Total: {formatBig(total)} g per canvas</div>
     </>
@@ -153,7 +155,7 @@ export function CanvasStage({
         </span>
         <Hoverable
           title="Sell Canvas"
-          body={() => sellHoverBody(sizeLevel)}
+          body={() => sellHoverBody(sizeLevel, comboChain ?? 0)}
           footer="Auto-sells when paint progress reaches 100%."
         >
           <span className={styles.goldPreview} data-testid="canvas-sell-preview">+{nextSaleGold}g on next sale</span>

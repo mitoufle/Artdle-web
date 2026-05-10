@@ -21,9 +21,11 @@ describe("CanvasStage hover wiring (sell preview)", () => {
     fireEvent.mouseEnter(screen.getByTestId("canvas-sell-preview"));
     expect(useGameStore.getState().hoverTitle).toBe("Sell Canvas");
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/Base × \(1 \+ 0\.3 × 3\) = 19\.0/);
+    expect(container.textContent).toMatch(/Base × \(1 \+ 0\.30 × 1\.00 × 3\) = 19\.0/);
     expect(container.textContent).toMatch(/Total:/);
     expect(container.textContent).toMatch(/per canvas/);
+    expect(container.textContent).toMatch(/Sell Price \(Lv/);
+    expect(container.textContent).toMatch(/Items \(sell\):/);
   });
 
   it("hover body reflects rainbow factor when rainbow is owned", () => {
