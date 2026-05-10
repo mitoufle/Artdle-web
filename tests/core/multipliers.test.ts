@@ -196,3 +196,44 @@ describe("getCanvasSpeedMultiplier — equipped +speed% contribution", () => {
     expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.20, 5);
   });
 });
+
+describe("getCritChance — equipped +crit_chance% contribution", () => {
+  const stub = (over: Partial<GameStore> = {}): GameStore => ({
+    purchasedNodes: {}, equipped: {}, critLevel: 0, ...over,
+  } as GameStore);
+
+  it("adds equipped +crit_chance% magnitudes (already fractional via getEquippedContribution)", () => {
+    const item: Item = {
+      id: "i1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+crit_chance%", magnitude: 10 }],
+    };
+    const state = stub({ critLevel: 5, equipped: { brush: item } });
+    // critChance = 0.05 (from level) + 0.10 (from affix) = 0.15
+    expect(getCritChance(state)).toBeCloseTo(0.15, 5);
+  });
+
+  it("clamps at 1.0 even with affix contributions", () => {
+    const item: Item = {
+      id: "i1", slot: "brush", tier: "epic",
+      affixes: [{ kind: "+crit_chance%", magnitude: 99 }],
+    };
+    const state = stub({ critLevel: 50, equipped: { brush: item } });
+    expect(getCritChance(state)).toBe(1.0);
+  });
+});
+
+describe("getComboBaseChance — equipped +combo_chance% contribution", () => {
+  const stub = (over: Partial<GameStore> = {}): GameStore => ({
+    purchasedNodes: {}, equipped: {}, comboLevel: 0, ...over,
+  } as GameStore);
+
+  it("adds equipped +combo_chance% magnitudes additively", () => {
+    const item: Item = {
+      id: "i1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+combo_chance%", magnitude: 15 }],
+    };
+    const state = stub({ comboLevel: 10, equipped: { brush: item } });
+    // base = 0.20 (from level) + 0.15 (from affix) = 0.35
+    expect(getComboBaseChance(state)).toBeCloseTo(0.35, 5);
+  });
+});

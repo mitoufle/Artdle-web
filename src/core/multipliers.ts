@@ -105,15 +105,22 @@ export const getAffixMagnitudeBonus = (state: GameStore): number =>
 
 /**
  * Crit chance (0 to 1). Clamped at 1.0 — multi-crit is out of scope
- * (canvas-depth spec §3.4). Currently only consumes critLevel; affix
- * contributions from `+crit_chance%` add in subproject 2.
+ * (canvas-depth spec §3.4). Consumes both critLevel and equipped +crit_chance%
+ * affixes additively (already fractional via getEquippedContribution).
  */
-export const getCritChance = (state: GameStore): number =>
-  Math.min(1.0, CRIT_PER_LEVEL * state.critLevel);
+export const getCritChance = (state: GameStore): number => {
+  let chance = CRIT_PER_LEVEL * state.critLevel;
+  chance += getEquippedContribution(state, "+crit_chance%"); // already fractional
+  return Math.min(1.0, chance);
+};
 
 /**
  * Base combo trigger chance, BEFORE per-link decay. Clamped at 1.0.
+ * Consumes both comboLevel and equipped +combo_chance% affixes additively.
  * Decay is applied at use sites (canvasTick) via comboEffectiveChance.
  */
-export const getComboBaseChance = (state: GameStore): number =>
-  Math.min(1.0, COMBO_PER_LEVEL * state.comboLevel);
+export const getComboBaseChance = (state: GameStore): number => {
+  let chance = COMBO_PER_LEVEL * state.comboLevel;
+  chance += getEquippedContribution(state, "+combo_chance%");
+  return Math.min(1.0, chance);
+};
