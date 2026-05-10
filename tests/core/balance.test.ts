@@ -19,6 +19,8 @@ import {
   sizeUpgradeCost,
   critUpgradeCost,
   comboUpgradeCost,
+  comboBonusFactor,
+  comboEffectiveChance,
   SELL_PRICE_PER_LEVEL,
   SPEED_PER_LEVEL,
   SIZE_GOLD_PER_LEVEL,
@@ -427,5 +429,29 @@ describe("per-track upgrade costs", () => {
     expect(critUpgradeCost(0).toNumber()).toBeCloseTo(5000, 5);
     expect(comboUpgradeCost(0).toNumber()).toBeCloseTo(5000, 5);
     expect(critUpgradeCost(3).toNumber()).toBeCloseTo(5000 * 1.5 ** 3, 0);
+  });
+});
+
+// ============================================================================
+// Combo formulas (canvas-depth §12)
+// ============================================================================
+describe("combo formulas", () => {
+  it("comboBonusFactor(0) = 1 (no chain → no bonus)", () => {
+    expect(comboBonusFactor(0)).toBeCloseTo(1, 5);
+  });
+
+  it("comboBonusFactor(N) = 1 + COMBO_PER_LINK × N", () => {
+    expect(comboBonusFactor(1)).toBeCloseTo(1.10, 5);
+    expect(comboBonusFactor(5)).toBeCloseTo(1.50, 5);
+    expect(comboBonusFactor(10)).toBeCloseTo(2.00, 5);
+  });
+
+  it("comboEffectiveChance: base × (1 - DECAY × chain), clamped at 0", () => {
+    // base 0.50, chain 0 → 0.50
+    expect(comboEffectiveChance(0.50, 0)).toBeCloseTo(0.50, 5);
+    // base 0.50, chain 5 → 0.50 × 0.75 = 0.375
+    expect(comboEffectiveChance(0.50, 5)).toBeCloseTo(0.375, 5);
+    // base 0.10, chain 25 → would go negative → clamped at 0
+    expect(comboEffectiveChance(0.10, 25)).toBe(0);
   });
 });

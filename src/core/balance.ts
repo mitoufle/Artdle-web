@@ -277,3 +277,17 @@ export const critUpgradeCost = (currentLevel: number): Big =>
 
 export const comboUpgradeCost = (currentLevel: number): Big =>
   big(COMBO_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+
+/**
+ * Multiplier on canvas gold from the current combo chain.
+ * `1 + COMBO_PER_LINK × chain`. chain=0 → 1.0 (no bonus).
+ */
+export const comboBonusFactor = (chain: number): number =>
+  1 + COMBO_PER_LINK * chain;
+
+/**
+ * Effective combo trigger chance after decay-per-link is applied.
+ * `base × (1 - COMBO_DECAY_PER_LINK × chain)`, clamped at 0 (no negative chance).
+ */
+export const comboEffectiveChance = (base: number, chain: number): number =>
+  Math.max(0, base * (1 - COMBO_DECAY_PER_LINK * chain));
