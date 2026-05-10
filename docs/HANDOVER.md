@@ -1,5 +1,39 @@
 # Artdle Web — Handover
 
+## Post-shipping polish (2026-05-10, after affix-pool-rework)
+
+Six commits of in-session playtest fixes after subprojects 1 + 2 landed. Each surfaced during browser testing.
+
+### What landed
+
+- **`+size_gold_per_level%` renamed to `+size%`** (`7f55fb8`). User feedback: the long name was unnecessary "shenanigans" — the mental model is just "bigger canvas = more gold + more time," so the affix is `+size%` and scales the *effective sizeLevel* symmetrically. Both gold AND time formulas now consume `getSizeMultiplier(state)` (renamed from `getSizeGoldPerLevelMultiplier`). `canvasTime(sizeLevel, sizeMult = 1)` gained an optional 2nd arg matching `canvasGold`'s shape. Save migration **v11 → v12** wipes inventory + equipped (old magnitudes don't translate; gameplay implications changed).
+- **ScalingMathPanel reflects `sizeMult`** (`84d0a03`). Reference panel's gold + time formulas display `× sizeMult` so the math stays accurate when `+size%` items are equipped.
+- **Crit RNG bug fixed** (`d95fdcd`). canvasTick rolled crit only when `canvasProgress === 0`, but after a sale the slice sets `canvasProgress: leftover` (typically > 0). So the gate failed on every canvas after the first → players never saw crits even at high crit chance. Fix: roll the next canvas's crit **inside the sale path itself** rather than waiting for the next tick's progress-=-0 check.
+- **Per-kind affix magnitude ranges** (`4f0e7e5`). Old uniform `5..15` range across all 5 kinds was unbalanced — `+crit_chance%` is non-linearly strong (10× speed on hit compounds at stack) and `+combo_chance%` is weak (fixed +10%/link with decay). New `AFFIX_MAGNITUDE_RANGE` record per kind:
+  - `+sell_price%` / `+speed%` / `+size%`: 5..15 (baseline)
+  - `+crit_chance%`: 2..8 (smaller pp)
+  - `+combo_chance%`: 5..20 (wider pp)
+  Targets rough EV equivalence at 5-legendary stacking (~1.5..1.75× output multiplier across kinds).
+- **Progress bar rubberband fix** (`45256d6`). The `.fill` and `.progressFill` divs had CSS transitions (200ms/100ms) that animated DOWN when progress snapped from ~100% → ~leftover% on sale. Fix: key both divs by `canvasNumber` (= `lastSale.id`); React re-mounts on sale, CSS transitions restart from 0. No CSS changes — the transitions stay (they're what makes in-canvas filling smooth); only the re-key timing changed.
+- **PM uncapped** (`a8cfa7f`). Two caps were limiting Paint Mastery:
+  - `pmFromLifetime` had a 30-iteration loop bound (~10^93 lifetime gold ceiling, ~30k PM).
+  - `pmMult` called `pm.toNumber()` → saturated at `Number.MAX_SAFE_INTEGER` (~9e15) → multiplier capped at ~81.
+  
+  Fixes: loop bound 30 → 100 (covers ~10^303, practical infinity); `pmMult` switches to `pm.add(1).log10().toNumber()` (break_eternity's native `.log10()` operates on the Big directly, no precision loss). At PM = 1e20, mult ≈ 101. At 1e50, ≈ 251.
+
+### Tests + build
+
+- **680 tests passing** (was 671 after affix-pool-rework; +9 net for the fixes/tests).
+- tsc clean. Lint clean. Bundle: ~157 KB gzipped JS (negligible drift). Under the 250 KB DoD budget.
+
+### Lessons
+
+- **State transitions need explicit reset triggers.** The crit bug came from assuming "the next tick's canvasProgress === 0 check will fire" — but the sale path sets canvasProgress to `leftover` (positive). When state convention is "this flag triggers re-roll," the re-roll must happen at the boundary where the next-state is constructed (the sale path), not deferred to a future tick that depends on a fragile invariant.
+- **CSS transitions + React keys = clean visual reset.** When a value should "snap" on a discrete event but smoothly animate otherwise, key the element by an event counter. React replaces the DOM node, transitions restart. Cleaner than conditional transition disabling.
+- **`break_eternity.js` has Big-native log/exp/etc.** When stacking caps come from `pm.toNumber()` → JS-number saturation, switch to `pm.log10()` / `pm.exp()` etc. — the Big stays in precision through the operation, only the final return value drops to a JS number.
+
+---
+
 ## Affix pool rework + capability tags (shipped on `main`, 2026-05-10)
 
 **Status:** Shipped. Subproject 2 of 3 in the Painter's Office decomposition. The workshop affix pool is rewritten to match the canvas-depth axes; the 3 advanced affixes are gated at craft-time by capability tags on user-authored skill-tree nodes (so node IDs are free-form game-design choices, not engine constraints).
