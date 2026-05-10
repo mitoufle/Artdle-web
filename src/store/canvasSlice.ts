@@ -3,16 +3,20 @@ import {
   canvasGold, canvasTime, tierUpgradeCost, MAX_TIER,
   sellPriceUpgradeCost, speedUpgradeCost,
   sizeUpgradeCost, critUpgradeCost, comboUpgradeCost,
+  CRIT_SPEED_FACTOR, comboBonusFactor, comboEffectiveChance,
 } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
   getPaintTimeMultiplier,
   getPmMultiplier,
+  getCritChance,
+  getComboBaseChance,
 } from "@/core/multipliers";
 import type { GameStore } from "@/store";
 import type { Big } from "@/core/bigNumber";
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
+import { rng } from "@/core/rng";
 
 export interface CanvasState {
   /**
@@ -106,23 +110,46 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
   canvasTick: (deltaSeconds) => {
     if (deltaSeconds <= 0) return;
     const state = get();
-    const paintTime = canvasTime(state.canvasTier) / (getPaintTimeMultiplier(state) * getCanvasSpeedMultiplier(state));
+
+    // Roll crit at the start of every new canvas (canvasProgress === 0 guarantees first tick).
+    let critFlag = state.isCritThisCanvas;
+    if (state.canvasProgress === 0) {
+      critFlag = rng() < getCritChance(state);
+    }
+
+    const baseTime = canvasTime(state.sizeLevel);
+    const speedMult = getCanvasSpeedMultiplier(state) * getPaintTimeMultiplier(state);
+    const critFactor = critFlag ? CRIT_SPEED_FACTOR : 1;
+    const effectiveTime = baseTime / (speedMult * critFactor);
+
     const newProgress = state.canvasProgress + deltaSeconds;
 
-    if (newProgress < paintTime) {
-      set({ canvasProgress: newProgress });
+    if (newProgress < effectiveTime) {
+      set({ canvasProgress: newProgress, isCritThisCanvas: critFlag });
       return;
     }
 
     // Threshold crossed — exactly one sale per tick.
     const goldMult = getCanvasGoldMultiplier(state) * getPmMultiplier(state);
-    const gain = canvasGold(state.canvasTier, goldMult);
+    const baseGold = canvasGold(state.sizeLevel, goldMult);
+    // Apply combo bonus from PRIOR chain state — chain mutation happens AFTER pay-out.
+    const gain = baseGold.mul(comboBonusFactor(state.comboChain));
+
     state.add("gold", gain);
     state.addGoldEarned(gain);
-    const leftover = newProgress - paintTime;
+
+    // Roll combo for the chain decision (after sale gold paid out).
+    const baseChance = getComboBaseChance(state);
+    const effChance = comboEffectiveChance(baseChance, state.comboChain);
+    const comboHit = rng() < effChance;
+    const newChain = comboHit ? state.comboChain + 1 : 0;
+
+    const leftover = newProgress - effectiveTime;
     const prevId = state.lastSale?.id ?? 0;
     set({
-      canvasProgress: leftover < paintTime ? leftover : 0,
+      canvasProgress: leftover < effectiveTime ? leftover : 0,
+      isCritThisCanvas: false, // reset; next tick re-rolls for the new canvas
+      comboChain: newChain,
       lastSale: { id: prevId + 1, amount: gain },
     });
   },
