@@ -14,6 +14,11 @@ import {
   PM_LOG_FACTOR,
   craftCost,
   xpToNext,
+  sellPriceUpgradeCost,
+  speedUpgradeCost,
+  sizeUpgradeCost,
+  critUpgradeCost,
+  comboUpgradeCost,
   SELL_PRICE_PER_LEVEL,
   SPEED_PER_LEVEL,
   SIZE_GOLD_PER_LEVEL,
@@ -390,5 +395,37 @@ describe("canvas-depth tuning constants", () => {
 
   it("exposes new canvas time base", () => {
     expect(CANVAS_TIME_BASE).toBe(2);
+  });
+});
+
+// ============================================================================
+// Per-track upgrade costs (canvas-depth §11)
+// ============================================================================
+describe("per-track upgrade costs", () => {
+  // Contract: formula(currentLevel) = cost to advance FROM currentLevel TO currentLevel+1.
+  // Formula shape: base × TRACK_COST_GROWTH^currentLevel.
+  // Mirrors the project's existing tierUpgradeCost(currentTier) and craftCost(level) contract.
+
+  it("sellPriceUpgradeCost: 100 × 1.5^level", () => {
+    expect(sellPriceUpgradeCost(0).toNumber()).toBeCloseTo(100, 5);
+    expect(sellPriceUpgradeCost(1).toNumber()).toBeCloseTo(150, 5);
+    expect(sellPriceUpgradeCost(2).toNumber()).toBeCloseTo(225, 5);
+    expect(sellPriceUpgradeCost(10).toNumber()).toBeCloseTo(100 * 1.5 ** 10, 0);
+  });
+
+  it("speedUpgradeCost shares base 100 with sell-price", () => {
+    expect(speedUpgradeCost(0).toNumber()).toBeCloseTo(100, 5);
+    expect(speedUpgradeCost(5).toNumber()).toBeCloseTo(100 * 1.5 ** 5, 1);
+  });
+
+  it("sizeUpgradeCost uses base 1000", () => {
+    expect(sizeUpgradeCost(0).toNumber()).toBeCloseTo(1000, 5);
+    expect(sizeUpgradeCost(5).toNumber()).toBeCloseTo(1000 * 1.5 ** 5, 0);
+  });
+
+  it("critUpgradeCost and comboUpgradeCost share base 5000", () => {
+    expect(critUpgradeCost(0).toNumber()).toBeCloseTo(5000, 5);
+    expect(comboUpgradeCost(0).toNumber()).toBeCloseTo(5000, 5);
+    expect(critUpgradeCost(3).toNumber()).toBeCloseTo(5000 * 1.5 ** 3, 0);
   });
 });

@@ -250,3 +250,30 @@ export const craftCost = (level: number): Big => {
  * Linear in level: `4 * (currentLevel + 1)`. Cumulative to L70 ≈ 9,936 crafts.
  */
 export const xpToNext = (currentLevel: number): number => 4 * (currentLevel + 1);
+
+/**
+ * Gold cost to upgrade a track from `currentLevel` to `currentLevel + 1`.
+ * Shared shape: `BASE × TRACK_COST_GROWTH^currentLevel`. Per-track BASEs differ.
+ *
+ * Mirrors the contract of the existing `tierUpgradeCost(currentTier)` and
+ * `craftCost(level)` — the parameter is the CURRENT level (the player's
+ * stored value), and the function returns the cost of the NEXT step.
+ *
+ * For tracks starting at L0 (size/crit/combo), first buy uses formula(0) = base.
+ * For tracks starting at L1 (sell-price/speed), first buy uses formula(1) = base × 1.5.
+ * No level cap.
+ */
+export const sellPriceUpgradeCost = (currentLevel: number): Big =>
+  big(SELL_PRICE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+
+export const speedUpgradeCost = (currentLevel: number): Big =>
+  big(SPEED_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+
+export const sizeUpgradeCost = (currentLevel: number): Big =>
+  big(SIZE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+
+export const critUpgradeCost = (currentLevel: number): Big =>
+  big(CRIT_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+
+export const comboUpgradeCost = (currentLevel: number): Big =>
+  big(COMBO_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
