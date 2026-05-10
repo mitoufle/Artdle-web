@@ -124,3 +124,20 @@ export const getComboBaseChance = (state: GameStore): number => {
   chance += getEquippedContribution(state, "+combo_chance%");
   return Math.min(1.0, chance);
 };
+
+/**
+ * Multiplier on `SIZE_GOLD_PER_LEVEL` from equipped +size_gold_per_level% affixes.
+ * Returns 1.0 + (sum of equipped magnitudes, already fractional via
+ * getEquippedContribution). Used by canvasGold to scale the per-level gold
+ * rate inside the size-track formula.
+ *
+ * Effect: each item with +X% size_gold_per_level boosts the per-level
+ * gold gain from the size track. With base SIZE_GOLD_PER_LEVEL = 0.30
+ * and items contributing +20% total, effective per-level rate = 0.36.
+ *
+ * Affix only rolls on items when unlock_canvas_size is owned (gated at
+ * roll-time in `rollAffixes`).
+ */
+export const getSizeGoldPerLevelMultiplier = (state: GameStore): number => {
+  return 1 + getEquippedContribution(state, "+size_gold_per_level%");
+};
