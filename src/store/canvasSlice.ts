@@ -2,6 +2,7 @@ import type { StateCreator } from "zustand";
 import {
   canvasGold, canvasTime, tierUpgradeCost, MAX_TIER,
   sellPriceUpgradeCost, speedUpgradeCost,
+  sizeUpgradeCost, critUpgradeCost, comboUpgradeCost,
 } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
@@ -11,6 +12,7 @@ import {
 } from "@/core/multipliers";
 import type { GameStore } from "@/store";
 import type { Big } from "@/core/bigNumber";
+import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 
 export interface CanvasState {
   /**
@@ -86,6 +88,12 @@ export interface CanvasSlice extends CanvasState {
   upgradeSellPrice: () => void;
   /** Validate → spend → mutate speed upgrade. No-op if gold < cost. */
   upgradeSpeed: () => void;
+  /** Gated upgrade: size track. No-op if locked or gold < cost. */
+  upgradeSize: () => void;
+  /** Gated upgrade: crit track. No-op if locked or gold < cost. */
+  upgradeCrit: () => void;
+  /** Gated upgrade: combo track. No-op if locked or gold < cost. */
+  upgradeCombo: () => void;
   /** For ascend orchestrator (Phase 3). */
   resetCanvas: () => void;
   /** Clear the lastSale animation trigger. Called from onAnimationComplete. */
@@ -149,6 +157,30 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       gold: state.gold.sub(cost),
       speedLevel: state.speedLevel + 1,
     });
+  },
+
+  upgradeSize: () => {
+    const state = get();
+    if (!getCanvasTrackUnlocked(state, "size")) return;
+    const cost = sizeUpgradeCost(state.sizeLevel);
+    if (state.gold.lt(cost)) return;
+    set({ gold: state.gold.sub(cost), sizeLevel: state.sizeLevel + 1 });
+  },
+
+  upgradeCrit: () => {
+    const state = get();
+    if (!getCanvasTrackUnlocked(state, "crit")) return;
+    const cost = critUpgradeCost(state.critLevel);
+    if (state.gold.lt(cost)) return;
+    set({ gold: state.gold.sub(cost), critLevel: state.critLevel + 1 });
+  },
+
+  upgradeCombo: () => {
+    const state = get();
+    if (!getCanvasTrackUnlocked(state, "combo")) return;
+    const cost = comboUpgradeCost(state.comboLevel);
+    if (state.gold.lt(cost)) return;
+    set({ gold: state.gold.sub(cost), comboLevel: state.comboLevel + 1 });
   },
 
   resetCanvas: () => set(initialCanvasState),

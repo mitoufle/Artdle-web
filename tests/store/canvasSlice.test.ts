@@ -349,3 +349,62 @@ describe("canvasSlice — upgradeSpeed", () => {
     expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(50, 5);
   });
 });
+
+describe("canvasSlice — upgradeSize (gated)", () => {
+  beforeEach(() => {
+    useGameStore.setState({ ...initialCanvasState, gold: big(0), purchasedNodes: {} });
+  });
+
+  it("no-ops when track is locked (no skill-tree node)", () => {
+    useGameStore.setState({ gold: big(10000), purchasedNodes: {} });
+    useGameStore.getState().upgradeSize();
+    expect(useGameStore.getState().sizeLevel).toBe(0);
+    expect(useGameStore.getState().gold.toNumber()).toBe(10000);
+  });
+
+  it("no-ops when gold < cost (even if unlocked)", () => {
+    useGameStore.setState({ gold: big(500), purchasedNodes: { unlock_canvas_size: 1 } });
+    useGameStore.getState().upgradeSize();
+    expect(useGameStore.getState().sizeLevel).toBe(0);
+  });
+
+  it("spends gold and increments when unlocked + affordable", () => {
+    useGameStore.setState({ gold: big(2000), purchasedNodes: { unlock_canvas_size: 1 } });
+    useGameStore.getState().upgradeSize();
+    // L0 → L1: cost = sizeUpgradeCost(0) = 1000 × 1.5^0 = 1000
+    expect(useGameStore.getState().sizeLevel).toBe(1);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(1000, 1);
+  });
+});
+
+describe("canvasSlice — upgradeCrit + upgradeCombo (gated)", () => {
+  beforeEach(() => {
+    useGameStore.setState({ ...initialCanvasState, gold: big(0), purchasedNodes: {} });
+  });
+
+  it("upgradeCrit: locked → no-op", () => {
+    useGameStore.setState({ gold: big(10000), purchasedNodes: {} });
+    useGameStore.getState().upgradeCrit();
+    expect(useGameStore.getState().critLevel).toBe(0);
+  });
+
+  it("upgradeCrit: unlocked + affordable → +1 level (L0→L1 = base 5000)", () => {
+    useGameStore.setState({ gold: big(10000), purchasedNodes: { unlock_canvas_crit: 1 } });
+    useGameStore.getState().upgradeCrit();
+    expect(useGameStore.getState().critLevel).toBe(1);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(5000, 1); // 10000 - 5000
+  });
+
+  it("upgradeCombo: locked → no-op", () => {
+    useGameStore.setState({ gold: big(10000), purchasedNodes: {} });
+    useGameStore.getState().upgradeCombo();
+    expect(useGameStore.getState().comboLevel).toBe(0);
+  });
+
+  it("upgradeCombo: unlocked + affordable → +1 level (L0→L1 = base 5000)", () => {
+    useGameStore.setState({ gold: big(10000), purchasedNodes: { unlock_canvas_combo: 1 } });
+    useGameStore.getState().upgradeCombo();
+    expect(useGameStore.getState().comboLevel).toBe(1);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(5000, 1);
+  });
+});
