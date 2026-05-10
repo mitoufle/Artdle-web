@@ -95,25 +95,28 @@ export const treePartCost = (level: number, baseCost: number): Big =>
 
 /**
  * Gold awarded when a canvas is sold, before equipped-item modifiers.
- * v1.1: scales as `BASE × tier² × multiplier`. The `tier²` substitutes for
- * the `quality × tier` shape from canvas-design.md §6.3 with `quality = tier`;
- * v1.3 will replace `tier × tier` with `quality × tier` (one-line drop-in).
+ *
+ * v3.x canvas-depth: `BASE × (1 + SIZE_GOLD_PER_LEVEL × sizeLevel) × multiplier`.
+ * Replaces the tier² form.
  *
  * `multiplier` is the aggregated canvas-gold multiplier from skill tree + items
- * + PM mult (composed by the caller in `multipliers.ts`).
+ * + sell-price level + PM mult (composed by the caller in `canvasTick`).
  */
-export const canvasGold = (tier: number, multiplier: number): Big =>
-  big(CANVAS_GOLD_BASE).mul(tier).mul(tier).mul(multiplier);
+export const canvasGold = (sizeLevel: number, multiplier: number): Big =>
+  big(CANVAS_GOLD_BASE)
+    .mul(1 + SIZE_GOLD_PER_LEVEL * sizeLevel)
+    .mul(multiplier);
 
 /**
- * Paint time per canvas in seconds, before paint-speed multipliers.
- * v1.1: `tier × 2`. Stripped form of canvas-design.md §6.5
- * (`tier * 2 + style * 1`) with style → 0; v1.3 adds the style term.
+ * Paint time per canvas in seconds, before any speed multipliers.
  *
- * Tier 1 = 2s, tier 5 = 10s (matches v1.0's PAINT_TIME_BASE_SECONDS),
- * tier 10 = 20s.
+ * v3.x canvas-depth: `CANVAS_TIME_BASE × (1 + SIZE_TIME_PER_LEVEL × sizeLevel)`.
+ * Replaces the linear-in-tier form.
+ *
+ * sizeLevel 0 = 2 s (matches the v1.1 tier-1 baseline).
  */
-export const canvasTime = (tier: number): number => tier * 2;
+export const canvasTime = (sizeLevel: number): number =>
+  CANVAS_TIME_BASE * (1 + SIZE_TIME_PER_LEVEL * sizeLevel);
 
 /**
  * Gold cost to upgrade canvas from `currentTier` to `currentTier + 1`.

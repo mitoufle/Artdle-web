@@ -100,33 +100,21 @@ describe("treePartCost", () => {
   });
 });
 
-describe("canvasGold", () => {
-  it("scales linearly with multiplier", () => {
-    expect(canvasGold(1, 1).toNumber()).toBe(10);
-    expect(canvasGold(1, 2).toNumber()).toBe(20);
-    expect(canvasGold(1, 0.5).toNumber()).toBe(5);
-  });
-});
-
-describe("canvasGold (v1.1 tier scaling)", () => {
-  it("tier 1, mult 1: returns CANVAS_GOLD_BASE × 1 = 10", () => {
-    expect(canvasGold(1, 1).toNumber()).toBe(10);
+describe("canvasGold (size-driven)", () => {
+  it("returns BASE × (1 + SIZE_GOLD_PER_LEVEL × sizeLevel) × multiplier", () => {
+    // sizeLevel 0, mult 1 → BASE × 1 × 1 = 10
+    expect(canvasGold(0, 1).toNumber()).toBeCloseTo(10, 5);
+    // sizeLevel 10, mult 1 → 10 × (1 + 0.3 × 10) = 40
+    expect(canvasGold(10, 1).toNumber()).toBeCloseTo(40, 5);
+    // sizeLevel 5, mult 2 → 10 × 2.5 × 2 = 50
+    expect(canvasGold(5, 2).toNumber()).toBeCloseTo(50, 5);
   });
 
-  it("tier 5, mult 1: returns CANVAS_GOLD_BASE × 25 = 250", () => {
-    expect(canvasGold(5, 1).toNumber()).toBe(250);
-  });
-
-  it("tier 10, mult 1: returns CANVAS_GOLD_BASE × 100 = 1000", () => {
-    expect(canvasGold(10, 1).toNumber()).toBe(1000);
-  });
-
-  it("tier 10, mult 2: returns 2000 (mult composes)", () => {
-    expect(canvasGold(10, 2).toNumber()).toBe(2000);
-  });
-
-  it("tier 1, mult 1.5: returns 15", () => {
-    expect(canvasGold(1, 1.5).toNumber()).toBeCloseTo(15, 9);
+  it("scales linearly in sizeLevel (not quadratically)", () => {
+    const a = canvasGold(0, 1).toNumber();
+    const b = canvasGold(1, 1).toNumber();
+    const c = canvasGold(2, 1).toNumber();
+    expect(b - a).toBeCloseTo(c - b, 5);
   });
 });
 
@@ -154,22 +142,14 @@ describe("inspiPerSec", () => {
   });
 });
 
-describe("canvasTime (v1.1)", () => {
-  it("tier 1 paints in 2 seconds", () => {
-    expect(canvasTime(1)).toBe(2);
-  });
-
-  it("tier 5 paints in 10 seconds (matches v1.0 PAINT_TIME_BASE_SECONDS)", () => {
-    expect(canvasTime(5)).toBe(10);
-  });
-
-  it("tier 10 paints in 20 seconds", () => {
-    expect(canvasTime(10)).toBe(20);
-  });
-
-  it("scales linearly with tier (×2)", () => {
-    expect(canvasTime(7)).toBe(14);
-    expect(canvasTime(3)).toBe(6);
+describe("canvasTime (size-driven)", () => {
+  it("returns CANVAS_TIME_BASE × (1 + SIZE_TIME_PER_LEVEL × sizeLevel)", () => {
+    // sizeLevel 0 → 2 × 1 = 2 (matches old tier-1 baseline)
+    expect(canvasTime(0)).toBeCloseTo(2, 5);
+    // sizeLevel 10 → 2 × 2.5 = 5
+    expect(canvasTime(10)).toBeCloseTo(5, 5);
+    // sizeLevel 4 → 2 × 1.6 = 3.2
+    expect(canvasTime(4)).toBeCloseTo(3.2, 5);
   });
 });
 
