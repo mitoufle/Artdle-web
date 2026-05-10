@@ -23,8 +23,11 @@ const TIER_LABEL: Record<ItemTier, string> = {
 };
 
 const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
-  "+canvas_gold%": (m) => `+${m}% canvas gold`,
-  "-paint_time%": (m) => `-${m}% paint time`,
+  "+sell_price%": (m) => `+${m}% sell price`,
+  "+speed%": (m) => `+${m}% speed`,
+  "+crit_chance%": (m) => `+${m}% crit chance`,
+  "+combo_chance%": (m) => `+${m}% combo chance`,
+  "+size_gold_per_level%": (m) => `+${m}% size gold/level`,
 };
 
 function affixHoverBody(affixes: Item["affixes"]): JSX.Element {

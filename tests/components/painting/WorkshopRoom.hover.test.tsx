@@ -74,8 +74,8 @@ describe("WorkshopRoom hover wiring", () => {
       inventory: [{
         id: "test-1", slot: "brush", tier: "rare",
         affixes: [
-          { kind: "+canvas_gold%", magnitude: 12 },
-          { kind: "-paint_time%", magnitude: 8 },
+          { kind: "+sell_price%", magnitude: 12 },
+          { kind: "+speed%", magnitude: 8 },
         ],
       }],
     });
@@ -83,15 +83,15 @@ describe("WorkshopRoom hover wiring", () => {
     fireEvent.mouseEnter(screen.getByTestId("inventory-equip-test-1"));
     expect(useGameStore.getState().hoverTitle).toBe("Rare brush");
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/\+12% canvas gold/);
-    expect(container.textContent).toMatch(/-8% paint time/);
+    expect(container.textContent).toMatch(/\+12% sell price/);
+    expect(container.textContent).toMatch(/\+8% speed/);
   });
 
   it("Inventory item hover footer reads 'Click to equip.'", () => {
     useGameStore.setState({
       inventory: [{
         id: "x-1", slot: "palette", tier: "normal",
-        affixes: [{ kind: "+canvas_gold%", magnitude: 3 }],
+        affixes: [{ kind: "+sell_price%", magnitude: 3 }],
       }],
     });
     render(<WorkshopRoom />);
@@ -105,7 +105,7 @@ describe("WorkshopRoom hover wiring", () => {
       equipped: {
         brush: {
           id: "eq-1", slot: "brush", tier: "magic",
-          affixes: [{ kind: "+canvas_gold%", magnitude: 5 }],
+          affixes: [{ kind: "+sell_price%", magnitude: 5 }],
         },
       },
     });
@@ -113,7 +113,7 @@ describe("WorkshopRoom hover wiring", () => {
     fireEvent.mouseEnter(screen.getByTestId("slot-unequip-brush"));
     expect(useGameStore.getState().hoverTitle).toBe("Magic brush — equipped");
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/\+5% canvas gold/);
+    expect(container.textContent).toMatch(/\+5% sell price/);
     expect(String(useGameStore.getState().hoverFooter)).toBe("Click to unequip.");
   });
 

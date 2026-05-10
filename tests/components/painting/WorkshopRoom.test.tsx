@@ -11,8 +11,8 @@ const sampleBrush: Item = {
   slot: "brush",
   tier: "magic",
   affixes: [
-    { kind: "+canvas_gold%", magnitude: 12 },
-    { kind: "-paint_time%", magnitude: 8 },
+    { kind: "+sell_price%", magnitude: 12 },
+    { kind: "+speed%", magnitude: 8 },
   ],
 };
 
@@ -69,8 +69,8 @@ describe("<WorkshopRoom />", () => {
     render(<WorkshopRoom />);
     expect(screen.getByText(/magic/i)).toBeInTheDocument();
     expect(screen.getByText(/brush/i)).toBeInTheDocument();
-    expect(screen.getByText(/\+canvas_gold%.*12/i)).toBeInTheDocument();
-    expect(screen.getByText(/-paint_time%.*8/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+sell_price%.*12/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+speed%.*8/i)).toBeInTheDocument();
   });
 
   it("inventory item has data-tier matching its tier", () => {
