@@ -117,3 +117,39 @@ describe("skillTreeSlice (multi-level + DAG)", () => {
     expect(useGameStore.getState().pokeTreeTimer).toBe(0);
   });
 });
+
+import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
+
+describe("getCanvasTrackUnlocked", () => {
+  it("returns true for sell_price always", () => {
+    useGameStore.setState({ purchasedNodes: {} });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "sell_price")).toBe(true);
+  });
+
+  it("returns true for speed always", () => {
+    useGameStore.setState({ purchasedNodes: {} });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "speed")).toBe(true);
+  });
+
+  it("returns false for size when unlock_canvas_size not purchased", () => {
+    useGameStore.setState({ purchasedNodes: {} });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "size")).toBe(false);
+  });
+
+  it("returns true for size when unlock_canvas_size purchased (any level)", () => {
+    useGameStore.setState({ purchasedNodes: { unlock_canvas_size: 1 } });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "size")).toBe(true);
+  });
+
+  it("checks unlock_canvas_crit for crit", () => {
+    useGameStore.setState({ purchasedNodes: { unlock_canvas_crit: 1 } });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "crit")).toBe(true);
+    useGameStore.setState({ purchasedNodes: {} });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "crit")).toBe(false);
+  });
+
+  it("checks unlock_canvas_combo for combo", () => {
+    useGameStore.setState({ purchasedNodes: { unlock_canvas_combo: 1 } });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "combo")).toBe(true);
+  });
+});

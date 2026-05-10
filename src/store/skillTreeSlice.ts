@@ -132,3 +132,30 @@ export const sumLevels = (
   state: GameStore,
   ids: ReadonlyArray<SkillNodeId>,
 ): number => ids.reduce((acc, id) => acc + getNodeLevel(state, id), 0);
+
+/** Canvas-depth track ID — five tracks total. */
+export type CanvasTrackId = "sell_price" | "speed" | "size" | "crit" | "combo";
+
+/**
+ * Returns true if the player has unlocked the given canvas upgrade track.
+ * Sell price and speed are always unlocked. Size, crit, combo each require
+ * the player to own the corresponding fame skill-tree node:
+ *   - unlock_canvas_size
+ *   - unlock_canvas_crit
+ *   - unlock_canvas_combo
+ *
+ * The user authors these nodes via /dev/skill-designer; the engine simply
+ * reads ownership of the well-known IDs.
+ */
+export const getCanvasTrackUnlocked = (
+  state: GameStore,
+  trackId: CanvasTrackId,
+): boolean => {
+  if (trackId === "sell_price" || trackId === "speed") return true;
+  const nodeId = trackId === "size"
+    ? "unlock_canvas_size"
+    : trackId === "crit"
+    ? "unlock_canvas_crit"
+    : "unlock_canvas_combo";
+  return getNodeLevel(state, nodeId) >= 1;
+};
