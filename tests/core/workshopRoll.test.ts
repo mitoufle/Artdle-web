@@ -114,7 +114,7 @@ describe("workshopRoll — rollAffixes", () => {
   it("each affix has a kind from AFFIX_KINDS and magnitude in [5, 15]", () => {
     const affixes = rollAffixes("legendary", baseStub());
     for (const a of affixes) {
-      expect(["+sell_price%", "+speed%", "+crit_chance%", "+combo_chance%", "+size_gold_per_level%"]).toContain(a.kind);
+      expect(["+sell_price%", "+speed%", "+crit_chance%", "+combo_chance%", "+size%"]).toContain(a.kind);
       expect(a.magnitude).toBeGreaterThanOrEqual(5);
       expect(a.magnitude).toBeLessThanOrEqual(15);
     }
@@ -164,7 +164,7 @@ describe("rollAffixes — skill-tree gating", () => {
     expect(seen.has("+speed%")).toBe(true);
     expect(seen.has("+crit_chance%")).toBe(false);
     expect(seen.has("+combo_chance%")).toBe(false);
-    expect(seen.has("+size_gold_per_level%")).toBe(false);
+    expect(seen.has("+size%")).toBe(false);
   });
 
   it("with genius_episode owned (unlocks canvas_crit), +crit_chance% can roll", () => {

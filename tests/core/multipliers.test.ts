@@ -6,7 +6,7 @@ import {
   getTreeUpgradeCostMultiplier,
   getCritChance,
   getComboBaseChance,
-  getSizeGoldPerLevelMultiplier,
+  getSizeMultiplier,
 } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
 import type { Item } from "@/store/workshopSlice";
@@ -239,24 +239,24 @@ describe("getComboBaseChance — equipped +combo_chance% contribution", () => {
   });
 });
 
-describe("getSizeGoldPerLevelMultiplier", () => {
+describe("getSizeMultiplier", () => {
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
     purchasedNodes: {}, equipped: {}, ...over,
   } as GameStore);
 
   it("returns 1.0 when no items equipped", () => {
-    expect(getSizeGoldPerLevelMultiplier(stub())).toBeCloseTo(1.0, 5);
+    expect(getSizeMultiplier(stub())).toBeCloseTo(1.0, 5);
   });
 
-  it("returns 1 + sum of equipped +size_gold_per_level% magnitudes (already fractional)", () => {
+  it("returns 1 + sum of equipped +size% magnitudes (already fractional)", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [
-        { kind: "+size_gold_per_level%", magnitude: 10 },
-        { kind: "+size_gold_per_level%", magnitude: 7 },
+        { kind: "+size%", magnitude: 10 },
+        { kind: "+size%", magnitude: 7 },
       ],
     };
     const state = stub({ equipped: { brush: item } });
-    expect(getSizeGoldPerLevelMultiplier(state)).toBeCloseTo(1.17, 5);
+    expect(getSizeMultiplier(state)).toBeCloseTo(1.17, 5);
   });
 });

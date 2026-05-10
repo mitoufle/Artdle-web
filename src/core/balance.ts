@@ -93,31 +93,35 @@ export const treePartCost = (level: number, baseCost: number): Big =>
 /**
  * Gold awarded when a canvas is sold, before equipped-item modifiers.
  *
- * v3.x canvas-depth: `BASE × (1 + SIZE_GOLD_PER_LEVEL × sizeGoldMult × sizeLevel) × multiplier`.
+ * v3.x canvas-depth: `BASE × (1 + SIZE_GOLD_PER_LEVEL × sizeMult × sizeLevel) × multiplier`.
  *
- * `sizeGoldMult` defaults to 1.0 — it scales the per-level gold rate from the
- * size track. Equipped +size_gold_per_level% affixes contribute via
- * `getSizeGoldPerLevelMultiplier(state)`. The caller in canvasTick passes it.
+ * `sizeMult` defaults to 1.0 — it scales the effective sizeLevel in the gold
+ * formula. Equipped +size% affixes contribute via `getSizeMultiplier(state)`.
+ * The caller in canvasTick passes it.
  */
 export const canvasGold = (
   sizeLevel: number,
   multiplier: number,
-  sizeGoldMult = 1,
+  sizeMult = 1,
 ): Big =>
   big(CANVAS_GOLD_BASE)
-    .mul(1 + SIZE_GOLD_PER_LEVEL * sizeGoldMult * sizeLevel)
+    .mul(1 + SIZE_GOLD_PER_LEVEL * sizeMult * sizeLevel)
     .mul(multiplier);
 
 /**
  * Paint time per canvas in seconds, before any speed multipliers.
  *
- * v3.x canvas-depth: `CANVAS_TIME_BASE × (1 + SIZE_TIME_PER_LEVEL × sizeLevel)`.
+ * v3.x canvas-depth: `CANVAS_TIME_BASE × (1 + SIZE_TIME_PER_LEVEL × sizeLevel × sizeMult)`.
  * Replaces the linear-in-tier form.
  *
- * sizeLevel 0 = 2 s (matches the v1.1 tier-1 baseline).
+ * `sizeMult` defaults to 1.0 — mirrors `canvasGold`'s third param. Equipped
+ * +size% affixes scale the effective sizeLevel in BOTH gold and time formulas,
+ * matching the mental model: bigger canvas = more gold + more time.
+ *
+ * sizeLevel 0 = 2 s (matches the v1.1 tier-1 baseline), regardless of sizeMult.
  */
-export const canvasTime = (sizeLevel: number): number =>
-  CANVAS_TIME_BASE * (1 + SIZE_TIME_PER_LEVEL * sizeLevel);
+export const canvasTime = (sizeLevel: number, sizeMult = 1): number =>
+  CANVAS_TIME_BASE * (1 + SIZE_TIME_PER_LEVEL * sizeLevel * sizeMult);
 
 /**
  * Total PM accumulated at a given lifetime canvas gold.

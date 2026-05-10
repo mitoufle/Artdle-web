@@ -317,7 +317,7 @@ describe("save migration v2 → v3", () => {
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(11);
+    expect(parsed.version).toBe(12);
   });
 });
 
@@ -369,7 +369,7 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(11);
+    expect(parsed.version).toBe(12);
   });
 });
 
@@ -576,14 +576,50 @@ describe("migrate v10 → v11 (affix-pool rework)", () => {
     expect(migrated.workshopXp).toBe(17);
   });
 
-  it("does not change saves at v11 (migrate is no-op when fromVersion >= 11)", () => {
+  it("v11 save is migrated to v12 (inventory + equipped wiped)", () => {
     const v11State: Record<string, unknown> = {
       inventory: [{ id: "x", slot: "brush", tier: "magic", affixes: [{ kind: "+sell_price%", magnitude: 7 }] }],
-      equipped: {},
+      equipped: { brush: { id: "eq-x", slot: "brush", tier: "normal", affixes: [{ kind: "+speed%", magnitude: 5 }] } },
       workshopLevel: 3,
       workshopXp: 5,
     };
     const migrated = migrate(v11State, 11) as unknown as Record<string, unknown>;
-    expect(migrated.inventory).toEqual([{ id: "x", slot: "brush", tier: "magic", affixes: [{ kind: "+sell_price%", magnitude: 7 }] }]);
+    // v11 → v12 wipes inventory + equipped.
+    expect(migrated.inventory).toEqual([]);
+    expect(migrated.equipped).toEqual({});
+    // Workshop level + XP preserved.
+    expect(migrated.workshopLevel).toBe(3);
+    expect(migrated.workshopXp).toBe(5);
+  });
+});
+
+describe("migrate v11 → v12 (+size_gold_per_level% → +size%)", () => {
+  it("wipes inventory + equipped (magnitudes from old kind don't translate cleanly)", () => {
+    const v11State: Record<string, unknown> = {
+      inventory: [
+        { id: "old1", slot: "brush", tier: "magic", affixes: [{ kind: "+size_gold_per_level%", magnitude: 10 }] },
+      ],
+      equipped: { brush: { id: "old2", slot: "brush", tier: "rare", affixes: [{ kind: "+size_gold_per_level%", magnitude: 8 }] } },
+      workshopLevel: 5,
+      workshopXp: 10,
+    };
+    const migrated = migrate(v11State, 11) as unknown as Record<string, unknown>;
+    expect(migrated.inventory).toEqual([]);
+    expect(migrated.equipped).toEqual({});
+    // Workshop level + XP preserved.
+    expect(migrated.workshopLevel).toBe(5);
+    expect(migrated.workshopXp).toBe(10);
+  });
+
+  it("does not change saves at v12 (migrate is no-op when fromVersion >= 12)", () => {
+    const v12State: Record<string, unknown> = {
+      inventory: [{ id: "y", slot: "easel", tier: "rare", affixes: [{ kind: "+size%", magnitude: 9 }] }],
+      equipped: {},
+      workshopLevel: 10,
+      workshopXp: 40,
+    };
+    const migrated = migrate(v12State, 12) as unknown as Record<string, unknown>;
+    expect(migrated.inventory).toEqual([{ id: "y", slot: "easel", tier: "rare", affixes: [{ kind: "+size%", magnitude: 9 }] }]);
+    expect(migrated.workshopLevel).toBe(10);
   });
 });

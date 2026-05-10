@@ -27,7 +27,7 @@ const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
   "+speed%": (m) => `+${m}% speed`,
   "+crit_chance%": (m) => `+${m}% crit chance`,
   "+combo_chance%": (m) => `+${m}% combo chance`,
-  "+size_gold_per_level%": (m) => `+${m}% size gold/level`,
+  "+size%": (m) => `+${m}% size`,
 };
 
 function affixHoverBody(affixes: Item["affixes"]): JSX.Element {

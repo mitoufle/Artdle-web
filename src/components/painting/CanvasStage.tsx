@@ -3,7 +3,7 @@ import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
 import { canvasGold, SIZE_GOLD_PER_LEVEL, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK } from "@/core/balance";
-import { getCanvasGoldMultiplier, getPmMultiplier, getSizeGoldPerLevelMultiplier } from "@/core/multipliers";
+import { getCanvasGoldMultiplier, getPmMultiplier, getSizeMultiplier } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
@@ -16,15 +16,15 @@ function sellHoverBody(sizeLevel: number, comboChain: number): JSX.Element {
   const rainbowLvl = getNodeLevel(state, "rainbow");
   const rainbowFactor = 1 + 0.50 * rainbowLvl;
   const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
-  const sizeGoldMult = getSizeGoldPerLevelMultiplier(state);
+  const sizeMult = getSizeMultiplier(state);
   // Reverse-engineer colors contribution (additive sum minus items minus sell-price)
   const colorPlusItemsPlusSellPrice = goldMult / rainbowFactor - 1;
   const colorSum = colorPlusItemsPlusSellPrice - itemBonus - sellPriceContribution;
-  const baseGold = 10 * (1 + SIZE_GOLD_PER_LEVEL * sizeGoldMult * sizeLevel);
-  const total = canvasGold(sizeLevel, goldMult * pmMult, sizeGoldMult).mul(1 + COMBO_PER_LINK * comboChain);
+  const baseGold = 10 * (1 + SIZE_GOLD_PER_LEVEL * sizeMult * sizeLevel);
+  const total = canvasGold(sizeLevel, goldMult * pmMult, sizeMult).mul(1 + COMBO_PER_LINK * comboChain);
   return (
     <>
-      <div>Base × (1 + {SIZE_GOLD_PER_LEVEL.toFixed(2)} × {sizeGoldMult.toFixed(2)} × {sizeLevel}) = {baseGold.toFixed(1)}</div>
+      <div>Base × (1 + {SIZE_GOLD_PER_LEVEL.toFixed(2)} × {sizeMult.toFixed(2)} × {sizeLevel}) = {baseGold.toFixed(1)}</div>
       <div>───</div>
       <div>Sell Price (Lv {state.sellPriceLevel}): ×{(1 + sellPriceContribution).toFixed(2)}</div>
       <div>Items (sell):  ×{(1 + itemBonus).toFixed(2)}</div>

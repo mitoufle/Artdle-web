@@ -32,7 +32,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 11;
+const SAVE_VERSION = 12;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -74,6 +74,11 @@ const SAVE_KEY = "artdle-save";
  * semantics for the rename don't translate cleanly (-10% paint_time ≠
  * +10% speed). Game unreleased — wipe inventory + equipped. Workshop
  * level + XP preserved (long-tail meta progression).
+ *
+ * v11 → v12 (2026-05-10): rename +size_gold_per_level% → +size% and change
+ * behavior (now affects both gold AND time, matching size-track semantics).
+ * Magnitudes from the old kind don't translate cleanly. Game unreleased —
+ * wipe inventory + equipped. Workshop level + XP preserved.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -190,6 +195,13 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       inventory: [],
       equipped: {},
     };
+  }
+
+  if (fromVersion < 12) {
+    // v11 → v12 (2026-05-10): rename +size_gold_per_level% → +size% and change
+    // behavior (now also affects time). Magnitudes don't translate cleanly.
+    // Wipe inventory + equipped; preserve workshopLevel + workshopXp.
+    state = { ...state, inventory: [], equipped: {} };
   }
 
   return state as unknown as GameStore;

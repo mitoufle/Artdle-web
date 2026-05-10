@@ -123,16 +123,16 @@ describe("canvasGold (size-driven)", () => {
   });
 });
 
-describe("canvasGold (with sizeGoldMult)", () => {
-  it("default sizeGoldMult = 1 leaves formula unchanged", () => {
+describe("canvasGold (with sizeMult)", () => {
+  it("default sizeMult = 1 leaves formula unchanged", () => {
     expect(canvasGold(5, 1).toNumber()).toBeCloseTo(canvasGold(5, 1, 1).toNumber(), 5);
   });
 
-  it("sizeGoldMult scales the per-level rate multiplicatively", () => {
-    // BASE × (1 + 0.30 × sizeGoldMult × sizeLevel) × mult
-    // sizeLevel 10, sizeGoldMult 2.0, mult 1: 10 × (1 + 0.30 × 2 × 10) × 1 = 10 × 7 = 70
+  it("sizeMult scales the per-level rate multiplicatively", () => {
+    // BASE × (1 + 0.30 × sizeMult × sizeLevel) × mult
+    // sizeLevel 10, sizeMult 2.0, mult 1: 10 × (1 + 0.30 × 2 × 10) × 1 = 10 × 7 = 70
     expect(canvasGold(10, 1, 2).toNumber()).toBeCloseTo(70, 5);
-    // sizeLevel 0, sizeGoldMult 2.0: still 10 (no per-level effect)
+    // sizeLevel 0, sizeMult 2.0: still 10 (no per-level effect)
     expect(canvasGold(0, 1, 2).toNumber()).toBeCloseTo(10, 5);
   });
 });
@@ -169,6 +169,26 @@ describe("canvasTime (size-driven)", () => {
     expect(canvasTime(10)).toBeCloseTo(5, 5);
     // sizeLevel 4 → 2 × 1.6 = 3.2
     expect(canvasTime(4)).toBeCloseTo(3.2, 5);
+  });
+});
+
+describe("canvasTime (with sizeMult)", () => {
+  it("default sizeMult = 1 leaves formula unchanged", () => {
+    expect(canvasTime(4, 1)).toBeCloseTo(canvasTime(4), 5);
+    expect(canvasTime(10, 1)).toBeCloseTo(canvasTime(10), 5);
+  });
+
+  it("sizeLevel 0 ignores sizeMult (no per-level contribution at L0)", () => {
+    // CANVAS_TIME_BASE × (1 + 0.15 × 0 × sizeMult) = 2 regardless of sizeMult
+    expect(canvasTime(0, 2)).toBeCloseTo(2, 5);
+    expect(canvasTime(0, 5)).toBeCloseTo(2, 5);
+  });
+
+  it("sizeMult scales time per-level rate multiplicatively", () => {
+    // sizeLevel 10, sizeMult 2: 2 × (1 + 0.15 × 10 × 2) = 2 × 4 = 8
+    expect(canvasTime(10, 2)).toBeCloseTo(8, 5);
+    // sizeLevel 4, sizeMult 1.5: 2 × (1 + 0.15 × 4 × 1.5) = 2 × 1.9 = 3.8
+    expect(canvasTime(4, 1.5)).toBeCloseTo(3.8, 5);
   });
 });
 

@@ -3,25 +3,26 @@
  *
  * Items come from the Workshop. Each kind contributes additively to one
  * canvas-derived multiplier:
- *   +sell_price%            → getCanvasGoldMultiplier
- *   +speed%                 → getCanvasSpeedMultiplier
- *   +crit_chance%           → getCritChance         (gated by unlock_canvas_crit)
- *   +combo_chance%          → getComboBaseChance    (gated by unlock_canvas_combo)
- *   +size_gold_per_level%   → getSizeGoldPerLevelMultiplier (gated by unlock_canvas_size)
+ *   +sell_price%   → getCanvasGoldMultiplier
+ *   +speed%        → getCanvasSpeedMultiplier
+ *   +crit_chance%  → getCritChance         (gated by unlock_canvas_crit)
+ *   +combo_chance% → getComboBaseChance    (gated by unlock_canvas_combo)
+ *   +size%         → getSizeMultiplier     (gated by unlock_canvas_size)
+ *                    Scales effective sizeLevel — applies to BOTH gold and time formulas.
  */
 export type AffixKind =
   | "+sell_price%"
   | "+speed%"
   | "+crit_chance%"
   | "+combo_chance%"
-  | "+size_gold_per_level%";
+  | "+size%";
 
 export const AFFIX_KINDS: ReadonlyArray<AffixKind> = [
   "+sell_price%",
   "+speed%",
   "+crit_chance%",
   "+combo_chance%",
-  "+size_gold_per_level%",
+  "+size%",
 ];
 
 /** Inclusive lower bound on rolled magnitude (integer percent). */
