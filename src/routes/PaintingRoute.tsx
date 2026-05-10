@@ -13,7 +13,7 @@ import {
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
-  getPaintTimeMultiplier,
+  getSizeGoldPerLevelMultiplier,
   getPmMultiplier,
 } from "@/core/multipliers";
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
@@ -53,12 +53,13 @@ export function PaintingRoute(): JSX.Element {
   } as unknown as GameStore;
 
   const baseTime = canvasTime(sizeLevel);
-  const speedMult = getPaintTimeMultiplier(helperState) * getCanvasSpeedMultiplier(helperState);
+  const speedMult = getCanvasSpeedMultiplier(helperState);
   const critFactor = isCritThisCanvas ? CRIT_SPEED_FACTOR : 1;
   const paintTimeSec = baseTime / (speedMult * critFactor);
   const progressPct = paintTimeSec > 0 ? canvasProgress / paintTimeSec : 0;
   const goldMult = getCanvasGoldMultiplier(helperState) * getPmMultiplier(helperState);
-  const baseGold = canvasGold(sizeLevel, goldMult);
+  const sizeGoldMult = getSizeGoldPerLevelMultiplier(helperState);
+  const baseGold = canvasGold(sizeLevel, goldMult, sizeGoldMult);
   const comboFactor = 1 + COMBO_PER_LINK * comboChain;
   const nextSaleGold = baseGold.mul(comboFactor);
 
