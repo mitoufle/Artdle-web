@@ -25,6 +25,40 @@ export const CRAFT_COST_LATE_GROWTH = 1.20;   // L5+   — exponential climb
 export const XP_PER_CRAFT = 1;
 
 // ============================================================================
+// Canvas depth — see docs/superpowers/specs/2026-05-10-canvas-depth-design.md
+// ============================================================================
+/** +10% gold per sell-price level (additive). */
+export const SELL_PRICE_PER_LEVEL = 0.10;
+/** +5% speed per speed level (additive). */
+export const SPEED_PER_LEVEL = 0.05;
+/** +30% gold per size level (additive on BASE). */
+export const SIZE_GOLD_PER_LEVEL = 0.30;
+/** +15% time per size level (additive on BASE). */
+export const SIZE_TIME_PER_LEVEL = 0.15;
+/** +1% crit chance per crit level. */
+export const CRIT_PER_LEVEL = 0.01;
+/** Crit canvases paint in `time / CRIT_SPEED_FACTOR`. Fixed at 10× (= 90% faster). */
+export const CRIT_SPEED_FACTOR = 10;
+/** +2% base combo chance per combo level. */
+export const COMBO_PER_LEVEL = 0.02;
+/** +10% gold per chain link. */
+export const COMBO_PER_LINK = 0.10;
+/** -5 percentage points off effective combo chance per current chain link. */
+export const COMBO_DECAY_PER_LINK = 0.05;
+
+/** Cost in gold at level 1 for the sell-price upgrade. */
+export const SELL_PRICE_COST_BASE = 100;
+export const SPEED_COST_BASE = 100;
+export const SIZE_COST_BASE = 1000;
+export const CRIT_COST_BASE = 5000;
+export const COMBO_COST_BASE = 5000;
+/** Shared exponential growth factor for all 5 track cost curves: cost = base × growth^(level-1). */
+export const TRACK_COST_GROWTH = 1.5;
+
+/** Base paint time at sizeLevel = 0, before speed multipliers. Matches the v1.1 tier-1 baseline. */
+export const CANVAS_TIME_BASE = 2;
+
+// ============================================================================
 // Formulas
 // ============================================================================
 

@@ -366,3 +366,52 @@ describe("xpToNext", () => {
     expect(total).toBe(9_936);
   });
 });
+
+// ============================================================================
+// Canvas depth — tuning constants (spec §10 defaults)
+// ============================================================================
+import {
+  SELL_PRICE_PER_LEVEL,
+  SPEED_PER_LEVEL,
+  SIZE_GOLD_PER_LEVEL,
+  SIZE_TIME_PER_LEVEL,
+  CRIT_PER_LEVEL,
+  CRIT_SPEED_FACTOR,
+  COMBO_PER_LEVEL,
+  COMBO_PER_LINK,
+  COMBO_DECAY_PER_LINK,
+  SELL_PRICE_COST_BASE,
+  SPEED_COST_BASE,
+  SIZE_COST_BASE,
+  CRIT_COST_BASE,
+  COMBO_COST_BASE,
+  TRACK_COST_GROWTH,
+  CANVAS_TIME_BASE,
+} from "@/core/balance";
+
+describe("canvas-depth tuning constants", () => {
+  it("exposes per-level rates matching spec §10 defaults", () => {
+    expect(SELL_PRICE_PER_LEVEL).toBeCloseTo(0.10, 5);
+    expect(SPEED_PER_LEVEL).toBeCloseTo(0.05, 5);
+    expect(SIZE_GOLD_PER_LEVEL).toBeCloseTo(0.30, 5);
+    expect(SIZE_TIME_PER_LEVEL).toBeCloseTo(0.15, 5);
+    expect(CRIT_PER_LEVEL).toBeCloseTo(0.01, 5);
+    expect(CRIT_SPEED_FACTOR).toBe(10);
+    expect(COMBO_PER_LEVEL).toBeCloseTo(0.02, 5);
+    expect(COMBO_PER_LINK).toBeCloseTo(0.10, 5);
+    expect(COMBO_DECAY_PER_LINK).toBeCloseTo(0.05, 5);
+  });
+
+  it("exposes per-track cost bases + shared growth factor", () => {
+    expect(SELL_PRICE_COST_BASE).toBe(100);
+    expect(SPEED_COST_BASE).toBe(100);
+    expect(SIZE_COST_BASE).toBe(1000);
+    expect(CRIT_COST_BASE).toBe(5000);
+    expect(COMBO_COST_BASE).toBe(5000);
+    expect(TRACK_COST_GROWTH).toBeCloseTo(1.5, 5);
+  });
+
+  it("exposes new canvas time base", () => {
+    expect(CANVAS_TIME_BASE).toBe(2);
+  });
+});
