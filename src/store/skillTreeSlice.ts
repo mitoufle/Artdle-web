@@ -137,25 +137,33 @@ export const sumLevels = (
 export type CanvasTrackId = "sell_price" | "speed" | "size" | "crit" | "combo";
 
 /**
+ * Returns true if any purchased node (level ≥ 1) has `capability` in its
+ * `unlocks` array. Node IDs are free-form — the engine reads capability tags,
+ * not node IDs.
+ */
+export const hasCapability = (state: GameStore, capability: string): boolean => {
+  for (const [nodeId, level] of Object.entries(state.purchasedNodes)) {
+    if ((level ?? 0) < 1) continue;
+    const config = getSkillNodeConfig(nodeId);
+    if (config && config.unlocks.includes(capability)) return true;
+  }
+  return false;
+};
+
+/**
  * Returns true if the player has unlocked the given canvas upgrade track.
- * Sell price and speed are always unlocked. Size, crit, combo each require
- * the player to own the corresponding fame skill-tree node:
- *   - unlock_canvas_size
- *   - unlock_canvas_crit
- *   - unlock_canvas_combo
+ * Sell price and speed are always unlocked. Size, crit, combo require a
+ * purchased node that carries the matching capability tag:
+ *   - canvas_size  (e.g. size_matters node)
+ *   - canvas_crit
+ *   - canvas_combo
  *
- * The user authors these nodes via /dev/skill-designer; the engine simply
- * reads ownership of the well-known IDs.
+ * Node IDs are a game-design decision — the engine reads `unlocks` tags only.
  */
 export const getCanvasTrackUnlocked = (
   state: GameStore,
   trackId: CanvasTrackId,
 ): boolean => {
   if (trackId === "sell_price" || trackId === "speed") return true;
-  const nodeId = trackId === "size"
-    ? "unlock_canvas_size"
-    : trackId === "crit"
-    ? "unlock_canvas_crit"
-    : "unlock_canvas_combo";
-  return getNodeLevel(state, nodeId) >= 1;
+  return hasCapability(state, `canvas_${trackId}`);
 };

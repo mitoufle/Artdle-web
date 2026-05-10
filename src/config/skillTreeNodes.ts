@@ -20,6 +20,13 @@ export interface SkillNodeConfig {
   readonly stacking: StackingMode;
   /** Visual prominence on the constellation. Major nodes render bigger + brighter. */
   readonly kind: NodeKind;
+  /**
+   * Generic capability tags granted by this node when purchased at level ≥ 1.
+   * Engine reads these to decouple node IDs from recognized capabilities.
+   * Example: ["canvas_size"] unlocks the size track regardless of this node's ID.
+   * Empty array means no capability tags.
+   */
+  readonly unlocks: ReadonlyArray<string>;
 }
 
 /**
@@ -42,6 +49,7 @@ export const SKILL_NODES: ReadonlyArray<SkillNodeConfig> = designJson.nodes.map(
       maxLevel: n.maxLevel,
       stacking: n.stacking as StackingMode,
       kind: (raw.kind as NodeKind | undefined) ?? "minor",
+      unlocks: (raw.unlocks as string[] | undefined) ?? [],
     };
   },
 );

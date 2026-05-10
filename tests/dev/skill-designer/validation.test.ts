@@ -13,6 +13,7 @@ function n(id: string, parentId: string | null = null, maxLevel = 1, costs: numb
     kind: "minor",
     maxLevel,
     costs,
+    unlocks: [],
     position: null,
   };
 }

@@ -13,6 +13,7 @@ interface LegacyDesignNode {
   kind?: "minor" | "major";
   maxLevel: number;
   costs: ReadonlyArray<number>;
+  unlocks?: ReadonlyArray<string>;
   position: { x: number; y: number } | null;
 }
 
@@ -20,6 +21,7 @@ interface LegacyDesignNode {
  * Migrate a node entry to the current schema. Handles two pre-existing shapes:
  *   - parentId: string | null  → parentIds: [parentId] or []
  *   - missing stacking         → defaults to "additive"
+ *   - missing unlocks          → defaults to []
  */
 function migrateNode(raw: LegacyDesignNode): DesignNode {
   const parentIds: ReadonlyArray<string> =
@@ -39,6 +41,7 @@ function migrateNode(raw: LegacyDesignNode): DesignNode {
     kind: raw.kind ?? "minor",
     maxLevel: raw.maxLevel,
     costs: raw.costs,
+    unlocks: raw.unlocks ?? [],
     position: raw.position,
   };
 }

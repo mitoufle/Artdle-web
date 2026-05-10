@@ -118,7 +118,8 @@ describe("skillTreeSlice (multi-level + DAG)", () => {
   });
 });
 
-import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
+import { getCanvasTrackUnlocked, hasCapability } from "@/store/skillTreeSlice";
+import { SKILL_NODES } from "@/config/skillTreeNodes";
 
 describe("getCanvasTrackUnlocked", () => {
   it("returns true for sell_price always", () => {
@@ -131,25 +132,62 @@ describe("getCanvasTrackUnlocked", () => {
     expect(getCanvasTrackUnlocked(useGameStore.getState(), "speed")).toBe(true);
   });
 
-  it("returns false for size when unlock_canvas_size not purchased", () => {
+  it("returns false for size when no purchased node unlocks canvas_size", () => {
     useGameStore.setState({ purchasedNodes: {} });
     expect(getCanvasTrackUnlocked(useGameStore.getState(), "size")).toBe(false);
   });
 
-  it("returns true for size when unlock_canvas_size purchased (any level)", () => {
-    useGameStore.setState({ purchasedNodes: { unlock_canvas_size: 1 } });
+  it("returns true for size when a node with unlocks:[canvas_size] is purchased (regardless of node ID)", () => {
+    // size_matters node in skillTreeDesign.json has unlocks: ["canvas_size"]
+    useGameStore.setState({ purchasedNodes: { size_matters: 1 } });
     expect(getCanvasTrackUnlocked(useGameStore.getState(), "size")).toBe(true);
   });
 
-  it("checks unlock_canvas_crit for crit", () => {
-    useGameStore.setState({ purchasedNodes: { unlock_canvas_crit: 1 } });
-    expect(getCanvasTrackUnlocked(useGameStore.getState(), "crit")).toBe(true);
+  it("returns false for size when the purchased node unlocks array does not include canvas_size", () => {
+    // get_inspired node has no unlocks array
+    useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "size")).toBe(false);
+  });
+
+  it("checks canvas_crit capability for crit track", () => {
     useGameStore.setState({ purchasedNodes: {} });
     expect(getCanvasTrackUnlocked(useGameStore.getState(), "crit")).toBe(false);
   });
 
-  it("checks unlock_canvas_combo for combo", () => {
-    useGameStore.setState({ purchasedNodes: { unlock_canvas_combo: 1 } });
-    expect(getCanvasTrackUnlocked(useGameStore.getState(), "combo")).toBe(true);
+  it("checks canvas_combo capability for combo track", () => {
+    useGameStore.setState({ purchasedNodes: {} });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "combo")).toBe(false);
+  });
+});
+
+describe("hasCapability", () => {
+  beforeEach(() => {
+    useGameStore.setState({ purchasedNodes: {}, pokeTreeTimer: 0, fame: big(0) });
+  });
+
+  it("returns false when no nodes are purchased", () => {
+    expect(hasCapability(useGameStore.getState(), "canvas_size")).toBe(false);
+  });
+
+  it("returns false when purchased nodes have no unlocks for the capability", () => {
+    useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
+    expect(hasCapability(useGameStore.getState(), "canvas_size")).toBe(false);
+  });
+
+  it("returns true when a purchased node has the capability in its unlocks", () => {
+    // size_matters has unlocks: ["canvas_size"] in the JSON
+    useGameStore.setState({ purchasedNodes: { size_matters: 1 } });
+    expect(hasCapability(useGameStore.getState(), "canvas_size")).toBe(true);
+  });
+
+  it("returns false when a node with the capability is in purchasedNodes at level 0", () => {
+    useGameStore.setState({ purchasedNodes: { size_matters: 0 } });
+    expect(hasCapability(useGameStore.getState(), "canvas_size")).toBe(false);
+  });
+
+  it("size_matters node in SKILL_NODES has unlocks containing canvas_size", () => {
+    const node = SKILL_NODES.find((n) => n.id === "size_matters");
+    expect(node).toBeDefined();
+    expect(node!.unlocks).toContain("canvas_size");
   });
 });

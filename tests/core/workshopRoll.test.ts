@@ -122,7 +122,7 @@ describe("workshopRoll — rollAffixes", () => {
 
   it("duplicates of the same kind are allowed across rolls", () => {
     setSeed(1);
-    const s = baseStub({ purchasedNodes: { unlock_canvas_size: 1, unlock_canvas_crit: 1, unlock_canvas_combo: 1 } });
+    const s = baseStub({ purchasedNodes: { size_matters: 1, genius_episode: 1, unrelentless: 1 } });
     let foundDuplicate = false;
     for (let i = 0; i < 200 && !foundDuplicate; i++) {
       const affixes = rollAffixes("rare", s);
@@ -167,9 +167,9 @@ describe("rollAffixes — skill-tree gating", () => {
     expect(seen.has("+size_gold_per_level%")).toBe(false);
   });
 
-  it("with unlock_canvas_crit owned, +crit_chance% can roll", () => {
+  it("with genius_episode owned (unlocks canvas_crit), +crit_chance% can roll", () => {
     setSeed(1);
-    const state = baseStub({ purchasedNodes: { unlock_canvas_crit: 1 } });
+    const state = baseStub({ purchasedNodes: { genius_episode: 1 } });
     const seen = new Set<string>();
     for (let i = 0; i < 50; i++) {
       const affixes = rollAffixes("legendary", state);
@@ -183,9 +183,9 @@ describe("rollAffixes — skill-tree gating", () => {
     setSeed(1);
     const state = baseStub({
       purchasedNodes: {
-        unlock_canvas_size: 1,
-        unlock_canvas_crit: 1,
-        unlock_canvas_combo: 1,
+        size_matters: 1,
+        genius_episode: 1,
+        unrelentless: 1,
       },
     });
     const seen = new Set<string>();

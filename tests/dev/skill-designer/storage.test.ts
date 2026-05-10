@@ -17,6 +17,7 @@ const sample: DesignFile = {
       kind: "minor",
       maxLevel: 1,
       costs: [1],
+      unlocks: [],
       position: null,
     },
   ],

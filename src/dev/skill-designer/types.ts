@@ -13,6 +13,8 @@ export interface DesignNode {
   kind: NodeKind;
   maxLevel: number;
   costs: ReadonlyArray<number>;
+  /** Capability tags granted when this node is purchased (level ≥ 1). */
+  unlocks: ReadonlyArray<string>;
   position: { x: number; y: number } | null;
 }
 

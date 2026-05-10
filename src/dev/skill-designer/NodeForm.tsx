@@ -168,6 +168,46 @@ export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Ele
         ))}
       </div>
 
+      <div className={styles.field}>
+        <span className={styles.label}>Unlocks (capability tags)</span>
+        <input
+          className={styles.input}
+          type="text"
+          placeholder="canvas_size, canvas_crit, …"
+          value={(node.unlocks ?? []).join(", ")}
+          onChange={(e) => {
+            const raw = e.target.value;
+            const tags = raw
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean);
+            patch({ unlocks: tags });
+          }}
+        />
+        <div className={styles.capabilityHints}>
+          {(["canvas_size", "canvas_crit", "canvas_combo", "palette_slot"] as const).map(
+            (cap) => (
+              <button
+                key={cap}
+                type="button"
+                className={styles.capabilityChip}
+                onClick={() => {
+                  const current = node.unlocks ?? [];
+                  if (!current.includes(cap)) {
+                    patch({ unlocks: [...current, cap] });
+                  }
+                }}
+              >
+                {cap}
+              </button>
+            ),
+          )}
+        </div>
+        <span className={styles.subLabel}>
+          Comma-separated. Click a chip to add. Engine reads these, not node IDs.
+        </span>
+      </div>
+
       <label className={styles.field}>
         <span className={styles.label}>Numeric effect</span>
         <input

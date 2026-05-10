@@ -23,6 +23,7 @@ function n(
     kind: "minor",
     maxLevel: 1,
     costs: [1],
+    unlocks: [],
     position,
   };
 }

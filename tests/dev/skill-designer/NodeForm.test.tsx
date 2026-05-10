@@ -13,6 +13,7 @@ const baseNode: DesignNode = {
   kind: "minor",
   maxLevel: 2,
   costs: [10, 25],
+  unlocks: [],
   position: null,
 };
 
@@ -26,6 +27,7 @@ const otherNode: DesignNode = {
   kind: "minor",
   maxLevel: 1,
   costs: [1],
+  unlocks: [],
   position: null,
 };
 

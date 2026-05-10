@@ -47,6 +47,7 @@ function loadFileBaseline(): DesignFile {
       kind: ((n as { kind?: string }).kind ?? "minor") as NodeKind,
       maxLevel: n.maxLevel,
       costs: n.costs,
+      unlocks: ((n as { unlocks?: string[] }).unlocks ?? []) as string[],
       position: n.position,
     })),
   };
@@ -82,6 +83,7 @@ export function useDesignerState(): DesignerState {
         kind: "minor",
         maxLevel: 1,
         costs: [0],
+        unlocks: [],
         position: null,
       };
       return { ...d, nodes: [...d.nodes, newNode] };

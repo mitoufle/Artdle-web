@@ -14,6 +14,7 @@ function n(id: string, name = id, maxLevel = 1): DesignNode {
     kind: "minor",
     maxLevel,
     costs: Array(maxLevel).fill(1),
+    unlocks: [],
     position: null,
   };
 }

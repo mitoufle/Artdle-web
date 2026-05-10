@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-10T20:40:07.751Z",
+  "designedAt": "2026-05-10T20:53:26.567Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -406,7 +406,7 @@
     {
       "id": "size_matters",
       "name": "Size matters",
-      "description": "unlocks Size dimension for your canvas (and associated affixes)",
+      "description": "unlocks Size upgrade for your canvas (and associated affixes)",
       "numericEffect": "1",
       "parentIds": [
         "muscle_memory"
@@ -417,9 +417,120 @@
       "costs": [
         5
       ],
+      "unlocks": ["canvas_size"],
       "position": {
-        "x": 446.84141546526865,
-        "y": 152.60069044879168
+        "x": 458.4534731323722,
+        "y": 214.72957422324512
+      }
+    },
+    {
+      "id": "big_picture",
+      "name": "Big picture",
+      "description": "each level increase by 5% canvas completion time but increases its sell value by 15% per size canvas upgrade",
+      "numericEffect": "5 - 15",
+      "parentIds": [
+        "size_matters"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "position": {
+        "x": 496.1992136304063,
+        "y": 162.945914844649
+      }
+    },
+    {
+      "id": "genius_episode",
+      "name": "Genius Episode",
+      "description": "unlocks Critical upgrade for your canvas (and associated affixes)",
+      "numericEffect": "1",
+      "parentIds": [
+        "muscle_memory"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        5
+      ],
+      "unlocks": ["canvas_crit"],
+      "position": {
+        "x": 382.1756225425951,
+        "y": 144.30379746835445
+      }
+    },
+    {
+      "id": "consistency",
+      "name": "Consistency",
+      "description": "increases crit chance by 1%",
+      "numericEffect": "1",
+      "parentIds": [
+        "genius_episode"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "position": {
+        "x": 436.43512450851904,
+        "y": 113.23360184119679
+      }
+    },
+    {
+      "id": "fast_learner",
+      "name": "Fast Learner",
+      "description": "each canvas upgrade is 2% more effective",
+      "numericEffect": "2",
+      "parentIds": [
+        "big_picture",
+        "consistency"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        20,
+        40,
+        80,
+        160,
+        320
+      ],
+      "position": {
+        "x": 488.33551769331586,
+        "y": 112.54315304948217
+      }
+    },
+    {
+      "id": "unrelentless",
+      "name": "unrelentless",
+      "description": "unlocks Combo upgrade for your canvas (and associated affixes)",
+      "numericEffect": "1",
+      "parentIds": [
+        "fast_learner"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        50
+      ],
+      "unlocks": ["canvas_combo"],
+      "position": {
+        "x": 527.653997378768,
+        "y": 74.56846950517838
       }
     }
   ]

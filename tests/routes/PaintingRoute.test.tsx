@@ -33,9 +33,9 @@ describe("<PaintingRoute> — 5 track cards", () => {
   it("all cards render unlocked once their fame node is purchased", () => {
     useGameStore.setState({
       purchasedNodes: {
-        unlock_canvas_size: 1,
-        unlock_canvas_crit: 1,
-        unlock_canvas_combo: 1,
+        size_matters: 1,
+        genius_episode: 1,
+        unrelentless: 1,
       },
     });
     render(<MemoryRouter><PaintingRoute /></MemoryRouter>);

@@ -14,6 +14,7 @@ function n(id: string, parentId: string | null = null, position: { x: number; y:
     kind: "minor",
     maxLevel: 1,
     costs: [1],
+    unlocks: [],
     position,
   };
 }
