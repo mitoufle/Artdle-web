@@ -258,3 +258,44 @@ describe("canvasSlice — tick reads canvasTier at threshold-cross (contract pin
     expect(useGameStore.getState().lifetimeGold.toNumber()).toBe(250);
   });
 });
+
+describe("canvasSlice — new track state fields", () => {
+  beforeEach(() => {
+    useGameStore.setState({ ...useGameStore.getState() }); // resets canvas portion via implicit state
+  });
+
+  it("starts with sellPriceLevel=1 and speedLevel=1 (unlocked tracks)", () => {
+    const s = useGameStore.getState();
+    expect(s.sellPriceLevel).toBe(1);
+    expect(s.speedLevel).toBe(1);
+  });
+
+  it("starts with sizeLevel=0, critLevel=0, comboLevel=0 (gated tracks)", () => {
+    const s = useGameStore.getState();
+    expect(s.sizeLevel).toBe(0);
+    expect(s.critLevel).toBe(0);
+    expect(s.comboLevel).toBe(0);
+  });
+
+  it("starts with comboChain=0 and isCritThisCanvas=false", () => {
+    const s = useGameStore.getState();
+    expect(s.comboChain).toBe(0);
+    expect(s.isCritThisCanvas).toBe(false);
+  });
+
+  it("resetCanvas restores all five levels + chain + crit flag", () => {
+    useGameStore.setState({
+      sellPriceLevel: 7, speedLevel: 4, sizeLevel: 5,
+      critLevel: 3, comboLevel: 2, comboChain: 4, isCritThisCanvas: true,
+    } as Parameters<typeof useGameStore.setState>[0]);
+    useGameStore.getState().resetCanvas();
+    const s = useGameStore.getState();
+    expect(s.sellPriceLevel).toBe(1);
+    expect(s.speedLevel).toBe(1);
+    expect(s.sizeLevel).toBe(0);
+    expect(s.critLevel).toBe(0);
+    expect(s.comboLevel).toBe(0);
+    expect(s.comboChain).toBe(0);
+    expect(s.isCritThisCanvas).toBe(false);
+  });
+});

@@ -17,11 +17,26 @@ export interface CanvasState {
    */
   canvasProgress: number;
   /**
+   * v1.1 tier (LEGACY — removed in canvas-depth Task 16).
    * Current canvas tier (v1.1: 1..MAX_TIER). Determines per-sale gold (BASE × tier²)
    * and base paint time (tier × 2 s). Reset to 1 on ascend (initialCanvasState
    * is the source of truth for resetCanvas).
    */
   canvasTier: number;
+  /** New canvas-depth: sell-price track level (unlocked from start). */
+  sellPriceLevel: number;
+  /** New canvas-depth: completion-speed track level (unlocked from start). */
+  speedLevel: number;
+  /** New canvas-depth: size track level. Gated by skill-tree node "unlock_canvas_size". */
+  sizeLevel: number;
+  /** New canvas-depth: crit track level. Gated. */
+  critLevel: number;
+  /** New canvas-depth: combo track level. Gated. */
+  comboLevel: number;
+  /** New canvas-depth: current combo chain. Run-state. Resets on miss / ascend. */
+  comboChain: number;
+  /** New canvas-depth: rolled at canvas start; `true` for one canvas's lifetime then reset on sale. */
+  isCritThisCanvas: boolean;
   /**
    * Most recent sale event for animation triggering. The `id` increments on
    * each sale; consumers (e.g. `<FloatingGoldText>`) use it as an
@@ -38,6 +53,13 @@ export interface CanvasState {
 export const initialCanvasState: CanvasState = Object.freeze({
   canvasProgress: 0,
   canvasTier: 1,
+  sellPriceLevel: 1,
+  speedLevel: 1,
+  sizeLevel: 0,
+  critLevel: 0,
+  comboLevel: 0,
+  comboChain: 0,
+  isCritThisCanvas: false,
   lastSale: null,
 }) as CanvasState;
 
