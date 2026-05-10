@@ -73,9 +73,8 @@ export function CanvasStage({
   timeElapsed,
   timeTotal,
   nextSaleGold,
-  // comboChain and isCrit accepted but not visually wired until T14
-  comboChain: _comboChain,
-  isCrit: _isCrit,
+  comboChain,
+  isCrit,
 }: Props): JSX.Element {
   const stageName = STAGE_NAMES[sizeLevel] ?? `Tier ${sizeLevel}`;
   const fillHeight = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
@@ -83,6 +82,16 @@ export function CanvasStage({
 
   return (
     <section className={styles.stage} aria-label="Canvas stage">
+      {isCrit && (
+        <div className={styles.critIndicator} data-testid="crit-indicator">CRIT</div>
+      )}
+
+      {comboChain !== undefined && comboChain > 0 && (
+        <div className={styles.comboBadge} data-testid="combo-badge">
+          🔥 ×{comboChain}  +{(comboChain * 10)}%
+        </div>
+      )}
+
       <div className={styles.title}>
         — Tier {sizeLevel} · {stageName} —
       </div>

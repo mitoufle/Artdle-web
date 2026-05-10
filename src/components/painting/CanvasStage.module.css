@@ -105,3 +105,40 @@
   letter-spacing: 0.12em;
   color: var(--ink-3);
 }
+
+.critIndicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--gold);
+  color: var(--bg-0);
+  font-family: var(--serif);
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: var(--r-sm, 4px);
+  box-shadow: 0 0 12px var(--gold);
+  z-index: 5;
+  animation: critPulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes critPulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+.comboBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(255, 100, 50, 0.85);
+  color: white;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: var(--r-sm, 4px);
+  z-index: 5;
+}
