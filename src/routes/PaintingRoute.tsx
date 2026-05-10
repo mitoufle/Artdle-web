@@ -86,6 +86,7 @@ export function PaintingRoute(): JSX.Element {
           nextSaleGold={formatBig(nextSaleGold)}
           comboChain={comboChain}
           isCrit={isCritThisCanvas}
+          canvasNumber={lastSale?.id ?? 0}
         />
         {lastSale && (
           <FloatingGoldText

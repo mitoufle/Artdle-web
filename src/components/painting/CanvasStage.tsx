@@ -48,6 +48,9 @@ interface Props {
   comboChain?: number;
   /** T14: whether the current canvas is a crit. */
   isCrit?: boolean;
+  /** Canvas number (= lastSale.id) — keys fill elements so React re-mounts on sale,
+   *  resetting CSS transition baseline to avoid the rubberband-down effect. */
+  canvasNumber?: number;
 }
 
 const STAGE_NAMES: Record<number, string> = {
@@ -82,6 +85,7 @@ export function CanvasStage({
   nextSaleGold,
   comboChain,
   isCrit,
+  canvasNumber = 0,
 }: Props): JSX.Element {
   const stageName = STAGE_NAMES[sizeLevel] ?? `Tier ${sizeLevel}`;
   const fillHeight = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
@@ -127,6 +131,7 @@ export function CanvasStage({
 
         {/* Paint-fill overlay — height controlled by progressPct */}
         <div
+          key={`fill-${canvasNumber}`}
           className={styles.fill}
           data-testid="canvas-fill"
           style={{ height: fillHeight }}
@@ -145,7 +150,7 @@ export function CanvasStage({
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <div className={styles.progressFill} style={{ width: barWidth }} />
+        <div key={`bar-${canvasNumber}`} className={styles.progressFill} style={{ width: barWidth }} />
       </div>
 
       {/* Bottom info row */}
