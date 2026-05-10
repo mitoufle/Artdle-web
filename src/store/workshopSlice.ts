@@ -127,7 +127,7 @@ function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<Game
   const slot = rngPick(unlocked);
   const tier = rollTier(state.workshopLevel);
   const magnitudeBonus = getNodeLevel(state, "craftsmanship");
-  const affixes = rollAffixes(tier, magnitudeBonus);
+  const affixes = rollAffixes(tier, state, magnitudeBonus);
   const item: Item = {
     id: nextItemId(),
     slot,

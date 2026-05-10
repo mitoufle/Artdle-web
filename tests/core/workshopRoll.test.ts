@@ -8,6 +8,11 @@ import {
   rollAffixes,
 } from "@/core/workshopRoll";
 import { setSeed } from "@/core/rng";
+import type { GameStore } from "@/store";
+
+function baseStub(over: Partial<GameStore> = {}): GameStore {
+  return { purchasedNodes: {}, ...over } as GameStore;
+}
 
 describe("workshopRoll — tier probabilities", () => {
   it("at level 1: only normal is possible", () => {
@@ -98,17 +103,18 @@ describe("workshopRoll — rollAffixes", () => {
   });
 
   it("returns the correct count per tier", () => {
-    expect(rollAffixes("normal").length).toBe(1);
-    expect(rollAffixes("magic").length).toBe(2);
-    expect(rollAffixes("rare").length).toBe(3);
-    expect(rollAffixes("epic").length).toBe(4);
-    expect(rollAffixes("legendary").length).toBe(5);
+    const s = baseStub();
+    expect(rollAffixes("normal", s).length).toBe(1);
+    expect(rollAffixes("magic", s).length).toBe(2);
+    expect(rollAffixes("rare", s).length).toBe(3);
+    expect(rollAffixes("epic", s).length).toBe(4);
+    expect(rollAffixes("legendary", s).length).toBe(5);
   });
 
   it("each affix has a kind from AFFIX_KINDS and magnitude in [5, 15]", () => {
-    const affixes = rollAffixes("legendary");
+    const affixes = rollAffixes("legendary", baseStub());
     for (const a of affixes) {
-      expect(["+canvas_gold%", "-paint_time%"]).toContain(a.kind);
+      expect(["+sell_price%", "+speed%", "+crit_chance%", "+combo_chance%", "+size_gold_per_level%"]).toContain(a.kind);
       expect(a.magnitude).toBeGreaterThanOrEqual(5);
       expect(a.magnitude).toBeLessThanOrEqual(15);
     }
@@ -116,9 +122,10 @@ describe("workshopRoll — rollAffixes", () => {
 
   it("duplicates of the same kind are allowed across rolls", () => {
     setSeed(1);
+    const s = baseStub({ purchasedNodes: { unlock_canvas_size: 1, unlock_canvas_crit: 1, unlock_canvas_combo: 1 } });
     let foundDuplicate = false;
     for (let i = 0; i < 200 && !foundDuplicate; i++) {
-      const affixes = rollAffixes("rare");
+      const affixes = rollAffixes("rare", s);
       const kinds = affixes.map((a) => a.kind);
       const uniques = new Set(kinds);
       if (uniques.size < kinds.length) foundDuplicate = true;
@@ -142,5 +149,50 @@ describe("workshopRoll — constants", () => {
     expect(TIER_AFFIX_COUNT.rare).toBe(3);
     expect(TIER_AFFIX_COUNT.epic).toBe(4);
     expect(TIER_AFFIX_COUNT.legendary).toBe(5);
+  });
+});
+
+describe("rollAffixes — skill-tree gating", () => {
+  it("with no track unlocks, only sell_price + speed roll", () => {
+    setSeed(1);
+    const seen = new Set<string>();
+    for (let i = 0; i < 50; i++) {
+      const affixes = rollAffixes("legendary", baseStub());
+      for (const a of affixes) seen.add(a.kind);
+    }
+    expect(seen.has("+sell_price%")).toBe(true);
+    expect(seen.has("+speed%")).toBe(true);
+    expect(seen.has("+crit_chance%")).toBe(false);
+    expect(seen.has("+combo_chance%")).toBe(false);
+    expect(seen.has("+size_gold_per_level%")).toBe(false);
+  });
+
+  it("with unlock_canvas_crit owned, +crit_chance% can roll", () => {
+    setSeed(1);
+    const state = baseStub({ purchasedNodes: { unlock_canvas_crit: 1 } });
+    const seen = new Set<string>();
+    for (let i = 0; i < 50; i++) {
+      const affixes = rollAffixes("legendary", state);
+      for (const a of affixes) seen.add(a.kind);
+    }
+    expect(seen.has("+crit_chance%")).toBe(true);
+    expect(seen.has("+combo_chance%")).toBe(false);
+  });
+
+  it("with all 3 unlocks owned, all 5 kinds can roll", () => {
+    setSeed(1);
+    const state = baseStub({
+      purchasedNodes: {
+        unlock_canvas_size: 1,
+        unlock_canvas_crit: 1,
+        unlock_canvas_combo: 1,
+      },
+    });
+    const seen = new Set<string>();
+    for (let i = 0; i < 100; i++) {
+      const affixes = rollAffixes("legendary", state);
+      for (const a of affixes) seen.add(a.kind);
+    }
+    expect(seen.size).toBe(5);
   });
 });

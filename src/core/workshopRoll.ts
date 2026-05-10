@@ -1,6 +1,9 @@
 import { rng, rngInt, rngPick } from "@/core/rng";
 import { AFFIX_KINDS, MAGNITUDE_MIN_PCT, MAGNITUDE_MAX_PCT } from "@/config/workshopAffixes";
 import type { AffixKind } from "@/config/workshopAffixes";
+import type { GameStore } from "@/store";
+import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
+import type { CanvasTrackId } from "@/store/skillTreeSlice";
 
 export type ItemTier = "normal" | "magic" | "rare" | "epic" | "legendary";
 
@@ -87,18 +90,46 @@ export function rollTier(level: number): ItemTier {
   return "normal"; // floating-point fallback
 }
 
+const KIND_TO_TRACK: Record<AffixKind, CanvasTrackId> = {
+  "+sell_price%": "sell_price",
+  "+speed%": "speed",
+  "+crit_chance%": "crit",
+  "+combo_chance%": "combo",
+  "+size_gold_per_level%": "size",
+};
+
+/** Available affix kinds at the player's current skill-tree state. */
+function availableKinds(state: GameStore): ReadonlyArray<AffixKind> {
+  return AFFIX_KINDS.filter((kind) => {
+    const track = KIND_TO_TRACK[kind];
+    return getCanvasTrackUnlocked(state, track);
+  });
+}
+
 /**
  * Roll the affixes for an item of the given tier. Duplicate kinds allowed.
  *
+ * Pool is filtered by skill-tree unlocks: +crit_chance% / +combo_chance% /
+ * +size_gold_per_level% only roll when their matching `unlock_canvas_*`
+ * skill-tree node is owned. Sell-price + speed always roll (their canvas
+ * tracks are unlocked from start).
+ *
  * `magnitudeBonus` shifts BOTH the min and max magnitude bounds by the same
- * amount (so the spread stays MAX - MIN). Skill-tree Craftsmanship contributes
- * via `getAffixMagnitudeBonus(state)`.
+ * amount (Craftsmanship contribution from `getAffixMagnitudeBonus(state)`).
  */
-export function rollAffixes(tier: ItemTier, magnitudeBonus = 0): ReadonlyArray<Affix> {
+export function rollAffixes(
+  tier: ItemTier,
+  state: GameStore,
+  magnitudeBonus = 0,
+): ReadonlyArray<Affix> {
   const count = TIER_AFFIX_COUNT[tier];
+  const pool = availableKinds(state);
+  if (pool.length === 0) {
+    throw new Error("rollAffixes: empty affix pool");
+  }
   const out: Affix[] = [];
   for (let i = 0; i < count; i++) {
-    const kind = rngPick(AFFIX_KINDS);
+    const kind = rngPick(pool);
     const min = MAGNITUDE_MIN_PCT + magnitudeBonus;
     const max = MAGNITUDE_MAX_PCT + magnitudeBonus;
     const magnitude = rngInt(min, max);

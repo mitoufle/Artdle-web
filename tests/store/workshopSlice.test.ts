@@ -25,8 +25,8 @@ const sampleBrush: Item = {
   slot: "brush",
   tier: "magic",
   affixes: [
-    { kind: "+canvas_gold%", magnitude: 12 },
-    { kind: "-paint_time%", magnitude: 8 },
+    { kind: "+sell_price%", magnitude: 12 },
+    { kind: "+speed%", magnitude: 8 },
   ],
 };
 
@@ -64,12 +64,12 @@ describe("workshopSlice — selectors", () => {
 
   it("getEquippedContribution: sums affixes of matching kind across all equipped items", () => {
     useGameStore.setState({ equipped: { brush: sampleBrush } });
-    expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBeCloseTo(0.12, 5);
-    expect(getEquippedContribution(useGameStore.getState(), "-paint_time%")).toBeCloseTo(0.08, 5);
+    expect(getEquippedContribution(useGameStore.getState(), "+sell_price%")).toBeCloseTo(0.12, 5);
+    expect(getEquippedContribution(useGameStore.getState(), "+speed%")).toBeCloseTo(0.08, 5);
   });
 
   it("getEquippedContribution: returns 0 when nothing equipped", () => {
-    expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBe(0);
+    expect(getEquippedContribution(useGameStore.getState(), "+sell_price%")).toBe(0);
   });
 
   it("getEquippedContribution: works across multiple slot kinds", () => {
@@ -78,12 +78,12 @@ describe("workshopSlice — selectors", () => {
       slot: "palette",
       tier: "rare",
       affixes: [
-        { kind: "+canvas_gold%", magnitude: 7 },
+        { kind: "+sell_price%", magnitude: 7 },
       ],
     };
     useGameStore.setState({ equipped: { brush: sampleBrush, palette } });
     // brush has +12% canvas gold + palette has +7% = 0.19
-    expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBeCloseTo(0.19, 5);
+    expect(getEquippedContribution(useGameStore.getState(), "+sell_price%")).toBeCloseTo(0.19, 5);
   });
 
   it("getEquippedContribution: handles duplicate affix kinds on a single item", () => {
@@ -92,13 +92,13 @@ describe("workshopSlice — selectors", () => {
       slot: "brush",
       tier: "rare",
       affixes: [
-        { kind: "+canvas_gold%", magnitude: 10 },
-        { kind: "+canvas_gold%", magnitude: 5 },
-        { kind: "-paint_time%", magnitude: 6 },
+        { kind: "+sell_price%", magnitude: 10 },
+        { kind: "+sell_price%", magnitude: 5 },
+        { kind: "+speed%", magnitude: 6 },
       ],
     };
     useGameStore.setState({ equipped: { brush: itemWithDupes } });
-    expect(getEquippedContribution(useGameStore.getState(), "+canvas_gold%")).toBeCloseTo(0.15, 5);
+    expect(getEquippedContribution(useGameStore.getState(), "+sell_price%")).toBeCloseTo(0.15, 5);
   });
 });
 
@@ -114,7 +114,7 @@ describe("workshopSlice — craft", () => {
         id: `pre-${i}`,
         slot: "brush" as const,
         tier: "normal" as const,
-        affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+        affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
       })),
       gold: big(1_000_000),
     });
@@ -162,7 +162,7 @@ describe("workshopSlice — craft", () => {
       id: `pre-${i}`,
       slot: "brush" as const,
       tier: "normal" as const,
-      affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+      affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
     }));
     useGameStore.setState({
       gold: big(1_000),
@@ -183,7 +183,7 @@ describe("workshopSlice — craft", () => {
       id: `pre-${i}`,
       slot: "brush" as const,
       tier: "normal" as const,
-      affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+      affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
     }));
     useGameStore.setState({ gold: big(1_000), inventory: fullInv });
     expect(useGameStore.getState().craft()).toBe(false);
@@ -235,7 +235,7 @@ describe("workshopSlice — equip / unequip", () => {
       id: "p1",
       slot: "palette",
       tier: "normal",
-      affixes: [{ kind: "+canvas_gold%", magnitude: 10 }],
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
     };
     useGameStore.setState({ inventory: [palette] });
     // palette slot not unlocked
@@ -254,7 +254,7 @@ describe("workshopSlice — equip / unequip", () => {
       id: "b2",
       slot: "brush",
       tier: "rare",
-      affixes: [{ kind: "+canvas_gold%", magnitude: 9 }],
+      affixes: [{ kind: "+sell_price%", magnitude: 9 }],
     };
     useGameStore.setState({
       inventory: [newBrush],
@@ -276,7 +276,7 @@ describe("workshopSlice — equip / unequip", () => {
         id: `inv-${i}`,
         slot: "brush" as const,
         tier: "normal" as const,
-        affixes: [{ kind: "+canvas_gold%" as const, magnitude: 10 }],
+        affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
       })),
       equipped: { brush: sampleBrush },
     });
