@@ -6,6 +6,7 @@ import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
   getInspiMultiplier,
+  getSizeMultiplier,
   getTreeUpgradeCostMultiplier,
 } from "@/core/multipliers";
 import styles from "./ScalingMathPanel.module.css";
@@ -22,6 +23,7 @@ export function ScalingMathPanel(): JSX.Element {
   const inspiMult = getInspiMultiplier(state);
   const goldMult = getCanvasGoldMultiplier(state);
   const speedMult = getCanvasSpeedMultiplier(state);
+  const sizeMult = getSizeMultiplier(state);
   const bargain = getTreeUpgradeCostMultiplier(state);
 
   return (
@@ -35,13 +37,13 @@ export function ScalingMathPanel(): JSX.Element {
 
       <section className={styles.section} data-testid="scaling-gold">
         <div className={styles.label}>Canvas Gold</div>
-        <div className={styles.formula}>10 × (1 + {SIZE_GOLD_PER_LEVEL} × {sizeLevel}) × {goldMult.toFixed(2)}×</div>
-        <div className={styles.note}>sell price + colors + items, × rainbow, × PM</div>
+        <div className={styles.formula}>10 × (1 + {SIZE_GOLD_PER_LEVEL} × {sizeMult.toFixed(2)} × {sizeLevel}) × {goldMult.toFixed(2)}×</div>
+        <div className={styles.note}>sell price + colors + items, × rainbow, × PM · size mult from +size% items</div>
       </section>
 
       <section className={styles.section} data-testid="scaling-paint">
         <div className={styles.label}>Paint Time</div>
-        <div className={styles.formula}>2 × (1 + {SIZE_TIME_PER_LEVEL} × {sizeLevel})s ÷ {speedMult.toFixed(2)}×</div>
+        <div className={styles.formula}>2 × (1 + {SIZE_TIME_PER_LEVEL} × {sizeMult.toFixed(2)} × {sizeLevel})s ÷ {speedMult.toFixed(2)}×</div>
       </section>
 
       <section className={styles.section} data-testid="scaling-craft-cost">
