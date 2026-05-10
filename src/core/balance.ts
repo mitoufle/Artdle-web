@@ -125,49 +125,29 @@ export const canvasTime = (sizeLevel: number, sizeMult = 1): number =>
 
 /**
  * Total PM accumulated at a given lifetime canvas gold.
- * v1.1 redesign (integer): PM ticks only when lifetimeGold crosses a multiple
- * of the current threshold. Phase 1 (lt < 1M): floor(lt / 1000), max 1000.
- * Phase 2 (1M ≤ lt < 1B): 1000 + floor((lt - 1M) / 1M), max 1999.
- * Each subsequent phase adds up to 999 PM as threshold ratchets ×1000.
  *
- * Returns Big for cross-precision arithmetic but the value is always
- * integer-valued.
+ * Linear: `floor(lifetimeGold / 1000)`. Every 1000 gold of lifetime earnings
+ * grants +1 PM, continuously. Original v1.1 design ratcheted the per-PM cost
+ * by 1000× at each phase boundary (1k → 1M → 1B → ...), which felt "stuck"
+ * to players once lifetime gold crossed 1M. Now uncapped + linear; pmMult's
+ * log10 curve keeps the overall reward shape gentle without phase plateaus.
+ *
+ * Big-typed for cross-precision arithmetic; the result is always integer-valued.
  */
 export const pmFromLifetime = (lt: Big): Big => {
   if (lt.lte(0)) return big(0);
-  let pm = big(0);
-  let phaseStart = big(0);
-  let threshold = big(1000);
-  // Upper bound on phases — generous but bounded to keep the loop terminating.
-  // 100 phases covers lifetime gold up to ~10^303; practical infinity for any reachable game state.
-  for (let i = 0; i < 100; i++) {
-    if (lt.lte(phaseStart)) break;
-    const phaseEnd = threshold.mul(1000);
-    if (lt.gte(phaseEnd)) {
-      // Full phase consumed.
-      pm = pm.add(phaseEnd.sub(phaseStart).div(threshold).floor());
-      phaseStart = phaseEnd;
-      threshold = threshold.mul(1000);
-    } else {
-      // Partial phase.
-      pm = pm.add(lt.sub(phaseStart).div(threshold).floor());
-      break;
-    }
-  }
-  return pm;
+  return lt.div(1000).floor();
 };
 
 /**
  * Paint Mastery gained per canvas sale.
- * v1.1 integer redesign: gain = pmFromLifetime(lt + saleGold) - pmFromLifetime(lt).
- * Always integer. Sub-threshold sales return 0; ticks fire when crossing
- * a multiple of the current threshold.
+ * Linear: gain = floor((lifetimeGold + saleGold) / 1000) - floor(lifetimeGold / 1000).
+ * Equivalently: each canvas sale ticks +1 PM whenever it crosses a 1000-gold boundary.
  */
 export const pmGainPerSale = (saleGold: Big, lifetimeGold: Big): Big => {
   if (saleGold.lte(0)) return big(0);
   const newLt = lifetimeGold.add(saleGold);
   const diff = pmFromLifetime(newLt).sub(pmFromLifetime(lifetimeGold));
-  // Guard against break_eternity's -0 on equal subtraction.
   return diff.lte(0) ? big(0) : diff;
 };
 
@@ -206,29 +186,10 @@ export const inspiPerSec = (
     .mul(multiplier);
 
 /**
- * Cost-per-PM at the given lifetime canvas gold.
- * v1.1 PM redesign: rate ratchets down by 1000× at each milestone.
- *
- * Returns:
- * - 1000 g per PM while lifetime gold < 1M
- * - 1M g per PM while 1M ≤ lifetime gold < 1B
- * - 1B g per PM while 1B ≤ lifetime gold < 1T
- * - 1T g per PM while 1T ≤ lifetime gold < 1Q
- * - ...
- *
- * Formula: max(1000, 10^(3 × floor(log10(lifetimeGold) / 3))).
- *
- * The pmGainPerSale(saleGold, lifetimeGold) function divides saleGold by this
- * threshold to compute PM gain. As lifetime gold grows by 1000×, each new PM
- * costs 1000× more gold — log-shaped accumulation by design.
+ * Cost-per-PM at the given lifetime canvas gold. Constant 1000 (linear design).
+ * Kept as a function for API stability with the v1.1 ratcheting era.
  */
-export const pmThreshold = (lifetimeGold: Big): Big => {
-  const lt = lifetimeGold.toNumber();
-  if (lt <= 0) return big(1000);
-  const phase = Math.floor(Math.log10(lt) / 3);
-  const exp = Math.max(3, 3 * phase);
-  return big(10).pow(exp);
-};
+export const pmThreshold = (_lifetimeGold: Big): Big => big(1000);
 
 /**
  * Cost in gold per craft attempt at the given workshop level.

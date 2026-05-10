@@ -66,26 +66,28 @@ describe("paintMasterySlice — addGoldEarned (v1.1 integer redesign)", () => {
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 
-  it("phase 2 (lifetime ≥ 1M): 1000g sale credits 0 PM (sub-threshold for new phase)", () => {
+  it("at high lifetime gold, 1000g sale credits 1 PM (linear, no phase slowdown)", () => {
     const h = createHarness();
     h.slice._setLifetimeGold(big(1_000_000));
     h.slice.addGoldEarned(big(1000));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    // Linear: pmFromLifetime(1_001_000) - pmFromLifetime(1_000_000) = 1001 - 1000 = 1 PM
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(1);
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(1_001_000);
   });
 
-  it("phase 2: 1M-gold sale credits 1 PM tick", () => {
+  it("at high lifetime gold, 1M-gold sale credits 1000 PM (linear: no phase cap)", () => {
     const h = createHarness();
     h.slice._setLifetimeGold(big(1_000_000));
     h.slice.addGoldEarned(big(1_000_000));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(1);
+    // Linear: pmFromLifetime(2_000_000) - pmFromLifetime(1_000_000) = 2000 - 1000 = 1000 PM
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(1000);
   });
 
-  it("phase boundary: lt=999_500, sale=1000 grants 1 PM (crosses into phase 2 just barely)", () => {
+  it("boundary crossing: lt=999_500, sale=1000 grants 1 PM (linear)", () => {
     const h = createHarness();
     h.slice._setLifetimeGold(big(999_500));
     h.slice.addGoldEarned(big(1000));
-    // pmFromLifetime(999_500) = 999. pmFromLifetime(1_000_500) = 1000.
+    // Linear: pmFromLifetime(999_500) = 999. pmFromLifetime(1_000_500) = 1000.
     expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(1);
   });
 });

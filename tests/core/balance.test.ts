@@ -192,38 +192,22 @@ describe("canvasTime (with sizeMult)", () => {
   });
 });
 
-describe("pmGainPerSale (v1.1 integer redesign)", () => {
-  it("at lt=0, sale=999g grants 0 PM (sub-threshold)", () => {
-    expect(pmGainPerSale(big(999), big(0)).toNumber()).toBe(0);
-  });
-
-  it("at lt=0, sale=1000g grants 1 PM (exact threshold)", () => {
+describe("pmGainPerSale (linear)", () => {
+  it("returns constant rate: every 1000 gold of sale = +1 PM at the differential", () => {
+    // At lt=0: a 1000 gold sale ticks +1 PM
     expect(pmGainPerSale(big(1000), big(0)).toNumber()).toBe(1);
+    // At lt=999: a 1 gold sale crosses the 1000 boundary → +1 PM
+    expect(pmGainPerSale(big(1), big(999)).toNumber()).toBe(1);
+    // At lt=1000: a 999 gold sale stays under the next boundary → 0 PM
+    expect(pmGainPerSale(big(999), big(1000)).toNumber()).toBe(0);
+    // At lt=1M: a 1k gold sale ticks +1 PM (same rate, no slowdown)
+    expect(pmGainPerSale(big(1000), big(1_000_000)).toNumber()).toBe(1);
   });
 
-  it("at lt=0, sale=1500g grants 1 PM (1500/1000 = 1.5 → floor 1)", () => {
-    expect(pmGainPerSale(big(1500), big(0)).toNumber()).toBe(1);
-  });
-
-  it("at lt=0, sale=2000g grants 2 PM", () => {
-    expect(pmGainPerSale(big(2000), big(0)).toNumber()).toBe(2);
-  });
-
-  it("at lt=500, sale=500g grants 1 PM (crosses 1000 threshold)", () => {
-    expect(pmGainPerSale(big(500), big(500)).toNumber()).toBe(1);
-  });
-
-  it("at lt=999_500, sale=1000g grants 1 PM (just enters phase 2)", () => {
-    // pmFromLifetime(999_500) = 999. pmFromLifetime(1_000_500) = 1000.
-    expect(pmGainPerSale(big(1000), big(999_500)).toNumber()).toBe(1);
-  });
-
-  it("at lt=1M, sale=1000g grants 0 PM (now in phase 2, threshold 1M)", () => {
-    expect(pmGainPerSale(big(1000), big(1_000_000)).toNumber()).toBe(0);
-  });
-
-  it("at lt=1M, sale=1M grants 1 PM (one phase-2 tick)", () => {
-    expect(pmGainPerSale(big(1_000_000), big(1_000_000)).toNumber()).toBe(1);
+  it("at high lifetime gold, gain rate is still 1 PM per 1k gold (no ratcheting)", () => {
+    // At lt=1e15 (way past old ratchet phases), 1k gold sale still gives +1 PM
+    // pmFromLifetime(1e15) = 1e12, pmFromLifetime(1e15 + 1000) = 1e12 + 1
+    expect(pmGainPerSale(big(1000), big("1000000000000000")).toNumber()).toBe(1);
   });
 
   it("0g sale grants 0 PM", () => {
@@ -237,41 +221,26 @@ describe("pmGainPerSale (v1.1 integer redesign)", () => {
   });
 });
 
-describe("pmFromLifetime (v1.1 integer)", () => {
-  it("lt=0 → 0 PM", () => {
+describe("pmFromLifetime (linear)", () => {
+  it("returns floor(lifetimeGold / 1000)", () => {
     expect(pmFromLifetime(big(0)).toNumber()).toBe(0);
-  });
-
-  it("lt=999 → 0 PM (sub-threshold)", () => {
     expect(pmFromLifetime(big(999)).toNumber()).toBe(0);
-  });
-
-  it("lt=1000 → 1 PM", () => {
     expect(pmFromLifetime(big(1000)).toNumber()).toBe(1);
-  });
-
-  it("lt=999_999 → 999 PM", () => {
-    expect(pmFromLifetime(big(999_999)).toNumber()).toBe(999);
-  });
-
-  it("lt=1_000_000 → 1000 PM (end of phase 1)", () => {
+    expect(pmFromLifetime(big(1500)).toNumber()).toBe(1);
     expect(pmFromLifetime(big(1_000_000)).toNumber()).toBe(1000);
+    expect(pmFromLifetime(big(1_000_000_000)).toNumber()).toBe(1_000_000);
   });
 
-  it("lt=1_500_000 → 1000 PM (within phase 2 sub-threshold)", () => {
-    expect(pmFromLifetime(big(1_500_000)).toNumber()).toBe(1000);
+  it("grows past the old 30k phase-cap (no ratcheting)", () => {
+    expect(pmFromLifetime(big("1e9")).toNumber()).toBeCloseTo(1e6, -2);
+    expect(pmFromLifetime(big("1e12")).toNumber()).toBeCloseTo(1e9, -4);
   });
 
-  it("lt=2_000_000 → 1001 PM (one phase-2 tick)", () => {
-    expect(pmFromLifetime(big(2_000_000)).toNumber()).toBe(1001);
-  });
-
-  it("lt=1e9 → 1999 PM (end of phase 2)", () => {
-    expect(pmFromLifetime(big(1e9)).toNumber()).toBe(1999);
-  });
-
-  it("lt=1e12 → 2998 PM (end of phase 3)", () => {
-    expect(pmFromLifetime(big(1e12)).toNumber()).toBe(2998);
+  it("handles Big values past Number.MAX_SAFE_INTEGER", () => {
+    const lt = big("1e30");
+    const pm = pmFromLifetime(lt);
+    // PM = lt / 1000 = 1e27
+    expect(pm.gt(big("1e26"))).toBe(true);
   });
 });
 
@@ -316,29 +285,11 @@ describe("pmFromLifetime — high lifetime gold", () => {
   });
 });
 
-describe("pmThreshold (v1.1 PM redesign)", () => {
-  it("at lifetime 0, threshold is 1000", () => {
+describe("pmThreshold (linear) — constant 1000", () => {
+  it("returns 1000 regardless of lifetime gold", () => {
     expect(pmThreshold(big(0)).toNumber()).toBe(1000);
-  });
-
-  it("at lifetime 999_999, threshold is still 1000 (phase 1)", () => {
-    expect(pmThreshold(big(999_999)).toNumber()).toBe(1000);
-  });
-
-  it("at lifetime 1_000_000, threshold steps up to 1_000_000", () => {
-    expect(pmThreshold(big(1_000_000)).toNumber()).toBe(1_000_000);
-  });
-
-  it("at lifetime 999_999_999, threshold is still 1_000_000 (phase 2)", () => {
-    expect(pmThreshold(big(999_999_999)).toNumber()).toBe(1_000_000);
-  });
-
-  it("at lifetime 1_000_000_000, threshold steps up to 1e9", () => {
-    expect(pmThreshold(big(1_000_000_000)).toNumber()).toBe(1_000_000_000);
-  });
-
-  it("at lifetime 1e12, threshold is 1e12", () => {
-    expect(pmThreshold(big(1e12)).toNumber()).toBe(1e12);
+    expect(pmThreshold(big(1_000_000)).toNumber()).toBe(1000);
+    expect(pmThreshold(big("1e30")).toNumber()).toBe(1000);
   });
 });
 
