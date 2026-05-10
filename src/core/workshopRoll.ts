@@ -1,5 +1,5 @@
 import { rng, rngInt, rngPick } from "@/core/rng";
-import { AFFIX_KINDS, MAGNITUDE_MIN_PCT, MAGNITUDE_MAX_PCT } from "@/config/workshopAffixes";
+import { AFFIX_KINDS, AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
 import type { AffixKind } from "@/config/workshopAffixes";
 import type { GameStore } from "@/store";
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
@@ -130,8 +130,9 @@ export function rollAffixes(
   const out: Affix[] = [];
   for (let i = 0; i < count; i++) {
     const kind = rngPick(pool);
-    const min = MAGNITUDE_MIN_PCT + magnitudeBonus;
-    const max = MAGNITUDE_MAX_PCT + magnitudeBonus;
+    const range = AFFIX_MAGNITUDE_RANGE[kind];
+    const min = range.min + magnitudeBonus;
+    const max = range.max + magnitudeBonus;
     const magnitude = rngInt(min, max);
     out.push({ kind, magnitude });
   }

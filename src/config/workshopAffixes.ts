@@ -25,11 +25,25 @@ export const AFFIX_KINDS: ReadonlyArray<AffixKind> = [
   "+size%",
 ];
 
-/** Inclusive lower bound on rolled magnitude (integer percent). */
-export const MAGNITUDE_MIN_PCT = 5;
-
-/** Inclusive upper bound on rolled magnitude (integer percent). */
-export const MAGNITUDE_MAX_PCT = 15;
+/**
+ * Per-affix-kind magnitude range. Bounds are integer percent (inclusive).
+ *
+ * Different kinds have wildly different gameplay impact at the same magnitude,
+ * so each gets its own range:
+ *   - sell_price / speed / size: 5..15 — direct % effect, baseline impact
+ *   - crit_chance: 2..8 — smaller pp; crit's 10× speed-on-hit compounds non-linearly at high stack
+ *   - combo_chance: 5..20 — wider pp; combo's fixed +10%-per-link bonus is weaker per chance %
+ *
+ * Craftsmanship skill-tree node still shifts BOTH bounds equally
+ * (via `getAffixMagnitudeBonus(state)`).
+ */
+export const AFFIX_MAGNITUDE_RANGE: Record<AffixKind, { min: number; max: number }> = {
+  "+sell_price%": { min: 5, max: 15 },
+  "+speed%": { min: 5, max: 15 },
+  "+size%": { min: 5, max: 15 },
+  "+crit_chance%": { min: 2, max: 8 },
+  "+combo_chance%": { min: 5, max: 20 },
+};
 
 /** Inventory cap. Locked at 3 for v1. */
 export const MAX_INVENTORY_SLOTS = 3;

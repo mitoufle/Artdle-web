@@ -7,6 +7,7 @@ import {
   rollTier,
   rollAffixes,
 } from "@/core/workshopRoll";
+import { AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
 import { setSeed } from "@/core/rng";
 import type { GameStore } from "@/store";
 
@@ -111,12 +112,13 @@ describe("workshopRoll — rollAffixes", () => {
     expect(rollAffixes("legendary", s).length).toBe(5);
   });
 
-  it("each affix has a kind from AFFIX_KINDS and magnitude in [5, 15]", () => {
+  it("each affix has a kind from AFFIX_KINDS and magnitude within that kind's range", () => {
     const affixes = rollAffixes("legendary", baseStub());
     for (const a of affixes) {
       expect(["+sell_price%", "+speed%", "+crit_chance%", "+combo_chance%", "+size%"]).toContain(a.kind);
-      expect(a.magnitude).toBeGreaterThanOrEqual(5);
-      expect(a.magnitude).toBeLessThanOrEqual(15);
+      const range = AFFIX_MAGNITUDE_RANGE[a.kind];
+      expect(a.magnitude).toBeGreaterThanOrEqual(range.min);
+      expect(a.magnitude).toBeLessThanOrEqual(range.max);
     }
   });
 

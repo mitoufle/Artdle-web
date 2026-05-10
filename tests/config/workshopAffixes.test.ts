@@ -1,8 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   AFFIX_KINDS,
-  MAGNITUDE_MIN_PCT,
-  MAGNITUDE_MAX_PCT,
+  AFFIX_MAGNITUDE_RANGE,
   MAX_INVENTORY_SLOTS,
 } from "@/config/workshopAffixes";
 
@@ -24,13 +23,25 @@ describe("workshopAffixes config", () => {
     }
   });
 
-  it("MAGNITUDE_MIN_PCT < MAGNITUDE_MAX_PCT", () => {
-    expect(MAGNITUDE_MIN_PCT).toBeLessThan(MAGNITUDE_MAX_PCT);
+  it("AFFIX_MAGNITUDE_RANGE has all 5 kinds with valid bounds (min < max, all > 0)", () => {
+    for (const kind of AFFIX_KINDS) {
+      expect(AFFIX_MAGNITUDE_RANGE[kind]).toBeDefined();
+      const { min, max } = AFFIX_MAGNITUDE_RANGE[kind];
+      expect(min).toBeGreaterThan(0);
+      expect(max).toBeGreaterThan(0);
+      expect(min).toBeLessThan(max);
+    }
+  });
+
+  it("AFFIX_MAGNITUDE_RANGE has the spec bounds", () => {
+    expect(AFFIX_MAGNITUDE_RANGE["+sell_price%"]).toEqual({ min: 5, max: 15 });
+    expect(AFFIX_MAGNITUDE_RANGE["+speed%"]).toEqual({ min: 5, max: 15 });
+    expect(AFFIX_MAGNITUDE_RANGE["+size%"]).toEqual({ min: 5, max: 15 });
+    expect(AFFIX_MAGNITUDE_RANGE["+crit_chance%"]).toEqual({ min: 2, max: 8 });
+    expect(AFFIX_MAGNITUDE_RANGE["+combo_chance%"]).toEqual({ min: 5, max: 20 });
   });
 
   it("all numeric constants are positive", () => {
-    expect(MAGNITUDE_MIN_PCT).toBeGreaterThan(0);
-    expect(MAGNITUDE_MAX_PCT).toBeGreaterThan(0);
     expect(MAX_INVENTORY_SLOTS).toBeGreaterThan(0);
   });
 
