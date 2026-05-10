@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useGameStore } from "@/store";
+import { initialCanvasState } from "@/store/canvasSlice";
 import { CANVAS_GOLD_BASE } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -297,5 +298,54 @@ describe("canvasSlice — new track state fields", () => {
     expect(s.comboLevel).toBe(0);
     expect(s.comboChain).toBe(0);
     expect(s.isCritThisCanvas).toBe(false);
+  });
+});
+
+describe("canvasSlice — upgradeSellPrice", () => {
+  beforeEach(() => {
+    useGameStore.setState({ ...initialCanvasState, gold: big(0) });
+  });
+
+  it("no-ops when gold < cost (validate guard)", () => {
+    useGameStore.setState({ gold: big(100) }); // < 150 cost (first buy from L1)
+    useGameStore.getState().upgradeSellPrice();
+    expect(useGameStore.getState().sellPriceLevel).toBe(1);
+    expect(useGameStore.getState().gold.toNumber()).toBe(100);
+  });
+
+  it("spends gold and increments level on success", () => {
+    useGameStore.setState({ gold: big(200) });
+    useGameStore.getState().upgradeSellPrice();
+    // First buy from L1: cost = sellPriceUpgradeCost(1) = 100 × 1.5 = 150
+    expect(useGameStore.getState().sellPriceLevel).toBe(2);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(50, 5); // 200 - 150
+  });
+
+  it("uses sellPriceUpgradeCost(currentLevel)", () => {
+    useGameStore.setState({ gold: big(1000), sellPriceLevel: 5 });
+    useGameStore.getState().upgradeSellPrice();
+    // L5 → L6 cost = sellPriceUpgradeCost(5) = 100 × 1.5^5 ≈ 759.375
+    expect(useGameStore.getState().sellPriceLevel).toBe(6);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(1000 - 759.375, 1);
+  });
+});
+
+describe("canvasSlice — upgradeSpeed", () => {
+  beforeEach(() => {
+    useGameStore.setState({ ...initialCanvasState, gold: big(0) });
+  });
+
+  it("no-ops when gold < cost", () => {
+    useGameStore.setState({ gold: big(100) });
+    useGameStore.getState().upgradeSpeed();
+    expect(useGameStore.getState().speedLevel).toBe(1);
+  });
+
+  it("spends gold and increments level", () => {
+    useGameStore.setState({ gold: big(200) });
+    useGameStore.getState().upgradeSpeed();
+    // First buy from L1: cost = speedUpgradeCost(1) = 100 × 1.5 = 150
+    expect(useGameStore.getState().speedLevel).toBe(2);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(50, 5);
   });
 });

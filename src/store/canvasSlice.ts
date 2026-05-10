@@ -1,5 +1,8 @@
 import type { StateCreator } from "zustand";
-import { canvasGold, canvasTime, tierUpgradeCost, MAX_TIER } from "@/core/balance";
+import {
+  canvasGold, canvasTime, tierUpgradeCost, MAX_TIER,
+  sellPriceUpgradeCost, speedUpgradeCost,
+} from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
@@ -79,6 +82,10 @@ export interface CanvasSlice extends CanvasState {
    * No partial state. No race window between gold check and tier mutation.
    */
   upgradeTier: () => void;
+  /** Validate → spend → mutate sell-price upgrade. No-op if gold < cost. */
+  upgradeSellPrice: () => void;
+  /** Validate → spend → mutate speed upgrade. No-op if gold < cost. */
+  upgradeSpeed: () => void;
   /** For ascend orchestrator (Phase 3). */
   resetCanvas: () => void;
   /** Clear the lastSale animation trigger. Called from onAnimationComplete. */
@@ -120,6 +127,27 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
     set({
       gold: state.gold.sub(cost),
       canvasTier: state.canvasTier + 1,
+    });
+  },
+
+  upgradeSellPrice: () => {
+    const state = get();
+    // Contract: formula(currentLevel) returns cost to advance from currentLevel to currentLevel+1.
+    const cost = sellPriceUpgradeCost(state.sellPriceLevel);
+    if (state.gold.lt(cost)) return;
+    set({
+      gold: state.gold.sub(cost),
+      sellPriceLevel: state.sellPriceLevel + 1,
+    });
+  },
+
+  upgradeSpeed: () => {
+    const state = get();
+    const cost = speedUpgradeCost(state.speedLevel);
+    if (state.gold.lt(cost)) return;
+    set({
+      gold: state.gold.sub(cost),
+      speedLevel: state.speedLevel + 1,
     });
   },
 
