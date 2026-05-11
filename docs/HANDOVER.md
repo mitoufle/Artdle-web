@@ -1,5 +1,36 @@
 # Artdle Web — Handover
 
+## Post-Office playtest polish (2026-05-11)
+
+Nine commits after Painter's Office landed. Each surfaced from in-session browser playtesting.
+
+### What landed
+
+- **Build break fixed** (`5622d3c`). Task 19 left 4 `TS2532` errors in test files that broke `tsc -b` but not `tsc --noEmit`. Added `!` non-null assertions on `s.queue[0]` / `s.roster[0]` / `s.roster[1]` indexed access. `npm run build` now passes; bundle ≈ 160 KB gzipped JS (under 250 KB DoD budget).
+- **Constellation pan + zoom + MiniMap viewport** (`e53b85d`, `8ef26b9`, `5cafabf`, `477acb5`, `71f34eb`). New `viewport.ts` pure module with `clampZoom`, `clampPan`, `zoomAt`, `panBy`, `centerOn`; shared viewport state in `ConstellationRoute` drives both the interactive `<StarCanvas>` and the `<MiniMap>` indicator. Wheel = cursor-anchored zoom (non-passive listener, `preventDefault`-ed); left-drag = pan; double-click = reset. Drag-vs-click discrimination via 3px movement threshold + `onClickCapture`. MiniMap renders a translucent stroked rect at the current viewport bounds and supports click-to-jump (centers the main view there). VIEWBOX is now computed from the actual node bounding box plus 880 px of margin (80 padding + 800 future growth), so the whole tree fits at default zoom and there is room for new nodes in every direction.
+- **Constellation pan-clamp evolution**. Initial strict clamp (entire viewport must sit inside VIEWBOX) made dragging dead at zoom 1; relaxed to "viewport center inside VIEWBOX" (gave ±half-viewport pan room); then added `PAN_BLEED = 1` so the user can drag past VIEWBOX bounds by a full extra viewport in every direction. Three iterations because each smaller fix surfaced a tighter UX expectation the next playtest.
+- **Skill tree merge** (`76b8716`). Designer's localStorage draft predated subproject 2's capability tags, so saving from it stripped `size_matters` / `big_picture` / `genius_episode` / `consistency` / `fast_learner` / `unrelentless` from the JSON — permanently locking the canvas Size/Crit/Combo tracks. Merged the 6 lost nodes back into the user's new layout, keeping their additions (`monk_internship`, `entrepreneur`, `education`, `free_will`) and fixing `entrepreneur`'s capability from the bogus `"Office_tab"` to `["roster_slot", "queue_slot"]`. Layout positions later refined (`a7f6072`).
+- **Office tab crash fix** (`ac4a37d`). `QueueCard` used `useGameStore(s => getHireCost(s, candidate))` — selector returned a fresh `Big` instance each call → Zustand "getSnapshot should be cached" → max-update-depth → React unmounted the tree → blank dark screen. Fixed by pulling `officeLevel` as a primitive and computing the Big inside `useMemo` keyed on `(officeLevel, candidate)`.
+- **Stats tab** (`d740cc1`, `b7fd3eb`, `d6357b1`). New right-rail tab below Lab in `RoomRail`, always enabled. `StatsRoom.tsx` shows each canvas-axis multiplier (Sell Price / Speed / Crit / Combo / Size) with a per-source breakdown: Canvas upgrade, Skill tree, Items, Workers. Multiplicative lines (Rainbow, Size factor) render below the additive ones; the displayed total reflects the full multiplicative product. Three new helper selectors in `multipliers.ts` — `getColorTreeContribution`, `getRainbowMultiplier`, `getSkillTreeSpeedContribution` — wrap previously-private logic for UI use without duplicating it. Size handling is a special case: the canvas Size upgrade is a *multiplier on the sell-price additive sum*, not an additive contribution to it, so Size shows up in two places — its own block (with canvas/items/workers lines) and as a multiplicative line in the Sell Price block.
+- **Scrollbars styled** (`5b699f1`). Thin 8 px scrollbars on `--bg-stone-d` tracks with `--ink-line` thumbs (hover lightens to `--ink-3`). Applied globally in `src/index.css`. Covers all scrollable panels including StatsRoom, OfficeRoom, WorkshopRoom, and dev tools.
+
+### Tests + build
+
+- **738 tests passing across 81 files** (was 725 after the Office handover; +13 net for `viewport.test.ts`).
+- `npx tsc --noEmit` clean; `npm run build` clean; bundle ≈ 160 KB gzipped JS.
+
+### Lessons preserved
+
+- **Zustand selectors that return fresh objects each call cause infinite loops.** When a selector wraps a function that constructs a new `Big` / array / object per call, Zustand sees a new identity every render and re-runs the selector forever. Fix: subscribe to the primitive inputs (state field) and compute the derived object via `useMemo` keyed on those inputs. The error surfaces as "The result of getSnapshot should be cached" → max-update-depth → blank dark screen because React unmounts the tree.
+- **localStorage drafts in dev tools can shadow file edits silently.** The SkillDesigner's `loadDraft()` reads `localStorage` first and only falls back to the JSON file when storage is empty. After we updated the JSON in tree on disk, the editor kept loading the stale draft. The editor has no "Reload from file" button; the recovery path is manual (`localStorage.removeItem('artdle:skill-design:draft')` + refresh). Worth adding the button if this pattern bites again.
+- **Pan/zoom clamps trade safety for vibe.** Strict bounds (viewport must stay inside content) feel dead at default zoom; relaxed bounds (allow over-pan into empty space) feel alive. The right balance is content-aware: compute the content bounding box, then add explicit "future growth" margin around it, then let the user pan-bleed up to one viewport beyond that margin. Three constants make the intent legible: `PADDING` (breathing room around current nodes), `FUTURE_GROWTH` (empty space for additions), `PAN_BLEED` (over-pan ratio).
+
+### Next
+
+Open ends from this session: Goldsmith class still has no fame node granting `class_goldsmith` (only Speedrunner is reachable via `free_will`); user can author one in the designer when ready. The Stats tab covers canvas-axis multipliers but doesn't yet surface PM mult or inspiration mult — could be added if it'd be useful in playtesting.
+
+---
+
 ## Painter's Office (shipped on `main`, 2026-05-11)
 
 **Status:** Shipped. Subproject 3 of 3 in the Painter's Office decomposition. The passive idle counterpart to the Workshop: a trickle queue of rolled worker candidates, Hire/Reject/Fire decisions, per-worker geometric XP levelling, and an Office Level meta-progression that survives ascend. Workers buff the single canvas through the same shared affix pool as the Workshop, wired additively into every multiplier.
