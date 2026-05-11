@@ -3,7 +3,7 @@ import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
 import { canvasGold, SIZE_GOLD_PER_LEVEL, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK } from "@/core/balance";
-import { getCanvasGoldMultiplier, getPmMultiplier, getSizeMultiplier } from "@/core/multipliers";
+import { getCanvasGoldMultiplier, getPmMultiplier, getSizeMultiplier, getOfficeContribution } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
@@ -13,13 +13,14 @@ function sellHoverBody(sizeLevel: number, comboChain: number): JSX.Element {
   const goldMult = getCanvasGoldMultiplier(state);
   const pmMult = getPmMultiplier(state);
   const itemBonus = getEquippedContribution(state, "+sell_price%");
+  const workerBonus = getOfficeContribution(state, "+sell_price%").toNumber();
   const rainbowLvl = getNodeLevel(state, "rainbow");
   const rainbowFactor = 1 + 0.50 * rainbowLvl;
   const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
   const sizeMult = getSizeMultiplier(state);
-  // Reverse-engineer colors contribution (additive sum minus items minus sell-price)
-  const colorPlusItemsPlusSellPrice = goldMult / rainbowFactor - 1;
-  const colorSum = colorPlusItemsPlusSellPrice - itemBonus - sellPriceContribution;
+  // Reverse-engineer colors: additive total minus all other named sources.
+  const additiveTotal = goldMult / rainbowFactor - 1;
+  const colorSum = additiveTotal - itemBonus - workerBonus - sellPriceContribution;
   const baseGold = 10 * (1 + SIZE_GOLD_PER_LEVEL * sizeMult * sizeLevel);
   const total = canvasGold(sizeLevel, goldMult * pmMult, sizeMult).mul(1 + COMBO_PER_LINK * comboChain);
   return (
@@ -28,6 +29,7 @@ function sellHoverBody(sizeLevel: number, comboChain: number): JSX.Element {
       <div>───</div>
       <div>Sell Price (Lv {state.sellPriceLevel}): ×{(1 + sellPriceContribution).toFixed(2)}</div>
       <div>Items (sell):  ×{(1 + itemBonus).toFixed(2)}</div>
+      <div>Workers:       ×{(1 + workerBonus).toFixed(2)}</div>
       <div>Colors:        ×{(1 + colorSum).toFixed(2)}</div>
       <div>Rainbow:       ×{rainbowFactor.toFixed(2)}</div>
       <div>Paint Mastery: ×{pmMult.toFixed(2)}</div>
