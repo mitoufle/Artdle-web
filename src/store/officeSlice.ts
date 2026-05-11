@@ -1,13 +1,13 @@
 import type { StateCreator } from "zustand";
 import { big, type Big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
-import type { Candidate } from "@/core/officeRoll";
+import { rollCandidate, type Candidate } from "@/core/officeRoll";
 import type { ClassId } from "@/config/officeClasses";
 import type { WorkerTier } from "@/core/balance";
 import type { Affix } from "@/core/workshopRoll";
 import { hasCapability, countCapability } from "@/store/skillTreeSlice";
 import { OFFICE_CLASSES } from "@/config/officeClasses";
-import { OFFICE_TIER_UNLOCK_LEVEL, ALL_WORKER_TIERS } from "@/core/balance";
+import { OFFICE_TIER_UNLOCK_LEVEL, ALL_WORKER_TIERS, trickleSeconds } from "@/core/balance";
 
 export interface Worker {
   readonly id: string;
@@ -67,11 +67,31 @@ export const getClassUnlocked = (state: GameStore, classId: ClassId): boolean =>
   return hasCapability(state, cap);
 };
 
-export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (set, _get) => ({
+export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (set, get) => ({
   ...initialOfficeState,
 
-  tickOffice: (_delta: number) => {
-    // Stub — implemented in Task 9.
+  tickOffice: (delta: number) => {
+    if (delta <= 0) return;
+    const state = get();
+    const queueCap = getQueueCap(state);
+    if (queueCap <= 0) return;
+    if (state.queue.length >= queueCap) return;
+
+    const period = trickleSeconds(state.officeLevel);
+    let timer = state.trickleTimer + delta;
+    const newCandidates: Candidate[] = [];
+    let queueSize = state.queue.length;
+
+    while (timer >= period && queueSize < queueCap) {
+      timer -= period;
+      newCandidates.push(rollCandidate(state.officeLevel, state));
+      queueSize += 1;
+    }
+
+    set({
+      queue: [...state.queue, ...newCandidates],
+      trickleTimer: timer,
+    });
   },
   hireFromQueue: (_id: string) => false,
   rejectFromQueue: (_id: string) => false,

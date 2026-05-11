@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { initialOfficeState, getRosterCap, getQueueCap, getOfficeTierCap, getClassUnlocked } from "@/store/officeSlice";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
@@ -58,5 +58,25 @@ describe("getClassUnlocked", () => {
   it("goldsmith requires class_goldsmith capability", () => {
     const state = { purchasedNodes: {} } as GameStore;
     expect(getClassUnlocked(state, "goldsmith")).toBe(false);
+  });
+});
+
+describe("tickOffice — trickle", () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      queue: [],
+      trickleTimer: 0,
+    });
+  });
+
+  it("at queue cap 0, no trickling occurs even when timer is overdue", () => {
+    useGameStore.setState({
+      purchasedNodes: {},
+      officeLevel: 5,
+      queue: [],
+      trickleTimer: 999,
+    });
+    useGameStore.getState().tickOffice(10);
+    expect(useGameStore.getState().queue.length).toBe(0);
   });
 });
