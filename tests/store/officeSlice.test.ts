@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { initialOfficeState, getRosterCap, getQueueCap, getOfficeTierCap, getClassUnlocked } from "@/store/officeSlice";
+import { initialOfficeState, getRosterCap, getQueueCap, getOfficeTierCap, getClassUnlocked, getHireCost } from "@/store/officeSlice";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
@@ -78,5 +78,55 @@ describe("tickOffice — trickle", () => {
     });
     useGameStore.getState().tickOffice(10);
     expect(useGameStore.getState().queue.length).toBe(0);
+  });
+});
+
+describe("getHireCost", () => {
+  it("computes cost from tier, affix sum, and office level", () => {
+    const state = { officeLevel: 0 } as GameStore;
+    const candidate = {
+      id: "x", class: "generalist" as const, tier: "common" as const,
+      affixes: [{ kind: "+sell_price%" as const, magnitude: 5 }],
+    };
+    const cost = getHireCost(state, candidate);
+    // common min-roll → tierBase × 1 × 1.10^0 = 100
+    expect(cost.toNumber()).toBeCloseTo(100, 4);
+  });
+});
+
+describe("hireFromQueue", () => {
+  it("returns false if no roster slots available", () => {
+    useGameStore.setState({
+      purchasedNodes: {},
+      queue: [{ id: "c1", class: "generalist" as const, tier: "common" as const, affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }] }],
+    });
+    expect(useGameStore.getState().hireFromQueue("c1")).toBe(false);
+    expect(useGameStore.getState().roster.length).toBe(0);
+  });
+});
+
+describe("rejectFromQueue", () => {
+  it("removes the candidate from the queue", () => {
+    useGameStore.setState({
+      queue: [
+        { id: "c1", class: "generalist" as const, tier: "common" as const, affixes: [] },
+        { id: "c2", class: "generalist" as const, tier: "common" as const, affixes: [] },
+      ],
+    });
+    expect(useGameStore.getState().rejectFromQueue("c1")).toBe(true);
+    expect(useGameStore.getState().queue.length).toBe(1);
+    expect(useGameStore.getState().queue[0].id).toBe("c2");
+  });
+});
+
+describe("fireWorker", () => {
+  it("removes the worker from the roster", () => {
+    useGameStore.setState({
+      roster: [
+        { id: "w1", class: "generalist" as const, tier: "common" as const, level: 5, xp: big(0), affixes: [] },
+      ],
+    });
+    expect(useGameStore.getState().fireWorker("w1")).toBe(true);
+    expect(useGameStore.getState().roster.length).toBe(0);
   });
 });
