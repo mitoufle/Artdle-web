@@ -46,9 +46,10 @@ function candidateHoverBody(candidate: Candidate): JSX.Element {
 
 export function QueueCard({ candidate }: Props): JSX.Element {
   const officeLevel = useGameStore((s) => s.officeLevel);
+  const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const cost = useMemo(
-    () => getHireCost({ officeLevel } as GameStore, candidate),
-    [officeLevel, candidate],
+    () => getHireCost({ officeLevel, purchasedNodes } as GameStore, candidate),
+    [officeLevel, purchasedNodes, candidate],
   );
   const gold = useGameStore((s) => s.gold);
   const rosterLen = useGameStore((s) => s.roster.length);
