@@ -1,3 +1,33 @@
+/* Custom scrollbars — match the dark/violet aesthetic. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-line) var(--bg-stone-d);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--bg-stone-d);
+  border-radius: 2px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--ink-line);
+  border-radius: 2px;
+  border: 1px solid var(--bg-stone-d);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-3);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 @keyframes fame-pulse {
   0%   { transform: scale(1);    color: var(--fame); }
   40%  { transform: scale(1.15); color: var(--gold); }
