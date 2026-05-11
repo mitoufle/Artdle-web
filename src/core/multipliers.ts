@@ -1,7 +1,37 @@
+/**
+ * Canvas multipliers return JS `number`. Office contribution from
+ * getOfficeContribution() is Big-valued and gets `.toNumber()`'d before
+ * adding to the multiplier sum. This saturates at MAX_SAFE_INTEGER if a
+ * single worker stacks magnitudes × levelScale beyond ~9e15 — which only
+ * happens past office L~100 with deep worker leveling. A future refactor
+ * can move the canvas multipliers to Big if this becomes a progression
+ * blocker; for v1.x of the Office, the saturation point is "you've won."
+ */
+
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
-import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL } from "./balance";
+import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, levelScale } from "./balance";
+import { big, type Big } from "@/core/bigNumber";
+import type { AffixKind } from "@/config/workshopAffixes";
+
+/**
+ * Sum of (worker.affix.magnitude / 100) × levelScale(worker.level) for all
+ * workers whose affix list contains the given kind. Returns Big — at high
+ * levels this is genuinely large (levelScale grows geometrically).
+ */
+export function getOfficeContribution(state: GameStore, kind: AffixKind): Big {
+  let total: Big = big(0);
+  for (const worker of state.roster) {
+    const scale = levelScale(worker.level);
+    for (const affix of worker.affixes) {
+      if (affix.kind === kind) {
+        total = total.add(big(affix.magnitude / 100).mul(scale));
+      }
+    }
+  }
+  return total;
+}
 
 /**
  * Per-color additive bonus to canvas gold. Tier-scaled per the v3.2 design:
@@ -53,6 +83,7 @@ export const getInspiMultiplier = (state: GameStore): number => {
 export const getCanvasGoldMultiplier = (state: GameStore): number => {
   let bonus = 0;
   bonus += getEquippedContribution(state, "+sell_price%");
+  bonus += getOfficeContribution(state, "+sell_price%").toNumber();
   for (const [id, perLevel] of Object.entries(COLOR_PER_LEVEL)) {
     bonus += getNodeLevel(state, id) * perLevel;
   }
@@ -77,6 +108,7 @@ export const getCanvasSpeedMultiplier = (state: GameStore): number => {
   bonus += getNodeLevel(state, "muscle_memory") * MUSCLE_MEMORY_PER_LEVEL;
   bonus += SPEED_PER_LEVEL * state.speedLevel;
   bonus += getEquippedContribution(state, "+speed%"); // already fractional
+  bonus += getOfficeContribution(state, "+speed%").toNumber();
   return 1 + bonus;
 };
 
@@ -111,6 +143,7 @@ export const getAffixMagnitudeBonus = (state: GameStore): number =>
 export const getCritChance = (state: GameStore): number => {
   let chance = CRIT_PER_LEVEL * state.critLevel;
   chance += getEquippedContribution(state, "+crit_chance%"); // already fractional
+  chance += getOfficeContribution(state, "+crit_chance%").toNumber();
   return Math.min(1.0, chance);
 };
 
@@ -122,6 +155,7 @@ export const getCritChance = (state: GameStore): number => {
 export const getComboBaseChance = (state: GameStore): number => {
   let chance = COMBO_PER_LEVEL * state.comboLevel;
   chance += getEquippedContribution(state, "+combo_chance%");
+  chance += getOfficeContribution(state, "+combo_chance%").toNumber();
   return Math.min(1.0, chance);
 };
 
@@ -139,5 +173,5 @@ export const getComboBaseChance = (state: GameStore): number => {
  * roll-time in `rollAffixes`).
  */
 export const getSizeMultiplier = (state: GameStore): number => {
-  return 1 + getEquippedContribution(state, "+size%");
+  return 1 + getEquippedContribution(state, "+size%") + getOfficeContribution(state, "+size%").toNumber();
 };

@@ -39,6 +39,7 @@ export function PaintingRoute(): JSX.Element {
   const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const paintMastery = useGameStore((s) => s.paintMastery);
+  const roster = useGameStore((s) => s.roster);
   const upgradeSellPrice = useGameStore((s) => s.upgradeSellPrice);
   const upgradeSpeed = useGameStore((s) => s.upgradeSpeed);
   const upgradeSize = useGameStore((s) => s.upgradeSize);
@@ -48,7 +49,7 @@ export function PaintingRoute(): JSX.Element {
   const clearLastSale = useGameStore((s) => s.clearLastSale);
 
   const helperState = {
-    equipped, purchasedNodes, paintMastery,
+    equipped, purchasedNodes, paintMastery, roster,
     sellPriceLevel, speedLevel, critLevel, comboLevel,
   } as unknown as GameStore;
 

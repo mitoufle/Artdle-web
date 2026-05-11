@@ -7,16 +7,19 @@ import {
   getCritChance,
   getComboBaseChance,
   getSizeMultiplier,
+  getOfficeContribution,
 } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
 import type { Item } from "@/store/workshopSlice";
 import { big } from "@/core/bigNumber";
+import { levelScale } from "@/core/balance";
 
 describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
   // Helper: minimal state-shape stub. The selectors only read certain fields.
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
     purchasedNodes: {},
     equipped: {},
+    roster: [],
     sellPriceLevel: 1,
     speedLevel: 1,
     paintMastery: big(0),
@@ -156,6 +159,7 @@ describe("multipliers — crit + combo chances", () => {
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
     purchasedNodes: {},
     equipped: {},
+    roster: [],
     critLevel: 0,
     comboLevel: 0,
     ...over,
@@ -184,7 +188,7 @@ describe("multipliers — crit + combo chances", () => {
 
 describe("getCanvasSpeedMultiplier — equipped +speed% contribution", () => {
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
-    purchasedNodes: {}, equipped: {}, speedLevel: 1, ...over,
+    purchasedNodes: {}, equipped: {}, roster: [], speedLevel: 1, ...over,
   } as GameStore);
 
   it("includes equipped +speed% magnitudes additively", () => {
@@ -200,7 +204,7 @@ describe("getCanvasSpeedMultiplier — equipped +speed% contribution", () => {
 
 describe("getCritChance — equipped +crit_chance% contribution", () => {
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
-    purchasedNodes: {}, equipped: {}, critLevel: 0, ...over,
+    purchasedNodes: {}, equipped: {}, roster: [], critLevel: 0, ...over,
   } as GameStore);
 
   it("adds equipped +crit_chance% magnitudes (already fractional via getEquippedContribution)", () => {
@@ -225,7 +229,7 @@ describe("getCritChance — equipped +crit_chance% contribution", () => {
 
 describe("getComboBaseChance — equipped +combo_chance% contribution", () => {
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
-    purchasedNodes: {}, equipped: {}, comboLevel: 0, ...over,
+    purchasedNodes: {}, equipped: {}, roster: [], comboLevel: 0, ...over,
   } as GameStore);
 
   it("adds equipped +combo_chance% magnitudes additively", () => {
@@ -241,7 +245,7 @@ describe("getComboBaseChance — equipped +combo_chance% contribution", () => {
 
 describe("getSizeMultiplier", () => {
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
-    purchasedNodes: {}, equipped: {}, ...over,
+    purchasedNodes: {}, equipped: {}, roster: [], ...over,
   } as GameStore);
 
   it("returns 1.0 when no items equipped", () => {
@@ -258,5 +262,37 @@ describe("getSizeMultiplier", () => {
     };
     const state = stub({ equipped: { brush: item } });
     expect(getSizeMultiplier(state)).toBeCloseTo(1.17, 5);
+  });
+});
+
+describe("getOfficeContribution — sums worker affix magnitudes × levelScale", () => {
+  it("returns 0 with empty roster", () => {
+    const state = { roster: [] } as unknown as GameStore;
+    expect(getOfficeContribution(state, "+sell_price%").eq(big(0))).toBe(true);
+  });
+
+  it("sums one worker's matching affixes (with level scale)", () => {
+    const state = {
+      roster: [
+        {
+          id: "w1", class: "generalist", tier: "common", level: 1, xp: big(0),
+          affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+        },
+      ],
+    } as unknown as GameStore;
+    const expected = big(10 / 100).mul(levelScale(1));
+    expect(getOfficeContribution(state, "+sell_price%").toNumber()).toBeCloseTo(expected.toNumber(), 6);
+  });
+
+  it("returns 0 for kinds no worker has", () => {
+    const state = {
+      roster: [
+        {
+          id: "w1", class: "generalist", tier: "common", level: 1, xp: big(0),
+          affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+        },
+      ],
+    } as unknown as GameStore;
+    expect(getOfficeContribution(state, "+speed%").eq(big(0))).toBe(true);
   });
 });
