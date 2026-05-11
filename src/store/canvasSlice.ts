@@ -95,55 +95,83 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
 
   canvasTick: (deltaSeconds) => {
     if (deltaSeconds <= 0) return;
-    const state = get();
+    let state = get();
 
-    // Roll crit at the start of every new canvas (canvasProgress === 0 guarantees first tick).
+    // Loop-local state — committed via set() at the end. Reading these from
+    // `state` mid-loop would be stale because we don't set() between sales.
+    let progress = state.canvasProgress;
     let critFlag = state.isCritThisCanvas;
-    if (state.canvasProgress === 0) {
+    let chain = state.comboChain;
+    let lastSaleId = state.lastSale?.id ?? 0;
+    let lastSaleAmount: Big | null = null;
+
+    // Roll crit at the start of every new canvas (covers the very first tick).
+    if (progress === 0) {
       critFlag = rng() < getCritChance(state);
     }
 
-    const size = getCanvasSize(state);
-    const baseTime = canvasTime(size);
-    const speedMult = getCanvasSpeedMultiplier(state);
-    const critFactor = critFlag ? CRIT_SPEED_FACTOR : 1;
-    const effectiveTime = baseTime / (speedMult * critFactor);
+    let timeBudget = deltaSeconds;
+    // Multiple sales per tick when effectiveTime < deltaSeconds (e.g. crits at
+    // already-fast canvas times). Safety cap prevents runaway loops.
+    const MAX_SALES_PER_TICK = 1000;
+    let sales = 0;
 
-    const newProgress = state.canvasProgress + deltaSeconds;
+    while (timeBudget > 0 && sales < MAX_SALES_PER_TICK) {
+      const size = getCanvasSize(state);
+      const baseTime = canvasTime(size);
+      const speedMult = getCanvasSpeedMultiplier(state);
+      const critFactor = critFlag ? CRIT_SPEED_FACTOR : 1;
+      const effectiveTime = baseTime / (speedMult * critFactor);
 
-    if (newProgress < effectiveTime) {
-      set({ canvasProgress: newProgress, isCritThisCanvas: critFlag });
-      return;
+      const remainingForThisCanvas = effectiveTime - progress;
+
+      if (timeBudget < remainingForThisCanvas) {
+        // Not enough time to finish this canvas — just advance progress.
+        progress += timeBudget;
+        timeBudget = 0;
+        break;
+      }
+
+      // Finish this canvas — fire a sale.
+      timeBudget -= remainingForThisCanvas;
+      progress = 0;
+      sales += 1;
+
+      const critGoldMult = critFlag ? (1 + getCritGoldBonus(state)) : 1;
+      const goldMult = getCanvasGoldMultiplier(state) * getPmMultiplier(state) * critGoldMult;
+      const baseGold = canvasGold(size, goldMult);
+      // Apply combo bonus from PRIOR chain state — chain mutation happens AFTER pay-out.
+      const gain = baseGold.mul(comboBonusFactor(chain));
+
+      state.add("gold", gain);
+      state.addGoldEarned(gain);
+      state.awardOfficeXp(gain);
+
+      // Roll combo for the chain decision (after sale paid out).
+      const baseChance = getComboBaseChance(state);
+      const decay = Math.max(0, COMBO_DECAY_PER_LINK - getComboDecayReduction(state));
+      const effChance = comboEffectiveChance(baseChance, chain, decay);
+      const comboHit = rng() < effChance;
+      chain = comboHit ? chain + 1 : 0;
+
+      // Roll crit for the NEXT canvas.
+      critFlag = rng() < getCritChance(state);
+      lastSaleId += 1;
+      lastSaleAmount = gain;
+
+      // Refresh state to capture gold / lifetimeGold / officeXp updates from the
+      // sale we just credited. Multipliers don't depend on these but PM does
+      // (compounds within a busy tick).
+      state = get();
     }
 
-    // Threshold crossed — exactly one sale per tick.
-    const critGoldMult = critFlag ? (1 + getCritGoldBonus(state)) : 1;
-    const goldMult = getCanvasGoldMultiplier(state) * getPmMultiplier(state) * critGoldMult;
-    const baseGold = canvasGold(size, goldMult);
-    // Apply combo bonus from PRIOR chain state — chain mutation happens AFTER pay-out.
-    const gain = baseGold.mul(comboBonusFactor(state.comboChain));
-
-    state.add("gold", gain);
-    state.addGoldEarned(gain);
-    state.awardOfficeXp(gain);
-
-    // Roll combo for the chain decision (after sale gold paid out).
-    const baseChance = getComboBaseChance(state);
-    const decay = Math.max(0, COMBO_DECAY_PER_LINK - getComboDecayReduction(state));
-    const effChance = comboEffectiveChance(baseChance, state.comboChain, decay);
-    const comboHit = rng() < effChance;
-    const newChain = comboHit ? state.comboChain + 1 : 0;
-
-    const leftover = newProgress - effectiveTime;
-    const prevId = state.lastSale?.id ?? 0;
-    // Roll crit for the NEXT canvas now (don't wait for next tick — leftover > 0
-    // would skip the canvasProgress === 0 check at tick top).
-    const nextCrit = rng() < getCritChance(state);
     set({
-      canvasProgress: leftover < effectiveTime ? leftover : 0,
-      isCritThisCanvas: nextCrit,
-      comboChain: newChain,
-      lastSale: { id: prevId + 1, amount: gain },
+      canvasProgress: progress,
+      isCritThisCanvas: critFlag,
+      comboChain: chain,
+      ...(lastSaleAmount !== null
+        ? { lastSale: { id: lastSaleId, amount: lastSaleAmount } }
+        : {}),
     });
   },
 

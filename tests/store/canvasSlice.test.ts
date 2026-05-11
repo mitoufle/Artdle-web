@@ -23,16 +23,15 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().gold.toNumber()).toBe(goldBefore);
   });
 
-  it("two canvasTick(5) calls each cross threshold once (tier 1, 2s/canvas): 2 sales, progress = 0", () => {
+  it("two canvasTick(5) calls fire multiple sales each (effectiveTime ≈ 1.905s, multi-sale per tick)", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(5);
     useGameStore.getState().canvasTick(5);
-    // Two sales must have fired: gold > goldBefore + CANVAS_GOLD_BASE (at least 2 × 10).
-    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThan(goldBefore + CANVAS_GOLD_BASE);
-    // Each tick clamped progress to 0 (leftover 3s ≥ paintTime 2s → clamp).
-    expect(useGameStore.getState().canvasProgress).toBe(0);
-    // lastSale.id === 2 confirms exactly two sales (one per tick).
-    expect(useGameStore.getState().lastSale!.id).toBe(2);
+    // 5s / ~1.905s = 2.6 sales per tick → 2 sales per tick = 4 total over 2 ticks.
+    // Expect at least 4 × 11g = 44g earned.
+    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(goldBefore + CANVAS_GOLD_BASE * 1.1 * 4);
+    // lastSale.id reflects total sales across both ticks (>= 4).
+    expect(useGameStore.getState().lastSale!.id).toBeGreaterThanOrEqual(4);
   });
 
   it("canvasTick at exact effective threshold (sizeLevel=0, speedLevel=1 → ~1.905s): one sale, progress = 0", () => {
@@ -54,13 +53,17 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().canvasProgress).toBeCloseTo(0.5, 9);
   });
 
-  it("canvasTick(huge delta) — credits exactly one sale; progress clamped to 0", () => {
+  it("canvasTick(huge delta) — fires multiple sales until budget exhausted (multi-sale per tick)", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(100); // way past effectiveTime of ~1.905s
-    // sizeLevel=0, sellPriceLevel=1: gold = 11
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE * 1.1, 9);
-    // Leftover would be ~98 ≥ effectiveTime → clamp to 0.
-    expect(useGameStore.getState().canvasProgress).toBe(0);
+    useGameStore.getState().canvasTick(100); // ~52 sales worth (100 / 1.905)
+    // Floor of 100 / 1.905 = 52 sales. Each sale ≈ 11g, so total ≈ 572g.
+    const expectedSales = Math.floor(100 / (2 / 1.05));
+    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(
+      goldBefore + CANVAS_GOLD_BASE * 1.1 * expectedSales,
+    );
+    // Progress carries the small leftover from the last partial canvas.
+    expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(0);
+    expect(useGameStore.getState().canvasProgress).toBeLessThan(2 / 1.05);
   });
 
   it("canvasTick(0) is a no-op: no sale, no progress change, no gold change", () => {
