@@ -11,6 +11,7 @@ import type { ItemTier } from "@/core/workshopRoll";
 import type { Affix } from "@/core/workshopRoll";
 import type { GameStore } from "@/store";
 import { getNodeLevel } from "@/store/skillTreeSlice";
+import { getAffixMagnitudeBonus } from "@/core/multipliers";
 
 export type { AffixKind, SlotKind } from "@/config/workshopAffixes";
 export type { ItemTier, Affix } from "@/core/workshopRoll";
@@ -126,8 +127,7 @@ function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<Game
   const unlocked = getUnlockedSlotKinds(state);
   const slot = rngPick(unlocked);
   const tier = rollTier(state.workshopLevel);
-  const magnitudeBonus = getNodeLevel(state, "craftsmanship");
-  const affixes = rollAffixes(tier, state, magnitudeBonus);
+  const affixes = rollAffixes(tier, state, getAffixMagnitudeBonus(state));
   const item: Item = {
     id: nextItemId(),
     slot,

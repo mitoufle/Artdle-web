@@ -143,6 +143,19 @@ describe("workshopSlice — craft", () => {
     expect(item.affixes.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("Craftsmanship Lv 5 shifts affix magnitudes by +25 pp (regression — was passing raw level)", () => {
+    // With craftsmanship 5, getAffixMagnitudeBonus = 5 × 5 = 25 pp.
+    // For any kind, rolled magnitude must land in [min+25, max+25].
+    useGameStore.setState({ gold: big(100), purchasedNodes: { craftsmanship: 5 } });
+    useGameStore.getState().craft();
+    const item = useGameStore.getState().inventory[0]!;
+    for (const affix of item.affixes) {
+      // Sanity: smallest possible min across kinds is +crit_chance% [2,8] → shifted to [27,33].
+      // So every rolled magnitude must be >= 27 (the smallest shifted min).
+      expect(affix.magnitude).toBeGreaterThanOrEqual(27);
+    }
+  });
+
   it("levels up when XP threshold reached: e.g., 8 XP = L1 → L2", () => {
     useGameStore.setState({ gold: big(10_000), workshopXp: 7 });
     expect(useGameStore.getState().workshopLevel).toBe(1);
