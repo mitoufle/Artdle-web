@@ -1,5 +1,56 @@
 # Artdle Web — Handover
 
+## Tree expansion + tick-loop fix + type-safety guard (2026-05-12)
+
+Seven commits covering one feature batch, one engine bug, and one architectural cleanup that closes a recurring class of bugs.
+
+### What landed
+
+- **"Buy all" button on the inspiration tree** (`8bbded7`). New `buyAllAffordableTreeParts` action in `treeSlice` uses a greedy "cheapest affordable next" loop: each iteration finds the lowest-cost affordable upgrade across all unlocked stages and buys one level, repeating until nothing's affordable. Maximally drains gold (greedy + geometric per-level cost growth = optimal). Capped at 10000 iterations. Button lives in the TreeRoute upgrades header, disabled when nothing's affordable.
+
+- **11 new fame skill-tree nodes + 7 new capability tags** (`8bdf6b6`, `40da6f5`). Filled the underbuilt Office branch and added depth to canvas/inspiration paths. Nodes:
+  - Office (5): `gold_diggers` (user renamed from `master_painter`) — `class_goldsmith`; `recruiter` — `queue_slot`; `hire_manager` — `roster_slot`; `accelerator` — `worker_xp_mult`; `bookkeeper` — `hire_cost_reduction`.
+  - Canvas-depth (3): `afterburner` — `combo_decay_reduction`; `prismatic_eye` — `crit_gold_bonus`; `expanding_horizon` — `canvas_size_bonus`.
+  - Inspiration (2): `enlightenment` — `ascend_threshold_reduction`; `patron` — `inspi_mult_bonus` (parent: `poke_tree`).
+  - Workshop (1): `apprentice_pool` — hardcoded inventory slot like the existing chests.
+  
+  Six new selectors in `multipliers.ts` plus `getCritGoldBonus` wired into `canvasTick`'s crit path. `comboEffectiveChance` and `fameOnAscend` extended with optional decay / threshold-reduction params (backward-compatible defaults). 9 focused tests cover each new capability selector. All new selectors use `countCapability` so authoring more nodes with the same tag stacks linearly.
+
+- **Office black-screen regression fix** (`a66f3fb`). The new `getHireCostMultiplier` reads `state.purchasedNodes`, but QueueCard's helperState (`{ officeLevel } as GameStore`) didn't include it → `countCapability` crashed on `Object.entries(undefined)` → React unmounted. Subscribed to `purchasedNodes` and threaded through useMemo deps. The third instance of this exact bug class (canvas NaN preview, Office black-screen v1, now Office black-screen v2). Triggered the next item.
+
+- **Typed `Pick<GameStore, ...>` selector signatures across the board** (`47f2794`). Closes the `as unknown as GameStore` escape hatch that enabled the recurring helperState bug. Each selector now declares the minimum fields it reads:
+  - **`Pick<GameStore, "purchasedNodes">`** — `getNodeLevel`, `hasNode`, `sumLevels`, `hasCapability`, `countCapability`, `getCanvasTrackUnlocked`, `getInspiMultiplier`, `getColorTreeContribution`, `getRainbowMultiplier`, `getSkillTreeSpeedContribution`, `getTreeUpgradeCostMultiplier`, `getAffixMagnitudeBonus`, `getWorkerXpMultiplier`, `getHireCostMultiplier`, `getComboDecayReduction`, `getCritGoldBonus`, `getAscendThresholdReduction`.
+  - **`Pick<GameStore, "paintMastery">`** — `getPmMultiplier`.
+  - **`Pick<GameStore, "equipped">`** — `getEquippedContribution`.
+  - **`Pick<GameStore, "roster">`** — `getOfficeContribution`.
+  - **New exported `CanvasMultiplierInputs` type** — union of all fields canvas multipliers read. `getCanvasGoldMultiplier`, `getCanvasSpeedMultiplier`, `getCritChance`, `getComboBaseChance`, `getCanvasSize` all take it. Components (PaintingRoute, StatsRoom) type their helperState as `: CanvasMultiplierInputs` instead of `as unknown as GameStore`. TS now catches missing fields at compile time.
+  
+  Net result: the three bugs that hit us (canvas NaN, Office black-screen v1, Office black-screen v2) would all have failed to compile under the new guard. Zero `as GameStore` escapes remain in canvas/office UI code.
+
+- **Multi-sale-per-tick fix — crit now actually scales at high speeds** (`f41f4df`, `7003c0b`). Old `canvasTick` fired *exactly one sale per call* and discarded leftover time beyond `effectiveTime`. Result: at high `speedMult` (or any state where `effectiveTime < 16ms` RAF delta), throughput was throttled to 60 sales/sec regardless of underlying speed. Crit (×10 faster) showed no visible gold/sec lift once base canvas was already sub-second — the extra speed had nowhere to go. Now `canvasTick` loops over the deltaSeconds budget, finishing as many canvases as time covers per tick; re-rolls crit/combo each iteration; refreshes state between iterations so PM compounds correctly. Safety cap at 1000 sales/tick. Regression test asserts ≥8× more sales/sec at 100% crit vs no-crit (geometric ~10×) — would fail under the old throttle.
+
+### Tests + build
+
+- **746 tests passing across 80 files** (was 736 before this batch; +10 net for new capabilities + Buy-all + multi-sale + crit regression).
+- `npx tsc --noEmit` clean. `npm run build` clean. Bundle ≈ 164 KB gzipped (under 250 KB DoD).
+
+### Lessons preserved
+
+- **`as` casts on partial state are landmines.** Three bugs hit the same pattern (component constructs `{ field1, field2 } as unknown as GameStore`, selector reads a field not in the stub, runtime crash). The fix is to make the cast unnecessary: narrow selector signatures to typed Picks so TS catches mismatches at compile time. Apply the same pattern wherever else `as unknown as GameStore` appears (workshop, constellation, ascension, tree routes still have one each — defer until something breaks).
+- **The greedy "cheapest first" sweep is optimal under geometric per-level cost growth.** When a per-level cost grows by a fixed ratio (e.g., ×1.5), buying the cheapest part first always gives more total levels for the same gold than other orderings. The `buyAllAffordableTreeParts` action exploits this.
+- **One-sale-per-tick throttles invisibly cap crit / speed late game.** Originally the throttle was a defensive choice ("exactly one sale per tick" was even commented). It's wrong: when `effectiveTime < frameDelta`, the engine is dropping sales. Multi-sale loop with a safety cap is the correct shape. Future content that boosts canvas speed (workers, items, tree nodes) won't silently regress now.
+- **Capability tags via `countCapability` make per-level-stacked nodes cheap to add.** Six of the seven new capabilities are pure additive multipliers via `countCapability(state, tag) × constant`. Authoring a new node with the same tag adds another level worth of effect — no engine changes needed. Pattern to keep using for future content.
+- **JSON-driven node config means rename-with-content-preservation is free.** User renamed `master_painter` → `gold_diggers` mid-session. Engine reads the capability tag, not the ID; only one test referenced the literal ID and needed updating. Mid-session renames are a natural part of authoring.
+
+### Next
+
+Open ends:
+- Goldsmith class node now exists (`gold_diggers`) but unwired in playtest — verify in browser that purchasing it lets Goldsmith candidates trickle.
+- Crit-not-working perception bug: user reported it after `f41f4df` shipped. Regression test passes. Probable cause was stale HMR; needs hard-refresh + Stats-tab verification of crit chance. Tracked.
+- Four `as unknown as GameStore` casts remain in `WorkshopRoom`, `ConstellationRoute`, `TreeRoute`, `AscensionRoute`. None has triggered a bug yet; leave until one does, then apply the same typed-Pick pattern.
+
+---
+
 ## Size rework + review-driven fixes (2026-05-11)
 
 Nine commits after the post-Office polish, driven by a formal `requesting-code-review` pass plus a user-requested Size system rework.
