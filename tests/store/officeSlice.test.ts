@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { initialOfficeState } from "@/store/officeSlice";
+import { initialOfficeState, getRosterCap, getQueueCap, getOfficeTierCap, getClassUnlocked } from "@/store/officeSlice";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
+import type { GameStore } from "@/store";
 
 describe("officeSlice — initial state", () => {
   it("level = 0, xp = big(0)", () => {
@@ -21,5 +22,41 @@ describe("officeSlice — wired into GameStore", () => {
     const s = useGameStore.getState();
     expect(typeof s.officeLevel).toBe("number");
     expect(s.officeXp).toBeDefined();
+  });
+});
+
+describe("getRosterCap / getQueueCap — sum capability levels", () => {
+  it("returns 0 when no nodes with roster_slot are purchased", () => {
+    const state = { purchasedNodes: {} } as GameStore;
+    expect(getRosterCap(state)).toBe(0);
+    expect(getQueueCap(state)).toBe(0);
+  });
+
+  // More integration tests added in Task 18 once SkillDesigner has the chips.
+});
+
+describe("getOfficeTierCap", () => {
+  it("returns common at L1", () => {
+    const state = { officeLevel: 1 } as GameStore;
+    expect(getOfficeTierCap(state)).toBe("common");
+  });
+  it("returns magic at L3", () => {
+    const state = { officeLevel: 3 } as GameStore;
+    expect(getOfficeTierCap(state)).toBe("magic");
+  });
+  it("returns legendary at L40+", () => {
+    const state = { officeLevel: 100 } as GameStore;
+    expect(getOfficeTierCap(state)).toBe("legendary");
+  });
+});
+
+describe("getClassUnlocked", () => {
+  it("generalist always unlocked", () => {
+    const state = { purchasedNodes: {} } as GameStore;
+    expect(getClassUnlocked(state, "generalist")).toBe(true);
+  });
+  it("goldsmith requires class_goldsmith capability", () => {
+    const state = { purchasedNodes: {} } as GameStore;
+    expect(getClassUnlocked(state, "goldsmith")).toBe(false);
   });
 });

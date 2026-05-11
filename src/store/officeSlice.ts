@@ -5,6 +5,9 @@ import type { Candidate } from "@/core/officeRoll";
 import type { ClassId } from "@/config/officeClasses";
 import type { WorkerTier } from "@/core/balance";
 import type { Affix } from "@/core/workshopRoll";
+import { hasCapability, countCapability } from "@/store/skillTreeSlice";
+import { OFFICE_CLASSES } from "@/config/officeClasses";
+import { OFFICE_TIER_UNLOCK_LEVEL, ALL_WORKER_TIERS } from "@/core/balance";
 
 export interface Worker {
   readonly id: string;
@@ -39,6 +42,30 @@ export interface OfficeSlice extends OfficeState {
   awardOfficeXp: (goldSold: Big) => void;
   resetOffice: () => void;
 }
+
+/** Max number of hired workers. Sums fame-node levels with the `roster_slot` tag. */
+export const getRosterCap = (state: GameStore): number =>
+  countCapability(state, "roster_slot");
+
+/** Max number of waiting candidates in the queue. Sums fame-node levels with `queue_slot`. */
+export const getQueueCap = (state: GameStore): number =>
+  countCapability(state, "queue_slot");
+
+/** Highest tier that can roll in the queue at the player's current office level. */
+export const getOfficeTierCap = (state: GameStore): WorkerTier => {
+  let cap: WorkerTier = "common";
+  for (const t of ALL_WORKER_TIERS) {
+    if (state.officeLevel >= OFFICE_TIER_UNLOCK_LEVEL[t]) cap = t;
+  }
+  return cap;
+};
+
+/** Whether the class can roll for new candidates (capability-gate check). */
+export const getClassUnlocked = (state: GameStore, classId: ClassId): boolean => {
+  const cap = OFFICE_CLASSES[classId].capability;
+  if (cap === null) return true;
+  return hasCapability(state, cap);
+};
 
 export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (set, _get) => ({
   ...initialOfficeState,
