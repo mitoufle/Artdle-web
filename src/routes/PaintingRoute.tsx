@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { useState } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import {
@@ -21,12 +22,15 @@ import { formatBig } from "@/core/formatter";
 import { CanvasStage } from "@/components/painting/CanvasStage";
 import { TrackCard } from "@/components/painting/TrackCard";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
-import { RoomRail } from "@/components/painting/RoomRail";
+import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
 import { WorkshopRoom } from "@/components/painting/WorkshopRoom";
+import { OfficeRoom } from "@/components/painting/OfficeRoom";
 import { FloatingGoldText } from "@/ui/widgets/FloatingGoldText";
 import styles from "./PaintingRoute.module.css";
 
 export function PaintingRoute(): JSX.Element {
+  const [activeRoom, setActiveRoom] = useState<RoomId>("workshop");
+
   const canvasProgress = useGameStore((s) => s.canvasProgress);
   const sellPriceLevel = useGameStore((s) => s.sellPriceLevel);
   const speedLevel = useGameStore((s) => s.speedLevel);
@@ -154,11 +158,12 @@ export function PaintingRoute(): JSX.Element {
       </div>
 
       <aside className={styles.roomArea}>
-        <WorkshopRoom />
+        {activeRoom === "workshop" && <WorkshopRoom />}
+        {activeRoom === "office" && <OfficeRoom />}
       </aside>
 
       <aside className={styles.railArea}>
-        <RoomRail />
+        <RoomRail activeRoom={activeRoom} onSelect={setActiveRoom} />
       </aside>
     </div>
   );
