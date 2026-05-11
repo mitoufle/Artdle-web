@@ -21,6 +21,7 @@ import {
   CRIT_PER_LEVEL,
   COMBO_PER_LEVEL,
   SIZE_GOLD_PER_LEVEL,
+  SIZE_TIME_PER_LEVEL,
 } from "@/core/balance";
 import styles from "./StatsRoom.module.css";
 
@@ -34,6 +35,16 @@ interface StatBlock {
   totalLabel: string;
   lines: BreakdownLine[];
   multiplicatives?: Array<{ source: string; factor: number }>;
+}
+
+interface SizeBlock {
+  name: "Size";
+  sizeLevel: number;
+  itemContribution: number;
+  workerContribution: number;
+  sizeMult: number;
+  effectiveGoldPct: number;
+  effectiveTimePct: number;
 }
 
 function fmtPct(v: number, digits = 1): string {
@@ -99,16 +110,22 @@ function statBlocks(state: GameStore): StatBlock[] {
         { source: "Workers", value: getOfficeContribution(state, "+combo_chance%").toNumber() },
       ],
     },
-    {
-      name: "Size",
-      totalLabel: fmtMult(sizeMult),
-      lines: [
-        { source: "Canvas upgrade", value: SIZE_GOLD_PER_LEVEL * state.sizeLevel },
-        { source: "Items", value: getEquippedContribution(state, "+size%") },
-        { source: "Workers", value: getOfficeContribution(state, "+size%").toNumber() },
-      ],
-    },
   ];
+}
+
+function sizeBlock(state: GameStore): SizeBlock {
+  const sizeMult = getSizeMultiplier(state);
+  const itemContribution = getEquippedContribution(state, "+size%");
+  const workerContribution = getOfficeContribution(state, "+size%").toNumber();
+  return {
+    name: "Size",
+    sizeLevel: state.sizeLevel,
+    itemContribution,
+    workerContribution,
+    sizeMult,
+    effectiveGoldPct: SIZE_GOLD_PER_LEVEL * sizeMult * state.sizeLevel,
+    effectiveTimePct: SIZE_TIME_PER_LEVEL * sizeMult * state.sizeLevel,
+  };
 }
 
 export function StatsRoom(): JSX.Element {
@@ -121,12 +138,12 @@ export function StatsRoom(): JSX.Element {
   const critLevel = useGameStore((s) => s.critLevel);
   const comboLevel = useGameStore((s) => s.comboLevel);
 
-  const blocks = useMemo(() => {
+  const { blocks, size } = useMemo(() => {
     const helperState = {
       equipped, purchasedNodes, roster,
       sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
     } as unknown as GameStore;
-    return statBlocks(helperState);
+    return { blocks: statBlocks(helperState), size: sizeBlock(helperState) };
   }, [equipped, purchasedNodes, roster, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel]);
 
   return (
@@ -157,6 +174,34 @@ export function StatsRoom(): JSX.Element {
           </ul>
         </article>
       ))}
+      <article className={styles.block}>
+        <header className={styles.blockHeader}>
+          <span className={styles.blockName}>Size</span>
+          <span className={styles.blockTotal}>Lv {size.sizeLevel} × {fmtMult(size.sizeMult)}</span>
+        </header>
+        <ul className={styles.lines}>
+          <li className={styles.line}>
+            <span className={styles.source}>Canvas size level</span>
+            <span className={styles.value}>{size.sizeLevel}</span>
+          </li>
+          <li className={styles.line}>
+            <span className={styles.source}>Items (→ mult)</span>
+            <span className={styles.value}>+{fmtPct(size.itemContribution)}</span>
+          </li>
+          <li className={styles.line}>
+            <span className={styles.source}>Workers (→ mult)</span>
+            <span className={styles.value}>+{fmtPct(size.workerContribution)}</span>
+          </li>
+          <li className={styles.line}>
+            <span className={styles.source}>Effective gold/canvas</span>
+            <span className={styles.value}>+{fmtPct(size.effectiveGoldPct)}</span>
+          </li>
+          <li className={styles.line}>
+            <span className={styles.source}>Effective time/canvas</span>
+            <span className={styles.value}>+{fmtPct(size.effectiveTimePct)}</span>
+          </li>
+        </ul>
+      </article>
     </section>
   );
 }
