@@ -248,3 +248,96 @@ export const comboBonusFactor = (chain: number): number =>
  */
 export const comboEffectiveChance = (base: number, chain: number): number =>
   Math.max(0, base * (1 - COMBO_DECAY_PER_LINK * chain));
+
+// ============================================================================
+// Painter's Office formulas
+// ============================================================================
+
+export const LEVEL_SCALE_GROWTH = 1.04;
+
+export const levelScale = (level: number): Big =>
+  big(LEVEL_SCALE_GROWTH).pow(level);
+
+export const WORKER_XP_BASE = 10;
+export const WORKER_XP_GROWTH = 1.15;
+export const OFFICE_XP_BASE = 50;
+export const OFFICE_XP_GROWTH = 1.30;
+
+export const workerXpToNext = (level: number): Big =>
+  big(WORKER_XP_BASE).mul(big(WORKER_XP_GROWTH).pow(level));
+
+export const officeXpToNext = (level: number): Big =>
+  big(OFFICE_XP_BASE).mul(big(OFFICE_XP_GROWTH).pow(level));
+
+export const TRICKLE_BASE_SECONDS = 60;
+export const TRICKLE_DECAY = 0.97;
+export const TRICKLE_FLOOR_SECONDS = 5;
+
+export const trickleSeconds = (officeLevel: number): number =>
+  Math.max(TRICKLE_FLOOR_SECONDS, TRICKLE_BASE_SECONDS * Math.pow(TRICKLE_DECAY, officeLevel));
+
+export type WorkerTier = "common" | "magic" | "rare" | "epic" | "legendary";
+export const ALL_WORKER_TIERS: ReadonlyArray<WorkerTier> = [
+  "common", "magic", "rare", "epic", "legendary",
+];
+
+export const OFFICE_TIER_UNLOCK_LEVEL: Record<WorkerTier, number> = {
+  common: 1, magic: 3, rare: 8, epic: 20, legendary: 40,
+};
+
+export const OFFICE_TIER_AFFIX_COUNT: Record<WorkerTier, number> = {
+  common: 1, magic: 2, rare: 3, epic: 4, legendary: 5,
+};
+
+interface TierProbRange { readonly min: number; readonly max: number; }
+const OFFICE_TIER_PROB_RANGES: Record<Exclude<WorkerTier, "common">, TierProbRange> = {
+  magic:     { min: 0.05, max: 0.30 },
+  rare:      { min: 0.05, max: 0.25 },
+  epic:      { min: 0.05, max: 0.20 },
+  legendary: { min: 0.05, max: 0.15 },
+};
+
+const OFFICE_PROB_MAX_LEVEL = 100;
+
+export function computeOfficeTierProbabilities(officeLevel: number): Record<WorkerTier, number> {
+  let nonCommonSum = 0;
+  const out: Record<string, number> = {};
+  for (const tier of ALL_WORKER_TIERS) {
+    if (tier === "common") continue;
+    const range = OFFICE_TIER_PROB_RANGES[tier];
+    const unlock = OFFICE_TIER_UNLOCK_LEVEL[tier];
+    if (officeLevel < unlock) { out[tier] = 0; continue; }
+    const span = OFFICE_PROB_MAX_LEVEL - unlock;
+    const t = span <= 0 ? 1 : Math.min(1, (officeLevel - unlock) / span);
+    const prob = range.min + (range.max - range.min) * t;
+    out[tier] = prob;
+    nonCommonSum += prob;
+  }
+  out.common = Math.max(0, 1 - nonCommonSum);
+  return out as Record<WorkerTier, number>;
+}
+
+export const HIRE_TIER_BASE: Record<WorkerTier, number> = {
+  common: 100, magic: 1_000, rare: 10_000, epic: 100_000, legendary: 1_000_000,
+};
+export const HIRE_QUALITY_MAX = 5;
+export const HIRE_OFFICE_LEVEL_GROWTH = 1.10;
+export const XP_GOLD_FRACTION = 0.01;
+
+interface HireCostInput {
+  readonly tier: WorkerTier;
+  readonly magnitudeSum: number;
+  readonly minMagnitudeSum: number;
+  readonly maxMagnitudeSum: number;
+}
+
+export function hireCost(input: HireCostInput, officeLevel: number): Big {
+  const range = input.maxMagnitudeSum - input.minMagnitudeSum;
+  const ratio = range > 0
+    ? Math.min(1, Math.max(0, (input.magnitudeSum - input.minMagnitudeSum) / range))
+    : 0;
+  const qualityFactor = 1 + (HIRE_QUALITY_MAX - 1) * ratio;
+  return big(HIRE_TIER_BASE[input.tier])
+    .mul(qualityFactor)
+    .mul(big(HIRE_OFFICE_LEVEL_GROWTH).pow(officeLevel));
+}

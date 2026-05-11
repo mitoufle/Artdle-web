@@ -35,6 +35,21 @@ import {
   COMBO_COST_BASE,
   TRACK_COST_GROWTH,
   CANVAS_TIME_BASE,
+  levelScale,
+  workerXpToNext,
+  officeXpToNext,
+  WORKER_XP_BASE,
+  OFFICE_XP_BASE,
+  trickleSeconds,
+  TRICKLE_BASE_SECONDS,
+  TRICKLE_FLOOR_SECONDS,
+  OFFICE_TIER_UNLOCK_LEVEL,
+  OFFICE_TIER_AFFIX_COUNT,
+  computeOfficeTierProbabilities,
+  hireCost,
+  HIRE_TIER_BASE,
+  XP_GOLD_FRACTION,
+  HIRE_OFFICE_LEVEL_GROWTH,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -433,5 +448,109 @@ describe("combo formulas", () => {
     expect(comboEffectiveChance(0.50, 5)).toBeCloseTo(0.375, 5);
     // base 0.10, chain 25 → would go negative → clamped at 0
     expect(comboEffectiveChance(0.10, 25)).toBe(0);
+  });
+});
+
+// ============================================================================
+// Painter's Office balance formulas
+// ============================================================================
+
+describe("levelScale (per-worker geometric XP scaling)", () => {
+  it("returns 1 at L0", () => {
+    expect(levelScale(0).toNumber()).toBeCloseTo(1, 6);
+  });
+  it("returns 1.04 at L1", () => {
+    expect(levelScale(1).toNumber()).toBeCloseTo(1.04, 6);
+  });
+  it("returns ~2.19 at L20", () => {
+    expect(levelScale(20).toNumber()).toBeCloseTo(Math.pow(1.04, 20), 4);
+  });
+  it("returns Big past L100 (no Number saturation)", () => {
+    const s = levelScale(500);
+    expect(s.gt(big(1e6))).toBe(true);
+  });
+});
+
+describe("workerXpToNext", () => {
+  it("equals WORKER_XP_BASE at L0", () => {
+    expect(workerXpToNext(0).eq(big(WORKER_XP_BASE))).toBe(true);
+  });
+  it("grows by 1.15 per level", () => {
+    const l0 = workerXpToNext(0);
+    const l1 = workerXpToNext(1);
+    expect(l1.div(l0).toNumber()).toBeCloseTo(1.15, 4);
+  });
+});
+
+describe("officeXpToNext", () => {
+  it("equals OFFICE_XP_BASE at L0", () => {
+    expect(officeXpToNext(0).eq(big(OFFICE_XP_BASE))).toBe(true);
+  });
+  it("grows by 1.30 per level (steeper than worker curve)", () => {
+    const l0 = officeXpToNext(0);
+    const l1 = officeXpToNext(1);
+    expect(l1.div(l0).toNumber()).toBeCloseTo(1.30, 4);
+  });
+});
+
+describe("trickleSeconds (geometric decay with floor)", () => {
+  it("returns TRICKLE_BASE_SECONDS at L0", () => {
+    expect(trickleSeconds(0)).toBeCloseTo(TRICKLE_BASE_SECONDS, 4);
+  });
+  it("decays by 0.97 per level", () => {
+    expect(trickleSeconds(1)).toBeCloseTo(TRICKLE_BASE_SECONDS * 0.97, 4);
+  });
+  it("floors at TRICKLE_FLOOR_SECONDS by high L", () => {
+    expect(trickleSeconds(1000)).toBe(TRICKLE_FLOOR_SECONDS);
+  });
+});
+
+describe("Office tier table", () => {
+  it("Common = L1, Magic = L3, Rare = L8, Epic = L20, Legendary = L40", () => {
+    expect(OFFICE_TIER_UNLOCK_LEVEL.common).toBe(1);
+    expect(OFFICE_TIER_UNLOCK_LEVEL.magic).toBe(3);
+    expect(OFFICE_TIER_UNLOCK_LEVEL.rare).toBe(8);
+    expect(OFFICE_TIER_UNLOCK_LEVEL.epic).toBe(20);
+    expect(OFFICE_TIER_UNLOCK_LEVEL.legendary).toBe(40);
+  });
+  it("affix slot count = 1/2/3/4/5", () => {
+    expect(OFFICE_TIER_AFFIX_COUNT.common).toBe(1);
+    expect(OFFICE_TIER_AFFIX_COUNT.legendary).toBe(5);
+  });
+});
+
+describe("computeOfficeTierProbabilities", () => {
+  it("at L1, only common rolls", () => {
+    const p = computeOfficeTierProbabilities(1);
+    expect(p.common).toBe(1);
+    expect(p.magic).toBe(0);
+  });
+  it("at L100, non-common sum < 1", () => {
+    const p = computeOfficeTierProbabilities(100);
+    const nonCommon = p.magic + p.rare + p.epic + p.legendary;
+    expect(nonCommon).toBeCloseTo(0.30 + 0.25 + 0.20 + 0.15, 4);
+    expect(p.common).toBeCloseTo(0.10, 4);
+  });
+});
+
+describe("hireCost", () => {
+  it("at min-roll Common, L0, cost ≈ tierBase × 1", () => {
+    const c = hireCost({
+      tier: "common", magnitudeSum: 5, minMagnitudeSum: 5, maxMagnitudeSum: 15,
+    }, 0);
+    // qualityFactor at min = 1
+    expect(c.toNumber()).toBeCloseTo(HIRE_TIER_BASE.common, 4);
+  });
+  it("at max-roll Legendary, L0, cost ≈ tierBase × 5", () => {
+    const c = hireCost({
+      tier: "legendary", magnitudeSum: 75, minMagnitudeSum: 15, maxMagnitudeSum: 75,
+    }, 0);
+    // qualityFactor at max = 5 (HIRE_QUALITY_MAX)
+    expect(c.toNumber()).toBeCloseTo(HIRE_TIER_BASE.legendary * 5, 4);
+  });
+  it("officeLevelFactor at L20 ≈ 1.10^20", () => {
+    const c1 = hireCost({ tier: "common", magnitudeSum: 5, minMagnitudeSum: 5, maxMagnitudeSum: 15 }, 20);
+    const c0 = hireCost({ tier: "common", magnitudeSum: 5, minMagnitudeSum: 5, maxMagnitudeSum: 15 }, 0);
+    expect(c1.div(c0).toNumber()).toBeCloseTo(Math.pow(1.10, 20), 4);
   });
 });
