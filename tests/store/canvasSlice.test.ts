@@ -53,6 +53,33 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().canvasProgress).toBeCloseTo(0.5, 9);
   });
 
+  it("100% crit gives ~10× sales per second vs no crit (regression: crit-throttle bug)", () => {
+    const tickCount = 100; // simulate 100 RAF frames
+    const tickDelta = 0.016; // ~16ms each (60Hz)
+
+    // Baseline: no crit. critLevel=0, no crit affixes, no crit nodes.
+    useGameStore.getState().resetCanvas();
+    useGameStore.getState().resetRunCurrencies();
+    useGameStore.setState({ critLevel: 0, isCritThisCanvas: false });
+    for (let i = 0; i < tickCount; i++) {
+      useGameStore.getState().canvasTick(tickDelta);
+    }
+    const baselineSales = useGameStore.getState().lastSale?.id ?? 0;
+
+    // 100% crit via critLevel=100 (CRIT_PER_LEVEL=0.01 × 100 = 1.0).
+    useGameStore.getState().resetCanvas();
+    useGameStore.getState().resetRunCurrencies();
+    useGameStore.setState({ critLevel: 100, isCritThisCanvas: false, lastSale: null });
+    for (let i = 0; i < tickCount; i++) {
+      useGameStore.getState().canvasTick(tickDelta);
+    }
+    const critSales = useGameStore.getState().lastSale?.id ?? 0;
+
+    // Expected: with 100% crit, canvases take 1/10 the time, so ~10× more sales.
+    // Allow some slack (8×–12×) for tick alignment and the very first canvas's fractional progress.
+    expect(critSales / Math.max(1, baselineSales)).toBeGreaterThanOrEqual(8);
+  });
+
   it("canvasTick(huge delta) — fires multiple sales until budget exhausted (multi-sale per tick)", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(100); // ~52 sales worth (100 / 1.905)
