@@ -441,9 +441,11 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
     expect(getAscendThresholdReduction(state)).toBeCloseTo(0.20, 4);
   });
 
-  it("master_painter: unlocks class_goldsmith capability", async () => {
+  it("class_goldsmith capability is reachable from a registered node (currently `gold_diggers`)", async () => {
     const { hasCapability } = await import("@/store/skillTreeSlice");
-    useGameStore.setState({ purchasedNodes: { master_painter: 1 } });
+    // Use whichever node currently carries the class_goldsmith tag.
+    // (User renamed master_painter → gold_diggers; the engine reads the tag, not the ID.)
+    useGameStore.setState({ purchasedNodes: { gold_diggers: 1 } });
     expect(hasCapability(useGameStore.getState(), "class_goldsmith")).toBe(true);
   });
 
