@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-10T20:53:26.567Z",
+  "designedAt": "2026-05-11T19:13:11.452Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -19,6 +19,7 @@
         15,
         20
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -35,6 +36,7 @@
       "costs": [
         1
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -51,6 +53,7 @@
       "costs": [
         5
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -67,6 +70,7 @@
       "costs": [
         5
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -83,6 +87,7 @@
       "costs": [
         5
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -100,6 +105,7 @@
       "costs": [
         10
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -117,6 +123,7 @@
       "costs": [
         30
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -134,6 +141,7 @@
       "costs": [
         10
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -151,6 +159,7 @@
       "costs": [
         20
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -168,6 +177,7 @@
       "costs": [
         20
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -185,6 +195,7 @@
       "costs": [
         20
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -203,6 +214,7 @@
       "costs": [
         100
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -223,6 +235,7 @@
         40,
         80
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -241,6 +254,7 @@
         4,
         5
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -261,7 +275,11 @@
         40,
         80
       ],
-      "position": null
+      "unlocks": [],
+      "position": {
+        "x": 359.37325516471253,
+        "y": 213.6837787154243
+      }
     },
     {
       "id": "gear_up",
@@ -269,7 +287,7 @@
       "description": "Unlocks a second equipment slot for palette items.",
       "numericEffect": "+1 palette slot",
       "parentIds": [
-        "basic_technique"
+        "muscle_memory"
       ],
       "stacking": "additive",
       "kind": "major",
@@ -277,6 +295,7 @@
       "costs": [
         100
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -297,6 +316,7 @@
         40,
         80
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -317,6 +337,7 @@
         100,
         100
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -333,6 +354,7 @@
       "costs": [
         100
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -349,6 +371,7 @@
       "costs": [
         150
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -365,6 +388,7 @@
       "costs": [
         150
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -381,6 +405,7 @@
       "costs": [
         200
       ],
+      "unlocks": [],
       "position": null
     },
     {
@@ -398,10 +423,91 @@
       "costs": [
         0
       ],
+      "unlocks": [],
       "position": {
-        "x": 300.7077326343381,
-        "y": -13.107019562715777
+        "x": 565.4098388429961,
+        "y": 35.60387779039152
       }
+    },
+    {
+      "id": "monk_internship",
+      "name": "Monk Internship",
+      "description": "increases #% min/max affixes magnitude",
+      "numericEffect": "10",
+      "parentIds": [
+        "forget_pain"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        10
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 616.6796657381616,
+        "y": -21.21058688147295
+      }
+    },
+    {
+      "id": "entrepreneur",
+      "name": "Entrepreneur",
+      "description": "unlocks the Worker Office tab ",
+      "numericEffect": "1",
+      "parentIds": [
+        "basic_technique"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        10
+      ],
+      "unlocks": [
+        "roster_slot",
+        "queue_slot"
+      ],
+      "position": null
+    },
+    {
+      "id": "education",
+      "name": "Education",
+      "description": "increase by #% workers affixes magnitude",
+      "numericEffect": "1",
+      "parentIds": [
+        "entrepreneur"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "unlocks": [],
+      "position": null
+    },
+    {
+      "id": "free_will",
+      "name": "Free will",
+      "description": "unlocks Speedrunner worker class",
+      "numericEffect": "1",
+      "parentIds": [
+        "education"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        1
+      ],
+      "unlocks": [
+        "class_speedrunner"
+      ],
+      "position": null
     },
     {
       "id": "size_matters",
@@ -417,7 +523,9 @@
       "costs": [
         5
       ],
-      "unlocks": ["canvas_size"],
+      "unlocks": [
+        "canvas_size"
+      ],
       "position": {
         "x": 458.4534731323722,
         "y": 214.72957422324512
@@ -441,6 +549,7 @@
         10,
         10
       ],
+      "unlocks": [],
       "position": {
         "x": 496.1992136304063,
         "y": 162.945914844649
@@ -460,7 +569,9 @@
       "costs": [
         5
       ],
-      "unlocks": ["canvas_crit"],
+      "unlocks": [
+        "canvas_crit"
+      ],
       "position": {
         "x": 382.1756225425951,
         "y": 144.30379746835445
@@ -484,6 +595,7 @@
         10,
         10
       ],
+      "unlocks": [],
       "position": {
         "x": 436.43512450851904,
         "y": 113.23360184119679
@@ -508,6 +620,7 @@
         160,
         320
       ],
+      "unlocks": [],
       "position": {
         "x": 488.33551769331586,
         "y": 112.54315304948217
@@ -527,7 +640,9 @@
       "costs": [
         50
       ],
-      "unlocks": ["canvas_combo"],
+      "unlocks": [
+        "canvas_combo"
+      ],
       "position": {
         "x": 527.653997378768,
         "y": 74.56846950517838
