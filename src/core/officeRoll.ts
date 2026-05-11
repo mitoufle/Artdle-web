@@ -6,9 +6,14 @@ import {
   SPECIALIST_CLASS_WEIGHT,
 } from "@/config/officeClasses";
 import type { ClassId } from "@/config/officeClasses";
-import { hasCapability } from "@/store/skillTreeSlice";
+import { hasCapability, getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
+import type { CanvasTrackId } from "@/store/skillTreeSlice";
 import type { GameStore } from "@/store";
+import { AFFIX_KINDS, AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
 import type { AffixKind } from "@/config/workshopAffixes";
+import { OFFICE_TIER_AFFIX_COUNT } from "@/core/balance";
+import type { WorkerTier } from "@/core/balance";
+import type { Affix } from "@/core/workshopRoll";
 
 /**
  * Roll the class for a new candidate worker.
@@ -59,4 +64,49 @@ export function rollWorkerWeights(classId: ClassId): WeightTuple {
     if (sum > 0) return out as WeightTuple;
   }
   throw new Error(`rollWorkerWeights: ${MAX_REROLL_ATTEMPTS} consecutive all-zero rolls — class ${classId} ranges may be misconfigured`);
+}
+
+const KIND_TO_TRACK: Record<AffixKind, CanvasTrackId> = {
+  "+sell_price%": "sell_price",
+  "+speed%": "speed",
+  "+crit_chance%": "crit",
+  "+combo_chance%": "combo",
+  "+size%": "size",
+};
+
+function availableKinds(state: GameStore): ReadonlyArray<AffixKind> {
+  return AFFIX_KINDS.filter((k) => getCanvasTrackUnlocked(state, KIND_TO_TRACK[k]));
+}
+
+function weightedPick(pool: ReadonlyArray<AffixKind>, weights: WeightTuple): AffixKind {
+  let total = 0;
+  for (const k of pool) total += weights[k];
+  if (total <= 0) {
+    return pool[Math.floor(rng() * pool.length)]!;
+  }
+  const r = rng() * total;
+  let acc = 0;
+  for (const k of pool) {
+    acc += weights[k];
+    if (r < acc) return k;
+  }
+  return pool[pool.length - 1]!;
+}
+
+export function rollWorkerAffixes(
+  weights: WeightTuple,
+  tier: WorkerTier,
+  state: GameStore,
+): ReadonlyArray<Affix> {
+  const count = OFFICE_TIER_AFFIX_COUNT[tier];
+  const pool = availableKinds(state);
+  if (pool.length === 0) throw new Error("rollWorkerAffixes: empty affix pool");
+  const out: Affix[] = [];
+  for (let i = 0; i < count; i++) {
+    const kind = weightedPick(pool, weights);
+    const range = AFFIX_MAGNITUDE_RANGE[kind];
+    const magnitude = rngInt(range.min, range.max);
+    out.push({ kind, magnitude });
+  }
+  return out;
 }

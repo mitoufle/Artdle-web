@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { rollWorkerClass, rollWorkerWeights } from "@/core/officeRoll";
+import { rollWorkerClass, rollWorkerWeights, rollWorkerAffixes } from "@/core/officeRoll";
 import { setSeed } from "@/core/rng";
 import type { GameStore } from "@/store";
+import { AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
 
 function stub(over: Partial<GameStore> = {}): GameStore {
   return { purchasedNodes: {}, ...over } as GameStore;
@@ -49,6 +50,42 @@ describe("rollWorkerWeights", () => {
       const w = rollWorkerWeights("generalist");
       const sum = Object.values(w).reduce((a, b) => a + b, 0);
       expect(sum).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("rollWorkerAffixes", () => {
+  it("rolls exactly tier-slot-count affixes for a legendary (5)", () => {
+    setSeed(20);
+    const weights = { "+sell_price%": 1, "+speed%": 1, "+size%": 1, "+crit_chance%": 1, "+combo_chance%": 1 };
+    const affixes = rollWorkerAffixes(weights, "legendary", stub());
+    expect(affixes.length).toBe(5);
+  });
+
+  it("rolls 1 affix for common", () => {
+    setSeed(21);
+    const weights = { "+sell_price%": 2, "+speed%": 2, "+size%": 2, "+crit_chance%": 2, "+combo_chance%": 2 };
+    const affixes = rollWorkerAffixes(weights, "common", stub());
+    expect(affixes.length).toBe(1);
+  });
+
+  it("respects per-worker weights (high-weight kinds dominate)", () => {
+    setSeed(22);
+    const weights = { "+sell_price%": 100, "+speed%": 0, "+size%": 0, "+crit_chance%": 0, "+combo_chance%": 0 };
+    const affixes = rollWorkerAffixes(weights, "legendary", stub());
+    for (const a of affixes) {
+      expect(a.kind).toBe("+sell_price%");
+    }
+  });
+
+  it("each affix magnitude is in the AFFIX_MAGNITUDE_RANGE for its kind", () => {
+    setSeed(23);
+    const weights = { "+sell_price%": 1, "+speed%": 1, "+size%": 1, "+crit_chance%": 1, "+combo_chance%": 1 };
+    const affixes = rollWorkerAffixes(weights, "legendary", stub());
+    for (const a of affixes) {
+      const range = AFFIX_MAGNITUDE_RANGE[a.kind];
+      expect(a.magnitude).toBeGreaterThanOrEqual(range.min);
+      expect(a.magnitude).toBeLessThanOrEqual(range.max);
     }
   });
 });
