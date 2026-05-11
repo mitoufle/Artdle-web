@@ -34,7 +34,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 12;
+const SAVE_VERSION = 13;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -81,6 +81,10 @@ const SAVE_KEY = "artdle-save";
  * behavior (now affects both gold AND time, matching size-track semantics).
  * Magnitudes from the old kind don't translate cleanly. Game unreleased —
  * wipe inventory + equipped. Workshop level + XP preserved.
+ *
+ * v12 → v13 (2026-05-11): Painter's Office launch. Adds officeLevel, officeXp,
+ * queue, roster, trickleTimer. No data to migrate from older saves (the
+ * system didn't exist).
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -204,6 +208,20 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     // behavior (now also affects time). Magnitudes don't translate cleanly.
     // Wipe inventory + equipped; preserve workshopLevel + workshopXp.
     state = { ...state, inventory: [], equipped: {} };
+  }
+
+  if (fromVersion < 13) {
+    // v12 → v13 (2026-05-11): Painter's Office. Adds officeLevel, officeXp,
+    // queue, roster, trickleTimer. No data to migrate from older saves
+    // (the system didn't exist).
+    state = {
+      ...state,
+      officeLevel: 0,
+      officeXp: big(0),
+      queue: [],
+      roster: [],
+      trickleTimer: 0,
+    };
   }
 
   return state as unknown as GameStore;

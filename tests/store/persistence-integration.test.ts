@@ -317,7 +317,7 @@ describe("save migration v2 → v3", () => {
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(12);
+    expect(parsed.version).toBe(13);
   });
 });
 
@@ -369,7 +369,7 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(12);
+    expect(parsed.version).toBe(13);
   });
 });
 
@@ -621,5 +621,18 @@ describe("migrate v11 → v12 (+size_gold_per_level% → +size%)", () => {
     const migrated = migrate(v12State, 12) as unknown as Record<string, unknown>;
     expect(migrated.inventory).toEqual([{ id: "y", slot: "easel", tier: "rare", affixes: [{ kind: "+size%", magnitude: 9 }] }]);
     expect(migrated.workshopLevel).toBe(10);
+  });
+});
+
+describe("save migration v12 → v13 (Painter's Office)", () => {
+  it("adds default office state to a v12 save", () => {
+    const v12Save = {
+      gold: { __big: "100" },
+    };
+    const migrated = migrate(v12Save, 12) as unknown as { officeLevel: number; officeXp: unknown; queue: unknown[]; roster: unknown[]; trickleTimer: number };
+    expect(migrated.officeLevel).toBe(0);
+    expect(migrated.queue).toEqual([]);
+    expect(migrated.roster).toEqual([]);
+    expect(migrated.trickleTimer).toBe(0);
   });
 });
