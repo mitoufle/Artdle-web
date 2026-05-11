@@ -55,7 +55,7 @@ export function PaintingRoute(): JSX.Element {
 
   const helperState = {
     equipped, purchasedNodes, paintMastery, roster,
-    sellPriceLevel, speedLevel, critLevel, comboLevel,
+    sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
   } as unknown as GameStore;
 
   const size = getCanvasSize(helperState);
