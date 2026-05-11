@@ -29,6 +29,12 @@ export interface TreeSlice extends TreeState {
    */
   buyPartLevel: (partId: string) => boolean;
   /**
+   * Greedy bulk buy: repeatedly purchase the cheapest currently-affordable
+   * part across all unlocked stages until nothing is affordable. Returns
+   * the number of levels purchased.
+   */
+  buyAllAffordableTreeParts: () => number;
+  /**
    * If `canGrowSapling(state)`: increments `currentStage` by 1. Free.
    * Returns false otherwise (threshold not met, or already at top stage).
    */
@@ -70,6 +76,33 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
       partLevels: { ...s.partLevels, [partId]: (s.partLevels[partId] ?? 0) + 1 },
     }));
     return true;
+  },
+
+  buyAllAffordableTreeParts: () => {
+    let bought = 0;
+    const MAX_ITER = 10000;
+    while (bought < MAX_ITER) {
+      const state = get();
+      const discount = getTreeUpgradeCostMultiplier(state);
+      let cheapestId: string | null = null;
+      let cheapestCost = big(0);
+      for (let i = 0; i <= state.currentStage && i < TREE_STAGES.length; i++) {
+        const stage = TREE_STAGES[i]!;
+        for (const part of stage.parts) {
+          const level = state.partLevels[part.id] ?? 0;
+          const cost = treePartCost(level, part.baseCost).mul(big(discount));
+          if (!state.gold.gte(cost)) continue;
+          if (cheapestId === null || cost.lt(cheapestCost)) {
+            cheapestId = part.id;
+            cheapestCost = cost;
+          }
+        }
+      }
+      if (cheapestId === null) break;
+      if (!get().buyPartLevel(cheapestId)) break;
+      bought += 1;
+    }
+    return bought;
   },
 
   growSapling: () => {

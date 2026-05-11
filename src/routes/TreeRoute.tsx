@@ -23,6 +23,7 @@ export function TreeRoute(): JSX.Element {
   const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const buyPartLevel = useGameStore((s) => s.buyPartLevel);
+  const buyAllAffordableTreeParts = useGameStore((s) => s.buyAllAffordableTreeParts);
   const growSapling = useGameStore((s) => s.growSapling);
 
   const helperState = {
@@ -41,6 +42,9 @@ export function TreeRoute(): JSX.Element {
 
   // Visible parts: every part of stages 0..currentStage.
   const visibleParts = TREE_STAGES.slice(0, currentStage + 1).flatMap((stage) => stage.parts);
+  const anyAffordable = visibleParts.some((part) =>
+    gold.gte(treePartCost(partLevels[part.id] ?? 0, part.baseCost)),
+  );
 
   return (
     <div className={styles.layout}>
@@ -61,7 +65,18 @@ export function TreeRoute(): JSX.Element {
         />
 
         <section className={styles.upgrades} aria-label="Upgrades">
-          <header className={styles.upgradesHeader}>Upgrades · spend gold</header>
+          <header className={styles.upgradesHeader}>
+            <span>Upgrades · spend gold</span>
+            <button
+              type="button"
+              className={styles.buyAllBtn}
+              disabled={!anyAffordable}
+              onClick={() => buyAllAffordableTreeParts()}
+              title={anyAffordable ? "Buy all affordable upgrades (cheapest first)" : "Nothing affordable"}
+            >
+              Buy all
+            </button>
+          </header>
           <ul className={styles.upgradeList}>
             {visibleParts.map((part) => {
               const level = partLevels[part.id] ?? 0;
