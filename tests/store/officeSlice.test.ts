@@ -130,3 +130,24 @@ describe("fireWorker", () => {
     expect(useGameStore.getState().roster.length).toBe(0);
   });
 });
+
+describe("ascend integration — resetOffice wipes run-state, preserves meta", () => {
+  it("ascending wipes queue + roster but keeps office.level + office.xp", () => {
+    useGameStore.setState({
+      inspiration: big(10000),
+      officeLevel: 5,
+      officeXp: big(123),
+      queue: [{ id: "c1", class: "generalist" as const, tier: "common" as const, affixes: [] }],
+      roster: [{ id: "w1", class: "generalist" as const, tier: "common" as const, level: 3, xp: big(50), affixes: [] }],
+      trickleTimer: 10,
+    });
+    useGameStore.getState().performAscend();
+
+    const s = useGameStore.getState();
+    expect(s.officeLevel).toBe(5);
+    expect(s.officeXp.eq(big(123))).toBe(true);
+    expect(s.queue).toEqual([]);
+    expect(s.roster).toEqual([]);
+    expect(s.trickleTimer).toBe(0);
+  });
+});

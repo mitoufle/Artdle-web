@@ -39,6 +39,7 @@ export const performAscendOrchestrator = (
   state.resetTree();
   state.resetCanvas();
   state.resetWorkshop();
+  state.resetOffice();
 
   // 3. Credit fame (after reset; fame survived resetRunCurrencies).
   if (fameGain > 0) {
