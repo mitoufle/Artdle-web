@@ -151,6 +151,23 @@ export const hasCapability = (state: GameStore, capability: string): boolean => 
 };
 
 /**
+ * Sum of `node.level` across all purchased nodes whose config.unlocks array
+ * contains `capability`. Used for count-based capability tags like
+ * `roster_slot` and `queue_slot` where each level of an authored node grants
+ * +1 to the cap.
+ */
+export const countCapability = (state: GameStore, capability: string): number => {
+  let total = 0;
+  for (const [nodeId, level] of Object.entries(state.purchasedNodes)) {
+    const lvl = level ?? 0;
+    if (lvl < 1) continue;
+    const config = getSkillNodeConfig(nodeId);
+    if (config && config.unlocks.includes(capability)) total += lvl;
+  }
+  return total;
+};
+
+/**
  * Returns true if the player has unlocked the given canvas upgrade track.
  * Sell price and speed are always unlocked. Size, crit, combo require a
  * purchased node that carries the matching capability tag:
