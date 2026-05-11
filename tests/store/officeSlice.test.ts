@@ -115,7 +115,7 @@ describe("rejectFromQueue", () => {
     });
     expect(useGameStore.getState().rejectFromQueue("c1")).toBe(true);
     expect(useGameStore.getState().queue.length).toBe(1);
-    expect(useGameStore.getState().queue[0].id).toBe("c2");
+    expect(useGameStore.getState().queue[0]!.id).toBe("c2");
   });
 });
 

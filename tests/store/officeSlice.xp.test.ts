@@ -18,8 +18,8 @@ describe("awardOfficeXp — equal share + mirror to office.xp", () => {
     const pot = goldSold.mul(XP_GOLD_FRACTION);   // 10 XP
     const perWorker = pot.div(2);                  // 5 XP each
     const s = useGameStore.getState();
-    expect(s.roster[0].xp.toNumber()).toBeCloseTo(perWorker.toNumber(), 4);
-    expect(s.roster[1].xp.toNumber()).toBeCloseTo(perWorker.toNumber(), 4);
+    expect(s.roster[0]!.xp.toNumber()).toBeCloseTo(perWorker.toNumber(), 4);
+    expect(s.roster[1]!.xp.toNumber()).toBeCloseTo(perWorker.toNumber(), 4);
     expect(s.officeXp.toNumber()).toBeCloseTo(pot.toNumber(), 4);
   });
 
@@ -35,7 +35,7 @@ describe("awardOfficeXp — equal share + mirror to office.xp", () => {
     // Award tiny gold — level-up resolution fires because xp >= threshold.
     useGameStore.getState().awardOfficeXp(big(1));
     const s = useGameStore.getState();
-    expect(s.roster[0].level).toBe(2);
+    expect(s.roster[0]!.level).toBe(2);
     // XP carries over (any overflow into the next level's bucket).
   });
 
