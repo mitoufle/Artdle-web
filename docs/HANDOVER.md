@@ -1,5 +1,41 @@
 # Artdle Web — Handover
 
+## Painter's Office (shipped on `main`, 2026-05-11)
+
+**Status:** Shipped. Subproject 3 of 3 in the Painter's Office decomposition. The passive idle counterpart to the Workshop: a trickle queue of rolled worker candidates, Hire/Reject/Fire decisions, per-worker geometric XP levelling, and an Office Level meta-progression that survives ascend. Workers buff the single canvas through the same shared affix pool as the Workshop, wired additively into every multiplier.
+
+**Plan:** `docs/superpowers/plans/2026-05-11-painters-office.md`. **Spec:** `docs/superpowers/specs/2026-05-10-painters-office-design.md`.
+
+### What landed
+
+- **Balance constants + formulas** (`core/balance.ts`): `workerXpToNext(level)` geometric scale, `officeXpToNext(level)` for Office Level, `trickleSeconds(officeLevel)` trickle rate, `hireCost(officeLevel, candidate)` gold cost, `computeOfficeTierProbabilities(officeLevel)` weighted tier roll, `OFFICE_TIER_AFFIX_COUNT`, `OFFICE_TIER_UNLOCK_LEVEL`, `XP_GOLD_FRACTION`, `levelScale`.
+- **Class config** (`config/officeClasses.ts`): `generalist`, `goldsmith`, `speedrunner` classes with per-kind weight ranges (e.g., Goldsmith `+sell_price% [3,7]`, Speedrunner `+speed% [3,7]`); `GENERALIST_CLASS_WEIGHT = 3`, `SPECIALIST_CLASS_WEIGHT = 1`. Classes gated by capability tags (`class_goldsmith`, `class_speedrunner`).
+- **Roll engine** (`core/officeRoll.ts`): `rollWorkerClass` (capability-gated weighted pool), `rollWorkerWeights` (per-kind weight tuple with reroll-on-all-zero guard), `rollWorkerAffixes` (weighted pick sampling capability-filtered kinds), `rollCandidate` (full pipeline composing class → weights → affixes → tier). Weight tuple is ephemeral — not stored on the worker.
+- **`officeSlice`** (`store/officeSlice.ts`): state (`officeLevel`, `officeXp`, `queue`, `roster`, `trickleTimer`), actions (`tickOffice`, `hireFromQueue`, `rejectFromQueue`, `fireWorker`, `awardOfficeXp`, `resetOffice`), selectors (`getRosterCap`, `getQueueCap`, `getClassUnlocked`, `getOfficeTierCap`, `getHireCost`, `getOfficeContribution`). `getRosterCap` / `getQueueCap` delegate to `countCapability` so each level of a user-authored fame node contributes +1 slot.
+- **Ascend hook** (`systems/ascend.ts`): `resetOffice()` call wipes queue + roster + trickleTimer while preserving `officeLevel` and `officeXp`.
+- **Save migration v12 → v13** (`store/index.ts`): seeds new office fields at defaults; `officeLevel` and `officeXp` intentionally preserved if already present. `SAVE_VERSION` bumped to 13.
+- **Multiplier wiring** (`core/multipliers.ts`): `getOfficeContribution(state, kind)` sums `affix.magnitude` across all roster workers' affixes for a given `AffixKind`. Wired additively into `getCanvasGoldMultiplier`, `getCanvasSpeedMultiplier`, `getCritChance`, `getComboBaseChance`, and `getSizeMultiplier`.
+- **SkillDesigner chips** (`dev/skillDesigner`): quick-add chips for `roster_slot`, `queue_slot`, `class_goldsmith`, `class_speedrunner` extend the subproject-2 chip set.
+- **UI panel components** (`components/painting/`): `OfficeRoom.tsx` (340 px right-rail panel), `OfficeLevelHeader.tsx` (level + XP bar + tier cap + trickle period), `QueueCard.tsx` (candidate display with Hire/Reject), `WorkerCard.tsx` (roster member with affix list + Fire button), `FireConfirmModal.tsx` (confirmation modal). CSS via `OfficeRoom.module.css` (mirroring Workshop CSS convention).
+- **RoomRail switching** (`components/painting/RoomRail.tsx` + `routes/PaintingRoute.tsx`): `RoomRail` accepts `activeRoom` + `onSelect` props; Office tab shows when `getRosterCap(state) >= 1` (at least one fame node with `roster_slot` purchased). `PaintingRoute` holds local `activeRoom` state and conditionally renders `<OfficeRoom>` vs `<WorkshopRoom>`.
+
+### Tests + build
+
+- **725 tests passing across 80 files** (was 663 before this subproject; +62 net). Tests cover balance formulas, roll engine (rollWorkerClass, rollWorkerWeights, rollWorkerAffixes), officeSlice actions + selectors, XP levelling, ascend integration, and multiplier contribution.
+- `npx tsc --noEmit` clean. `npm run build` (`tsc -b`) fails on 4 pre-existing `TS2532` ("Object is possibly 'undefined'") errors in `tests/store/officeSlice.test.ts:118` and `tests/store/officeSlice.xp.test.ts:21,22,38` — `noUncheckedIndexedAccess` on `s.queue[0]` / `s.roster[0]` / `s.roster[1]`. Fix is 4 non-null assertions (`!`) or narrowing guards; deferred as out-of-scope for Task 19 (`Modify only: docs/HANDOVER.md`). Bundle size could not be measured (build blocked by these errors). Prior task sweeps ran `npx tsc --noEmit` (excludes test project refs) but not `npm run build`, which is why the errors were not caught earlier.
+
+### Lessons preserved
+
+- **`countCapability` is the levelled sibling of `hasCapability`.** When a capability needs to contribute a quantity (roster slots, queue slots) rather than a boolean, `countCapability` sums `node.level` across all nodes tagging that capability. This parallelism is now explicit in `skillTreeSlice.ts` and should be the pattern for any future count-based capability.
+- **Per-worker random weight profiles are ephemeral; only the rolled affixes are stored.** `rollWorkerWeights` produces a per-kind weight tuple consumed immediately by `rollWorkerAffixes` and then discarded — it is never stored on the `Worker` record. The variance surfaces through the affix list the player sees. Don't be tempted to store weights for display: the spec's decision was "naturally surfaces through the rolled affix list."
+- **`Big`-vs-`number` boundary lives at the multiplier return, not inside the contribution sum.** `getOfficeContribution` sums `affix.magnitude` (plain JS numbers) and returns a raw number; `getHireCost` operates on a `Big` result from the start because the hire cost formula mixes `officeLevel`-based scaling with a `Big` floor. The boundary rule: use `Big` when the value itself can exceed `Number.MAX_SAFE_INTEGER` or is monetary/inspiration-scale; keep contribution sums as numbers since magnitudes are bounded small integers.
+
+### Next
+
+All prerequisites for v1.x Office feature extensions are in place: capability-tag gating, `countCapability` for slot caps, per-worker affix system, multiplier wiring, save migration. Future waves can add new worker classes, tier expansions, or Office Level perks by authoring fame nodes and extending class config — no engine changes required.
+
+---
+
 ## Post-shipping polish (2026-05-10, after affix-pool-rework)
 
 Seven commits of in-session playtest fixes after subprojects 1 + 2 landed. Each surfaced during browser testing.
