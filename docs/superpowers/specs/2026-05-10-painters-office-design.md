@@ -98,7 +98,9 @@ Past L100 the trickle floor binds; Office Level continues to scale tier-roll pro
 
 **Queue overflow** (`§11.2`b resolved): when the queue is at cap, **trickling stops** until the player hires or rejects. Player can step away indefinitely and return to a preserved queue.
 
-**Queue cap** (`§11.2`a resolved): driven by **skill-tree capability tags**, not Office Level. New capability: `queue_slot`. Each purchased fame node with `unlocks: ["queue_slot"]` in its tags contributes +1 to the queue cap. Engine selector `getQueueCap(state)` sums contributions. Default with no nodes purchased: 0 (queue is invisible / disabled). User authors nodes via `/dev/skill-designer` to expose the queue.
+**Queue cap** (`§11.2`a resolved): driven by **skill-tree capability tags**, not Office Level. New capability: `queue_slot`. Engine selector `getQueueCap(state)` sums contributions across purchased fame nodes carrying `unlocks: ["queue_slot"]`. The exact counting rule — *each purchased node = +1* vs *each level of a leveled node = +1* — is a small mechanical decision deferred to plan-write (the existing `hasCapability()` is boolean; we'll add the matching count helper). Default with no nodes purchased: 0 (queue is invisible / disabled). User authors nodes via `/dev/skill-designer` to expose the queue.
+
+Same pattern applies to `roster_slot`: `getRosterCap(state)` sums contributions, default 0 (Office tab disabled).
 
 **Hire cost** (`§11.4` resolved): function of tier, affix magnitude sum, and Office Level. A min-roll Legendary is cheaper than a max-roll Legendary.
 
@@ -131,10 +133,12 @@ Specific constants are playtest tunable; the *shape* is locked.
 
 ```
 xpPerSale = goldSold × XP_GOLD_FRACTION   // single tuning knob, sketch: 0.01
-xpPerWorker = xpPerSale / rosterSize       // equal share
+xpPerWorker = xpPerSale / rosterSize       // equal share, divides the pot
 ```
 
 XP gain is Big-valued (canvas gold is already Big). Distribution is equal share, not proportional to worker contribution — keeps re-rolling viable (a freshly-hired Legendary levels at the same rate as your old Common).
+
+**Note on the equal-share semantics:** since the pot is fixed (`xpPerSale`) and divided among workers, the per-worker XP gain *decreases* as the roster grows. Adding a 5th worker dilutes each existing worker's XP by 20%. This is intentional — it makes "should I hire a 4th/5th worker?" a real decision (more contribution capacity vs slower individual leveling). The alternative ("each worker gets full pot, total Office XP scales with roster size") would make hiring an obvious yes and remove the trade-off.
 
 **No Train button.** The Office is fully hands-off after hire/reject decisions. Office Level's trickle-rate acceleration is the throughput lever, not per-worker training.
 
@@ -168,11 +172,11 @@ The `0.04` per-level constant is playtest tunable; the geometric shape is locked
 
 ```
 officeXpGain = Σ xpPerWorker (across all hired workers)
-            = xpPerSale × rosterSize / rosterSize
+            = (xpPerSale / rosterSize) × rosterSize
             = xpPerSale                           // simplifies to per-sale XP pot
 ```
 
-So Office XP per sale = `goldSold × XP_GOLD_FRACTION`, independent of roster size (the per-worker division cancels with the summation). Mirroring is total-XP-conserving: bigger roster doesn't slow Office XP, doesn't speed it up.
+So Office XP per sale = `goldSold × XP_GOLD_FRACTION`, **independent of roster size** (the per-worker division cancels with the summation across workers). Adding more workers dilutes per-worker leveling but does not affect Office Level pace. This is a deliberate consequence of "equal share + mirror" — the institutional progression rate is gated purely by sale value, not roster size.
 
 **XP-to-next curve — steeper than worker curve:**
 
@@ -253,14 +257,16 @@ Reuses the v3.1 Workshop tier system (5 tiers with 1–5 affix slots). Tier-cap 
 
 **Tier never changes for a worker.** Once rolled, fixed for life. Players keep rare-roll workers and discard low-tier ones; high-tier rolls become rare and special (Diablo-loot mental model).
 
-**Tier-roll probability** (`§11.8` resolved): same algorithm as Workshop v3.1 — linear interp from `(unlock_level, min%)` to `(L100, max%)`. Common fills the residual. Sketch ranges (playtest tunable):
+**Tier-roll probability** (`§11.8` resolved): same algorithm as Workshop v3.1 — linear interp from `(unlock_level, min%)` to `(L100, max%)`. Common fills the residual. The non-Common sum at L100 must stay below 1.0 (Common is the residual; negative residual breaks the distribution). Sketch ranges (playtest tunable):
 
 | Tier | Min % (at unlock) | Max % (at L100) |
 |---|---|---|
-| Magic | 5% | 60% |
-| Rare | 5% | 50% |
-| Epic | 5% | 30% |
-| Legendary | 5% | 20% |
+| Magic | 5% | 30% |
+| Rare | 5% | 25% |
+| Epic | 5% | 20% |
+| Legendary | 5% | 15% |
+
+At L100 non-Common sum = 0.90, Common = 0.10. (Office Level being harder-won than Workshop level justifies slightly higher max-% than Workshop's 0.51 sum — high-Office-Level players see mostly-Legendary rolls, which matches the "rare drops become commonplace at endgame" idle pattern.)
 
 Reuses `computeTierProbabilities()` from `workshopRoll.ts` with the Office's threshold table — same engine helper, different unlock map.
 
