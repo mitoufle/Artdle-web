@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useMemo, type JSX } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import {
@@ -69,7 +69,7 @@ function statBlocks(state: GameStore): StatBlock[] {
         { source: "Items", value: getEquippedContribution(state, "+sell_price%") },
         { source: "Workers", value: getOfficeContribution(state, "+sell_price%").toNumber() },
       ],
-      multiplicatives: sellMultiplicatives.length > 0 ? sellMultiplicatives : undefined,
+      ...(sellMultiplicatives.length > 0 ? { multiplicatives: sellMultiplicatives } : {}),
     },
     {
       name: "Speed",
@@ -121,12 +121,13 @@ export function StatsRoom(): JSX.Element {
   const critLevel = useGameStore((s) => s.critLevel);
   const comboLevel = useGameStore((s) => s.comboLevel);
 
-  const helperState = {
-    equipped, purchasedNodes, roster,
-    sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
-  } as unknown as GameStore;
-
-  const blocks = statBlocks(helperState);
+  const blocks = useMemo(() => {
+    const helperState = {
+      equipped, purchasedNodes, roster,
+      sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
+    } as unknown as GameStore;
+    return statBlocks(helperState);
+  }, [equipped, purchasedNodes, roster, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel]);
 
   return (
     <section className={styles.room} aria-label="Stats">

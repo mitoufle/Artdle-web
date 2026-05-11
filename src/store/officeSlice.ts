@@ -54,6 +54,7 @@ export const getQueueCap = (state: GameStore): number =>
 
 /** Highest tier that can roll in the queue at the player's current office level. */
 export const getOfficeTierCap = (state: GameStore): WorkerTier => {
+  if (state.officeLevel <= 0) return "common";
   let cap: WorkerTier = "common";
   for (const t of ALL_WORKER_TIERS) {
     if (state.officeLevel >= OFFICE_TIER_UNLOCK_LEVEL[t]) cap = t;
@@ -86,14 +87,20 @@ export const getHireCost = (
   );
 };
 
+const LEVEL_UP_CAP = 1000;
+
 function applyWorkerLevelUps(worker: Worker): Worker {
   let level = worker.level;
   let xp = worker.xp;
-  for (let i = 0; i < 1000; i++) {
+  let i = 0;
+  for (; i < LEVEL_UP_CAP; i++) {
     const cost = workerXpToNext(level);
     if (xp.lt(cost)) break;
     xp = xp.sub(cost);
     level += 1;
+  }
+  if (import.meta.env.DEV && i === LEVEL_UP_CAP) {
+    console.warn(`applyWorkerLevelUps hit ${LEVEL_UP_CAP}-level cap; worker ${worker.id} still has unspent XP. Remainder will resolve on next sale.`);
   }
   return { ...worker, level, xp };
 }
@@ -101,11 +108,15 @@ function applyWorkerLevelUps(worker: Worker): Worker {
 function applyOfficeLevelUps(currentLevel: number, currentXp: Big): { level: number; xp: Big } {
   let level = currentLevel;
   let xp = currentXp;
-  for (let i = 0; i < 1000; i++) {
+  let i = 0;
+  for (; i < LEVEL_UP_CAP; i++) {
     const cost = officeXpToNext(level);
     if (xp.lt(cost)) break;
     xp = xp.sub(cost);
     level += 1;
+  }
+  if (import.meta.env.DEV && i === LEVEL_UP_CAP) {
+    console.warn(`applyOfficeLevelUps hit ${LEVEL_UP_CAP}-level cap; office still has unspent XP. Remainder will resolve on next sale.`);
   }
   return { level, xp };
 }
@@ -150,6 +161,7 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
       tier: candidate.tier,
       level: 1,
       xp: big(0),
+      // Shared ReadonlyArray ref — neither side mutates. Don't defensive-copy.
       affixes: candidate.affixes,
     };
     set({
@@ -173,11 +185,13 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
   },
   awardOfficeXp: (goldSold: Big) => {
     const state = get();
+    const n = state.roster.length;
+    // Spec §4.3: Office Level is emergent from roster activity. No roster, no progression.
+    if (n === 0) return;
     const pot = goldSold.mul(XP_GOLD_FRACTION);
     if (pot.lte(big(0))) return;
 
-    const n = state.roster.length;
-    const newRoster = n === 0 ? state.roster : state.roster.map((w) => {
+    const newRoster = state.roster.map((w) => {
       const share = pot.div(n);
       return applyWorkerLevelUps({ ...w, xp: w.xp.add(share) });
     });

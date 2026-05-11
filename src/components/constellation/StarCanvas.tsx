@@ -22,7 +22,12 @@ function screenToSvg(svg: SVGSVGElement, clientX: number, clientY: number): { x:
   pt.x = clientX;
   pt.y = clientY;
   const ctm = svg.getScreenCTM();
-  if (!ctm) return { x: 0, y: 0 };
+  if (!ctm) {
+    if (import.meta.env.DEV) {
+      console.warn("screenToSvg: getScreenCTM() returned null (SVG may not be fully mounted); falling back to {0,0}");
+    }
+    return { x: 0, y: 0 };
+  }
   const out = pt.matrixTransform(ctm.inverse());
   return { x: out.x, y: out.y };
 }

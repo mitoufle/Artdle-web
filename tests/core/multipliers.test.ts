@@ -296,3 +296,72 @@ describe("getOfficeContribution — sums worker affix magnitudes × levelScale",
     expect(getOfficeContribution(state, "+speed%").eq(big(0))).toBe(true);
   });
 });
+
+describe("multipliers — additive stacking across canvas + items + workers", () => {
+  it("getCanvasGoldMultiplier sums all three sources additively", () => {
+    const item: Item = {
+      id: "i1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+    };
+    const state = {
+      purchasedNodes: {},
+      equipped: { brush: item },
+      sellPriceLevel: 5,
+      speedLevel: 0, critLevel: 0, comboLevel: 0,
+      paintMastery: big(0),
+      roster: [
+        {
+          id: "w1", class: "generalist", tier: "common", level: 1, xp: big(0),
+          affixes: [{ kind: "+sell_price%", magnitude: 20 }],
+        },
+      ],
+    } as unknown as GameStore;
+    // Canvas: 0.10 × 5 = 0.50; Items: 10/100 = 0.10; Workers: (20/100) × 1.04 = 0.208
+    // Total bonus = 0.808 → multiplier = 1.808 (no rainbow, no color tree)
+    expect(getCanvasGoldMultiplier(state)).toBeCloseTo(1.808, 4);
+  });
+
+  it("getCanvasSpeedMultiplier sums all three sources additively", () => {
+    const item: Item = {
+      id: "i1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+speed%", magnitude: 10 }],
+    };
+    const state = {
+      purchasedNodes: {},
+      equipped: { brush: item },
+      sellPriceLevel: 0, speedLevel: 4, critLevel: 0, comboLevel: 0,
+      paintMastery: big(0),
+      roster: [
+        {
+          id: "w1", class: "speedrunner", tier: "common", level: 1, xp: big(0),
+          affixes: [{ kind: "+speed%", magnitude: 15 }],
+        },
+      ],
+    } as unknown as GameStore;
+    // Canvas: 0.05 × 4 = 0.20; Items: 0.10; Workers: 0.15 × 1.04 = 0.156
+    // Total bonus = 0.456 → multiplier = 1.456
+    expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.456, 4);
+  });
+
+  it("getCritChance sums canvas + items + workers additively, clamped at 1.0", () => {
+    const item: Item = {
+      id: "i1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+crit_chance%", magnitude: 5 }],
+    };
+    const state = {
+      purchasedNodes: {},
+      equipped: { brush: item },
+      sellPriceLevel: 0, speedLevel: 0, critLevel: 10, comboLevel: 0,
+      paintMastery: big(0),
+      roster: [
+        {
+          id: "w1", class: "speedrunner", tier: "common", level: 1, xp: big(0),
+          affixes: [{ kind: "+crit_chance%", magnitude: 5 }],
+        },
+      ],
+    } as unknown as GameStore;
+    // Canvas: 0.01 × 10 = 0.10; Items: 0.05; Workers: 0.05 × 1.04 = 0.052
+    // Total = 0.202 (well under 1.0)
+    expect(getCritChance(state)).toBeCloseTo(0.202, 4);
+  });
+});

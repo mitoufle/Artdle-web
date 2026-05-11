@@ -39,10 +39,12 @@ describe("awardOfficeXp — equal share + mirror to office.xp", () => {
     // XP carries over (any overflow into the next level's bucket).
   });
 
-  it("noop when roster is empty", () => {
+  it("is a true no-op when roster is empty (spec §4.3 — emergent from roster activity)", () => {
     useGameStore.setState({ officeLevel: 0, officeXp: big(0), roster: [] });
     useGameStore.getState().awardOfficeXp(big(1000));
-    // officeXp still receives the pot per the spec — Office Level is mirror-of-pot.
-    expect(useGameStore.getState().officeXp.toNumber()).toBeGreaterThan(0);
+    const s = useGameStore.getState();
+    expect(s.officeXp.toNumber()).toBe(0);
+    expect(s.officeLevel).toBe(0);
+    expect(s.roster).toEqual([]);
   });
 });
