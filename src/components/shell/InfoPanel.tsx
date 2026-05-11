@@ -1,17 +1,12 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
-import { ScalingMathPanel } from "./ScalingMathPanel";
 import styles from "./InfoPanel.module.css";
 
 /**
  * Info strip rendered between PaintingView/etc. and the BottomBar.
- *
- * Left column (`hoverColumn`) pulls live hover-info state from `hoverInfoSlice`.
- * Title in Cinzel, body and footer in mono. When no hover is active, renders an
- * empty placeholder so layout doesn't shift (handoff §IA: fixed-height strip).
- *
- * Right column is a persistent `<ScalingMathPanel />` cheat sheet of the key
- * formulas and current scaling values.
+ * Pulls live hover-info state from `hoverInfoSlice`. Title in Cinzel,
+ * body and footer in mono. Fixed-height so layout doesn't shift when
+ * hover state changes.
  */
 export function InfoPanel(): JSX.Element {
   const title = useGameStore((s) => s.hoverTitle);
@@ -25,7 +20,6 @@ export function InfoPanel(): JSX.Element {
         {body && <div className={styles.body}>{body}</div>}
         {footer && <div className={styles.footer}>{footer}</div>}
       </div>
-      <ScalingMathPanel />
     </aside>
   );
 }
