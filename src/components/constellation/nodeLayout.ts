@@ -18,6 +18,8 @@ const rawPositions = computeAutoLayout(
 );
 
 const PADDING = 80;
+const FUTURE_GROWTH = 800;
+const TOTAL_MARGIN = PADDING + FUTURE_GROWTH;
 
 const allRawPoints: ReadonlyArray<Point> = [
   { x: FAME_HUB_X, y: FAME_HUB_Y },
@@ -30,8 +32,8 @@ const minY = Math.min(...ys);
 const maxX = Math.max(...xs);
 const maxY = Math.max(...ys);
 
-const offsetX = PADDING - minX;
-const offsetY = PADDING - minY;
+const offsetX = TOTAL_MARGIN - minX;
+const offsetY = TOTAL_MARGIN - minY;
 
 export const FAME_HUB: Point = { x: FAME_HUB_X + offsetX, y: FAME_HUB_Y + offsetY };
 
@@ -43,8 +45,8 @@ export const NODE_POSITIONS: Record<string, Point> = Object.fromEntries(
 );
 
 export const VIEWBOX = {
-  width: (maxX - minX) + 2 * PADDING,
-  height: (maxY - minY) + 2 * PADDING,
+  width: (maxX - minX) + 2 * TOTAL_MARGIN,
+  height: (maxY - minY) + 2 * TOTAL_MARGIN,
 };
 
 export const EDGES: ReadonlyArray<{ from: EdgeFrom; to: SkillNodeId }> = (
