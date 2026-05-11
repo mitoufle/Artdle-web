@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rollWorkerClass, rollWorkerWeights, rollWorkerAffixes } from "@/core/officeRoll";
+import { rollWorkerClass, rollWorkerWeights, rollWorkerAffixes, rollCandidate } from "@/core/officeRoll";
 import { setSeed } from "@/core/rng";
 import type { GameStore } from "@/store";
 import { AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
@@ -87,5 +87,29 @@ describe("rollWorkerAffixes", () => {
       expect(a.magnitude).toBeGreaterThanOrEqual(range.min);
       expect(a.magnitude).toBeLessThanOrEqual(range.max);
     }
+  });
+});
+
+describe("rollCandidate", () => {
+  it("at office L1 (common-only), tier is common and affix count is 1", () => {
+    setSeed(30);
+    const c = rollCandidate(1, stub());
+    expect(c.tier).toBe("common");
+    expect(c.affixes.length).toBe(1);
+    expect(c.class).toBe("generalist");
+  });
+
+  it("at office L40+, occasionally rolls legendary", () => {
+    setSeed(31);
+    let sawLegendary = false;
+    for (let i = 0; i < 1000; i++) {
+      const c = rollCandidate(100, stub());
+      if (c.tier === "legendary") {
+        sawLegendary = true;
+        expect(c.affixes.length).toBe(5);
+        break;
+      }
+    }
+    expect(sawLegendary).toBe(true);
   });
 });

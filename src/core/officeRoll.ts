@@ -11,7 +11,7 @@ import type { CanvasTrackId } from "@/store/skillTreeSlice";
 import type { GameStore } from "@/store";
 import { AFFIX_KINDS, AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
 import type { AffixKind } from "@/config/workshopAffixes";
-import { OFFICE_TIER_AFFIX_COUNT } from "@/core/balance";
+import { OFFICE_TIER_AFFIX_COUNT, computeOfficeTierProbabilities, ALL_WORKER_TIERS } from "@/core/balance";
 import type { WorkerTier } from "@/core/balance";
 import type { Affix } from "@/core/workshopRoll";
 
@@ -109,4 +109,41 @@ export function rollWorkerAffixes(
     out.push({ kind, magnitude });
   }
   return out;
+}
+
+export interface Candidate {
+  readonly id: string;
+  readonly class: ClassId;
+  readonly tier: WorkerTier;
+  readonly affixes: ReadonlyArray<Affix>;
+}
+
+let _candidateCounter = 0;
+function nextCandidateId(): string {
+  _candidateCounter += 1;
+  return `cand-${Date.now().toString(36)}-${_candidateCounter}`;
+}
+
+function rollOfficeTier(officeLevel: number): WorkerTier {
+  const probs = computeOfficeTierProbabilities(officeLevel);
+  const r = rng();
+  let acc = 0;
+  for (const t of ALL_WORKER_TIERS) {
+    acc += probs[t];
+    if (r < acc) return t;
+  }
+  return "common";
+}
+
+export function rollCandidate(officeLevel: number, state: GameStore): Candidate {
+  const tier = rollOfficeTier(officeLevel);
+  const classId = rollWorkerClass(state);
+  const weights = rollWorkerWeights(classId);
+  const affixes = rollWorkerAffixes(weights, tier, state);
+  return {
+    id: nextCandidateId(),
+    class: classId,
+    tier,
+    affixes,
+  };
 }
