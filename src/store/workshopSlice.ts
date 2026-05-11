@@ -94,7 +94,7 @@ export const getMaxInventorySlots = (state: GameStore): number => {
  * Sum the magnitude (as fraction) of equipped affixes matching the given kind,
  * walking every equipped item across all slot kinds.
  */
-export const getEquippedContribution = (state: GameStore, kind: AffixKind): number => {
+export const getEquippedContribution = (state: Pick<GameStore, "equipped">, kind: AffixKind): number => {
   let total = 0;
   for (const item of Object.values(state.equipped)) {
     if (!item) continue;

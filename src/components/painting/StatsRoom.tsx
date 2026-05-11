@@ -1,6 +1,6 @@
 import { useMemo, type JSX } from "react";
 import { useGameStore } from "@/store";
-import type { GameStore } from "@/store";
+import type { CanvasMultiplierInputs } from "@/core/multipliers";
 import {
   getEquippedContribution,
 } from "@/store/workshopSlice";
@@ -54,7 +54,7 @@ function fmtMult(v: number, digits = 2): string {
   return `×${v.toFixed(digits)}`;
 }
 
-function statBlocks(state: GameStore): StatBlock[] {
+function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   const goldTotal = getCanvasGoldMultiplier(state);
   const speedTotal = getCanvasSpeedMultiplier(state);
   const critTotal = getCritChance(state);
@@ -112,7 +112,7 @@ function statBlocks(state: GameStore): StatBlock[] {
   ];
 }
 
-function sizeBlock(state: GameStore): SizeBlock {
+function sizeBlock(state: CanvasMultiplierInputs): SizeBlock {
   const size = getCanvasSize(state);
   const canvasContribution = SIZE_PER_LEVEL * state.sizeLevel;
   const itemContribution = getEquippedContribution(state, "+size%");
@@ -138,13 +138,14 @@ export function StatsRoom(): JSX.Element {
   const critLevel = useGameStore((s) => s.critLevel);
   const comboLevel = useGameStore((s) => s.comboLevel);
 
+  const paintMastery = useGameStore((s) => s.paintMastery);
   const { blocks, size } = useMemo(() => {
-    const helperState = {
-      equipped, purchasedNodes, roster,
+    const helperState: CanvasMultiplierInputs = {
+      equipped, purchasedNodes, roster, paintMastery,
       sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
-    } as unknown as GameStore;
+    };
     return { blocks: statBlocks(helperState), size: sizeBlock(helperState) };
-  }, [equipped, purchasedNodes, roster, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel]);
+  }, [equipped, purchasedNodes, roster, paintMastery, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel]);
 
   return (
     <section className={styles.room} aria-label="Stats">

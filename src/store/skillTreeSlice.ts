@@ -91,11 +91,11 @@ export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlic
 // ============================================================================
 
 /** Current level (0..maxLevel). Returns 0 for unknown id or unbought node. */
-export const getNodeLevel = (state: GameStore, id: SkillNodeId): number =>
+export const getNodeLevel = (state: Pick<GameStore, "purchasedNodes">, id: SkillNodeId): number =>
   state.purchasedNodes[id] ?? 0;
 
 /** True iff the player has purchased this node at least once. */
-export const hasNode = (state: GameStore, id: SkillNodeId): boolean =>
+export const hasNode = (state: Pick<GameStore, "purchasedNodes">, id: SkillNodeId): boolean =>
   getNodeLevel(state, id) > 0;
 
 /**
@@ -129,7 +129,7 @@ export const canBuyNode = (state: GameStore, id: SkillNodeId): boolean => {
 
 /** Sum of additive contributions from a list of node ids, multiplied by their levels. */
 export const sumLevels = (
-  state: GameStore,
+  state: Pick<GameStore, "purchasedNodes">,
   ids: ReadonlyArray<SkillNodeId>,
 ): number => ids.reduce((acc, id) => acc + getNodeLevel(state, id), 0);
 
@@ -141,7 +141,7 @@ export type CanvasTrackId = "sell_price" | "speed" | "size" | "crit" | "combo";
  * `unlocks` array. Node IDs are free-form — the engine reads capability tags,
  * not node IDs.
  */
-export const hasCapability = (state: GameStore, capability: string): boolean => {
+export const hasCapability = (state: Pick<GameStore, "purchasedNodes">, capability: string): boolean => {
   for (const [nodeId, level] of Object.entries(state.purchasedNodes)) {
     if ((level ?? 0) < 1) continue;
     const config = getSkillNodeConfig(nodeId);
@@ -156,7 +156,7 @@ export const hasCapability = (state: GameStore, capability: string): boolean => 
  * `roster_slot` and `queue_slot` where each level of an authored node grants
  * +1 to the cap.
  */
-export const countCapability = (state: GameStore, capability: string): number => {
+export const countCapability = (state: Pick<GameStore, "purchasedNodes">, capability: string): number => {
   let total = 0;
   for (const [nodeId, level] of Object.entries(state.purchasedNodes)) {
     const lvl = level ?? 0;
@@ -178,7 +178,7 @@ export const countCapability = (state: GameStore, capability: string): number =>
  * Node IDs are a game-design decision — the engine reads `unlocks` tags only.
  */
 export const getCanvasTrackUnlocked = (
-  state: GameStore,
+  state: Pick<GameStore, "purchasedNodes">,
   trackId: CanvasTrackId,
 ): boolean => {
   if (trackId === "sell_price" || trackId === "speed") return true;

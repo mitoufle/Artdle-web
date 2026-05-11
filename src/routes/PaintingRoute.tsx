@@ -1,7 +1,6 @@
 import type { JSX } from "react";
 import { useState } from "react";
 import { useGameStore } from "@/store";
-import type { GameStore } from "@/store";
 import {
   canvasGold, canvasTime,
   sellPriceUpgradeCost, speedUpgradeCost,
@@ -16,6 +15,7 @@ import {
   getCanvasSpeedMultiplier,
   getCanvasSize,
   getPmMultiplier,
+  type CanvasMultiplierInputs,
 } from "@/core/multipliers";
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
@@ -53,10 +53,10 @@ export function PaintingRoute(): JSX.Element {
   const lastSale = useGameStore((s) => s.lastSale);
   const clearLastSale = useGameStore((s) => s.clearLastSale);
 
-  const helperState = {
+  const helperState: CanvasMultiplierInputs = {
     equipped, purchasedNodes, paintMastery, roster,
     sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
-  } as unknown as GameStore;
+  };
 
   const size = getCanvasSize(helperState);
   const baseTime = canvasTime(size);

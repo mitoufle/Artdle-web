@@ -1,6 +1,5 @@
 import { useMemo, type JSX } from "react";
 import { useGameStore } from "@/store";
-import type { GameStore } from "@/store";
 import { getHireCost, getRosterCap } from "@/store/officeSlice";
 import { formatBig } from "@/core/formatter";
 import type { AffixKind } from "@/config/workshopAffixes";
@@ -48,7 +47,7 @@ export function QueueCard({ candidate }: Props): JSX.Element {
   const officeLevel = useGameStore((s) => s.officeLevel);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const cost = useMemo(
-    () => getHireCost({ officeLevel, purchasedNodes } as GameStore, candidate),
+    () => getHireCost({ officeLevel, purchasedNodes }, candidate),
     [officeLevel, purchasedNodes, candidate],
   );
   const gold = useGameStore((s) => s.gold);
