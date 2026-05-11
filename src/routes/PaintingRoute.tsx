@@ -25,6 +25,7 @@ import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
 import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
 import { WorkshopRoom } from "@/components/painting/WorkshopRoom";
 import { OfficeRoom } from "@/components/painting/OfficeRoom";
+import { StatsRoom } from "@/components/painting/StatsRoom";
 import { FloatingGoldText } from "@/ui/widgets/FloatingGoldText";
 import styles from "./PaintingRoute.module.css";
 
@@ -160,6 +161,7 @@ export function PaintingRoute(): JSX.Element {
       <aside className={styles.roomArea}>
         {activeRoom === "workshop" && <WorkshopRoom />}
         {activeRoom === "office" && <OfficeRoom />}
+        {activeRoom === "stats" && <StatsRoom />}
       </aside>
 
       <aside className={styles.railArea}>

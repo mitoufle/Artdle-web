@@ -1,10 +1,10 @@
 import type { JSX } from "react";
-import { Hammer, User, GraduationCap, FlaskConical } from "lucide-react";
+import { Hammer, User, GraduationCap, FlaskConical, BarChart3 } from "lucide-react";
 import { useGameStore } from "@/store";
 import { getRosterCap } from "@/store/officeSlice";
 import styles from "./RoomRail.module.css";
 
-export type RoomId = "workshop" | "office" | "school" | "lab";
+export type RoomId = "workshop" | "office" | "school" | "lab" | "stats";
 
 interface RoomDef {
   id: RoomId;
@@ -17,6 +17,7 @@ const ROOMS: ReadonlyArray<RoomDef> = [
   { id: "office",   label: "Office",   Icon: User          },
   { id: "school",   label: "School",   Icon: GraduationCap },
   { id: "lab",      label: "Lab",      Icon: FlaskConical  },
+  { id: "stats",    label: "Stats",    Icon: BarChart3     },
 ];
 
 interface Props {
@@ -30,7 +31,7 @@ export function RoomRail({ activeRoom, onSelect }: Props): JSX.Element {
   return (
     <nav className={styles.rail} role="tablist" aria-label="Rooms" aria-orientation="vertical">
       {ROOMS.map(({ id, label, Icon }) => {
-        const enabled = id === "workshop" || (id === "office" && officeEnabled);
+        const enabled = id === "workshop" || id === "stats" || (id === "office" && officeEnabled);
         const active = activeRoom === id;
         return (
           <button

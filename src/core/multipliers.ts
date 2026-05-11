@@ -112,6 +112,24 @@ export const getCanvasSpeedMultiplier = (state: GameStore): number => {
   return 1 + bonus;
 };
 
+/** Sum of color-tree contributions to canvas gold (additive, fractional). */
+export const getColorTreeContribution = (state: GameStore): number => {
+  let sum = 0;
+  for (const [id, perLevel] of Object.entries(COLOR_PER_LEVEL)) {
+    sum += getNodeLevel(state, id) * perLevel;
+  }
+  return sum;
+};
+
+/** Multiplicative rainbow factor applied to the additive gold bonus. */
+export const getRainbowMultiplier = (state: GameStore): number =>
+  1 + getNodeLevel(state, "rainbow") * RAINBOW_PER_LEVEL;
+
+/** Sum of skill-tree contributions to canvas speed (additive, fractional). */
+export const getSkillTreeSpeedContribution = (state: GameStore): number =>
+  getNodeLevel(state, "basic_technique") * BASIC_TECHNIQUE_PER_LEVEL +
+  getNodeLevel(state, "muscle_memory") * MUSCLE_MEMORY_PER_LEVEL;
+
 /**
  * Multiplier on tree-part upgrade costs (spark/bud/leaf/branch). 1.0 = no
  * discount; <1.0 = discounted. Floored at BARGAIN_DISCOUNT_FLOOR.
