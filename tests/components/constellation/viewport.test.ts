@@ -24,24 +24,26 @@ describe("viewport — clampZoom", () => {
 });
 
 describe("viewport — clampPan", () => {
-  it("at zoom 1, allows panning by half a viewport in each direction (center stays inside)", () => {
-    const { panX, panY } = clampPan(VIEWBOX.width, VIEWBOX.height, 1);
-    expect(panX).toBe(VIEWBOX.width - VIEWBOX.width / 2);
-    expect(panY).toBe(VIEWBOX.height - VIEWBOX.height / 2);
+  it("at zoom 1, allows pan up to ±(half viewport + full bleed) in each direction", () => {
+    // Bleed = VIEWBOX.width × 1. At zoom 1, w = VIEWBOX.width.
+    // maxPanX = VIEWBOX.width - w/2 + bleed = VIEWBOX.width/2 + VIEWBOX.width = VIEWBOX.width × 1.5
+    const { panX, panY } = clampPan(99999, 99999, 1);
+    expect(panX).toBe(VIEWBOX.width * 1.5);
+    expect(panY).toBe(VIEWBOX.height * 1.5);
   });
 
-  it("at zoom 2, allows pan in [-w/2, VIEWBOX.width - w/2] where w = VIEWBOX.width/2", () => {
-    const w = VIEWBOX.width / 2;
-    const { panX } = clampPan(VIEWBOX.width, 0, 2);
-    expect(panX).toBe(VIEWBOX.width - w / 2);
-    const { panX: panLeft } = clampPan(-VIEWBOX.width, 0, 2);
-    expect(panLeft).toBe(-w / 2);
+  it("clamps far-negative pan to (-w/2 - bleed)", () => {
+    // At zoom 2, w = VIEWBOX.width/2, bleed = VIEWBOX.width × 1.
+    // minPanX = -w/2 - bleed = -VIEWBOX.width/4 - VIEWBOX.width = -VIEWBOX.width × 1.25
+    const { panX, panY } = clampPan(-99999, -99999, 2);
+    expect(panX).toBe(-VIEWBOX.width * 1.25);
+    expect(panY).toBe(-VIEWBOX.height * 1.25);
   });
 
-  it("clamps to negative-half-viewport on the low end (not 0)", () => {
-    const { panX, panY } = clampPan(-9999, -9999, 2);
-    expect(panX).toBe(-VIEWBOX.width / 4);
-    expect(panY).toBe(-VIEWBOX.height / 4);
+  it("passes through pan that's already within bounds", () => {
+    const { panX, panY } = clampPan(100, 100, 1);
+    expect(panX).toBe(100);
+    expect(panY).toBe(100);
   });
 });
 
@@ -87,11 +89,11 @@ describe("viewport — panBy", () => {
     expect(after.panY).toBe(150);
   });
 
-  it("clamps when pan goes past the negative-half-viewport floor", () => {
+  it("clamps when pan goes past the bleed-extended floor", () => {
     const at = { zoom: 2, panX: 0, panY: 0 };
-    const after = panBy(at, -9999, -9999);
-    expect(after.panX).toBe(-VIEWBOX.width / 4);
-    expect(after.panY).toBe(-VIEWBOX.height / 4);
+    const after = panBy(at, -99999, -99999);
+    expect(after.panX).toBe(-VIEWBOX.width * 1.25);
+    expect(after.panY).toBe(-VIEWBOX.height * 1.25);
   });
 });
 
@@ -104,9 +106,10 @@ describe("viewport — centerOn", () => {
     expect(after.panY).toBeCloseTo(200 - h / 2, 4);
   });
 
-  it("clamps when centering near edge", () => {
+  it("passes through centering near edge (within the bleed-extended range)", () => {
     const after = centerOn({ zoom: 2, panX: 0, panY: 0 }, 0, 0);
-    // At zoom 2, w = VIEWBOX.width/2; centerOn computes -w/2; clamp min is -w/2.
+    // At zoom 2, centerOn computes panX = 0 - w/2 = -VIEWBOX.width/4. With bleed,
+    // the clamp min is -VIEWBOX.width * 1.25 — so the value passes through unchanged.
     expect(after.panX).toBe(-VIEWBOX.width / 4);
     expect(after.panY).toBe(-VIEWBOX.height / 4);
   });

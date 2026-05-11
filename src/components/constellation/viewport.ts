@@ -14,6 +14,7 @@ export const DEFAULT_VIEWPORT: ViewportState = Object.freeze({
 
 export const MIN_ZOOM = 1;
 export const MAX_ZOOM = 4;
+const PAN_BLEED = 1;
 
 export function clampZoom(zoom: number): number {
   if (zoom < MIN_ZOOM) return MIN_ZOOM;
@@ -28,10 +29,12 @@ export function clampPan(
 ): { panX: number; panY: number } {
   const w = VIEWBOX.width / zoom;
   const h = VIEWBOX.height / zoom;
-  const minPanX = -w / 2;
-  const maxPanX = VIEWBOX.width - w / 2;
-  const minPanY = -h / 2;
-  const maxPanY = VIEWBOX.height - h / 2;
+  const bleedX = VIEWBOX.width * PAN_BLEED;
+  const bleedY = VIEWBOX.height * PAN_BLEED;
+  const minPanX = -w / 2 - bleedX;
+  const maxPanX = VIEWBOX.width - w / 2 + bleedX;
+  const minPanY = -h / 2 - bleedY;
+  const maxPanY = VIEWBOX.height - h / 2 + bleedY;
   return {
     panX: Math.min(Math.max(panX, minPanX), maxPanX),
     panY: Math.min(Math.max(panY, minPanY), maxPanY),
