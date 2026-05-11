@@ -28,11 +28,13 @@ export function clampPan(
 ): { panX: number; panY: number } {
   const w = VIEWBOX.width / zoom;
   const h = VIEWBOX.height / zoom;
-  const maxPanX = VIEWBOX.width - w;
-  const maxPanY = VIEWBOX.height - h;
+  const minPanX = -w / 2;
+  const maxPanX = VIEWBOX.width - w / 2;
+  const minPanY = -h / 2;
+  const maxPanY = VIEWBOX.height - h / 2;
   return {
-    panX: Math.min(Math.max(panX, 0), Math.max(0, maxPanX)),
-    panY: Math.min(Math.max(panY, 0), Math.max(0, maxPanY)),
+    panX: Math.min(Math.max(panX, minPanX), maxPanX),
+    panY: Math.min(Math.max(panY, minPanY), maxPanY),
   };
 }
 

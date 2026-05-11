@@ -24,21 +24,24 @@ describe("viewport — clampZoom", () => {
 });
 
 describe("viewport — clampPan", () => {
-  it("at zoom 1, pan is fixed at 0,0 (no room to pan)", () => {
-    const { panX, panY } = clampPan(50, 50, 1);
-    expect(panX).toBe(0);
-    expect(panY).toBe(0);
-  });
-
-  it("at zoom 2, allowed pan range is [0, VIEWBOX.width/2] for x", () => {
-    const { panX } = clampPan(VIEWBOX.width, 0, 2);
+  it("at zoom 1, allows panning by half a viewport in each direction (center stays inside)", () => {
+    const { panX, panY } = clampPan(VIEWBOX.width, VIEWBOX.height, 1);
     expect(panX).toBe(VIEWBOX.width - VIEWBOX.width / 2);
+    expect(panY).toBe(VIEWBOX.height - VIEWBOX.height / 2);
   });
 
-  it("clamps negative pan to 0", () => {
-    const { panX, panY } = clampPan(-100, -100, 2);
-    expect(panX).toBe(0);
-    expect(panY).toBe(0);
+  it("at zoom 2, allows pan in [-w/2, VIEWBOX.width - w/2] where w = VIEWBOX.width/2", () => {
+    const w = VIEWBOX.width / 2;
+    const { panX } = clampPan(VIEWBOX.width, 0, 2);
+    expect(panX).toBe(VIEWBOX.width - w / 2);
+    const { panX: panLeft } = clampPan(-VIEWBOX.width, 0, 2);
+    expect(panLeft).toBe(-w / 2);
+  });
+
+  it("clamps to negative-half-viewport on the low end (not 0)", () => {
+    const { panX, panY } = clampPan(-9999, -9999, 2);
+    expect(panX).toBe(-VIEWBOX.width / 4);
+    expect(panY).toBe(-VIEWBOX.height / 4);
   });
 });
 
@@ -84,11 +87,11 @@ describe("viewport — panBy", () => {
     expect(after.panY).toBe(150);
   });
 
-  it("clamps negative pan to 0", () => {
+  it("clamps when pan goes past the negative-half-viewport floor", () => {
     const at = { zoom: 2, panX: 0, panY: 0 };
-    const after = panBy(at, -100, -100);
-    expect(after.panX).toBe(0);
-    expect(after.panY).toBe(0);
+    const after = panBy(at, -9999, -9999);
+    expect(after.panX).toBe(-VIEWBOX.width / 4);
+    expect(after.panY).toBe(-VIEWBOX.height / 4);
   });
 });
 
@@ -103,7 +106,8 @@ describe("viewport — centerOn", () => {
 
   it("clamps when centering near edge", () => {
     const after = centerOn({ zoom: 2, panX: 0, panY: 0 }, 0, 0);
-    expect(after.panX).toBe(0);
-    expect(after.panY).toBe(0);
+    // At zoom 2, w = VIEWBOX.width/2; centerOn computes -w/2; clamp min is -w/2.
+    expect(after.panX).toBe(-VIEWBOX.width / 4);
+    expect(after.panY).toBe(-VIEWBOX.height / 4);
   });
 });
