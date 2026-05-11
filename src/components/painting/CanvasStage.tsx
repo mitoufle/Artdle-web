@@ -105,7 +105,7 @@ export function CanvasStage({
       )}
 
       <div className={styles.title}>
-        — Tier {sizeLevel} · {stageName} —
+        — {stageName} —
       </div>
       <div className={styles.frame}>
         {/* Pixel landscape inside the frame */}
