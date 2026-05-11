@@ -3,7 +3,6 @@ import {
   computeAutoLayout,
   FAME_HUB_X,
   FAME_HUB_Y,
-  CANVAS_WIDTH,
 } from "@/dev/skill-designer/autoLayout";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
 
@@ -12,31 +11,42 @@ export interface Point {
   readonly y: number;
 }
 
-/** FAME hub position. Re-exported for StarCanvas. */
-export const FAME_HUB: Point = { x: FAME_HUB_X, y: FAME_HUB_Y };
-
-/** ViewBox dimensions used by StarCanvas + MiniMap. */
-export const VIEWBOX = { width: CANVAS_WIDTH, height: 600 };
-
-/**
- * Synthetic edge source. "fame" represents the root hub — used for nodes
- * with empty `parentIds`.
- */
 export type EdgeFrom = SkillNodeId | "fame";
 
-/**
- * Auto-computed positions, derived from `skillTreeDesign.json` at module load.
- * Manually-positioned nodes (those with `position !== null` in the JSON)
- * are honored; the rest get BFS auto-layout.
- */
-export const NODE_POSITIONS: Record<string, Point> = computeAutoLayout(
+const rawPositions = computeAutoLayout(
   design.nodes as Parameters<typeof computeAutoLayout>[0],
 );
 
-/**
- * Edges to render. Each child contributes one edge per parent (or one edge
- * from FAME if it has no parents). DAG-ready.
- */
+const PADDING = 80;
+
+const allRawPoints: ReadonlyArray<Point> = [
+  { x: FAME_HUB_X, y: FAME_HUB_Y },
+  ...Object.values(rawPositions),
+];
+const xs = allRawPoints.map((p) => p.x);
+const ys = allRawPoints.map((p) => p.y);
+const minX = Math.min(...xs);
+const minY = Math.min(...ys);
+const maxX = Math.max(...xs);
+const maxY = Math.max(...ys);
+
+const offsetX = PADDING - minX;
+const offsetY = PADDING - minY;
+
+export const FAME_HUB: Point = { x: FAME_HUB_X + offsetX, y: FAME_HUB_Y + offsetY };
+
+export const NODE_POSITIONS: Record<string, Point> = Object.fromEntries(
+  Object.entries(rawPositions).map(([id, p]) => [
+    id,
+    { x: p.x + offsetX, y: p.y + offsetY },
+  ]),
+);
+
+export const VIEWBOX = {
+  width: (maxX - minX) + 2 * PADDING,
+  height: (maxY - minY) + 2 * PADDING,
+};
+
 export const EDGES: ReadonlyArray<{ from: EdgeFrom; to: SkillNodeId }> = (
   design.nodes as Parameters<typeof computeAutoLayout>[0]
 ).flatMap((node) => {
