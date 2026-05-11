@@ -1,11 +1,31 @@
 import type { JSX } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
 import { getSkillNodeConfig } from "@/config/skillTreeNodes";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
 import { formatBig } from "@/core/formatter";
 import { EDGES, FAME_HUB, NODE_POSITIONS, VIEWBOX, type EdgeFrom } from "./nodeLayout";
+import {
+  DEFAULT_VIEWPORT,
+  clampPan,
+  zoomAt,
+  type ViewportState,
+} from "./viewport";
 import styles from "./StarCanvas.module.css";
+
+const DRAG_THRESHOLD_PX = 3;
+const WHEEL_ZOOM_FACTOR = 1.15;
+
+function screenToSvg(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
+  const pt = svg.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return { x: 0, y: 0 };
+  const out = pt.matrixTransform(ctm.inverse());
+  return { x: out.x, y: out.y };
+}
 
 function fameHubBody(): JSX.Element {
   const s = useGameStore.getState();
@@ -33,6 +53,8 @@ interface Props {
   selectedId: SkillNodeId | null;
   onSelect: (id: SkillNodeId) => void;
   nodeStates: Record<SkillNodeId, NodeState>;
+  viewport: ViewportState;
+  onViewportChange: (v: ViewportState) => void;
 }
 
 const TWINKLES: ReadonlyArray<{ x: number; y: number; r: number; dur: string }> = [
@@ -57,16 +79,86 @@ function pointFor(id: EdgeFrom): { x: number; y: number } {
   return NODE_POSITIONS[id] ?? FAME_HUB;
 }
 
-export function StarCanvas({ selectedId, onSelect, nodeStates }: Props): JSX.Element {
+export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewportChange }: Props): JSX.Element {
   const pushHoverInfo = useGameStore((s) => s.pushHoverInfo);
   const clearHoverInfo = useGameStore((s) => s.clearHoverInfo);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragStart = useRef<{ screenX: number; screenY: number; viewport: ViewportState } | null>(null);
+  const dragMoved = useRef(false);
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent): void => {
+      e.preventDefault();
+      const { x, y } = screenToSvg(el, e.clientX, e.clientY);
+      const factor = e.deltaY < 0 ? WHEEL_ZOOM_FACTOR : 1 / WHEEL_ZOOM_FACTOR;
+      onViewportChange(zoomAt(viewport, x, y, factor));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [viewport, onViewportChange]);
+
+  const onMouseDown = (e: React.MouseEvent<SVGSVGElement>): void => {
+    if (e.button !== 0) return;
+    dragStart.current = { screenX: e.clientX, screenY: e.clientY, viewport };
+    dragMoved.current = false;
+    setDragging(true);
+  };
+
+  const onMouseMove = (e: React.MouseEvent<SVGSVGElement>): void => {
+    const start = dragStart.current;
+    const svg = svgRef.current;
+    if (!start || !svg) return;
+    const dxScreen = e.clientX - start.screenX;
+    const dyScreen = e.clientY - start.screenY;
+    if (Math.abs(dxScreen) > DRAG_THRESHOLD_PX || Math.abs(dyScreen) > DRAG_THRESHOLD_PX) {
+      dragMoved.current = true;
+    }
+    const rect = svg.getBoundingClientRect();
+    const svgPerPxX = (VIEWBOX.width / start.viewport.zoom) / rect.width;
+    const svgPerPxY = (VIEWBOX.height / start.viewport.zoom) / rect.height;
+    const { panX, panY } = clampPan(
+      start.viewport.panX - dxScreen * svgPerPxX,
+      start.viewport.panY - dyScreen * svgPerPxY,
+      start.viewport.zoom,
+    );
+    onViewportChange({ ...start.viewport, panX, panY });
+  };
+
+  const endDrag = (): void => {
+    dragStart.current = null;
+    setDragging(false);
+  };
+
+  const onClickCapture = (e: React.MouseEvent<SVGSVGElement>): void => {
+    if (dragMoved.current) {
+      e.stopPropagation();
+      dragMoved.current = false;
+    }
+  };
+
+  const onDoubleClick = (e: React.MouseEvent<SVGSVGElement>): void => {
+    e.preventDefault();
+    onViewportChange(DEFAULT_VIEWPORT);
+  };
+
   return (
     <div className={styles.canvas}>
       <svg
-        viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`}
+        ref={svgRef}
+        viewBox={`${viewport.panX} ${viewport.panY} ${VIEWBOX.width / viewport.zoom} ${VIEWBOX.height / viewport.zoom}`}
         xmlns="http://www.w3.org/2000/svg"
         className={styles.svg}
+        data-dragging={dragging ? "true" : undefined}
         aria-label="Constellation skill tree"
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={endDrag}
+        onMouseLeave={endDrag}
+        onClickCapture={onClickCapture}
+        onDoubleClick={onDoubleClick}
       >
         <defs>
           <pattern id="cs-grid" width="32" height="32" patternUnits="userSpaceOnUse">

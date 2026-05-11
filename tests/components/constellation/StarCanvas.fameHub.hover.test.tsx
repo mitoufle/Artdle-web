@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, fireEvent, screen } from "@testing-library/react";
 import { StarCanvas, type NodeState } from "@/components/constellation/StarCanvas";
+import { DEFAULT_VIEWPORT } from "@/components/constellation/viewport";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
 
@@ -19,7 +20,7 @@ function makeStates(): Record<string, NodeState> {
 
 function renderCanvas() {
   return render(
-    <StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} />,
+    <StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} />,
   );
 }
 

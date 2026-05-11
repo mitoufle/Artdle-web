@@ -10,6 +10,7 @@ import { StarCanvas, type NodeState } from "@/components/constellation/StarCanva
 import { NodeCard } from "@/components/constellation/NodeCard";
 import { MiniMap } from "@/components/constellation/MiniMap";
 import { ClusterList } from "@/components/constellation/ClusterList";
+import { DEFAULT_VIEWPORT, centerOn, type ViewportState } from "@/components/constellation/viewport";
 import styles from "./ConstellationRoute.module.css";
 
 export function ConstellationRoute(): JSX.Element {
@@ -18,6 +19,10 @@ export function ConstellationRoute(): JSX.Element {
   const buyNode = useGameStore((s) => s.buyNode);
 
   const [selectedId, setSelectedId] = useState<SkillNodeId | null>(null);
+  const [viewport, setViewport] = useState<ViewportState>(DEFAULT_VIEWPORT);
+  const jumpTo = (svgX: number, svgY: number): void => {
+    setViewport((current) => centerOn(current, svgX, svgY));
+  };
 
   const helperState = { fame, purchasedNodes } as unknown as GameStore;
 
@@ -63,6 +68,8 @@ export function ConstellationRoute(): JSX.Element {
           selectedId={selectedId}
           onSelect={setSelectedId}
           nodeStates={nodeStates}
+          viewport={viewport}
+          onViewportChange={setViewport}
         />
         {selectedNode && selectedState && (
           <div className={styles.cardSlot}>
@@ -91,7 +98,7 @@ export function ConstellationRoute(): JSX.Element {
           <div className={styles.fameLabel}>Fame to spend</div>
           <div className={styles.fameValue}>{formatBig(fame)}</div>
         </section>
-        <MiniMap ownedById={ownedById} selectedId={selectedId} />
+        <MiniMap ownedById={ownedById} selectedId={selectedId} viewport={viewport} onJump={jumpTo} />
         <ClusterList ownedCount={ownedCount} totalCount={SKILL_NODES.length} />
       </aside>
     </div>
