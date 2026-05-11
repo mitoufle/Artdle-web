@@ -1,5 +1,39 @@
 # Artdle Web — Handover
 
+## Size rework + review-driven fixes (2026-05-11)
+
+Nine commits after the post-Office polish, driven by a formal `requesting-code-review` pass plus a user-requested Size system rework.
+
+### What landed
+
+- **Review-pass fixes** (`386264b`). Critical: `awardOfficeXp` no longer credits `officeXp` when the roster is empty — spec §4.3 said "emergent from roster activity," but the slice was silently leveling the Office from canvas sales before any worker was ever hired (so a player opening Office for the first time would walk into a fully-tier-unlocked office with fast trickle). Companion test renamed + assertions inverted. Plus integration test for additive stacking across canvas + items + workers (closes the gap where unit tests covered each source in isolation but not their sum). Minors: `useMemo` on StatsRoom `helperState`; `LEVEL_UP_CAP` extracted and dev `console.warn` when it binds on `applyWorkerLevelUps` / `applyOfficeLevelUps`; `screenToSvg` dev-warn on null CTM; explicit L0 guard in `getOfficeTierCap`; one-line comment on `Worker.affixes` shared-ref with `Candidate`.
+- **Craftsmanship 5× weaker than designed** (`a90e494`). `workshopSlice.craft` was passing the raw fame-node level (1–5) to `rollAffixes` where it expected percentage points (5–25 from `getAffixMagnitudeBonus`). Selector existed and was correct; the consumer bypassed it and reinvented (incorrectly) the math. At Craftsmanship 5, players were getting +5pp shift instead of +25pp. Fix: `workshopSlice.craft` now calls `getAffixMagnitudeBonus(state)` directly. Regression test added (asserts every rolled magnitude ≥ 27 at L5, which fails under the old bug).
+- **CanvasStage hover mislabeled workers as "Colors"** (`2deb828`). The sell-price hover reverse-engineered `colorSum = goldMult / rainbow − 1 − items − sellPrice`. Post-Office, `getCanvasGoldMultiplier` also includes worker contribution, so worker bonuses were displayed under the Colors line. Total was correct; the breakdown lied. Added explicit Workers line + subtracted from colorSum.
+- **Size rework — single unified value** (`18a4c32`). Replaces the dual `sizeLevel`/`sizeMult` model. Size is now ONE number, base 1, with all sources contributing additively (canvas size-track level × `SIZE_PER_LEVEL=0.15`, equipped `+size%` items, hired workers' `+size%` affixes, and any future fame nodes via the `+size%` capability). Canvas gold scales as **size²**, canvas time scales as **size** — so doubling size quadruples gold and doubles time, making bigger canvases strictly more efficient per second (gold-per-second = (BASE/TIME_BASE) × size, linear and unbounded). Replaces `SIZE_GOLD_PER_LEVEL` + `SIZE_TIME_PER_LEVEL` with the single `SIZE_PER_LEVEL`; `canvasGold(size, multiplier)` and `canvasTime(size)` shed the `sizeMult` parameter; `getSizeMultiplier` becomes `getCanvasSize`. All consumers updated: `canvasSlice`, `PaintingRoute`, `CanvasStage` hover, `StatsRoom` Size block (now Base / Canvas / Items / Workers + Gold factor (size²) + Time factor (size)). The user's choice: +15% per level, additive composition, gold chain `BASE × size² × sellMult × PM × combo`.
+- **Three follow-up size fixes**:
+  - `651a3e3`: `PaintingRoute.helperState` was missing `sizeLevel`, so the canvas's "next sale gold" preview rendered `(e^NaN)NaN`. Added.
+  - `bbd12d7`: canvas title showed "Tier 18 · Tier 18" past size 10 because `STAGE_NAMES` only covers 0–10 and the fallback `Tier N` collided with the title's "Tier N · " prefix. Title now reads `— {stageName} —` only; tier number stays in `tierBadge` below.
+  - `a591ddc`: removed `ScalingMathPanel` from the bottom info bar. The same scaling info now lives in the Stats tab with cleaner breakdowns.
+
+### Tests + build
+
+- **736 tests passing across 80 files** (was 738 after the post-Office polish; net −2 from removing the ScalingMathPanel suite, +5 from integration / Craftsmanship / size tests).
+- `npx tsc --noEmit` clean. `npm run build` clean. Bundle ≈ 162 KB gzipped JS (under 250 KB DoD).
+
+### Lessons preserved
+
+- **Selectors-that-wrap-math are the contract; consumers must call them.** Craftsmanship's bug was the canonical anti-pattern: a selector (`getAffixMagnitudeBonus`) existed and did the right math, but `workshopSlice.craft` bypassed it and recomputed (wrong) inline. The pattern is now grep-able: any direct `getNodeLevel(state, "<id>") * constant` outside `multipliers.ts` is a smell. A quick repo-wide sweep after each new selector lands would catch this.
+- **Reverse-engineered breakdowns are stale-by-default.** `CanvasStage.sellHoverBody` derives `colorSum` by subtracting known sources from the total multiplier. When a new source (Office workers) lands in the multiplier function, the breakdown lies until someone explicitly subtracts the new source. Better pattern: `StatsRoom` adds each source as an explicit line (additive construction). The mislabel will recur whenever something new gets wired into `getCanvasGoldMultiplier` and CanvasStage isn't updated.
+- **Spec §4.3 "emergent from roster activity"** is the design promise. `awardOfficeXp` violated it silently because canvas-sale path calls it unconditionally. The guard belongs in the action itself, not the caller — a single early return is more robust than asking every future caller to remember the precondition.
+- **Single-value models beat dual-axis models for player-facing concepts.** The dual `sizeLevel` (integer canvas upgrade count) + `sizeMult` (fractional items+workers multiplier) was technically correct but conceptually muddled — adding the two via "+30%" / "+10%" breakdown looked additive but actually compounded. The unified `size` value with `size²` gold and `size` time is harder to *implement* (multi-file refactor) but easier to *reason about* (one number, one formula).
+- **`helperState` is a maintenance liability.** Several consumers construct `as unknown as GameStore` stubs with hand-picked fields. When a new selector lands that reads a different field (e.g., `getCanvasSize` now reads `state.sizeLevel`), every helperState in the codebase silently breaks. The `(e^NaN)NaN` regression came from exactly this. Worth considering a typed helper like `subsetGameStore(...)` that errors at compile time when fields are missing — but YAGNI for now.
+
+### Next
+
+The Stats panel surfaces canvas-axis multipliers only; PM and inspi-mult are still invisible there. Goldsmith class remains unauthored (no fame node grants `class_goldsmith`). The `helperState` pattern noted above is fragile and would benefit from a typed helper if/when it bites again.
+
+---
+
 ## Post-Office playtest polish (2026-05-11)
 
 Nine commits after Painter's Office landed. Each surfaced from in-session browser playtesting.
