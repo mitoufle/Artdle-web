@@ -8,6 +8,7 @@ import type { Affix } from "@/core/workshopRoll";
 import { hasCapability, countCapability } from "@/store/skillTreeSlice";
 import { OFFICE_CLASSES } from "@/config/officeClasses";
 import { OFFICE_TIER_UNLOCK_LEVEL, ALL_WORKER_TIERS, trickleSeconds, hireCost, workerXpToNext, officeXpToNext, XP_GOLD_FRACTION } from "@/core/balance";
+import { getWorkerXpMultiplier, getHireCostMultiplier } from "@/core/multipliers";
 import { AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
 
 export interface Worker {
@@ -70,7 +71,7 @@ export const getClassUnlocked = (state: GameStore, classId: ClassId): boolean =>
 };
 
 export const getHireCost = (
-  state: Pick<GameStore, "officeLevel">,
+  state: Pick<GameStore, "officeLevel" | "purchasedNodes">,
   candidate: { tier: WorkerTier; affixes: ReadonlyArray<Affix> },
 ): Big => {
   let magnitudeSum = 0;
@@ -81,10 +82,11 @@ export const getHireCost = (
     minMagnitudeSum += AFFIX_MAGNITUDE_RANGE[a.kind].min;
     maxMagnitudeSum += AFFIX_MAGNITUDE_RANGE[a.kind].max;
   }
-  return hireCost(
+  const base = hireCost(
     { tier: candidate.tier, magnitudeSum, minMagnitudeSum, maxMagnitudeSum },
     state.officeLevel,
   );
+  return base.mul(getHireCostMultiplier(state as GameStore));
 };
 
 const LEVEL_UP_CAP = 1000;
@@ -188,7 +190,8 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
     const n = state.roster.length;
     // Spec §4.3: Office Level is emergent from roster activity. No roster, no progression.
     if (n === 0) return;
-    const pot = goldSold.mul(XP_GOLD_FRACTION);
+    const xpMult = getWorkerXpMultiplier(state);
+    const pot = goldSold.mul(XP_GOLD_FRACTION).mul(xpMult);
     if (pot.lte(big(0))) return;
 
     const newRoster = state.roster.map((w) => {

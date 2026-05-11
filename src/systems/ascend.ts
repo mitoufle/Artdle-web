@@ -2,14 +2,17 @@ import type { GameStore } from "@/store";
 import type { StoreApi } from "zustand";
 import { big } from "@/core/bigNumber";
 import { fameOnAscend } from "@/core/balance";
+import { getAscendThresholdReduction } from "@/core/multipliers";
 
 /**
  * True iff the current inspiration would yield at least 1 fame. Below
  * 10^FAME_THRESHOLD_LOG10 (10,000 inspi) the curve returns 0, so the
  * ascend button is gated until the player crosses that threshold.
+ * The threshold is reduced by `getAscendThresholdReduction(state)` from
+ * the `ascend_threshold_reduction` capability.
  */
 export const canAscend = (state: GameStore): boolean =>
-  fameOnAscend(state.inspiration) >= 1;
+  fameOnAscend(state.inspiration, getAscendThresholdReduction(state)) >= 1;
 
 /**
  * Atomic ascend orchestrator. Returns true on success; false if canAscend is false.
@@ -32,7 +35,7 @@ export const performAscendOrchestrator = (
   if (!canAscend(state)) return false;
 
   // 1. Capture fame gain BEFORE inspiration is reset.
-  const fameGain = fameOnAscend(state.inspiration);
+  const fameGain = fameOnAscend(state.inspiration, getAscendThresholdReduction(state));
 
   // 2. Reset run state via existing slice actions.
   state.resetRunCurrencies(); // gold + inspiration → 0; fame preserved

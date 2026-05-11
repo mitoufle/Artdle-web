@@ -389,3 +389,68 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
     expect(getCritChance(state)).toBeCloseTo(0.202, 4);
   });
 });
+
+describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
+  it("patron: inspi_mult_bonus adds +10% per level on top of get_inspired", async () => {
+    const { getInspiMultiplier } = await import("@/core/multipliers");
+    useGameStore.setState({ purchasedNodes: { get_inspired: 5, patron: 3 } });
+    // 5 × 0.25 (get_inspired) + 3 × 0.10 (patron) = 1.55 bonus → ×2.55
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.55, 4);
+  });
+
+  it("expanding_horizon: canvas_size_bonus adds +5% size per level", async () => {
+    const { getCanvasSize } = await import("@/core/multipliers");
+    const state = {
+      sizeLevel: 4, purchasedNodes: { expanding_horizon: 3 },
+      equipped: {}, roster: [],
+    } as unknown as GameStore;
+    // 1 + 0.15×4 + 0.05×3 = 1.75
+    expect(getCanvasSize(state)).toBeCloseTo(1.75, 4);
+  });
+
+  it("accelerator: worker_xp_mult returns 1 + 0.10 × level", async () => {
+    const { getWorkerXpMultiplier } = await import("@/core/multipliers");
+    const state = { purchasedNodes: { accelerator: 4 } } as unknown as GameStore;
+    expect(getWorkerXpMultiplier(state)).toBeCloseTo(1.40, 4);
+  });
+
+  it("bookkeeper: hire_cost_reduction returns max(0.1, 1 - 0.10 × level), floored", async () => {
+    const { getHireCostMultiplier } = await import("@/core/multipliers");
+    const stateLow = { purchasedNodes: { bookkeeper: 2 } } as unknown as GameStore;
+    expect(getHireCostMultiplier(stateLow)).toBeCloseTo(0.80, 4);
+    // Maxed bookkeeper at L4 → 1 - 0.40 = 0.60 (still above the 0.1 floor)
+    const stateMax = { purchasedNodes: { bookkeeper: 4 } } as unknown as GameStore;
+    expect(getHireCostMultiplier(stateMax)).toBeCloseTo(0.60, 4);
+  });
+
+  it("afterburner: combo_decay_reduction returns 0.01 × level", async () => {
+    const { getComboDecayReduction } = await import("@/core/multipliers");
+    const state = { purchasedNodes: { afterburner: 3 } } as unknown as GameStore;
+    expect(getComboDecayReduction(state)).toBeCloseTo(0.03, 4);
+  });
+
+  it("prismatic_eye: crit_gold_bonus returns 0.20 × level", async () => {
+    const { getCritGoldBonus } = await import("@/core/multipliers");
+    const state = { purchasedNodes: { prismatic_eye: 2 } } as unknown as GameStore;
+    expect(getCritGoldBonus(state)).toBeCloseTo(0.40, 4);
+  });
+
+  it("enlightenment: ascend_threshold_reduction returns 0.05 × level", async () => {
+    const { getAscendThresholdReduction } = await import("@/core/multipliers");
+    const state = { purchasedNodes: { enlightenment: 4 } } as unknown as GameStore;
+    expect(getAscendThresholdReduction(state)).toBeCloseTo(0.20, 4);
+  });
+
+  it("master_painter: unlocks class_goldsmith capability", async () => {
+    const { hasCapability } = await import("@/store/skillTreeSlice");
+    useGameStore.setState({ purchasedNodes: { master_painter: 1 } });
+    expect(hasCapability(useGameStore.getState(), "class_goldsmith")).toBe(true);
+  });
+
+  it("apprentice_pool: adds inventory slots", async () => {
+    const { getMaxInventorySlots } = await import("@/store/workshopSlice");
+    useGameStore.setState({ purchasedNodes: { apprentice_pool: 3 } });
+    // Base MAX_INVENTORY_SLOTS + 0 chests + 3 from apprentice_pool
+    expect(getMaxInventorySlots(useGameStore.getState())).toBe(3 + 3); // assuming MAX_INVENTORY_SLOTS = 3
+  });
+});

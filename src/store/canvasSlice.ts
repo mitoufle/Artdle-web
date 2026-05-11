@@ -3,7 +3,7 @@ import {
   canvasGold, canvasTime,
   sellPriceUpgradeCost, speedUpgradeCost,
   sizeUpgradeCost, critUpgradeCost, comboUpgradeCost,
-  CRIT_SPEED_FACTOR, comboBonusFactor, comboEffectiveChance,
+  CRIT_SPEED_FACTOR, COMBO_DECAY_PER_LINK, comboBonusFactor, comboEffectiveChance,
 } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
@@ -12,6 +12,8 @@ import {
   getCritChance,
   getComboBaseChance,
   getCanvasSize,
+  getComboDecayReduction,
+  getCritGoldBonus,
 } from "@/core/multipliers";
 import type { GameStore } from "@/store";
 import type { Big } from "@/core/bigNumber";
@@ -115,7 +117,8 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
     }
 
     // Threshold crossed — exactly one sale per tick.
-    const goldMult = getCanvasGoldMultiplier(state) * getPmMultiplier(state);
+    const critGoldMult = critFlag ? (1 + getCritGoldBonus(state)) : 1;
+    const goldMult = getCanvasGoldMultiplier(state) * getPmMultiplier(state) * critGoldMult;
     const baseGold = canvasGold(size, goldMult);
     // Apply combo bonus from PRIOR chain state — chain mutation happens AFTER pay-out.
     const gain = baseGold.mul(comboBonusFactor(state.comboChain));
@@ -126,7 +129,8 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
 
     // Roll combo for the chain decision (after sale gold paid out).
     const baseChance = getComboBaseChance(state);
-    const effChance = comboEffectiveChance(baseChance, state.comboChain);
+    const decay = Math.max(0, COMBO_DECAY_PER_LINK - getComboDecayReduction(state));
+    const effChance = comboEffectiveChance(baseChance, state.comboChain, decay);
     const comboHit = rng() < effChance;
     const newChain = comboHit ? state.comboChain + 1 : 0;
 

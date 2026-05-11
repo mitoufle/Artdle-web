@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-11T19:27:17.033Z",
+  "designedAt": "2026-05-11T21:17:58.381Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -386,7 +386,10 @@
         150
       ],
       "unlocks": [],
-      "position": null
+      "position": {
+        "x": 363.50974930362116,
+        "y": -32.451093210586876
+      }
     },
     {
       "id": "steel_chest",
@@ -403,7 +406,10 @@
         200
       ],
       "unlocks": [],
-      "position": null
+      "position": {
+        "x": 448.74651810584953,
+        "y": -25.546605293440763
+      }
     },
     {
       "id": "forget_pain",
@@ -422,8 +428,8 @@
       ],
       "unlocks": [],
       "position": {
-        "x": 433.4464178272981,
-        "y": -22.81375373993083
+        "x": 413.66172398885794,
+        "y": -105.49541230635427
       }
     },
     {
@@ -442,8 +448,8 @@
       ],
       "unlocks": [],
       "position": {
-        "x": 464.3656378830084,
-        "y": -81.50190103567307
+        "x": 422.0055710306407,
+        "y": -173.30264672036827
       }
     },
     {
@@ -485,7 +491,10 @@
         1
       ],
       "unlocks": [],
-      "position": null
+      "position": {
+        "x": 282.3351366106128,
+        "y": 109.65336380684508
+      }
     },
     {
       "id": "free_will",
@@ -504,7 +513,10 @@
       "unlocks": [
         "class_speedrunner"
       ],
-      "position": null
+      "position": {
+        "x": 259.62623370817425,
+        "y": 32.4209215928625
+      }
     },
     {
       "id": "size_matters",
@@ -629,8 +641,273 @@
         "canvas_combo"
       ],
       "position": {
-        "x": 558.87260909935,
-        "y": 121.25326582278468
+        "x": 553.2033426183845,
+        "y": 121.51898734177215
+      }
+    },
+    {
+      "id": "gold_diggers",
+      "name": "Gold diggers",
+      "description": "Unlocks the Goldsmith worker class.",
+      "numericEffect": "1",
+      "parentIds": [
+        "accelerator",
+        "hire_manager"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        5
+      ],
+      "unlocks": [
+        "class_goldsmith"
+      ],
+      "position": {
+        "x": 238.20837503009096,
+        "y": -109.09717320888153
+      }
+    },
+    {
+      "id": "recruiter",
+      "name": "Recruiter",
+      "description": "Each level adds +1 queue slot in the Office.",
+      "numericEffect": "+1",
+      "parentIds": [
+        "hire_manager"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 3,
+      "costs": [
+        3,
+        6,
+        12
+      ],
+      "unlocks": [
+        "queue_slot"
+      ],
+      "position": {
+        "x": 160.2603713160705,
+        "y": -86.69274922217909
+      }
+    },
+    {
+      "id": "hire_manager",
+      "name": "Hire Manager",
+      "description": "Each level adds +1 roster slot for hired workers.",
+      "numericEffect": "+1",
+      "parentIds": [
+        "free_will"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 4,
+      "costs": [
+        5,
+        10,
+        20,
+        40
+      ],
+      "unlocks": [
+        "roster_slot"
+      ],
+      "position": {
+        "x": 197.92327581760043,
+        "y": -38.855562185379256
+      }
+    },
+    {
+      "id": "accelerator",
+      "name": "Accelerator Program",
+      "description": "Each level boosts the XP workers earn per canvas sale by +10%.",
+      "numericEffect": "10%",
+      "parentIds": [
+        "free_will"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        20,
+        40,
+        80,
+        160,
+        320
+      ],
+      "unlocks": [
+        "worker_xp_mult"
+      ],
+      "position": {
+        "x": 296.5769434127722,
+        "y": -57.63513001557999
+      }
+    },
+    {
+      "id": "bookkeeper",
+      "name": "Bookkeeper",
+      "description": "Each level reduces hire cost by 10% (floored at 10% of base).",
+      "numericEffect": "-10%",
+      "parentIds": [
+        "hire_manager"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 4,
+      "costs": [
+        10,
+        20,
+        50,
+        100
+      ],
+      "unlocks": [
+        "hire_cost_reduction"
+      ],
+      "position": {
+        "x": 129.80496019464238,
+        "y": -31.198189702936347
+      }
+    },
+    {
+      "id": "afterburner",
+      "name": "Afterburner",
+      "description": "Each level reduces combo decay by 1 percentage point per chain link.",
+      "numericEffect": "-1pp",
+      "parentIds": [
+        "unrelentless"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 4,
+      "costs": [
+        20,
+        40,
+        80,
+        160
+      ],
+      "unlocks": [
+        "combo_decay_reduction"
+      ],
+      "position": {
+        "x": 589.9721448467967,
+        "y": 77.33026467203683
+      }
+    },
+    {
+      "id": "prismatic_eye",
+      "name": "Prismatic Eye",
+      "description": "Each level adds +20% gold on crit canvases (in addition to the speed bonus).",
+      "numericEffect": "20%",
+      "parentIds": [
+        "consistency"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 3,
+      "costs": [
+        30,
+        60,
+        120
+      ],
+      "unlocks": [
+        "crit_gold_bonus"
+      ],
+      "position": {
+        "x": 521.4484679665738,
+        "y": 58.68814729574224
+      }
+    },
+    {
+      "id": "expanding_horizon",
+      "name": "Expanding Horizon",
+      "description": "Each level adds +5% to canvas size.",
+      "numericEffect": "5%",
+      "parentIds": [
+        "big_picture"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        25,
+        50,
+        100,
+        200,
+        400
+      ],
+      "unlocks": [
+        "canvas_size_bonus"
+      ],
+      "position": {
+        "x": 559.2048994763231,
+        "y": 242.03047952333515
+      }
+    },
+    {
+      "id": "enlightenment",
+      "name": "Enlightenment",
+      "description": "Each level reduces the inspiration needed to ascend by 5%.",
+      "numericEffect": "-5%",
+      "parentIds": [
+        "Bargain"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 4,
+      "costs": [
+        50,
+        100,
+        200,
+        400
+      ],
+      "unlocks": [
+        "ascend_threshold_reduction"
+      ],
+      "position": null
+    },
+    {
+      "id": "patron",
+      "name": "Patron",
+      "description": "Each level boosts inspiration gain by +10% (stacks with Get Inspired).",
+      "numericEffect": "10%",
+      "parentIds": [
+        "poke_tree"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        40,
+        80,
+        160,
+        320,
+        640
+      ],
+      "unlocks": [
+        "inspi_mult_bonus"
+      ],
+      "position": null
+    },
+    {
+      "id": "apprentice_pool",
+      "name": "Apprentice Pool",
+      "description": "Each level adds +1 inventory slot in the Workshop.",
+      "numericEffect": "+1",
+      "parentIds": [
+        "wooden_chest"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 3,
+      "costs": [
+        30,
+        60,
+        120
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 401.1142061281337,
+        "y": 17.951668584579977
       }
     }
   ]

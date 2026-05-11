@@ -77,10 +77,11 @@ export const CANVAS_TIME_BASE = 2;
  *   - 100,000,000 inspi: 3,276 fame
  *   - 1,000,000,000 inspi: 10,000 fame
  */
-export const fameOnAscend = (inspi: Big): number => {
+export const fameOnAscend = (inspi: Big, thresholdReduction = 0): number => {
   const n = inspi.toNumber();
   const log = Math.log10(Math.max(1, n));
-  const x = log - FAME_THRESHOLD_LOG10;
+  const effectiveThreshold = FAME_THRESHOLD_LOG10 * (1 - thresholdReduction);
+  const x = log - effectiveThreshold;
   if (x < 0) return 0;
   return Math.max(1, Math.floor(Math.pow(x, FAME_POWER) * FAME_SCALE));
 };
@@ -232,10 +233,15 @@ export const comboBonusFactor = (chain: number): number =>
 
 /**
  * Effective combo trigger chance after decay-per-link is applied.
- * `base × (1 - COMBO_DECAY_PER_LINK × chain)`, clamped at 0 (no negative chance).
+ * `base × (1 - decay × chain)`, clamped at 0 (no negative chance).
+ * `decay` defaults to `COMBO_DECAY_PER_LINK`; callers can pass a reduced
+ * value when capability tags (e.g., `combo_decay_reduction`) apply.
  */
-export const comboEffectiveChance = (base: number, chain: number): number =>
-  Math.max(0, base * (1 - COMBO_DECAY_PER_LINK * chain));
+export const comboEffectiveChance = (
+  base: number,
+  chain: number,
+  decay: number = COMBO_DECAY_PER_LINK,
+): number => Math.max(0, base * (1 - decay * chain));
 
 // ============================================================================
 // Painter's Office formulas

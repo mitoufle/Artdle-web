@@ -86,6 +86,7 @@ export const getMaxInventorySlots = (state: GameStore): number => {
   let cap = MAX_INVENTORY_SLOTS;
   if (getNodeLevel(state, "wooden_chest") > 0) cap += STORAGE_PER_CHEST;
   if (getNodeLevel(state, "steel_chest") > 0) cap += STORAGE_PER_CHEST;
+  cap += getNodeLevel(state, "apprentice_pool");
   return cap;
 };
 

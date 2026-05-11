@@ -10,7 +10,7 @@
 
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
-import { getNodeLevel } from "@/store/skillTreeSlice";
+import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
 import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale } from "./balance";
 import { big, type Big } from "@/core/bigNumber";
 import type { AffixKind } from "@/config/workshopAffixes";
@@ -68,7 +68,8 @@ const CRAFTSMANSHIP_PER_LEVEL = 5; // +5 percentage points to affix min/max per 
  *   - workshop items: do NOT contribute (painting-only by design).
  */
 export const getInspiMultiplier = (state: GameStore): number => {
-  const bonus = getNodeLevel(state, "get_inspired") * GET_INSPIRED_PER_LEVEL;
+  const bonus = getNodeLevel(state, "get_inspired") * GET_INSPIRED_PER_LEVEL
+    + countCapability(state, "inspi_mult_bonus") * 0.10;
   return 1 + bonus;
 };
 
@@ -191,5 +192,26 @@ export const getCanvasSize = (state: GameStore): number => {
   return 1
     + SIZE_PER_LEVEL * state.sizeLevel
     + getEquippedContribution(state, "+size%")
-    + getOfficeContribution(state, "+size%").toNumber();
+    + getOfficeContribution(state, "+size%").toNumber()
+    + countCapability(state, "canvas_size_bonus") * 0.05;
 };
+
+/** Worker XP gain per canvas sale, multiplied by accelerator nodes. */
+export const getWorkerXpMultiplier = (state: GameStore): number =>
+  1 + countCapability(state, "worker_xp_mult") * 0.10;
+
+/** Hire cost reduction, floored at 90% (so cost can't go below 10% of base). */
+export const getHireCostMultiplier = (state: GameStore): number =>
+  Math.max(0.1, 1 - countCapability(state, "hire_cost_reduction") * 0.10);
+
+/** Combo decay reduction per chain link (subtracted from COMBO_DECAY_PER_LINK). */
+export const getComboDecayReduction = (state: GameStore): number =>
+  countCapability(state, "combo_decay_reduction") * 0.01;
+
+/** Bonus % applied to canvas gold when the canvas is a crit. 0 if no nodes purchased. */
+export const getCritGoldBonus = (state: GameStore): number =>
+  countCapability(state, "crit_gold_bonus") * 0.20;
+
+/** Ascend threshold reduction in log10-space (used by canAscend + fameOnAscend). */
+export const getAscendThresholdReduction = (state: GameStore): number =>
+  countCapability(state, "ascend_threshold_reduction") * 0.05;

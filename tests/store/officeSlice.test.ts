@@ -83,13 +83,13 @@ describe("tickOffice — trickle", () => {
 
 describe("getHireCost", () => {
   it("computes cost from tier, affix sum, and office level", () => {
-    const state = { officeLevel: 0 } as GameStore;
+    const state = { officeLevel: 0, purchasedNodes: {} } as GameStore;
     const candidate = {
       id: "x", class: "generalist" as const, tier: "common" as const,
       affixes: [{ kind: "+sell_price%" as const, magnitude: 5 }],
     };
     const cost = getHireCost(state, candidate);
-    // common min-roll → tierBase × 1 × 1.10^0 = 100
+    // common min-roll → tierBase × 1 × 1.10^0 = 100 (no bookkeeper → ×1)
     expect(cost.toNumber()).toBeCloseTo(100, 4);
   });
 });
