@@ -185,22 +185,34 @@ export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Ele
           }}
         />
         <div className={styles.capabilityHints}>
-          {(["canvas_size", "canvas_crit", "canvas_combo", "palette_slot"] as const).map(
-            (cap) => (
-              <button
-                key={cap}
-                type="button"
-                className={styles.capabilityChip}
-                onClick={() => {
-                  const current = node.unlocks ?? [];
-                  if (!current.includes(cap)) {
-                    patch({ unlocks: [...current, cap] });
-                  }
-                }}
-              >
-                {cap}
-              </button>
-            ),
+          {(["canvas_size", "canvas_crit", "canvas_combo", "palette_slot", "roster_slot", "queue_slot", "class_goldsmith", "class_speedrunner"] as const).map(
+            (cap) => {
+              const labels: Record<string, string> = {
+                canvas_size: "Canvas Size",
+                canvas_crit: "Canvas Crit",
+                canvas_combo: "Canvas Combo",
+                palette_slot: "Palette Slot",
+                roster_slot: "Roster Slot",
+                queue_slot: "Queue Slot",
+                class_goldsmith: "Class: Goldsmith",
+                class_speedrunner: "Class: Speedrunner",
+              };
+              return (
+                <button
+                  key={cap}
+                  type="button"
+                  className={styles.capabilityChip}
+                  onClick={() => {
+                    const current = node.unlocks ?? [];
+                    if (!current.includes(cap)) {
+                      patch({ unlocks: [...current, cap] });
+                    }
+                  }}
+                >
+                  {labels[cap]}
+                </button>
+              );
+            },
           )}
         </div>
         <span className={styles.subLabel}>
