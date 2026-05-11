@@ -1548,13 +1548,15 @@ export const getHireCost = (
   candidate: { tier: WorkerTier; affixes: ReadonlyArray<Affix> },
 ): Big => {
   let magnitudeSum = 0;
+  let minMagnitudeSum = 0;
   let maxMagnitudeSum = 0;
   for (const a of candidate.affixes) {
     magnitudeSum += a.magnitude;
+    minMagnitudeSum += AFFIX_MAGNITUDE_RANGE[a.kind].min;
     maxMagnitudeSum += AFFIX_MAGNITUDE_RANGE[a.kind].max;
   }
   return hireCost(
-    { tier: candidate.tier, magnitudeSum, maxMagnitudeSum },
+    { tier: candidate.tier, magnitudeSum, minMagnitudeSum, maxMagnitudeSum },
     state.officeLevel,
   );
 };
