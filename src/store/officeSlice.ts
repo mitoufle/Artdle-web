@@ -7,7 +7,7 @@ import type { WorkerTier } from "@/core/balance";
 import type { Affix } from "@/core/workshopRoll";
 import { hasCapability, countCapability } from "@/store/skillTreeSlice";
 import { OFFICE_CLASSES } from "@/config/officeClasses";
-import { OFFICE_TIER_UNLOCK_LEVEL, ALL_WORKER_TIERS, trickleSeconds, hireCost } from "@/core/balance";
+import { OFFICE_TIER_UNLOCK_LEVEL, ALL_WORKER_TIERS, trickleSeconds, hireCost, workerXpToNext, officeXpToNext, XP_GOLD_FRACTION } from "@/core/balance";
 import { AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
 
 export interface Worker {
@@ -86,6 +86,30 @@ export const getHireCost = (
   );
 };
 
+function applyWorkerLevelUps(worker: Worker): Worker {
+  let level = worker.level;
+  let xp = worker.xp;
+  for (let i = 0; i < 1000; i++) {
+    const cost = workerXpToNext(level);
+    if (xp.lt(cost)) break;
+    xp = xp.sub(cost);
+    level += 1;
+  }
+  return { ...worker, level, xp };
+}
+
+function applyOfficeLevelUps(currentLevel: number, currentXp: Big): { level: number; xp: Big } {
+  let level = currentLevel;
+  let xp = currentXp;
+  for (let i = 0; i < 1000; i++) {
+    const cost = officeXpToNext(level);
+    if (xp.lt(cost)) break;
+    xp = xp.sub(cost);
+    level += 1;
+  }
+  return { level, xp };
+}
+
 export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (set, get) => ({
   ...initialOfficeState,
 
@@ -147,8 +171,24 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
     set({ roster: state.roster.filter((w) => w.id !== workerId) });
     return true;
   },
-  awardOfficeXp: (_g: Big) => {
-    // Stub — implemented in Task 12.
+  awardOfficeXp: (goldSold: Big) => {
+    const state = get();
+    const pot = goldSold.mul(XP_GOLD_FRACTION);
+    if (pot.lte(big(0))) return;
+
+    const n = state.roster.length;
+    const newRoster = n === 0 ? state.roster : state.roster.map((w) => {
+      const share = pot.div(n);
+      return applyWorkerLevelUps({ ...w, xp: w.xp.add(share) });
+    });
+
+    const officeAfter = applyOfficeLevelUps(state.officeLevel, state.officeXp.add(pot));
+
+    set({
+      roster: newRoster,
+      officeXp: officeAfter.xp,
+      officeLevel: officeAfter.level,
+    });
   },
   resetOffice: () => {
     set({

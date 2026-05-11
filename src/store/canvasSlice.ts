@@ -122,6 +122,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
 
     state.add("gold", gain);
     state.addGoldEarned(gain);
+    state.awardOfficeXp(gain);
 
     // Roll combo for the chain decision (after sale gold paid out).
     const baseChance = getComboBaseChance(state);
