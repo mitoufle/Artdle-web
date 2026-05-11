@@ -20,6 +20,7 @@ import {
   SPEED_PER_LEVEL,
   CRIT_PER_LEVEL,
   COMBO_PER_LEVEL,
+  SIZE_GOLD_PER_LEVEL,
 } from "@/core/balance";
 import styles from "./StatsRoom.module.css";
 
@@ -97,6 +98,7 @@ function statBlocks(state: GameStore): StatBlock[] {
       name: "Size",
       totalLabel: fmtMult(sizeTotal),
       lines: [
+        { source: "Canvas upgrade", value: SIZE_GOLD_PER_LEVEL * state.sizeLevel },
         { source: "Items", value: getEquippedContribution(state, "+size%") },
         { source: "Workers", value: getOfficeContribution(state, "+size%").toNumber() },
       ],
@@ -110,12 +112,13 @@ export function StatsRoom(): JSX.Element {
   const roster = useGameStore((s) => s.roster);
   const sellPriceLevel = useGameStore((s) => s.sellPriceLevel);
   const speedLevel = useGameStore((s) => s.speedLevel);
+  const sizeLevel = useGameStore((s) => s.sizeLevel);
   const critLevel = useGameStore((s) => s.critLevel);
   const comboLevel = useGameStore((s) => s.comboLevel);
 
   const helperState = {
     equipped, purchasedNodes, roster,
-    sellPriceLevel, speedLevel, critLevel, comboLevel,
+    sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
   } as unknown as GameStore;
 
   const blocks = statBlocks(helperState);
