@@ -2,14 +2,15 @@ import type { JSX } from "react";
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
-import { canvasGold, SIZE_GOLD_PER_LEVEL, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK } from "@/core/balance";
-import { getCanvasGoldMultiplier, getPmMultiplier, getSizeMultiplier, getOfficeContribution } from "@/core/multipliers";
+import { canvasGold, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK } from "@/core/balance";
+import { getCanvasGoldMultiplier, getPmMultiplier, getCanvasSize, getOfficeContribution } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 
-function sellHoverBody(sizeLevel: number, comboChain: number): JSX.Element {
+function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const state = useGameStore.getState();
+  const size = getCanvasSize(state);
   const goldMult = getCanvasGoldMultiplier(state);
   const pmMult = getPmMultiplier(state);
   const itemBonus = getEquippedContribution(state, "+sell_price%");
@@ -17,15 +18,13 @@ function sellHoverBody(sizeLevel: number, comboChain: number): JSX.Element {
   const rainbowLvl = getNodeLevel(state, "rainbow");
   const rainbowFactor = 1 + 0.50 * rainbowLvl;
   const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
-  const sizeMult = getSizeMultiplier(state);
-  // Reverse-engineer colors: additive total minus all other named sources.
   const additiveTotal = goldMult / rainbowFactor - 1;
   const colorSum = additiveTotal - itemBonus - workerBonus - sellPriceContribution;
-  const baseGold = 10 * (1 + SIZE_GOLD_PER_LEVEL * sizeMult * sizeLevel);
-  const total = canvasGold(sizeLevel, goldMult * pmMult, sizeMult).mul(1 + COMBO_PER_LINK * comboChain);
+  const baseGold = 10 * size * size;
+  const total = canvasGold(size, goldMult * pmMult).mul(1 + COMBO_PER_LINK * comboChain);
   return (
     <>
-      <div>Base × (1 + {SIZE_GOLD_PER_LEVEL.toFixed(2)} × {sizeMult.toFixed(2)} × {sizeLevel}) = {baseGold.toFixed(1)}</div>
+      <div>Base × size² = 10 × {size.toFixed(2)}² = {baseGold.toFixed(1)}</div>
       <div>───</div>
       <div>Sell Price (Lv {state.sellPriceLevel}): ×{(1 + sellPriceContribution).toFixed(2)}</div>
       <div>Items (sell):  ×{(1 + itemBonus).toFixed(2)}</div>

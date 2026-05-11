@@ -21,8 +21,7 @@ import {
   comboEffectiveChance,
   SELL_PRICE_PER_LEVEL,
   SPEED_PER_LEVEL,
-  SIZE_GOLD_PER_LEVEL,
-  SIZE_TIME_PER_LEVEL,
+  SIZE_PER_LEVEL,
   CRIT_PER_LEVEL,
   CRIT_SPEED_FACTOR,
   COMBO_PER_LEVEL,
@@ -120,35 +119,20 @@ describe("treePartCost", () => {
   });
 });
 
-describe("canvasGold (size-driven)", () => {
-  it("returns BASE × (1 + SIZE_GOLD_PER_LEVEL × sizeLevel) × multiplier", () => {
-    // sizeLevel 0, mult 1 → BASE × 1 × 1 = 10
-    expect(canvasGold(0, 1).toNumber()).toBeCloseTo(10, 5);
-    // sizeLevel 10, mult 1 → 10 × (1 + 0.3 × 10) = 40
-    expect(canvasGold(10, 1).toNumber()).toBeCloseTo(40, 5);
-    // sizeLevel 5, mult 2 → 10 × 2.5 × 2 = 50
-    expect(canvasGold(5, 2).toNumber()).toBeCloseTo(50, 5);
+describe("canvasGold (size² scaling)", () => {
+  it("returns BASE × size² × multiplier", () => {
+    // size 1, mult 1 → 10 × 1² × 1 = 10
+    expect(canvasGold(1, 1).toNumber()).toBeCloseTo(10, 5);
+    // size 2, mult 1 → 10 × 4 × 1 = 40
+    expect(canvasGold(2, 1).toNumber()).toBeCloseTo(40, 5);
+    // size 1.5, mult 2 → 10 × 2.25 × 2 = 45
+    expect(canvasGold(1.5, 2).toNumber()).toBeCloseTo(45, 5);
   });
 
-  it("scales linearly in sizeLevel (not quadratically)", () => {
-    const a = canvasGold(0, 1).toNumber();
-    const b = canvasGold(1, 1).toNumber();
-    const c = canvasGold(2, 1).toNumber();
-    expect(b - a).toBeCloseTo(c - b, 5);
-  });
-});
-
-describe("canvasGold (with sizeMult)", () => {
-  it("default sizeMult = 1 leaves formula unchanged", () => {
-    expect(canvasGold(5, 1).toNumber()).toBeCloseTo(canvasGold(5, 1, 1).toNumber(), 5);
-  });
-
-  it("sizeMult scales the per-level rate multiplicatively", () => {
-    // BASE × (1 + 0.30 × sizeMult × sizeLevel) × mult
-    // sizeLevel 10, sizeMult 2.0, mult 1: 10 × (1 + 0.30 × 2 × 10) × 1 = 10 × 7 = 70
-    expect(canvasGold(10, 1, 2).toNumber()).toBeCloseTo(70, 5);
-    // sizeLevel 0, sizeMult 2.0: still 10 (no per-level effect)
-    expect(canvasGold(0, 1, 2).toNumber()).toBeCloseTo(10, 5);
+  it("doubles size quadruples gold (size² relationship)", () => {
+    const a = canvasGold(1, 1).toNumber();
+    const b = canvasGold(2, 1).toNumber();
+    expect(b / a).toBeCloseTo(4, 5);
   });
 });
 
@@ -176,34 +160,20 @@ describe("inspiPerSec", () => {
   });
 });
 
-describe("canvasTime (size-driven)", () => {
-  it("returns CANVAS_TIME_BASE × (1 + SIZE_TIME_PER_LEVEL × sizeLevel)", () => {
-    // sizeLevel 0 → 2 × 1 = 2 (matches old tier-1 baseline)
-    expect(canvasTime(0)).toBeCloseTo(2, 5);
-    // sizeLevel 10 → 2 × 2.5 = 5
-    expect(canvasTime(10)).toBeCloseTo(5, 5);
-    // sizeLevel 4 → 2 × 1.6 = 3.2
-    expect(canvasTime(4)).toBeCloseTo(3.2, 5);
-  });
-});
-
-describe("canvasTime (with sizeMult)", () => {
-  it("default sizeMult = 1 leaves formula unchanged", () => {
-    expect(canvasTime(4, 1)).toBeCloseTo(canvasTime(4), 5);
-    expect(canvasTime(10, 1)).toBeCloseTo(canvasTime(10), 5);
+describe("canvasTime (linear size scaling)", () => {
+  it("returns CANVAS_TIME_BASE × size", () => {
+    // size 1 → 2s (baseline canvas)
+    expect(canvasTime(1)).toBeCloseTo(2, 5);
+    // size 2 → 4s (double canvas, double time)
+    expect(canvasTime(2)).toBeCloseTo(4, 5);
+    // size 1.5 → 3s
+    expect(canvasTime(1.5)).toBeCloseTo(3, 5);
   });
 
-  it("sizeLevel 0 ignores sizeMult (no per-level contribution at L0)", () => {
-    // CANVAS_TIME_BASE × (1 + 0.15 × 0 × sizeMult) = 2 regardless of sizeMult
-    expect(canvasTime(0, 2)).toBeCloseTo(2, 5);
-    expect(canvasTime(0, 5)).toBeCloseTo(2, 5);
-  });
-
-  it("sizeMult scales time per-level rate multiplicatively", () => {
-    // sizeLevel 10, sizeMult 2: 2 × (1 + 0.15 × 10 × 2) = 2 × 4 = 8
-    expect(canvasTime(10, 2)).toBeCloseTo(8, 5);
-    // sizeLevel 4, sizeMult 1.5: 2 × (1 + 0.15 × 4 × 1.5) = 2 × 1.9 = 3.8
-    expect(canvasTime(4, 1.5)).toBeCloseTo(3.8, 5);
+  it("doubles size doubles time (linear relationship)", () => {
+    const a = canvasTime(1);
+    const b = canvasTime(2);
+    expect(b / a).toBeCloseTo(2, 5);
   });
 });
 
@@ -372,8 +342,7 @@ describe("canvas-depth tuning constants", () => {
   it("exposes per-level rates matching spec §10 defaults", () => {
     expect(SELL_PRICE_PER_LEVEL).toBeCloseTo(0.10, 5);
     expect(SPEED_PER_LEVEL).toBeCloseTo(0.05, 5);
-    expect(SIZE_GOLD_PER_LEVEL).toBeCloseTo(0.30, 5);
-    expect(SIZE_TIME_PER_LEVEL).toBeCloseTo(0.15, 5);
+    expect(SIZE_PER_LEVEL).toBeCloseTo(0.15, 5);
     expect(CRIT_PER_LEVEL).toBeCloseTo(0.01, 5);
     expect(CRIT_SPEED_FACTOR).toBe(10);
     expect(COMBO_PER_LEVEL).toBeCloseTo(0.02, 5);

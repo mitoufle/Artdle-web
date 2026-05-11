@@ -11,7 +11,7 @@
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
-import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, levelScale } from "./balance";
+import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale } from "./balance";
 import { big, type Big } from "@/core/bigNumber";
 import type { AffixKind } from "@/config/workshopAffixes";
 
@@ -178,18 +178,18 @@ export const getComboBaseChance = (state: GameStore): number => {
 };
 
 /**
- * Multiplier on effective sizeLevel — applies to BOTH gold and time formulas.
- * Returns 1.0 + (sum of equipped +size% magnitudes, already fractional via
- * getEquippedContribution). Used by both canvasGold and canvasTime to scale
- * the per-level contribution from the size track.
+ * Total canvas size, base 1. Every source contributes additively:
+ *   - canvas size-track level: SIZE_PER_LEVEL × sizeLevel
+ *   - equipped +size% items: getEquippedContribution(state, "+size%")
+ *   - hired workers' +size% affixes: getOfficeContribution(state, "+size%")
+ *   - future fame nodes can be wired in here when authored.
  *
- * Effect: equipping +10% size boosts effective sizeLevel by 10%, increasing
- * BOTH canvas gold and canvas time — matching the mental model (bigger canvas
- * = higher price + longer to paint, just like buying a Size level).
- *
- * Affix only rolls on items when unlock_canvas_size is owned (gated at
- * roll-time in `rollAffixes`).
+ * Used by `canvasGold` (size² scaling) and `canvasTime` (linear scaling).
+ * Gold-per-second scales linearly with size — doubling size doubles efficiency.
  */
-export const getSizeMultiplier = (state: GameStore): number => {
-  return 1 + getEquippedContribution(state, "+size%") + getOfficeContribution(state, "+size%").toNumber();
+export const getCanvasSize = (state: GameStore): number => {
+  return 1
+    + SIZE_PER_LEVEL * state.sizeLevel
+    + getEquippedContribution(state, "+size%")
+    + getOfficeContribution(state, "+size%").toNumber();
 };

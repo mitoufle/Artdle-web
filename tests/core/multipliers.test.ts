@@ -6,7 +6,7 @@ import {
   getTreeUpgradeCostMultiplier,
   getCritChance,
   getComboBaseChance,
-  getSizeMultiplier,
+  getCanvasSize,
   getOfficeContribution,
 } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
@@ -243,16 +243,21 @@ describe("getComboBaseChance — equipped +combo_chance% contribution", () => {
   });
 });
 
-describe("getSizeMultiplier", () => {
+describe("getCanvasSize — single unified size value", () => {
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
-    purchasedNodes: {}, equipped: {}, roster: [], ...over,
+    purchasedNodes: {}, equipped: {}, roster: [], sizeLevel: 0, ...over,
   } as GameStore);
 
-  it("returns 1.0 when no items equipped", () => {
-    expect(getSizeMultiplier(stub())).toBeCloseTo(1.0, 5);
+  it("returns 1.0 with no contributions (base canvas)", () => {
+    expect(getCanvasSize(stub())).toBeCloseTo(1.0, 5);
   });
 
-  it("returns 1 + sum of equipped +size% magnitudes (already fractional)", () => {
+  it("canvas upgrade contributes SIZE_PER_LEVEL × sizeLevel", () => {
+    // sizeLevel 5, SIZE_PER_LEVEL 0.15 → 1 + 0.75 = 1.75
+    expect(getCanvasSize(stub({ sizeLevel: 5 }))).toBeCloseTo(1.75, 5);
+  });
+
+  it("equipped +size% items add to size additively", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [
@@ -261,7 +266,26 @@ describe("getSizeMultiplier", () => {
       ],
     };
     const state = stub({ equipped: { brush: item } });
-    expect(getSizeMultiplier(state)).toBeCloseTo(1.17, 5);
+    expect(getCanvasSize(state)).toBeCloseTo(1.17, 5);
+  });
+
+  it("canvas + items + workers all stack additively into size", () => {
+    const item: Item = {
+      id: "i1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+size%", magnitude: 10 }],
+    };
+    const state = stub({
+      sizeLevel: 4,                 // +0.60
+      equipped: { brush: item },    // +0.10
+      roster: [
+        {
+          id: "w1", class: "generalist", tier: "common", level: 1, xp: big(0),
+          affixes: [{ kind: "+size%", magnitude: 20 }],   // 0.20 × 1.04 = 0.208
+        },
+      ],
+    } as unknown as GameStore);
+    // 1 + 0.60 + 0.10 + 0.208 = 1.908
+    expect(getCanvasSize(state)).toBeCloseTo(1.908, 4);
   });
 });
 

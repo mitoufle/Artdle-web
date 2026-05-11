@@ -164,39 +164,36 @@ describe("canvasSlice — size-aware tick (canvas-depth)", () => {
     useGameStore.getState()._setLifetimeGold(big(0));
   });
 
-  it("at sizeLevel=0, effectiveTime = canvasTime(0) / speedMult = 2 / 1.05 ≈ 1.905s", () => {
-    // canvasTime(0) = 2s (baseline); speedLevel=1 → speedMult = 1.05
+  it("at sizeLevel=0, size=1, gold = 10 × 1² × 1.10 = 11", () => {
+    // canvasTime(size=1) = 2s; speedLevel=1 → speedMult = 1.05
     const effTime = 2 / 1.05;
     useGameStore.getState().canvasTick(effTime);
     expect(useGameStore.getState().canvasProgress).toBe(0);
-    // sizeLevel=0, sellPriceLevel=1: gold = 10 × 1.10 = 11
+    // size = 1, sellPriceLevel=1 → gold = 10 × 1 × 1.10 = 11
     expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE * 1.1, 9);
   });
 
-  it("at sizeLevel=1, canvasTime grows by 15%: 2 × 1.15 = 2.3s base, effectiveTime = 2.3 / 1.05", () => {
+  it("at sizeLevel=1, size = 1.15, gold = 10 × 1.15² × 1.10, time = 2 × 1.15", () => {
     useGameStore.setState({ sizeLevel: 1 });
-    const effTime = 2.3 / 1.05; // canvasTime(1) = 2 × (1 + 0.15 × 1) = 2.3
+    const effTime = (2 * 1.15) / 1.05; // canvasTime(1.15) = 2.3 / speedMult
     useGameStore.getState().canvasTick(effTime);
     expect(useGameStore.getState().canvasProgress).toBe(0);
-    // sizeLevel=1: canvasGold base = 10 × (1 + 0.30 × 1) = 13; sellPriceLevel=1 → × 1.10 = 14.3
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(14.3, 1);
+    // size = 1 + 0.15 × 1 = 1.15 ; gold = 10 × 1.15² × 1.10 = 10 × 1.3225 × 1.10 ≈ 14.5475
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(14.5475, 3);
   });
 
   it("sale credits PM via addGoldEarned (11g at lt=0 is sub-threshold → 0 PM)", () => {
     const effTime = 2 / 1.05;
     useGameStore.getState().canvasTick(effTime);
-    // sizeLevel=0 sale = 11g. pmFromLifetime(11) - pmFromLifetime(0) = 0 (< 1000 threshold).
     expect(useGameStore.getState().paintMastery.toNumber()).toBe(0);
     expect(useGameStore.getState().lifetimeGold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE * 1.1, 9);
   });
 
-  it("PM mult applies to gold output (PM 100 → ~11× at sizeLevel=0)", () => {
+  it("PM mult applies to gold output (PM 100 → ~11× at size=1)", () => {
     useGameStore.getState()._setPaintMastery(big(100));
     const effTime = 2 / 1.05;
     useGameStore.getState().canvasTick(effTime);
-    // gold = 10 × sellPrice(1.10) × pmMult(100) = 11 × pmMult(100)
-    // pmMult(100) = 1 + 5.0 × log10(101) ≈ 1 + 5.0 × 2.0043 = 11.02
-    // total ≈ 11 × 11.02 = 121.2
+    // gold = 10 × 1² × sellPrice(1.10) × pmMult(100) = 11 × pmMult(100) ≈ 121.2
     expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(121.2, 0);
   });
 });

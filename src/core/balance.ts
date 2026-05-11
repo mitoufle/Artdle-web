@@ -28,10 +28,12 @@ export const XP_PER_CRAFT = 1;
 export const SELL_PRICE_PER_LEVEL = 0.10;
 /** +5% speed per speed level (additive). */
 export const SPEED_PER_LEVEL = 0.05;
-/** +30% gold per size level (additive on BASE). */
-export const SIZE_GOLD_PER_LEVEL = 0.30;
-/** +15% time per size level (additive on BASE). */
-export const SIZE_TIME_PER_LEVEL = 0.15;
+/**
+ * +15% size per canvas size-track level (additive into the single `size` value).
+ * Size 1 is the base canvas. Gold scales as size², time scales as size¹ —
+ * so doubling size quadruples gold and doubles time.
+ */
+export const SIZE_PER_LEVEL = 0.15;
 /** +1% crit chance per crit level. */
 export const CRIT_PER_LEVEL = 0.01;
 /** Crit canvases paint in `time / CRIT_SPEED_FACTOR`. Fixed at 10× (= 90% faster). */
@@ -91,37 +93,23 @@ export const treePartCost = (level: number, baseCost: number): Big =>
   big(baseCost).mul(big(TREE_PART_COST_GROWTH).pow(level));
 
 /**
- * Gold awarded when a canvas is sold, before equipped-item modifiers.
- *
- * v3.x canvas-depth: `BASE × (1 + SIZE_GOLD_PER_LEVEL × sizeMult × sizeLevel) × multiplier`.
- *
- * `sizeMult` defaults to 1.0 — it scales the effective sizeLevel in the gold
- * formula. Equipped +size% affixes contribute via `getSizeMultiplier(state)`.
- * The caller in canvasTick passes it.
+ * Gold awarded when a canvas is sold, before sell-price / PM / combo modifiers.
+ * `gold = CANVAS_GOLD_BASE × size² × multiplier`. Size² scaling is the design
+ * relationship: doubling the canvas quadruples the gold.
  */
-export const canvasGold = (
-  sizeLevel: number,
-  multiplier: number,
-  sizeMult = 1,
-): Big =>
-  big(CANVAS_GOLD_BASE)
-    .mul(1 + SIZE_GOLD_PER_LEVEL * sizeMult * sizeLevel)
-    .mul(multiplier);
+export const canvasGold = (size: number, multiplier: number): Big =>
+  big(CANVAS_GOLD_BASE).mul(size * size).mul(multiplier);
 
 /**
- * Paint time per canvas in seconds, before any speed multipliers.
+ * Paint time per canvas in seconds, before speed/crit modifiers.
+ * `time = CANVAS_TIME_BASE × size`. Linear scaling: doubling the canvas
+ * doubles the time. Combined with size² gold, this means gold-per-second
+ * scales linearly with size — bigger canvas = strictly more efficient.
  *
- * v3.x canvas-depth: `CANVAS_TIME_BASE × (1 + SIZE_TIME_PER_LEVEL × sizeLevel × sizeMult)`.
- * Replaces the linear-in-tier form.
- *
- * `sizeMult` defaults to 1.0 — mirrors `canvasGold`'s third param. Equipped
- * +size% affixes scale the effective sizeLevel in BOTH gold and time formulas,
- * matching the mental model: bigger canvas = more gold + more time.
- *
- * sizeLevel 0 = 2 s (matches the v1.1 tier-1 baseline), regardless of sizeMult.
+ * size = 1 (no upgrades, no items, no workers) ⇒ time = CANVAS_TIME_BASE = 2s.
  */
-export const canvasTime = (sizeLevel: number, sizeMult = 1): number =>
-  CANVAS_TIME_BASE * (1 + SIZE_TIME_PER_LEVEL * sizeLevel * sizeMult);
+export const canvasTime = (size: number): number =>
+  CANVAS_TIME_BASE * size;
 
 /**
  * Total PM accumulated at a given lifetime canvas gold.

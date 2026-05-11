@@ -7,14 +7,14 @@ import {
   sellPriceUpgradeCost, speedUpgradeCost,
   sizeUpgradeCost, critUpgradeCost, comboUpgradeCost,
   SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL,
-  SIZE_GOLD_PER_LEVEL, SIZE_TIME_PER_LEVEL,
+  SIZE_PER_LEVEL,
   CRIT_PER_LEVEL, COMBO_PER_LEVEL, COMBO_PER_LINK,
   CRIT_SPEED_FACTOR,
 } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
-  getSizeMultiplier,
+  getCanvasSize,
   getPmMultiplier,
 } from "@/core/multipliers";
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
@@ -58,14 +58,14 @@ export function PaintingRoute(): JSX.Element {
     sellPriceLevel, speedLevel, critLevel, comboLevel,
   } as unknown as GameStore;
 
-  const sizeMult = getSizeMultiplier(helperState);
-  const baseTime = canvasTime(sizeLevel, sizeMult);
+  const size = getCanvasSize(helperState);
+  const baseTime = canvasTime(size);
   const speedMult = getCanvasSpeedMultiplier(helperState);
   const critFactor = isCritThisCanvas ? CRIT_SPEED_FACTOR : 1;
   const paintTimeSec = baseTime / (speedMult * critFactor);
   const progressPct = paintTimeSec > 0 ? canvasProgress / paintTimeSec : 0;
   const goldMult = getCanvasGoldMultiplier(helperState) * getPmMultiplier(helperState);
-  const baseGold = canvasGold(sizeLevel, goldMult, sizeMult);
+  const baseGold = canvasGold(size, goldMult);
   const comboFactor = 1 + COMBO_PER_LINK * comboChain;
   const nextSaleGold = baseGold.mul(comboFactor);
 
@@ -129,7 +129,7 @@ export function PaintingRoute(): JSX.Element {
             trackId="size"
             label="Size"
             level={sizeLevel}
-            effectLine={sizeLocked ? "—" : `+${fmtPct(SIZE_GOLD_PER_LEVEL, 0)} gold / +${fmtPct(SIZE_TIME_PER_LEVEL, 0)} time`}
+            effectLine={sizeLocked ? "—" : `+${fmtPct(SIZE_PER_LEVEL, 0)} size / level (gold = size², time = size)`}
             costLabel={sizeLocked ? "—" : `${formatBig(sizeCost)}g`}
             canAfford={gold.gte(sizeCost)}
             locked={sizeLocked}

@@ -1,29 +1,28 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import { formatBig } from "@/core/formatter";
-import { craftCost, sellPriceUpgradeCost, SIZE_GOLD_PER_LEVEL, SIZE_TIME_PER_LEVEL } from "@/core/balance";
+import { craftCost, sellPriceUpgradeCost } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
   getInspiMultiplier,
-  getSizeMultiplier,
+  getCanvasSize,
   getTreeUpgradeCostMultiplier,
 } from "@/core/multipliers";
 import styles from "./ScalingMathPanel.module.css";
 
 export function ScalingMathPanel(): JSX.Element {
   const workshopLevel = useGameStore((s) => s.workshopLevel);
-  const sizeLevel = useGameStore((s) => s.sizeLevel);
+  useGameStore((s) => s.sizeLevel); // re-render dep — size derived via getCanvasSize
   const sellPriceLevel = useGameStore((s) => s.sellPriceLevel);
   // Multiplier selectors are stable enough that one-shot reads here are fine —
-  // every state change that affects them also bumps workshopLevel/sizeLevel
-  // or another root subscription elsewhere in the app, so this panel re-renders
-  // on the relevant ticks.
+  // every state change that affects them also bumps a root subscription
+  // elsewhere in the app, so this panel re-renders on the relevant ticks.
   const state = useGameStore.getState();
   const inspiMult = getInspiMultiplier(state);
   const goldMult = getCanvasGoldMultiplier(state);
   const speedMult = getCanvasSpeedMultiplier(state);
-  const sizeMult = getSizeMultiplier(state);
+  const size = getCanvasSize(state);
   const bargain = getTreeUpgradeCostMultiplier(state);
 
   return (
@@ -37,13 +36,13 @@ export function ScalingMathPanel(): JSX.Element {
 
       <section className={styles.section} data-testid="scaling-gold">
         <div className={styles.label}>Canvas Gold</div>
-        <div className={styles.formula}>10 × (1 + {SIZE_GOLD_PER_LEVEL} × {sizeMult.toFixed(2)} × {sizeLevel}) × {goldMult.toFixed(2)}×</div>
-        <div className={styles.note}>sell price + colors + items + workers, × rainbow, × PM · size mult from +size% items + workers</div>
+        <div className={styles.formula}>10 × size² × {goldMult.toFixed(2)}× = 10 × {size.toFixed(2)}² × {goldMult.toFixed(2)}×</div>
+        <div className={styles.note}>size = 1 + canvas Lv × 0.15 + items + workers</div>
       </section>
 
       <section className={styles.section} data-testid="scaling-paint">
         <div className={styles.label}>Paint Time</div>
-        <div className={styles.formula}>2 × (1 + {SIZE_TIME_PER_LEVEL} × {sizeMult.toFixed(2)} × {sizeLevel})s ÷ {speedMult.toFixed(2)}×</div>
+        <div className={styles.formula}>2 × size s ÷ {speedMult.toFixed(2)}× = 2 × {size.toFixed(2)}s ÷ {speedMult.toFixed(2)}×</div>
       </section>
 
       <section className={styles.section} data-testid="scaling-craft-cost">

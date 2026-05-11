@@ -13,15 +13,14 @@ import {
   getCanvasSpeedMultiplier,
   getCritChance,
   getComboBaseChance,
-  getSizeMultiplier,
+  getCanvasSize,
 } from "@/core/multipliers";
 import {
   SELL_PRICE_PER_LEVEL,
   SPEED_PER_LEVEL,
   CRIT_PER_LEVEL,
   COMBO_PER_LEVEL,
-  SIZE_GOLD_PER_LEVEL,
-  SIZE_TIME_PER_LEVEL,
+  SIZE_PER_LEVEL,
 } from "@/core/balance";
 import styles from "./StatsRoom.module.css";
 
@@ -39,12 +38,12 @@ interface StatBlock {
 
 interface SizeBlock {
   name: "Size";
-  sizeLevel: number;
+  size: number;             // total size value (base 1)
+  canvasContribution: number;   // SIZE_PER_LEVEL × sizeLevel
   itemContribution: number;
   workerContribution: number;
-  sizeMult: number;
-  effectiveGoldPct: number;
-  effectiveTimePct: number;
+  goldFactor: number;       // size²
+  timeFactor: number;       // size
 }
 
 function fmtPct(v: number, digits = 1): string {
@@ -60,15 +59,15 @@ function statBlocks(state: GameStore): StatBlock[] {
   const speedTotal = getCanvasSpeedMultiplier(state);
   const critTotal = getCritChance(state);
   const comboTotal = getComboBaseChance(state);
-  const sizeMult = getSizeMultiplier(state);
+  const size = getCanvasSize(state);
+  const sizeGoldFactor = size * size;
   const rainbowFactor = getRainbowMultiplier(state);
-  const sizeFactor = 1 + SIZE_GOLD_PER_LEVEL * sizeMult * state.sizeLevel;
 
   const sellMultiplicatives: Array<{ source: string; factor: number }> = [];
   if (rainbowFactor > 1) sellMultiplicatives.push({ source: "Rainbow", factor: rainbowFactor });
-  if (state.sizeLevel > 0) sellMultiplicatives.push({ source: "Size factor", factor: sizeFactor });
+  if (sizeGoldFactor > 1) sellMultiplicatives.push({ source: "Size² factor", factor: sizeGoldFactor });
 
-  const effectiveGold = goldTotal * sizeFactor;
+  const effectiveGold = goldTotal * sizeGoldFactor;
 
   return [
     {
@@ -114,17 +113,18 @@ function statBlocks(state: GameStore): StatBlock[] {
 }
 
 function sizeBlock(state: GameStore): SizeBlock {
-  const sizeMult = getSizeMultiplier(state);
+  const size = getCanvasSize(state);
+  const canvasContribution = SIZE_PER_LEVEL * state.sizeLevel;
   const itemContribution = getEquippedContribution(state, "+size%");
   const workerContribution = getOfficeContribution(state, "+size%").toNumber();
   return {
     name: "Size",
-    sizeLevel: state.sizeLevel,
+    size,
+    canvasContribution,
     itemContribution,
     workerContribution,
-    sizeMult,
-    effectiveGoldPct: SIZE_GOLD_PER_LEVEL * sizeMult * state.sizeLevel,
-    effectiveTimePct: SIZE_TIME_PER_LEVEL * sizeMult * state.sizeLevel,
+    goldFactor: size * size,
+    timeFactor: size,
   };
 }
 
@@ -177,28 +177,32 @@ export function StatsRoom(): JSX.Element {
       <article className={styles.block}>
         <header className={styles.blockHeader}>
           <span className={styles.blockName}>Size</span>
-          <span className={styles.blockTotal}>Lv {size.sizeLevel} × {fmtMult(size.sizeMult)}</span>
+          <span className={styles.blockTotal}>{fmtMult(size.size)}</span>
         </header>
         <ul className={styles.lines}>
           <li className={styles.line}>
-            <span className={styles.source}>Canvas size level</span>
-            <span className={styles.value}>{size.sizeLevel}</span>
+            <span className={styles.source}>Base</span>
+            <span className={styles.value}>×1.00</span>
           </li>
           <li className={styles.line}>
-            <span className={styles.source}>Items (→ mult)</span>
+            <span className={styles.source}>Canvas upgrade</span>
+            <span className={styles.value}>+{fmtPct(size.canvasContribution)}</span>
+          </li>
+          <li className={styles.line}>
+            <span className={styles.source}>Items</span>
             <span className={styles.value}>+{fmtPct(size.itemContribution)}</span>
           </li>
           <li className={styles.line}>
-            <span className={styles.source}>Workers (→ mult)</span>
+            <span className={styles.source}>Workers</span>
             <span className={styles.value}>+{fmtPct(size.workerContribution)}</span>
           </li>
           <li className={styles.line}>
-            <span className={styles.source}>Effective gold/canvas</span>
-            <span className={styles.value}>+{fmtPct(size.effectiveGoldPct)}</span>
+            <span className={styles.source}>Gold factor (size²)</span>
+            <span className={styles.value}>{fmtMult(size.goldFactor)}</span>
           </li>
           <li className={styles.line}>
-            <span className={styles.source}>Effective time/canvas</span>
-            <span className={styles.value}>+{fmtPct(size.effectiveTimePct)}</span>
+            <span className={styles.source}>Time factor (size)</span>
+            <span className={styles.value}>{fmtMult(size.timeFactor)}</span>
           </li>
         </ul>
       </article>

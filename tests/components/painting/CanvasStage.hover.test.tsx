@@ -15,13 +15,15 @@ describe("CanvasStage hover wiring (sell preview)", () => {
   });
 
   it("hover on gold preview pushes title 'Sell Canvas' and a body with Total line", () => {
+    useGameStore.setState({ sizeLevel: 3 });
     render(
       <CanvasStage sizeLevel={3} progressPct={0.5} timeElapsed="3.0" timeTotal="6.0" nextSaleGold="90" />,
     );
     fireEvent.mouseEnter(screen.getByTestId("canvas-sell-preview"));
     expect(useGameStore.getState().hoverTitle).toBe("Sell Canvas");
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/Base × \(1 \+ 0\.30 × 1\.00 × 3\) = 19\.0/);
+    // size = 1 + 0.15 × 3 = 1.45 → base × size² = 10 × 2.1025 = 21.025
+    expect(container.textContent).toMatch(/Base × size² = 10 × 1\.45² = 21\.0/);
     expect(container.textContent).toMatch(/Total:/);
     expect(container.textContent).toMatch(/per canvas/);
     expect(container.textContent).toMatch(/Sell Price \(Lv/);
