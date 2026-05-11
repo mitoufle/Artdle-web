@@ -33,7 +33,7 @@ interface StatBlock {
   name: string;
   totalLabel: string;
   lines: BreakdownLine[];
-  multiplicative?: { source: string; factor: number };
+  multiplicatives?: Array<{ source: string; factor: number }>;
 }
 
 function fmtPct(v: number, digits = 1): string {
@@ -49,22 +49,27 @@ function statBlocks(state: GameStore): StatBlock[] {
   const speedTotal = getCanvasSpeedMultiplier(state);
   const critTotal = getCritChance(state);
   const comboTotal = getComboBaseChance(state);
-  const sizeTotal = getSizeMultiplier(state);
+  const sizeMult = getSizeMultiplier(state);
   const rainbowFactor = getRainbowMultiplier(state);
+  const sizeFactor = 1 + SIZE_GOLD_PER_LEVEL * sizeMult * state.sizeLevel;
+
+  const sellMultiplicatives: Array<{ source: string; factor: number }> = [];
+  if (rainbowFactor > 1) sellMultiplicatives.push({ source: "Rainbow", factor: rainbowFactor });
+  if (state.sizeLevel > 0) sellMultiplicatives.push({ source: "Size factor", factor: sizeFactor });
+
+  const effectiveGold = goldTotal * sizeFactor;
 
   return [
     {
       name: "Sell Price (gold)",
-      totalLabel: fmtMult(goldTotal),
+      totalLabel: fmtMult(effectiveGold),
       lines: [
         { source: "Canvas upgrade", value: SELL_PRICE_PER_LEVEL * state.sellPriceLevel },
         { source: "Skill tree (color)", value: getColorTreeContribution(state) },
         { source: "Items", value: getEquippedContribution(state, "+sell_price%") },
         { source: "Workers", value: getOfficeContribution(state, "+sell_price%").toNumber() },
       ],
-      multiplicative: rainbowFactor > 1
-        ? { source: "Rainbow", factor: rainbowFactor }
-        : undefined,
+      multiplicatives: sellMultiplicatives.length > 0 ? sellMultiplicatives : undefined,
     },
     {
       name: "Speed",
@@ -96,7 +101,7 @@ function statBlocks(state: GameStore): StatBlock[] {
     },
     {
       name: "Size",
-      totalLabel: fmtMult(sizeTotal),
+      totalLabel: fmtMult(sizeMult),
       lines: [
         { source: "Canvas upgrade", value: SIZE_GOLD_PER_LEVEL * state.sizeLevel },
         { source: "Items", value: getEquippedContribution(state, "+size%") },
@@ -142,12 +147,12 @@ export function StatsRoom(): JSX.Element {
                 <span className={styles.value}>+{fmtPct(line.value)}</span>
               </li>
             ))}
-            {block.multiplicative && (
-              <li className={styles.line}>
-                <span className={styles.source}>{block.multiplicative.source}</span>
-                <span className={styles.value}>{fmtMult(block.multiplicative.factor)}</span>
+            {block.multiplicatives?.map((m) => (
+              <li key={m.source} className={styles.line}>
+                <span className={styles.source}>{m.source}</span>
+                <span className={styles.value}>{fmtMult(m.factor)}</span>
               </li>
-            )}
+            ))}
           </ul>
         </article>
       ))}
