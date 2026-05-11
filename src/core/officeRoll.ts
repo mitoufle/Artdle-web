@@ -1,4 +1,4 @@
-import { rng } from "@/core/rng";
+import { rng, rngInt } from "@/core/rng";
 import {
   OFFICE_CLASSES,
   ALL_CLASS_IDS,
@@ -8,6 +8,7 @@ import {
 import type { ClassId } from "@/config/officeClasses";
 import { hasCapability } from "@/store/skillTreeSlice";
 import type { GameStore } from "@/store";
+import type { AffixKind } from "@/config/workshopAffixes";
 
 /**
  * Roll the class for a new candidate worker.
@@ -32,4 +33,30 @@ export function rollWorkerClass(state: GameStore): ClassId {
     if (r < acc) return entry.id;
   }
   return pool[pool.length - 1]!.id;
+}
+
+const MAX_REROLL_ATTEMPTS = 100;
+
+export type WeightTuple = Record<AffixKind, number>;
+
+/**
+ * Roll per-kind sampling weights for a new worker of the given class.
+ * For Generalist (range [0, 4] per kind), an all-zero roll is rerolled.
+ * For specialists, off-spec ranges have positive minima (e.g., Goldsmith
+ * +sell [3,7]) so all-zero is structurally impossible.
+ */
+export function rollWorkerWeights(classId: ClassId): WeightTuple {
+  const ranges = OFFICE_CLASSES[classId].weightRanges;
+  for (let attempt = 0; attempt < MAX_REROLL_ATTEMPTS; attempt++) {
+    const out: Record<string, number> = {};
+    let sum = 0;
+    for (const kind of Object.keys(ranges) as ReadonlyArray<AffixKind>) {
+      const r = ranges[kind];
+      const w = rngInt(r.min, r.max);
+      out[kind] = w;
+      sum += w;
+    }
+    if (sum > 0) return out as WeightTuple;
+  }
+  throw new Error(`rollWorkerWeights: ${MAX_REROLL_ATTEMPTS} consecutive all-zero rolls — class ${classId} ranges may be misconfigured`);
 }
