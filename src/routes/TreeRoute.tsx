@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import { TREE_STAGES } from "@/config/treeStages";
@@ -39,6 +40,20 @@ export function TreeRoute(): JSX.Element {
 
   // Visible parts: every part of stages 0..currentStage.
   const visibleParts = TREE_STAGES.slice(0, currentStage + 1).flatMap((stage) => stage.parts);
+
+  // Stage-up toast — show for 2s when currentStage advances.
+  const lastStageRef = useRef(currentStage);
+  const [toastName, setToastName] = useState<string | null>(null);
+  useEffect(() => {
+    if (currentStage > lastStageRef.current) {
+      setToastName(stageName);
+      const t = window.setTimeout(() => setToastName(null), 2000);
+      lastStageRef.current = currentStage;
+      return () => window.clearTimeout(t);
+    }
+    lastStageRef.current = currentStage;
+    return undefined;
+  }, [currentStage, stageName]);
   const anyAffordable = visibleParts.some((part) =>
     gold.gte(treePartCost(partLevels[part.id] ?? 0, part.baseCost)),
   );
@@ -48,6 +63,11 @@ export function TreeRoute(): JSX.Element {
       <div className={styles.scene}>
         <TreeScene stage={currentStage} />
         <InspiReadout rate={formatBig(rate)} stageName={stageName} />
+        {toastName && (
+          <div className={styles.stageUpToast} data-testid="stage-up-toast">
+            Grown into {toastName}!
+          </div>
+        )}
       </div>
 
       <aside className={styles.rail}>
