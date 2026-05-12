@@ -74,7 +74,7 @@ describe("<UpgradeRow />", () => {
   it("monogram is the uppercased first letter of the name", () => {
     render(
       <UpgradeRow
-        partId="leaflet"
+        partId="leaftip"
         name="Leaflet"
         level={0}
         rate={50}
