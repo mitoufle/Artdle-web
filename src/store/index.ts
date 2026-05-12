@@ -34,7 +34,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 13;
+const SAVE_VERSION = 14;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -85,6 +85,9 @@ const SAVE_KEY = "artdle-save";
  * v12 → v13 (2026-05-11): Painter's Office launch. Adds officeLevel, officeXp,
  * queue, roster, trickleTimer. No data to migrate from older saves (the
  * system didn't exist).
+ *
+ * v13 → v14 (2026-05-12): inspiration tree rewrite — 6 stages with new
+ * part IDs. Wipe currentStage + partLevels; all other slices preserved.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -221,6 +224,29 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       queue: [],
       roster: [],
       trickleTimer: 0,
+    };
+  }
+
+  if (fromVersion < 14) {
+    // v13 → v14 (2026-05-12): inspiration tree rewrite — 6 stages with new
+    // part IDs (cotyledon, tendril, ..., stalk). Old part IDs have no
+    // mechanical equivalent; mapping them would produce misleading state.
+    // Wipe currentStage + partLevels only; all other slices preserved.
+    // See docs/superpowers/specs/2026-05-12-inspiration-tree-expansion-design.md.
+    const TREE_PART_IDS = [
+      "cotyledon",
+      "tendril", "budtip",
+      "vein", "leaftip",
+      "twig", "branch", "leaf",
+      "softbough", "quietleaf", "faintvein",
+      "greenshoot", "lushbough", "vividleaf", "stalk",
+    ];
+    const wipedPartLevels: Record<string, number> = {};
+    for (const id of TREE_PART_IDS) wipedPartLevels[id] = 0;
+    state = {
+      ...state,
+      currentStage: 0,
+      partLevels: wipedPartLevels,
     };
   }
 

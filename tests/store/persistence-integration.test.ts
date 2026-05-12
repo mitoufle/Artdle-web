@@ -244,7 +244,8 @@ describe("save schema migration", () => {
     expect(result.gold).toEqual({ __big: "1234" });
     // v8 migration wipes purchasedNodes (skill-tree rewrite), so old IDs don't survive.
     expect(result.purchasedNodes).toEqual({});
-    expect(result.currentStage).toBe(1);
+    // v14 migration wipes currentStage (inspiration tree rewrite).
+    expect(result.currentStage).toBe(0);
   });
 
   it("migrate from version 2 (legacy): v9 wipes inventory and drops equippedItems", () => {
@@ -318,7 +319,7 @@ describe("save migration v2 → v3", () => {
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(13);
+    expect(parsed.version).toBe(14);
   });
 });
 
@@ -370,7 +371,7 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(13);
+    expect(parsed.version).toBe(14);
   });
 });
 
@@ -635,5 +636,46 @@ describe("save migration v12 → v13 (Painter's Office)", () => {
     expect(migrated.queue).toEqual([]);
     expect(migrated.roster).toEqual([]);
     expect(migrated.trickleTimer).toBe(0);
+  });
+});
+
+describe("save migration v13 → v14 (inspiration tree rewrite)", () => {
+  it("v13 → v14 migration: wipes tree state, preserves other slices", () => {
+    const v13Save = {
+      currentStage: 2,
+      partLevels: { spark: 7, bud: 3, leaf: 2, branch: 0, bough: 0, crown: 0 },
+      gold: big(12345),
+      inspiration: big(678),
+      fame: big(9),
+      purchasedNodes: { someNode: 1 },
+      inventory: [],
+      equipped: {},
+      workshopLevel: 4,
+      workshopXp: big(20),
+      paintMastery: big(11),
+      lifetimeGold: big(100),
+      sellPriceLevel: 1, speedLevel: 1, sizeLevel: 0,
+      critLevel: 0, comboLevel: 0, comboChain: 0,
+      isCritThisCanvas: false,
+      officeLevel: 0, officeXp: big(0),
+      queue: [], roster: [], trickleTimer: 0,
+      pastRuns: [],
+      playerId: "test-uuid",
+      pokeTreeTimer: 0,
+    };
+    const migrated = migrate(v13Save, 13) as Record<string, unknown>;
+    // Tree wiped:
+    expect(migrated.currentStage).toBe(0);
+    const pl = migrated.partLevels as Record<string, number>;
+    expect(pl.spark).toBeUndefined();
+    expect(pl.cotyledon).toBe(0);
+    expect(pl.tendril).toBe(0);
+    expect(pl.stalk).toBe(0);
+    // Other slices preserved:
+    expect((migrated.gold as { toString: () => string }).toString()).toBe("12345");
+    expect((migrated.fame as { toString: () => string }).toString()).toBe("9");
+    expect(migrated.workshopLevel).toBe(4);
+    expect(migrated.purchasedNodes).toEqual({ someNode: 1 });
+    expect(migrated.playerId).toBe("test-uuid");
   });
 });
