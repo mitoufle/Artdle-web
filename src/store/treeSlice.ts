@@ -5,6 +5,9 @@ import { big } from "@/core/bigNumber";
 import { getInspiMultiplier, getTreeUpgradeCostMultiplier } from "@/core/multipliers";
 import type { GameStore } from "@/store";
 
+/** Iteration cap for auto-advance loops in buyPartLevel and treeTick. */
+const AUTO_GROW_MAX_ITER = 100;
+
 export interface TreeState {
   /** Highest stage grown into. 0 = Seed (initial), 1 = Sapling, 2 = Tree. */
   currentStage: number;
@@ -75,11 +78,10 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
     set((s) => ({
       partLevels: { ...s.partLevels, [partId]: (s.partLevels[partId] ?? 0) + 1 },
     }));
-    // Auto-advance stage(s) if the new totals cross a threshold.
-    // Loop is defensive — a single buy cannot cross more than one threshold
-    // (a part lives in exactly one stage), but the guard keeps the implementation
-    // idempotent.
-    for (let i = 0; i < 100 && canGrowSapling(get()); i++) {
+    // Auto-advance stage(s) if the new totals cross a threshold. In practice
+    // a single buy crosses at most one (a part lives in exactly one stage);
+    // the bounded loop guards against unexpected qualifying states.
+    for (let i = 0; i < AUTO_GROW_MAX_ITER && canGrowSapling(get()); i++) {
       get().growSapling();
     }
     return true;
