@@ -75,6 +75,13 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
     set((s) => ({
       partLevels: { ...s.partLevels, [partId]: (s.partLevels[partId] ?? 0) + 1 },
     }));
+    // Auto-advance stage(s) if the new totals cross a threshold.
+    // Loop is defensive — a single buy cannot cross more than one threshold
+    // (a part lives in exactly one stage), but the guard keeps the implementation
+    // idempotent.
+    for (let i = 0; i < 100 && canGrowSapling(get()); i++) {
+      get().growSapling();
+    }
     return true;
   },
 

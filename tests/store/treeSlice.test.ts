@@ -106,6 +106,9 @@ describe("treeSlice — growSapling + canGrowSapling", () => {
     for (let i = 0; i < 5; i++) {
       useGameStore.getState().buyPartLevel("cotyledon");
     }
+    // buyPartLevel now auto-advances on the 5th purchase; reset stage so we can
+    // test canGrowSapling directly at the threshold condition.
+    useGameStore.setState({ currentStage: 0 });
     expect(getTotalLevelsInStage(useGameStore.getState(), 0)).toBe(5);
     expect(canGrowSapling(useGameStore.getState())).toBe(true);
   });
@@ -120,6 +123,9 @@ describe("treeSlice — growSapling + canGrowSapling", () => {
     for (let i = 0; i < 5; i++) {
       useGameStore.getState().buyPartLevel("cotyledon");
     }
+    // buyPartLevel now auto-advances on the 5th purchase; reset stage so we can
+    // test growSapling() directly as the canonical mutation point.
+    useGameStore.setState({ currentStage: 0 });
     expect(useGameStore.getState().growSapling()).toBe(true);
     expect(useGameStore.getState().currentStage).toBe(1);
   });
@@ -143,6 +149,35 @@ describe("treeSlice — growSapling + canGrowSapling", () => {
     // Force-advance to the last stage by direct setState (test-only shortcut).
     useGameStore.setState({ currentStage: TREE_STAGES.length - 1 });
     expect(useGameStore.getState().growSapling()).toBe(false);
+    expect(useGameStore.getState().currentStage).toBe(TREE_STAGES.length - 1);
+  });
+
+  it("buyPartLevel auto-advances stage when the buy brings total levels to threshold", () => {
+    useGameStore.getState().add("gold", big(10000));
+    // Buy cotyledon 4 times — under threshold (5).
+    for (let i = 0; i < 4; i++) {
+      useGameStore.getState().buyPartLevel("cotyledon");
+    }
+    expect(useGameStore.getState().currentStage).toBe(0);
+    // The 5th buy crosses the threshold — stage should auto-advance.
+    expect(useGameStore.getState().buyPartLevel("cotyledon")).toBe(true);
+    expect(useGameStore.getState().currentStage).toBe(1);
+  });
+
+  it("buyPartLevel does NOT auto-advance when total levels < threshold", () => {
+    useGameStore.getState().add("gold", big(10000));
+    for (let i = 0; i < 4; i++) {
+      useGameStore.getState().buyPartLevel("cotyledon");
+    }
+    expect(useGameStore.getState().currentStage).toBe(0);
+  });
+
+  it("buyPartLevel auto-advances are idempotent at the final stage (top stage cannot grow)", () => {
+    useGameStore.setState({ currentStage: TREE_STAGES.length - 1 });
+    useGameStore.getState().add("gold", big(1_000_000_000));
+    // Buy a top-stage part — should succeed but not advance.
+    const lastStageFirstPartId = TREE_STAGES[TREE_STAGES.length - 1]!.parts[0]!.id;
+    expect(useGameStore.getState().buyPartLevel(lastStageFirstPartId)).toBe(true);
     expect(useGameStore.getState().currentStage).toBe(TREE_STAGES.length - 1);
   });
 });
