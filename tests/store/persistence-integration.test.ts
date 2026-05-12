@@ -96,9 +96,10 @@ describe("persistence integration — Phase 2 fields round-trip", () => {
   it("partLevels + currentStage + canvasProgress all round-trip through save", async () => {
     // Seed known state.
     useGameStore.getState().add("gold", big(100000));
-    useGameStore.getState().buyPartLevel("spark"); // partLevels.spark → 1
-    useGameStore.getState().buyPartLevel("spark"); // → 2
-    useGameStore.getState().buyPartLevel("bud"); // partLevels.bud → 1
+    useGameStore.getState().buyPartLevel("cotyledon"); // partLevels.cotyledon → 1
+    useGameStore.getState().buyPartLevel("cotyledon"); // → 2
+    useGameStore.setState({ currentStage: 1 });
+    useGameStore.getState().buyPartLevel("tendril"); // partLevels.tendril → 1
     useGameStore.setState({ currentStage: 1, canvasProgress: 5.5 });
 
     const beforeStage = useGameStore.getState().currentStage;

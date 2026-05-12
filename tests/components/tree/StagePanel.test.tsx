@@ -3,20 +3,20 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { StagePanel } from "@/components/tree/StagePanel";
 
 describe("<StagePanel />", () => {
-  it("renders all 3 stage chips with the current one marked active", () => {
+  it("renders all 6 stage chips with the current one marked active", () => {
     render(
       <StagePanel
         currentStageIndex={1}
-        currentStageName="Sapling"
-        nextStageName="Tree"
+        currentStageName="Bud"
+        nextStageName="Leaflet"
         totalLevelsInStage={5}
-        unlockThreshold={10}
+        unlockThreshold={12}
         canGrow={false}
         onGrow={() => {}}
       />,
     );
     const chips = screen.getAllByTestId(/stage-chip-/);
-    expect(chips).toHaveLength(3);
+    expect(chips).toHaveLength(6);
     expect(screen.getByTestId("stage-chip-1")).toHaveAttribute("data-active", "true");
     expect(screen.getByTestId("stage-chip-0")).not.toHaveAttribute("data-active", "true");
   });
@@ -25,40 +25,40 @@ describe("<StagePanel />", () => {
     render(
       <StagePanel
         currentStageIndex={1}
-        currentStageName="Sapling"
-        nextStageName="Tree"
+        currentStageName="Bud"
+        nextStageName="Leaflet"
         totalLevelsInStage={5}
-        unlockThreshold={10}
+        unlockThreshold={12}
         canGrow={false}
         onGrow={() => {}}
       />,
     );
-    expect(screen.getByText(/Sapling.*Tree/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bud.*Leaflet/i)).toBeInTheDocument();
   });
 
   it("renders the progress label '{N} / {threshold} levels in stage'", () => {
     render(
       <StagePanel
         currentStageIndex={1}
-        currentStageName="Sapling"
-        nextStageName="Tree"
+        currentStageName="Bud"
+        nextStageName="Leaflet"
         totalLevelsInStage={5}
-        unlockThreshold={10}
+        unlockThreshold={12}
         canGrow={false}
         onGrow={() => {}}
       />,
     );
-    expect(screen.getByText(/5 \/ 10 levels in stage/i)).toBeInTheDocument();
+    expect(screen.getByText(/5 \/ 12 levels in stage/i)).toBeInTheDocument();
   });
 
   it("grow button is disabled when canGrow=false", () => {
     render(
       <StagePanel
         currentStageIndex={1}
-        currentStageName="Sapling"
-        nextStageName="Tree"
+        currentStageName="Bud"
+        nextStageName="Leaflet"
         totalLevelsInStage={5}
-        unlockThreshold={10}
+        unlockThreshold={12}
         canGrow={false}
         onGrow={() => {}}
       />,
@@ -71,10 +71,10 @@ describe("<StagePanel />", () => {
     render(
       <StagePanel
         currentStageIndex={1}
-        currentStageName="Sapling"
-        nextStageName="Tree"
-        totalLevelsInStage={10}
-        unlockThreshold={10}
+        currentStageName="Bud"
+        nextStageName="Leaflet"
+        totalLevelsInStage={12}
+        unlockThreshold={12}
         canGrow={true}
         onGrow={onGrow}
       />,
@@ -87,22 +87,22 @@ describe("<StagePanel />", () => {
     render(
       <StagePanel
         currentStageIndex={1}
-        currentStageName="Sapling"
-        nextStageName="Tree"
-        totalLevelsInStage={10}
-        unlockThreshold={10}
+        currentStageName="Bud"
+        nextStageName="Leaflet"
+        totalLevelsInStage={12}
+        unlockThreshold={12}
         canGrow={true}
         onGrow={() => {}}
       />,
     );
-    expect(screen.getByRole("button", { name: /Grow into Tree/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Grow into Leaflet/i })).toBeInTheDocument();
   });
 
   it("renders 'Final stage' when nextStageName is undefined", () => {
     render(
       <StagePanel
-        currentStageIndex={2}
-        currentStageName="Tree"
+        currentStageIndex={5}
+        currentStageName="Verdant Shoot"
         nextStageName={undefined}
         totalLevelsInStage={50}
         unlockThreshold={0}

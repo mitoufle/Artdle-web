@@ -1,8 +1,7 @@
 import type { JSX } from "react";
 import { Hoverable } from "@/ui/widgets/Hoverable";
+import { TREE_STAGES } from "@/config/treeStages";
 import styles from "./StagePanel.module.css";
-
-const STAGE_NAMES = ["Seed", "Sapling", "Tree"] as const;
 
 interface Props {
   currentStageIndex: number;
@@ -88,15 +87,15 @@ export function StagePanel({
         </header>
 
         <ol className={styles.chips} aria-label="Stage chain">
-          {STAGE_NAMES.map((name, idx) => (
+          {TREE_STAGES.map((stage, idx) => (
             <li
-              key={name}
+              key={stage.id}
               className={styles.chip}
               data-testid={`stage-chip-${idx}`}
               data-active={idx === currentStageIndex ? "true" : undefined}
             >
-              <span>{name}</span>
-              {idx < STAGE_NAMES.length - 1 && <span className={styles.arrow} aria-hidden="true">→</span>}
+              <span>{stage.name}</span>
+              {idx < TREE_STAGES.length - 1 && <span className={styles.arrow} aria-hidden="true">→</span>}
             </li>
           ))}
         </ol>

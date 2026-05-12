@@ -154,7 +154,7 @@ export const getSkillTreeSpeedContribution = (state: Pick<GameStore, "purchasedN
   getNodeLevel(state, "muscle_memory") * MUSCLE_MEMORY_PER_LEVEL;
 
 /**
- * Multiplier on tree-part upgrade costs (spark/bud/leaf/branch). 1.0 = no
+ * Multiplier on tree-part upgrade costs (cotyledon/tendril/budtip/...). 1.0 = no
  * discount; <1.0 = discounted. Floored at BARGAIN_DISCOUNT_FLOOR.
  *
  * Wiring:

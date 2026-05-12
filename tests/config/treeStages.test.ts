@@ -2,17 +2,23 @@ import { describe, it, expect } from "vitest";
 import { TREE_STAGES } from "@/config/treeStages";
 
 describe("TREE_STAGES config", () => {
-  it("has exactly 3 stages, ordered seed → sapling → tree", () => {
-    expect(TREE_STAGES).toHaveLength(3);
-    expect(TREE_STAGES[0]?.id).toBe("seed");
-    expect(TREE_STAGES[1]?.id).toBe("sapling");
-    expect(TREE_STAGES[2]?.id).toBe("tree");
+  it("has exactly 6 stages, ordered tiny-sprout → bud → leaflet → sapling → whisperleaf → verdant-shoot", () => {
+    expect(TREE_STAGES).toHaveLength(6);
+    expect(TREE_STAGES[0]?.id).toBe("tiny-sprout");
+    expect(TREE_STAGES[1]?.id).toBe("bud");
+    expect(TREE_STAGES[2]?.id).toBe("leaflet");
+    expect(TREE_STAGES[3]?.id).toBe("sapling");
+    expect(TREE_STAGES[4]?.id).toBe("whisperleaf");
+    expect(TREE_STAGES[5]?.id).toBe("verdant-shoot");
   });
 
   it("unlockThreshold is strictly increasing across stages", () => {
     expect(TREE_STAGES[0]?.unlockThreshold).toBe(0);
-    expect(TREE_STAGES[1]?.unlockThreshold).toBe(10);
-    expect(TREE_STAGES[2]?.unlockThreshold).toBe(100);
+    expect(TREE_STAGES[1]?.unlockThreshold).toBe(5);
+    expect(TREE_STAGES[2]?.unlockThreshold).toBe(12);
+    expect(TREE_STAGES[3]?.unlockThreshold).toBe(25);
+    expect(TREE_STAGES[4]?.unlockThreshold).toBe(50);
+    expect(TREE_STAGES[5]?.unlockThreshold).toBe(100);
     // Pin the strict-increase invariant for future-wave additions.
     for (let i = 1; i < TREE_STAGES.length; i++) {
       expect(TREE_STAGES[i]!.unlockThreshold).toBeGreaterThan(
@@ -43,6 +49,6 @@ describe("TREE_STAGES config", () => {
   it("stage 0 is the only stage with unlockThreshold 0", () => {
     const zeros = TREE_STAGES.filter((s) => s.unlockThreshold === 0);
     expect(zeros).toHaveLength(1);
-    expect(zeros[0]?.id).toBe("seed");
+    expect(zeros[0]?.id).toBe("tiny-sprout");
   });
 });

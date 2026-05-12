@@ -6,8 +6,8 @@ describe("<UpgradeRow />", () => {
   it("renders monogram, name, level, rate, cost", () => {
     render(
       <UpgradeRow
-        partId="spark"
-        name="Spark"
+        partId="cotyledon"
+        name="Cotyledon"
         level={3}
         rate={0.1}
         cost="120"
@@ -15,8 +15,8 @@ describe("<UpgradeRow />", () => {
         onBuy={() => {}}
       />,
     );
-    expect(screen.getByText("S")).toBeInTheDocument(); // monogram
-    expect(screen.getByText("Spark")).toBeInTheDocument();
+    expect(screen.getByText("C")).toBeInTheDocument(); // monogram
+    expect(screen.getByText("Cotyledon")).toBeInTheDocument();
     expect(screen.getByText(/Lv 3/i)).toBeInTheDocument();
     expect(screen.getByText(/0\.1/)).toBeInTheDocument();
     expect(screen.getByText(/120/)).toBeInTheDocument();
@@ -26,8 +26,8 @@ describe("<UpgradeRow />", () => {
     const onBuy = vi.fn();
     render(
       <UpgradeRow
-        partId="spark"
-        name="Spark"
+        partId="cotyledon"
+        name="Cotyledon"
         level={0}
         rate={0.1}
         cost="10"
@@ -42,8 +42,8 @@ describe("<UpgradeRow />", () => {
   it("button is disabled when canAfford=false", () => {
     render(
       <UpgradeRow
-        partId="spark"
-        name="Spark"
+        partId="cotyledon"
+        name="Cotyledon"
         level={0}
         rate={0.1}
         cost="10"
@@ -58,8 +58,8 @@ describe("<UpgradeRow />", () => {
     const onBuy = vi.fn();
     render(
       <UpgradeRow
-        partId="spark"
-        name="Spark"
+        partId="cotyledon"
+        name="Cotyledon"
         level={0}
         rate={0.1}
         cost="10"
@@ -74,15 +74,15 @@ describe("<UpgradeRow />", () => {
   it("monogram is the uppercased first letter of the name", () => {
     render(
       <UpgradeRow
-        partId="bough"
-        name="Bough"
+        partId="leaflet"
+        name="Leaflet"
         level={0}
-        rate={100}
-        cost="1K"
+        rate={50}
+        cost="5K"
         canAfford={true}
         onBuy={() => {}}
       />,
     );
-    expect(screen.getByText("B")).toBeInTheDocument();
+    expect(screen.getByText("L")).toBeInTheDocument();
   });
 });

@@ -11,7 +11,7 @@ describe("CurrencyChip hover wiring", () => {
       gold: big(0), lifetimeGold: big(0),
       inspiration: big(0), fame: big(0),
       paintMastery: big(0), ascendCount: 0, pastRuns: [],
-      partLevels: { spark: 0, bud: 0, leaf: 0, branch: 0 },
+      partLevels: { cotyledon: 0, tendril: 0, budtip: 0, vein: 0 },
       purchasedNodes: {}, equipped: {},
     });
   });

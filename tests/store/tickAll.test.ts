@@ -27,13 +27,13 @@ describe("tickAll orchestrator", () => {
   });
 
   it("tickAll(1) credits inspiration AND advances canvas in one call", () => {
-    // Set up: spark@5 produces 0.5 inspi/sec; canvas starts mid-paint.
+    // Set up: cotyledon@5 produces 0.5 inspi/sec; canvas starts mid-paint.
     // effectiveTime = canvasTime(0) / speedMult = 2 / (1 + 0.05×1) = 2/1.05 ≈ 1.905s.
     // Start at 1.5s; delta=1 pushes to 2.5 ≥ 1.905 → sale fires, leftover = 2.5 - 2/1.05.
     useGameStore.getState().add("gold", big(10000));
     useGameStore.getState()._setPaintMastery(big(0));
     for (let i = 0; i < 5; i++) {
-      useGameStore.getState().buyPartLevel("spark");
+      useGameStore.getState().buyPartLevel("cotyledon");
     }
     useGameStore.setState({ canvasProgress: 1.5 });
     const inspBefore = useGameStore.getState().inspiration.toNumber();

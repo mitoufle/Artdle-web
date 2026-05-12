@@ -22,27 +22,27 @@ describe("treeSlice — state + buyPartLevel + selectors", () => {
     }
   });
 
-  it("buyPartLevel('spark') with gold ≥ baseCost succeeds: level → 1, gold deducted", () => {
+  it("buyPartLevel('cotyledon') with gold ≥ baseCost succeeds: level → 1, gold deducted", () => {
     useGameStore.getState().add("gold", big(10));
-    expect(useGameStore.getState().buyPartLevel("spark")).toBe(true);
+    expect(useGameStore.getState().buyPartLevel("cotyledon")).toBe(true);
     const s = useGameStore.getState();
-    expect(s.partLevels.spark).toBe(1);
+    expect(s.partLevels.cotyledon).toBe(1);
     expect(s.gold.toNumber()).toBe(0);
   });
 
-  it("buyPartLevel('spark') with insufficient gold returns false; state unchanged (atomic)", () => {
+  it("buyPartLevel('cotyledon') with insufficient gold returns false; state unchanged (atomic)", () => {
     useGameStore.getState().add("gold", big(9));
-    expect(useGameStore.getState().buyPartLevel("spark")).toBe(false);
+    expect(useGameStore.getState().buyPartLevel("cotyledon")).toBe(false);
     const s = useGameStore.getState();
-    expect(s.partLevels.spark).toBe(0);
+    expect(s.partLevels.cotyledon).toBe(0);
     expect(s.gold.toNumber()).toBe(9);
   });
 
-  it("buyPartLevel('leaf') with currentStage = 0 returns false (locked stage)", () => {
+  it("buyPartLevel('tendril') with currentStage = 0 returns false (locked stage)", () => {
     useGameStore.getState().add("gold", big(10000));
-    expect(useGameStore.getState().buyPartLevel("leaf")).toBe(false);
+    expect(useGameStore.getState().buyPartLevel("tendril")).toBe(false);
     const s = useGameStore.getState();
-    expect(s.partLevels.leaf).toBe(0);
+    expect(s.partLevels.tendril).toBe(0);
     expect(s.gold.toNumber()).toBe(10000); // not deducted
   });
 
@@ -52,24 +52,24 @@ describe("treeSlice — state + buyPartLevel + selectors", () => {
     expect(useGameStore.getState().gold.toNumber()).toBe(100);
   });
 
-  it("buying spark 10 times brings getTotalLevelsInStage(state, 0) to 10", () => {
+  it("buying cotyledon 10 times brings getTotalLevelsInStage(state, 0) to 10", () => {
     // Cumulative cost of 10 levels: sum_{i=0..9} 10 * 1.15^i ≈ 203.04
     useGameStore.getState().add("gold", big(10000));
     for (let i = 0; i < 10; i++) {
-      expect(useGameStore.getState().buyPartLevel("spark")).toBe(true);
+      expect(useGameStore.getState().buyPartLevel("cotyledon")).toBe(true);
     }
     expect(getTotalLevelsInStage(useGameStore.getState(), 0)).toBe(10);
   });
 
-  it("the 11th spark purchase costs ≈ 10 * 1.15^10 (Big.pow precision: toBeCloseTo)", () => {
+  it("the 11th cotyledon purchase costs ≈ 10 * 1.15^10 (Big.pow precision: toBeCloseTo)", () => {
     // Phase 0+1 lesson #1: Big.pow uses log-domain math; tests must use toBeCloseTo.
     // Buy 10 levels first, then check cost of the 11th attempt.
     useGameStore.getState().add("gold", big(10000));
     for (let i = 0; i < 10; i++) {
-      useGameStore.getState().buyPartLevel("spark");
+      useGameStore.getState().buyPartLevel("cotyledon");
     }
     const goldBefore = useGameStore.getState().gold;
-    expect(useGameStore.getState().buyPartLevel("spark")).toBe(true);
+    expect(useGameStore.getState().buyPartLevel("cotyledon")).toBe(true);
     const goldAfter = useGameStore.getState().gold;
     const spent = goldBefore.sub(goldAfter).toNumber();
     expect(spent).toBeCloseTo(10 * Math.pow(1.15, 10), 3);
@@ -77,8 +77,8 @@ describe("treeSlice — state + buyPartLevel + selectors", () => {
 
   it("getProducingParts returns only parts with level > 0 from unlocked stages", () => {
     useGameStore.getState().add("gold", big(1000));
-    useGameStore.getState().buyPartLevel("spark"); // stage 0, level 1
-    // 'bud' stays at level 0
+    useGameStore.getState().buyPartLevel("cotyledon"); // stage 0, level 1
+    // 'tendril' stays at level 0
     const producing = getProducingParts(useGameStore.getState());
     expect(producing).toHaveLength(1);
     expect(producing[0]?.level).toBe(1);
@@ -92,21 +92,21 @@ describe("treeSlice — growSapling + canGrowSapling", () => {
     useGameStore.getState().resetTree();
   });
 
-  it("canGrowSapling returns false at total stage-0 levels = 9", () => {
+  it("canGrowSapling returns false at total stage-0 levels = 4", () => {
     useGameStore.getState().add("gold", big(10000));
-    for (let i = 0; i < 9; i++) {
-      useGameStore.getState().buyPartLevel("spark");
+    for (let i = 0; i < 4; i++) {
+      useGameStore.getState().buyPartLevel("cotyledon");
     }
-    expect(getTotalLevelsInStage(useGameStore.getState(), 0)).toBe(9);
+    expect(getTotalLevelsInStage(useGameStore.getState(), 0)).toBe(4);
     expect(canGrowSapling(useGameStore.getState())).toBe(false);
   });
 
-  it("canGrowSapling returns true at exact threshold (totalLevels === 10)", () => {
+  it("canGrowSapling returns true at exact threshold (totalLevels === 5)", () => {
     useGameStore.getState().add("gold", big(10000));
-    for (let i = 0; i < 10; i++) {
-      useGameStore.getState().buyPartLevel("spark");
+    for (let i = 0; i < 5; i++) {
+      useGameStore.getState().buyPartLevel("cotyledon");
     }
-    expect(getTotalLevelsInStage(useGameStore.getState(), 0)).toBe(10);
+    expect(getTotalLevelsInStage(useGameStore.getState(), 0)).toBe(5);
     expect(canGrowSapling(useGameStore.getState())).toBe(true);
   });
 
@@ -117,8 +117,8 @@ describe("treeSlice — growSapling + canGrowSapling", () => {
 
   it("growSapling returns true when threshold is met; currentStage becomes 1", () => {
     useGameStore.getState().add("gold", big(10000));
-    for (let i = 0; i < 10; i++) {
-      useGameStore.getState().buyPartLevel("spark");
+    for (let i = 0; i < 5; i++) {
+      useGameStore.getState().buyPartLevel("cotyledon");
     }
     expect(useGameStore.getState().growSapling()).toBe(true);
     expect(useGameStore.getState().currentStage).toBe(1);
@@ -126,17 +126,17 @@ describe("treeSlice — growSapling + canGrowSapling", () => {
 
   it("after growSapling to stage 1, stage-0 parts remain buyable (D5)", () => {
     useGameStore.getState().add("gold", big(100000));
-    for (let i = 0; i < 10; i++) {
-      useGameStore.getState().buyPartLevel("spark");
+    for (let i = 0; i < 5; i++) {
+      useGameStore.getState().buyPartLevel("cotyledon");
     }
     useGameStore.getState().growSapling();
     expect(useGameStore.getState().currentStage).toBe(1);
     // stage-0 part still buyable
-    expect(useGameStore.getState().buyPartLevel("bud")).toBe(true);
-    expect(useGameStore.getState().partLevels.bud).toBe(1);
+    expect(useGameStore.getState().buyPartLevel("cotyledon")).toBe(true);
+    expect(useGameStore.getState().partLevels.cotyledon).toBe(6);
     // stage-1 part now also buyable
-    expect(useGameStore.getState().buyPartLevel("leaf")).toBe(true);
-    expect(useGameStore.getState().partLevels.leaf).toBe(1);
+    expect(useGameStore.getState().buyPartLevel("tendril")).toBe(true);
+    expect(useGameStore.getState().partLevels.tendril).toBe(1);
   });
 
   it("growSapling returns false at currentStage === TREE_STAGES.length - 1 (already at top)", () => {
@@ -159,10 +159,10 @@ describe("treeSlice — treeTick", () => {
     expect(useGameStore.getState().inspiration.toNumber()).toBe(before);
   });
 
-  it("treeTick(1) with spark at level 5: credits 0.5 inspi (5 * 0.1 * 1)", () => {
+  it("treeTick(1) with cotyledon at level 5: credits 0.5 inspi (5 * 0.1 * 1)", () => {
     useGameStore.getState().add("gold", big(10000));
     for (let i = 0; i < 5; i++) {
-      useGameStore.getState().buyPartLevel("spark");
+      useGameStore.getState().buyPartLevel("cotyledon");
     }
     const before = useGameStore.getState().inspiration.toNumber();
     useGameStore.getState().treeTick(1);
@@ -173,7 +173,7 @@ describe("treeSlice — treeTick", () => {
   it("treeTick respects deltaSeconds linearly: tick(2) credits 2× tick(1)", () => {
     useGameStore.getState().add("gold", big(10000));
     for (let i = 0; i < 5; i++) {
-      useGameStore.getState().buyPartLevel("spark");
+      useGameStore.getState().buyPartLevel("cotyledon");
     }
     const before = useGameStore.getState().inspiration.toNumber();
     useGameStore.getState().treeTick(2);
@@ -182,16 +182,16 @@ describe("treeSlice — treeTick", () => {
   });
 
   it("treeTick credits cumulatively across stages (D5: prior-stage parts still produce)", () => {
-    // Set up: spark@1 (stage 0), leaf@1 (stage 1). Force currentStage = 1.
+    // Set up: cotyledon@1 (stage 0), tendril@1 (stage 1). Force currentStage = 1.
     useGameStore.getState().add("gold", big(100000));
-    useGameStore.getState().buyPartLevel("spark"); // 1 * 0.1 = 0.1
+    useGameStore.getState().buyPartLevel("cotyledon"); // 1 * 0.1 = 0.1
     useGameStore.setState({ currentStage: 1 });
-    useGameStore.getState().buyPartLevel("leaf"); // 1 * 5 = 5
-    // Total expected rate: 0.1 + 5 = 5.1 inspi/sec
+    useGameStore.getState().buyPartLevel("tendril"); // 1 * 1 = 1
+    // Total expected rate: 0.1 + 1 = 1.1 inspi/sec
     const before = useGameStore.getState().inspiration.toNumber();
     useGameStore.getState().treeTick(1);
     const after = useGameStore.getState().inspiration.toNumber();
-    expect(after - before).toBeCloseTo(5.1, 6);
+    expect(after - before).toBeCloseTo(1.1, 6);
   });
 });
 
@@ -203,8 +203,9 @@ describe("treeSlice — resetTree", () => {
 
   it("resetTree restores currentStage = 0 and zeroes all part levels", () => {
     useGameStore.getState().add("gold", big(100000));
-    useGameStore.getState().buyPartLevel("spark");
-    useGameStore.getState().buyPartLevel("bud");
+    useGameStore.getState().buyPartLevel("cotyledon");
+    useGameStore.setState({ currentStage: 1 });
+    useGameStore.getState().buyPartLevel("tendril");
     useGameStore.setState({ currentStage: 2 });
     useGameStore.getState().resetTree();
     const s = useGameStore.getState();

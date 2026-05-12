@@ -26,29 +26,30 @@ describe("TreeRoute (v2 visual)", () => {
 
   it("renders InspiReadout with stage name", () => {
     renderTreeRoute();
-    expect(screen.getByText(/Stage · Seed/i)).toBeInTheDocument();
+    expect(screen.getByText(/Stage · Tiny Sprout/i)).toBeInTheDocument();
   });
 
-  it("renders 3 stage chips in the right rail", () => {
+  it("renders 6 stage chips in the right rail", () => {
     renderTreeRoute();
-    expect(screen.getAllByTestId(/stage-chip-/)).toHaveLength(3);
+    expect(screen.getAllByTestId(/stage-chip-/)).toHaveLength(6);
   });
 
   it("renders upgrade rows for the parts visible at the current stage", () => {
     renderTreeRoute();
-    // At currentStage=0 (Seed), 2 parts visible: spark + bud.
-    expect(screen.getByTestId("upgrade-buy-spark")).toBeInTheDocument();
-    expect(screen.getByTestId("upgrade-buy-bud")).toBeInTheDocument();
+    // At currentStage=0 (Tiny Sprout), 1 part visible: cotyledon.
+    expect(screen.getByTestId("upgrade-buy-cotyledon")).toBeInTheDocument();
+    // stage 1 part tendril is not yet visible (locked)
+    expect(screen.queryByTestId("upgrade-buy-tendril")).not.toBeInTheDocument();
   });
 
   it("buy button is disabled when player has 0 gold", () => {
     renderTreeRoute();
-    expect(screen.getByTestId("upgrade-buy-spark")).toBeDisabled();
+    expect(screen.getByTestId("upgrade-buy-cotyledon")).toBeDisabled();
   });
 
   it("buy button is enabled when player has enough gold", () => {
     useGameStore.setState({ gold: big(1000) });
     renderTreeRoute();
-    expect(screen.getByTestId("upgrade-buy-spark")).not.toBeDisabled();
+    expect(screen.getByTestId("upgrade-buy-cotyledon")).not.toBeDisabled();
   });
 });

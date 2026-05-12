@@ -14,12 +14,12 @@ describe("UpgradeRow hover wiring", () => {
   it("hover on buy button pushes name as title and shows level + cost + contribution", () => {
     render(
       <UpgradeRow
-        partId="spark" name="Spark" level={3} rate={1.5}
+        partId="cotyledon" name="Cotyledon" level={3} rate={1.5}
         cost="120" canAfford={true} onBuy={() => {}}
       />,
     );
-    fireEvent.mouseEnter(screen.getByTestId("upgrade-buy-spark"));
-    expect(useGameStore.getState().hoverTitle).toBe("Spark");
+    fireEvent.mouseEnter(screen.getByTestId("upgrade-buy-cotyledon"));
+    expect(useGameStore.getState().hoverTitle).toBe("Cotyledon");
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
     expect(container.textContent).toMatch(/Level: 3/);
     expect(container.textContent).toMatch(/Next cost: 120 g/);
@@ -32,11 +32,11 @@ describe("UpgradeRow hover wiring", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
     render(
       <UpgradeRow
-        partId="spark" name="Spark" level={3} rate={1.5}
+        partId="cotyledon" name="Cotyledon" level={3} rate={1.5}
         cost="120" canAfford={true} onBuy={() => {}}
       />,
     );
-    fireEvent.mouseEnter(screen.getByTestId("upgrade-buy-spark"));
+    fireEvent.mouseEnter(screen.getByTestId("upgrade-buy-cotyledon"));
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
     expect(container.textContent).toMatch(/\+5\.6 inspi\/sec/);
   });
@@ -44,11 +44,11 @@ describe("UpgradeRow hover wiring", () => {
   it("footer reads the static scaling note", () => {
     render(
       <UpgradeRow
-        partId="bud" name="Bud" level={0} rate={2.0}
+        partId="tendril" name="Tendril" level={0} rate={2.0}
         cost="200" canAfford={false} onBuy={() => {}}
       />,
     );
-    fireEvent.mouseEnter(screen.getByTestId("upgrade-buy-bud"));
+    fireEvent.mouseEnter(screen.getByTestId("upgrade-buy-tendril"));
     expect(String(useGameStore.getState().hoverFooter)).toMatch(/global inspi multiplier/);
   });
 });
