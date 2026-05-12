@@ -125,12 +125,19 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
     if (deltaSeconds <= 0) return;
     const state = get();
     const producing = getProducingParts(state);
-    if (producing.length === 0) return;
-    const multiplier = getInspiMultiplier(state);
-    const rate = inspiPerSec(producing, multiplier);
-    if (rate.lte(0)) return; // defensive: Phase 3 multipliers may push rate non-positive
-    const gain = rate.mul(deltaSeconds);
-    state.add("inspiration", gain);
+    if (producing.length > 0) {
+      const multiplier = getInspiMultiplier(state);
+      const rate = inspiPerSec(producing, multiplier);
+      if (rate.gt(0)) {
+        const gain = rate.mul(deltaSeconds);
+        state.add("inspiration", gain);
+      }
+    }
+    // Defensive auto-advance: catches loaded saves whose partLevels already
+    // qualify without a fresh buy event (post-migration, balance-curve shifts).
+    for (let i = 0; i < AUTO_GROW_MAX_ITER && canGrowSapling(get()); i++) {
+      get().growSapling();
+    }
   },
 
   resetTree: () => set(initialTreeState),

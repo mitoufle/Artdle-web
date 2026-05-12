@@ -228,6 +228,25 @@ describe("treeSlice — treeTick", () => {
     const after = useGameStore.getState().inspiration.toNumber();
     expect(after - before).toBeCloseTo(1.1, 6);
   });
+
+  it("treeTick auto-advances stage when state qualifies on entry", () => {
+    // Simulate post-migration state where partLevels qualify but currentStage didn't advance.
+    useGameStore.setState({
+      currentStage: 0,
+      partLevels: {
+        ...useGameStore.getState().partLevels,
+        cotyledon: 5,
+      },
+    });
+    useGameStore.getState().treeTick(0.1);
+    expect(useGameStore.getState().currentStage).toBe(1);
+  });
+
+  it("treeTick does NOT auto-advance at the final stage", () => {
+    useGameStore.setState({ currentStage: TREE_STAGES.length - 1 });
+    useGameStore.getState().treeTick(0.1);
+    expect(useGameStore.getState().currentStage).toBe(TREE_STAGES.length - 1);
+  });
 });
 
 describe("treeSlice — resetTree", () => {
