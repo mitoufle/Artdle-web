@@ -663,7 +663,7 @@ describe("save migration v13 → v14 (inspiration tree rewrite)", () => {
       playerId: "test-uuid",
       pokeTreeTimer: 0,
     };
-    const migrated = migrate(v13Save, 13) as Record<string, unknown>;
+    const migrated = migrate(v13Save, 13) as unknown as Record<string, unknown>;
     // Tree wiped:
     expect(migrated.currentStage).toBe(0);
     const pl = migrated.partLevels as Record<string, number>;
