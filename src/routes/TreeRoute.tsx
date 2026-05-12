@@ -6,7 +6,6 @@ import { treePartCost, inspiPerSec } from "@/core/balance";
 import { getInspiMultiplier } from "@/core/multipliers";
 import {
   getProducingParts,
-  canGrowSapling,
   getTotalLevelsInStage,
 } from "@/store/treeSlice";
 import { formatBig } from "@/core/formatter";
@@ -24,7 +23,6 @@ export function TreeRoute(): JSX.Element {
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const buyPartLevel = useGameStore((s) => s.buyPartLevel);
   const buyAllAffordableTreeParts = useGameStore((s) => s.buyAllAffordableTreeParts);
-  const growSapling = useGameStore((s) => s.growSapling);
 
   const helperState = {
     currentStage,
@@ -34,7 +32,6 @@ export function TreeRoute(): JSX.Element {
   } as unknown as GameStore;
 
   const rate = inspiPerSec(getProducingParts(helperState), getInspiMultiplier(helperState));
-  const canGrow = canGrowSapling(helperState);
   const stageConfig = TREE_STAGES[currentStage];
   const stageName = stageConfig?.name ?? "?";
   const nextStageConfig = TREE_STAGES[currentStage + 1];
@@ -60,8 +57,6 @@ export function TreeRoute(): JSX.Element {
           nextStageName={nextStageConfig?.name}
           totalLevelsInStage={totalLevels}
           unlockThreshold={nextStageConfig?.unlockThreshold ?? 0}
-          canGrow={canGrow}
-          onGrow={growSapling}
         />
 
         <section className={styles.upgrades} aria-label="Upgrades">

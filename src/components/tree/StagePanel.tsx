@@ -9,15 +9,12 @@ interface Props {
   nextStageName: string | undefined;
   totalLevelsInStage: number;
   unlockThreshold: number;
-  canGrow: boolean;
-  onGrow: () => void;
 }
 
 function stagePanelHoverBody(
   isFinal: boolean,
   totalLevels: number,
   threshold: number,
-  canGrow: boolean,
 ): JSX.Element {
   if (isFinal) {
     return (
@@ -29,6 +26,7 @@ function stagePanelHoverBody(
   }
   const pct = threshold > 0 ? Math.min(100, (totalLevels / threshold) * 100) : 0;
   const need = Math.max(0, threshold - totalLevels);
+  const canGrow = need === 0;
   return (
     <>
       <div>Levels in stage: {totalLevels} / {threshold}</div>
@@ -40,10 +38,8 @@ function stagePanelHoverBody(
 }
 
 /**
- * Top-of-right-rail stage progress panel.
- * Renders: title `Current → Next` (or `Current · Final stage` at top stage),
- * stage chip row (3 chips, current highlighted), progress bar to next-stage
- * unlock, level count, grow CTA.
+ * Top-of-right-rail stage progress panel. Stage advancement is automatic
+ * (see treeSlice.buyPartLevel + treeTick); this panel is informational only.
  */
 export function StagePanel({
   currentStageIndex,
@@ -51,8 +47,6 @@ export function StagePanel({
   nextStageName,
   totalLevelsInStage,
   unlockThreshold,
-  canGrow,
-  onGrow,
 }: Props): JSX.Element {
   const isFinal = nextStageName === undefined;
   const progressPct =
@@ -66,10 +60,8 @@ export function StagePanel({
           ? `${currentStageName} · Final stage`
           : `${currentStageName} → ${nextStageName}`
       }
-      body={() =>
-        stagePanelHoverBody(isFinal, totalLevelsInStage, unlockThreshold, canGrow)
-      }
-      footer={() => (isFinal ? "" : "Click 'Grow' to advance to the next stage.")}
+      body={() => stagePanelHoverBody(isFinal, totalLevelsInStage, unlockThreshold)}
+      footer={() => (isFinal ? "" : "Stage advances automatically when threshold is reached.")}
     >
       <section
         className={styles.panel}
@@ -95,7 +87,9 @@ export function StagePanel({
               data-active={idx === currentStageIndex ? "true" : undefined}
             >
               <span>{stage.name}</span>
-              {idx < TREE_STAGES.length - 1 && <span className={styles.arrow} aria-hidden="true">→</span>}
+              {idx < TREE_STAGES.length - 1 && (
+                <span className={styles.arrow} aria-hidden="true">→</span>
+              )}
             </li>
           ))}
         </ol>
@@ -114,14 +108,6 @@ export function StagePanel({
             <div className={styles.progressLabel}>
               {totalLevelsInStage} / {unlockThreshold} levels in stage
             </div>
-            <button
-              type="button"
-              className={styles.grow}
-              disabled={!canGrow}
-              onClick={canGrow ? onGrow : undefined}
-            >
-              Grow into {nextStageName}
-            </button>
           </>
         )}
       </section>

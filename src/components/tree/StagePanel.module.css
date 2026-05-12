@@ -69,26 +69,3 @@
   font-size: 11px;
   color: var(--ink-2);
 }
-
-.grow {
-  font-family: var(--serif);
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--ink-0);
-  padding: var(--s-2) var(--s-3);
-  border: 1px solid var(--inspi-d);
-  border-radius: var(--r-sm);
-  background: var(--bg-2);
-  transition: background-color 120ms ease;
-}
-
-.grow:hover:not(:disabled) {
-  background: var(--inspi-d);
-}
-
-.grow:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}

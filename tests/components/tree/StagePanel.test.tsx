@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+import { render, screen } from "@testing-library/react";
 import { StagePanel } from "@/components/tree/StagePanel";
 
 describe("<StagePanel />", () => {
@@ -11,8 +11,6 @@ describe("<StagePanel />", () => {
         nextStageName="Leaflet"
         totalLevelsInStage={5}
         unlockThreshold={12}
-        canGrow={false}
-        onGrow={() => {}}
       />,
     );
     const chips = screen.getAllByTestId(/stage-chip-/);
@@ -29,8 +27,6 @@ describe("<StagePanel />", () => {
         nextStageName="Leaflet"
         totalLevelsInStage={5}
         unlockThreshold={12}
-        canGrow={false}
-        onGrow={() => {}}
       />,
     );
     expect(screen.getByText(/Bud.*Leaflet/i)).toBeInTheDocument();
@@ -44,30 +40,12 @@ describe("<StagePanel />", () => {
         nextStageName="Leaflet"
         totalLevelsInStage={5}
         unlockThreshold={12}
-        canGrow={false}
-        onGrow={() => {}}
       />,
     );
     expect(screen.getByText(/5 \/ 12 levels in stage/i)).toBeInTheDocument();
   });
 
-  it("grow button is disabled when canGrow=false", () => {
-    render(
-      <StagePanel
-        currentStageIndex={1}
-        currentStageName="Bud"
-        nextStageName="Leaflet"
-        totalLevelsInStage={5}
-        unlockThreshold={12}
-        canGrow={false}
-        onGrow={() => {}}
-      />,
-    );
-    expect(screen.getByRole("button", { name: /Grow/i })).toBeDisabled();
-  });
-
-  it("grow button calls onGrow when canGrow=true and clicked", () => {
-    const onGrow = vi.fn();
+  it("does NOT render a Grow button (advancement is automatic)", () => {
     render(
       <StagePanel
         currentStageIndex={1}
@@ -75,27 +53,9 @@ describe("<StagePanel />", () => {
         nextStageName="Leaflet"
         totalLevelsInStage={12}
         unlockThreshold={12}
-        canGrow={true}
-        onGrow={onGrow}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Grow/i }));
-    expect(onGrow).toHaveBeenCalledOnce();
-  });
-
-  it("renders 'Grow into {next stage}' label", () => {
-    render(
-      <StagePanel
-        currentStageIndex={1}
-        currentStageName="Bud"
-        nextStageName="Leaflet"
-        totalLevelsInStage={12}
-        unlockThreshold={12}
-        canGrow={true}
-        onGrow={() => {}}
-      />,
-    );
-    expect(screen.getByRole("button", { name: /Grow into Leaflet/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Grow/i })).not.toBeInTheDocument();
   });
 
   it("renders 'Final stage' when nextStageName is undefined", () => {
@@ -104,10 +64,8 @@ describe("<StagePanel />", () => {
         currentStageIndex={5}
         currentStageName="Verdant Shoot"
         nextStageName={undefined}
-        totalLevelsInStage={50}
-        unlockThreshold={0}
-        canGrow={false}
-        onGrow={() => {}}
+        totalLevelsInStage={150}
+        unlockThreshold={100}
       />,
     );
     expect(screen.getByText(/Final stage/i)).toBeInTheDocument();
