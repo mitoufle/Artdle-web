@@ -50,7 +50,7 @@ export const TREE_STAGES: ReadonlyArray<TreeStageConfig> = [
     unlockThreshold: 12,
     parts: [
       { id: "vein", name: "Vein", baseCost: 1_000, rate: 10 },
-      { id: "leaftip", name: "Leaflet", baseCost: 5_000, rate: 50 },
+      { id: "leaftip", name: "Leaf Tip", baseCost: 5_000, rate: 50 },
     ],
   },
   {

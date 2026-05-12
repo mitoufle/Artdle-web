@@ -9,7 +9,7 @@ import type { GameStore } from "@/store";
 const AUTO_GROW_MAX_ITER = 100;
 
 export interface TreeState {
-  /** Highest stage grown into. 0 = Seed (initial), 1 = Sapling, 2 = Tree. */
+  /** Highest stage grown into. 0..TREE_STAGES.length-1 (currently 0 = Tiny Sprout, 5 = Verdant Shoot). */
   currentStage: number;
   /** Per-part level. Seeded with every configured part ID at 0. */
   partLevels: Record<string, number>;
