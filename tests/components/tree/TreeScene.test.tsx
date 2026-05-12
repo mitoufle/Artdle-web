@@ -27,12 +27,19 @@ describe("<TreeScene />", () => {
     expect(container.querySelector('[data-testid="fireflies"]')).toBeInTheDocument();
   });
 
-  it("renders the tree group with stage-specific data-tree-stage", () => {
+  it("renders the tree group with tier-mapped data-tree-stage (floor(stage/2))", () => {
+    // stages 0-1 → seed, stages 2-3 → sapling, stages 4-5 → tree
     const { container, rerender } = render(<TreeScene stage={0} />);
     expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "seed");
     rerender(<TreeScene stage={1} />);
-    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "sapling");
+    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "seed");
     rerender(<TreeScene stage={2} />);
+    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "sapling");
+    rerender(<TreeScene stage={3} />);
+    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "sapling");
+    rerender(<TreeScene stage={4} />);
+    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "tree");
+    rerender(<TreeScene stage={5} />);
     expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "tree");
   });
 });

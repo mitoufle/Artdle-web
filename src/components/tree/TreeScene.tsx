@@ -5,18 +5,26 @@ interface Props {
   stage: number;
 }
 
-const STAGE_NAMES = ["seed", "sapling", "tree"] as const;
+/**
+ * 6 stages map onto 3 sprite tiers: floor(stage/2). Stages 7+ will need new
+ * sprite art; this mapping is intentionally minimal until then.
+ */
+const SPRITE_TIERS = ["seed", "sapling", "tree"] as const;
+const getSpriteTier = (stage: number): typeof SPRITE_TIERS[number] => {
+  const tier = Math.min(SPRITE_TIERS.length - 1, Math.max(0, Math.floor(stage / 2)));
+  return SPRITE_TIERS[tier]!;
+};
 
 /**
  * Pixel-art landscape: sky → mountains → hills → pond → ground → tree → motes → fireflies.
- * The tree visual has 3 variants keyed off `stage`. Motes and fireflies animate
- * via SVG `<animate>` (durations from handoff §Animations).
+ * The tree visual has 3 variants keyed off the sprite tier (= floor(stage/2)).
+ * Motes and fireflies animate via SVG `<animate>` (durations from handoff §Animations).
  *
  * Scene colors are inlined per the handoff's pixel-art SVG approach (the colors
  * are scene-specific, not part of the ARTDLE token palette).
  */
 export function TreeScene({ stage }: Props): JSX.Element {
-  const treeStageName = STAGE_NAMES[Math.max(0, Math.min(2, stage))] ?? "seed";
+  const treeStageName = getSpriteTier(stage);
   return (
     <div className={styles.scene} data-stage={String(stage)}>
       <svg
@@ -89,8 +97,8 @@ export function TreeScene({ stage }: Props): JSX.Element {
           <rect x="-12" y="232" width="24" height="8" fill="#3a2a18" />
           <rect x="-8" y="240" width="16" height="4" fill="#2e2014" />
 
-          {/* Stage 0: seed sprout — small */}
-          {stage === 0 && (
+          {/* Seed tier (stages 0-1): seed sprout — small */}
+          {treeStageName === "seed" && (
             <>
               <rect x="-2" y="220" width="4" height="20" fill="#5a3a22" />
               <ellipse cx="0" cy="216" rx="10" ry="6" fill="#3a6a3a" />
@@ -98,8 +106,8 @@ export function TreeScene({ stage }: Props): JSX.Element {
             </>
           )}
 
-          {/* Stage 1: sapling — mid */}
-          {stage === 1 && (
+          {/* Sapling tier (stages 2-3): sapling — mid */}
+          {treeStageName === "sapling" && (
             <>
               <rect x="-3" y="190" width="6" height="50" fill="#5a3a22" />
               <rect x="-3" y="200" width="6" height="2" fill="#3a2a18" />
@@ -118,8 +126,8 @@ export function TreeScene({ stage }: Props): JSX.Element {
             </>
           )}
 
-          {/* Stage 2: full tree — big */}
-          {stage === 2 && (
+          {/* Tree tier (stages 4-5): full tree — big */}
+          {treeStageName === "tree" && (
             <>
               <rect x="-5" y="160" width="10" height="80" fill="#5a3a22" />
               <rect x="-5" y="170" width="10" height="3" fill="#3a2a18" />
