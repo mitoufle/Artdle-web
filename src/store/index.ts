@@ -86,7 +86,7 @@ const SAVE_KEY = "artdle-save";
  * queue, roster, trickleTimer. No data to migrate from older saves (the
  * system didn't exist).
  *
- * v13 → v14 (2026-05-12): inspiration tree rewrite — 6 stages with new
+ * v13 → v14 (2026-05-12): Inspiration tree rewrite — 6 stages with new
  * part IDs. Wipe currentStage + partLevels; all other slices preserved.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
@@ -233,13 +233,14 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     // mechanical equivalent; mapping them would produce misleading state.
     // Wipe currentStage + partLevels only; all other slices preserved.
     // See docs/superpowers/specs/2026-05-12-inspiration-tree-expansion-design.md.
+    // One row per stage (1/2/2/3/3/4 parts).
     const TREE_PART_IDS = [
-      "cotyledon",
-      "tendril", "budtip",
-      "vein", "leaftip",
-      "twig", "branch", "leaf",
-      "softbough", "quietleaf", "faintvein",
-      "greenshoot", "lushbough", "vividleaf", "stalk",
+      "cotyledon",                                           // stage 0 Tiny Sprout
+      "tendril", "budtip",                                   // stage 1 Bud
+      "vein", "leaftip",                                     // stage 2 Leaflet
+      "twig", "branch", "leaf",                              // stage 3 Sapling
+      "softbough", "quietleaf", "faintvein",                 // stage 4 Whisperleaf
+      "greenshoot", "lushbough", "vividleaf", "stalk",       // stage 5 Verdant Shoot
     ];
     const wipedPartLevels: Record<string, number> = {};
     for (const id of TREE_PART_IDS) wipedPartLevels[id] = 0;
