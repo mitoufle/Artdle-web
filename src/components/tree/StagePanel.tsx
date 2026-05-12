@@ -26,13 +26,13 @@ function stagePanelHoverBody(
   }
   const pct = threshold > 0 ? Math.min(100, (totalLevels / threshold) * 100) : 0;
   const need = Math.max(0, threshold - totalLevels);
-  const canGrow = need === 0;
+  const thresholdMet = need === 0;
   return (
     <>
       <div>Levels in stage: {totalLevels} / {threshold}</div>
       <div>Progress: {pct.toFixed(0)}%</div>
       <div>───</div>
-      <div>{canGrow ? "Ready to grow!" : `Need ${need} more levels.`}</div>
+      <div>{thresholdMet ? "Threshold reached — advancing!" : `Need ${need} more levels.`}</div>
     </>
   );
 }

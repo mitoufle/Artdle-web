@@ -26,7 +26,7 @@ describe("StagePanel hover wiring", () => {
     expect(String(useGameStore.getState().hoverFooter)).toMatch(/automatically/i);
   });
 
-  it("hover (non-final, threshold reached) shows 'Ready to grow!'", () => {
+  it("hover (non-final, threshold reached) shows 'Threshold reached — advancing!'", () => {
     render(
       <StagePanel
         currentStageIndex={0} currentStageName="Tiny Sprout" nextStageName="Bud"
@@ -35,7 +35,7 @@ describe("StagePanel hover wiring", () => {
     );
     fireEvent.mouseEnter(screen.getByTestId("stage-panel"));
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/Ready to grow!/);
+    expect(container.textContent).toMatch(/Threshold reached/);
   });
 
   it("hover (final stage) shows '· Final stage' title and final-state body, empty footer", () => {
