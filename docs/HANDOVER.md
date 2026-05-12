@@ -1,5 +1,42 @@
 # Artdle Web — Handover
 
+## Inspiration tree v1.x: 6 stages + auto-grow (2026-05-12)
+
+15 commits delivering the 6-stage inspiration tree expansion specified in `docs/superpowers/specs/2026-05-12-inspiration-tree-expansion-design.md`. Plan: `docs/superpowers/plans/2026-05-12-inspiration-tree-expansion.md`. Subagent-driven execution with two-stage review per task.
+
+### What landed
+
+- **Config rewrite** (`bb2cd08`, `2f9155f`, `59892f3`). 3 stages × 2 parts → 6 stages with variable parts (1/2/2/3/3/4): Tiny Sprout (cotyledon), Bud (tendril, budtip), Leaflet (vein, leaftip "Leaf Tip"), Sapling (twig, branch, leaf), Whisperleaf (softbough, quietleaf, faintvein), Verdant Shoot (greenshoot, lushbough, vividleaf, stalk). Cost/rate curves preserve the prior `×10 between / ×5 within` ratios; unlockThresholds are 0/5/12/25/50/100. Mid-implementation the part id `"leaflet"` was renamed to `"leaftip"` to avoid a collision with the stage id of the same name, and the display name was later set to `"Leaf Tip"` to keep the in-rail labelling unambiguous. The remaining 20-stage roadmap (through Mossling, Sylvan Sapling, … Genesis Arbor → World Tree) is parked in the spec, not yet coded.
+- **Auto-stage-up** (`d1d5cce`, `f13696d`, `49ef351`, `386a189`). `growSapling()` stays as the canonical atomic mutator but the manual button is gone. Two trigger points fire it automatically: `buyPartLevel` (immediately after a successful purchase) and `treeTick` (defensive safety-net for post-migration / loaded-qualifying-state). Both use the same `AUTO_GROW_MAX_ITER = 100` guard. `buyAllAffordableTreeParts` cascades through stages naturally since each outer iteration re-reads `state.currentStage`.
+- **Save migration v13 → v14** (`7d7ab3b`, `e139238`, `f269fdb`). Wipes `currentStage` (→ 0) and `partLevels` (→ all-zero on the 15 new IDs). Currency, fame, items, workers, PM, lifetime gold, fame nodes, and every other slice are preserved. Returning v13 saves boot into stage 0 with zero levels but full gold — auto-grow rebuilds progression quickly. The TREE_PART_IDS array is documented in-place with one row per stage so future readers don't need to cross-reference `treeStages.ts` to understand the migration.
+- **UI cleanup** (`b154bed`, `2560cda`). `StagePanel` drops the `canGrow`/`onGrow` props and the Grow button entirely; the chip strip iterates `TREE_STAGES` for 6 chips. The hover footer became "Stage advances automatically when threshold is reached." and the hover body's threshold-reached line became "Threshold reached — advancing!" (was "Ready to grow!" which implied player agency). `TreeRoute` drops the `growSapling` selector and the `canGrowSapling` import. Dead `.grow` CSS rules removed.
+- **TreeScene tier mapping** (`e885469`). 6 stages → 3 sprite tiers via `floor(stage / 2)`: stages 0-1 use the seed sprite, 2-3 use sapling, 4-5 use tree. `getSpriteTier(stage)` clamps at `SPRITE_TIERS.length - 1`, so any future stage 6+ falls back to the tree sprite until new art lands.
+- **Stage-up toast** (`23168d5`). `TreeRoute` tracks `currentStage` in a `useRef`; on advance it sets a 2-second toast inside the `.scene` container with name "Grown into {stageName}!" and a CSS-keyframe fade. No new dependencies.
+
+### Tests + build
+
+- **750 tests passing across 80 files** (was 746; +4 net: +3 new auto-grow-on-buy cases, +2 new auto-grow-on-tick cases, +1 new migration case, -2 Grow-button-specific cases that no longer apply).
+- `npx tsc --noEmit` clean. `npm run build` clean. Bundle ≈ **164.16 KB gzipped** — essentially unchanged from the 164 KB baseline; well under the 250 KB DoD budget.
+
+### Lessons preserved
+
+- **Two trigger points are cheaper than they look.** Auto-grow guarded by `canGrowSapling(get())` at the end of both `buyPartLevel` and `treeTick`: the action path catches a "buy crossed threshold" event immediately; the tick path catches a "state loaded already qualifying" case (post-migration, balance changes, hand-edited saves). The cost is one O(parts-in-stage) sum per tick — trivial. The pattern is grep-able (`AUTO_GROW_MAX_ITER`) and should be reused when any future auto-advance mechanic ships.
+- **Stage IDs and part IDs share a namespace in test/grep, not in code.** When stage 2 was named `"leaflet"` and one of its parts was also id `"leaflet"`, no runtime bug existed (TREE_STAGES[n].id vs partLevels keys are different lookups), but a future tooling pass that built a flat identifier map would silently collide. The fix was the early rename (`leaflet` → `leaftip`) plus a later display-name update (`"Leaflet"` → `"Leaf Tip"`) so the in-rail UI is also unambiguous. **Avoid name-equal-to-parent in nested configs.**
+- **Migration that wipes one slice is cheaper than translating it.** Old part IDs (`spark/bud/leaf/branch/bough/crown`) have no mechanical equivalent in the new config. Mapping by total levels or estimating equivalent stages would produce misleading state. Wiping only `currentStage` + `partLevels` while preserving currency/items/workers/fame is graceful: returning players keep their gold income and auto-grow rebuilds tree progression in a few minutes.
+- **Toast coalesces across multi-stage advances.** If a single `treeTick` advances the player across two thresholds (rare: stage cascade from a loaded save), the `useRef`-tracked previous value updates between renders and only the final stage's name lands in the toast. Behaviour is benign; document as expected.
+- **Player-facing text should match the system model.** The hover body originally said "Ready to grow!" — verb implies player action. After the auto-grow change that's a lie. Renamed to "Threshold reached — advancing!" so the body matches the footer's framing. This text is rarely visible in practice (auto-grow fires synchronously after the threshold-crossing buy, so the "ready" state lasts at most one render frame) but should be correct when seen.
+
+### Next
+
+Open ends:
+
+- **Browser smoke not yet completed.** The dev server is running (started earlier in session). User to verify: (1) buying enough cotyledon flips to Bud automatically with the toast firing; (2) no Grow button anywhere; (3) chip strip readable at 6 wide on the rail (the implementer judged spacing already compact at `var(--s-2)` gap + 11px font, but only browser playtest can confirm); (4) v13 saves migrate to v14 without errors visible in DevTools console.
+- **Chip-strip spacing** may need tightening if 6 chips overflow. CSS was not adjusted by the plan; deferred pending playtest.
+- **Stages 7+ art and balance** queued for a future wave. The current `×10 between stages` curve is mathematically untouchable past stage 10 or so; that wave needs a new growth curve. Names are pre-authored in the spec.
+- The carry-overs from yesterday's HANDOVER stand: Goldsmith class playtest, crit perception verify, four remaining `as unknown as GameStore` escapes.
+
+---
+
 ## Tree expansion + tick-loop fix + type-safety guard (2026-05-12)
 
 Seven commits covering one feature batch, one engine bug, and one architectural cleanup that closes a recurring class of bugs.
