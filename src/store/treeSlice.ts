@@ -43,8 +43,9 @@ export interface TreeSlice extends TreeState {
    */
   growSapling: () => boolean;
   /**
-   * Per-frame: credit inspiration via currencySlice.
-   * No-op when no parts are producing (avoids 60Hz persist writes during bootstrap).
+   * Per-frame: credit inspiration via currencySlice (skipped when no parts
+   * are producing, to avoid 60Hz persist writes during bootstrap), then
+   * auto-advance stage if the current totals already meet the next threshold.
    */
   treeTick: (deltaSeconds: number) => void;
   /** For ascend orchestrator (Phase 3). Resets state to `initialTreeState`. */
