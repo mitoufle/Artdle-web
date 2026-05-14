@@ -61,7 +61,7 @@ describe("<WorkshopRoom />", () => {
   it("clicking craft adds an item to inventory", () => {
     useGameStore.setState({ gold: big(200) });
     render(<WorkshopRoom />);
-    fireEvent.click(screen.getByTestId("craft-button"));
+    fireEvent.pointerDown(screen.getByTestId("craft-button"));
     expect(useGameStore.getState().inventory.length).toBe(1);
   });
 

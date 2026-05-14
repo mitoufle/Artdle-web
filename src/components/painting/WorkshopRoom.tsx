@@ -1,4 +1,4 @@
-import { useMemo, type JSX } from "react";
+import { useMemo, useRef, useEffect, useCallback, type JSX } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import { craftCost, xpToNext } from "@/core/balance";
@@ -130,6 +130,23 @@ export function WorkshopRoom(): JSX.Element {
   const hasUnprotectedInInventory = inventory.some((item) => !protectedTiers[item.tier]);
   const canCraft = gold.gte(cost) && (inventory.length < maxSlots || (hasShredder && hasUnprotectedInInventory));
 
+  const holdRef = useRef<{ timer: ReturnType<typeof setTimeout> | null; interval: ReturnType<typeof setInterval> | null }>
+    ({ timer: null, interval: null });
+
+  const clearHold = useCallback(() => {
+    if (holdRef.current.timer) { clearTimeout(holdRef.current.timer); holdRef.current.timer = null; }
+    if (holdRef.current.interval) { clearInterval(holdRef.current.interval); holdRef.current.interval = null; }
+  }, []);
+
+  useEffect(() => clearHold, [clearHold]);
+
+  const handleCraftPointerDown = useCallback(() => {
+    craft();
+    holdRef.current.timer = setTimeout(() => {
+      holdRef.current.interval = setInterval(() => craft(), 80);
+    }, 350);
+  }, [craft]);
+
   const fusionTargetMap = useMemo(() => {
     const map = new Map<string, Item | null>();
     for (const item of inventory) {
@@ -182,7 +199,10 @@ export function WorkshopRoom(): JSX.Element {
             type="button"
             className={styles.craftBtn}
             disabled={!canCraft}
-            onClick={() => craft()}
+            onPointerDown={handleCraftPointerDown}
+            onPointerUp={clearHold}
+            onPointerLeave={clearHold}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); craft(); } }}
             data-testid="craft-button"
           >
             Craft · {formatBig(cost)} g
