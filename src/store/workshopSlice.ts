@@ -5,7 +5,8 @@ import {
   type SlotKind,
 } from "@/config/workshopAffixes";
 import { craftCost, xpToNext, MAX_WORKSHOP_LEVEL } from "@/core/balance";
-import { rngPick } from "@/core/rng";
+import type { Big } from "@/core/bigNumber";
+import { rng, rngPick } from "@/core/rng";
 import { rollTier, rollAffixes, TIER_XP } from "@/core/workshopRoll";
 import type { ItemTier } from "@/core/workshopRoll";
 import type { Affix } from "@/core/workshopRoll";
@@ -55,6 +56,7 @@ export interface WorkshopSlice extends WorkshopState {
   equipItem: (itemId: string) => boolean;
   unequipSlot: (slot: SlotKind) => boolean;
   discard: (itemId: string) => boolean;
+  fuseItem: (dropId: string) => boolean;
   workshopTick: (deltaSeconds: number) => void;
   resetWorkshop: () => void;
 }
@@ -111,6 +113,32 @@ export const getEquippedContribution = (state: Pick<GameStore, "equipped">, kind
   }
   return total;
 };
+
+/**
+ * Returns the first equipped item whose affix kinds exactly match the
+ * inventory item's affix kinds (same count, same set, order irrelevant).
+ * Returns null if no match. First match wins.
+ */
+export function getFusionTarget(
+  invItem: Item,
+  equipped: Partial<Record<SlotKind, Item>>,
+): Item | null {
+  const invKinds = invItem.affixes.map((a) => a.kind).sort().join(",");
+  for (const eq of Object.values(equipped)) {
+    if (!eq) continue;
+    if (eq.affixes.length !== invItem.affixes.length) continue;
+    const eqKinds = eq.affixes.map((a) => a.kind).sort().join(",");
+    if (invKinds === eqKinds) return eq;
+  }
+  return null;
+}
+
+/**
+ * Gold cost to fuse a drop into an equipped item.
+ * craftCost(workshopLevel) × 2^equippedItem.fuseCount
+ */
+export const getFuseCost = (equippedItem: Item, workshopLevel: number): Big =>
+  craftCost(workshopLevel).mul(Math.pow(2, equippedItem.fuseCount));
 
 // ============================================================================
 // Helpers
@@ -210,6 +238,43 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     if (!exists) return false;
     set((s) => ({
       inventory: s.inventory.filter((i) => i.id !== itemId),
+    }));
+    return true;
+  },
+
+  fuseItem: (dropId) => {
+    const state = get();
+    const drop = state.inventory.find((i) => i.id === dropId);
+    if (!drop) return false;
+
+    const target = getFusionTarget(drop, state.equipped);
+    if (!target) return false;
+
+    const fuseCost = getFuseCost(target, state.workshopLevel);
+    if (!state.spend("gold", fuseCost)) return false;
+
+    const targetSlot = (
+      Object.entries(state.equipped) as Array<[SlotKind, Item | undefined]>
+    ).find(([, eq]) => eq?.id === target.id)?.[0];
+    if (!targetSlot) return false;
+
+    const dropKindMap = new Map(drop.affixes.map((a) => [a.kind, a.magnitude]));
+    const newAffixes: Array<{ kind: AffixKind; magnitude: number }> = target.affixes.map((a) => {
+      const dropMag = dropKindMap.get(a.kind) ?? 0;
+      const pct = 0.05 + rng() * 0.45;
+      const gain = Math.round(dropMag * pct);
+      return { kind: a.kind, magnitude: a.magnitude + gain };
+    });
+
+    const fusedItem: Item = {
+      ...target,
+      affixes: newAffixes,
+      fuseCount: target.fuseCount + 1,
+    };
+
+    set((s) => ({
+      inventory: s.inventory.filter((i) => i.id !== dropId),
+      equipped: { ...s.equipped, [targetSlot]: fusedItem },
     }));
     return true;
   },

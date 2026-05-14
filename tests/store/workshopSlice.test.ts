@@ -4,6 +4,8 @@ import {
   getCurrentSlotCount,
   getEquippedContribution,
   getUnlockedSlotKinds,
+  getFusionTarget,
+  getFuseCost,
 } from "@/store/workshopSlice";
 import { setSeed } from "@/core/rng";
 import { big } from "@/core/bigNumber";
@@ -358,5 +360,172 @@ describe("workshopSlice — resetWorkshop", () => {
     // Workshop level survives ascend (it's a long-tail achievement, like skill tree).
     expect(useGameStore.getState().workshopLevel).toBe(25);
     expect(useGameStore.getState().workshopXp).toBe(0);
+  });
+});
+
+describe("fusion — getFusionTarget", () => {
+  it("returns null when no equipped items", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }, { kind: "+speed%", magnitude: 8 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, {})).toBeNull();
+  });
+
+  it("returns null when kinds match but count differs", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "rare",
+      affixes: [{ kind: "+sell_price%", magnitude: 8 }, { kind: "+speed%", magnitude: 5 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, { brush: eq })).toBeNull();
+  });
+
+  it("returns equipped item when affix kinds match exactly (order irrelevant)", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "palette", tier: "magic",
+      affixes: [{ kind: "+speed%", magnitude: 10 }, { kind: "+sell_price%", magnitude: 8 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "rare",
+      affixes: [{ kind: "+sell_price%", magnitude: 12 }, { kind: "+speed%", magnitude: 7 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, { brush: eq })).toBe(eq);
+  });
+
+  it("slot kind of inventory item does not have to match equipped slot", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "hat", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "rare",
+      affixes: [{ kind: "+sell_price%", magnitude: 12 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, { brush: eq })).toBe(eq);
+  });
+});
+
+describe("fusion — getFuseCost", () => {
+  it("cost at fuseCount=0 equals craftCost(workshopLevel)", () => {
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "normal",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
+    };
+    const cost = getFuseCost(eq, 1);
+    // craftCost(1) = CRAFT_COST_BASE * 1.05^0 = 100; 100 * 2^0 = 100
+    expect(cost.toNumber()).toBeCloseTo(100, 1);
+  });
+
+  it("cost doubles for each prior fuse", () => {
+    const base: Item = {
+      id: "eq-1", slot: "brush", tier: "normal",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
+    };
+    const fused3: Item = { ...base, fuseCount: 3 };
+    const costBase = getFuseCost(base, 1).toNumber();
+    const costFused3 = getFuseCost(fused3, 1).toNumber();
+    expect(costFused3).toBeCloseTo(costBase * 8, 1); // 2^3 = 8
+  });
+});
+
+describe("fusion — fuseItem action", () => {
+  beforeEach(() => {
+    freshState();
+    setSeed(42);
+  });
+
+  it("returns false when dropId not in inventory", () => {
+    expect(useGameStore.getState().fuseItem("no-such-id")).toBe(false);
+  });
+
+  it("returns false when drop has no matching equipped item", () => {
+    const drop: Item = {
+      id: "drop-1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
+    };
+    useGameStore.setState({ inventory: [drop], equipped: {}, gold: big(10_000) });
+    expect(useGameStore.getState().fuseItem("drop-1")).toBe(false);
+  });
+
+  it("returns false when insufficient gold", () => {
+    const drop: Item = {
+      id: "drop-1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "rare",
+      affixes: [{ kind: "+sell_price%", magnitude: 12 }],
+      fuseCount: 0,
+    };
+    useGameStore.setState({ inventory: [drop], equipped: { brush: eq }, gold: big(0) });
+    expect(useGameStore.getState().fuseItem("drop-1")).toBe(false);
+  });
+
+  it("on success: removes drop, increments fuseCount, increases magnitude, spends gold", () => {
+    const drop: Item = {
+      id: "drop-1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: 20 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "rare",
+      affixes: [{ kind: "+sell_price%", magnitude: 12 }],
+      fuseCount: 0,
+    };
+    useGameStore.setState({ inventory: [drop], equipped: { brush: eq }, gold: big(10_000), workshopLevel: 1 });
+    expect(useGameStore.getState().fuseItem("drop-1")).toBe(true);
+
+    const state = useGameStore.getState();
+    // Drop consumed
+    expect(state.inventory.find(i => i.id === "drop-1")).toBeUndefined();
+    // Equipped item's fuseCount incremented
+    expect(state.equipped.brush!.fuseCount).toBe(1);
+    // Magnitude increased (absorbed 5%–50% of drop's 20 → added 1–10 to eq's 12)
+    const newMag = state.equipped.brush!.affixes[0]!.magnitude;
+    expect(newMag).toBeGreaterThan(12);
+    expect(newMag).toBeLessThanOrEqual(22); // 12 + 50% of 20
+    // Gold spent: craftCost(1) * 2^0 = 100
+    expect(state.gold.toNumber()).toBeLessThan(10_000);
+    expect(state.gold.toNumber()).toBeCloseTo(9_900, 0);
+  });
+
+  it("fuse cost doubles on second fuse of the same item", () => {
+    const makeItem = (id: string, mag: number): Item => ({
+      id, slot: "brush", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: mag }],
+      fuseCount: 0,
+    });
+    const drop1: Item = makeItem("drop-1", 15);
+    const drop2: Item = makeItem("drop-2", 15);
+    const eq: Item = { ...makeItem("eq-1", 10), tier: "rare" };
+
+    useGameStore.setState({ inventory: [drop1, drop2], equipped: { brush: eq }, gold: big(10_000), workshopLevel: 1 });
+    useGameStore.getState().fuseItem("drop-1");
+    const goldAfterFirst = useGameStore.getState().gold.toNumber();
+
+    // Patch drop2 into inventory (first fuse removed drop-1 and updated equip)
+    const eqAfterFirst = useGameStore.getState().equipped.brush!;
+    useGameStore.setState({ inventory: [drop2], equipped: { brush: eqAfterFirst } });
+    useGameStore.getState().fuseItem("drop-2");
+    const goldAfterSecond = useGameStore.getState().gold.toNumber();
+
+    const firstFuseCost = 10_000 - goldAfterFirst;
+    const secondFuseCost = goldAfterFirst - goldAfterSecond;
+    expect(secondFuseCost).toBeCloseTo(firstFuseCost * 2, 0);
   });
 });
