@@ -14,6 +14,7 @@ const sampleBrush: Item = {
     { kind: "+sell_price%", magnitude: 12 },
     { kind: "+speed%", magnitude: 8 },
   ],
+  fuseCount: 0,
 };
 
 beforeEach(() => {

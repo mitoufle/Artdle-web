@@ -85,6 +85,7 @@ describe("systems/ascend", () => {
           slot: "brush" as const,
           tier: "normal" as const,
           affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
+          fuseCount: 0,
         },
       ],
       equipped: {
@@ -93,6 +94,7 @@ describe("systems/ascend", () => {
           slot: "brush" as const,
           tier: "magic" as const,
           affixes: [{ kind: "+speed%" as const, magnitude: 8 }],
+          fuseCount: 0,
         },
       },
     });

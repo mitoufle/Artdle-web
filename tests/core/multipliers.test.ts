@@ -122,6 +122,7 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
           slot: "brush",
           tier: "normal",
           affixes: [{ kind: "+sell_price%", magnitude: 5 }],
+          fuseCount: 0,
         },
       },
     });
@@ -195,6 +196,7 @@ describe("getCanvasSpeedMultiplier — equipped +speed% contribution", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+speed%", magnitude: 10 }, { kind: "+speed%", magnitude: 5 }],
+      fuseCount: 0,
     };
     const state = stub({ equipped: { brush: item } });
     // bonus = SPEED_PER_LEVEL × speedLevel(1) + 0.10 + 0.05 = 0.05 + 0.15 = 0.20
@@ -211,6 +213,7 @@ describe("getCritChance — equipped +crit_chance% contribution", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+crit_chance%", magnitude: 10 }],
+      fuseCount: 0,
     };
     const state = stub({ critLevel: 5, equipped: { brush: item } });
     // critChance = 0.05 (from level) + 0.10 (from affix) = 0.15
@@ -221,6 +224,7 @@ describe("getCritChance — equipped +crit_chance% contribution", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "epic",
       affixes: [{ kind: "+crit_chance%", magnitude: 99 }],
+      fuseCount: 0,
     };
     const state = stub({ critLevel: 50, equipped: { brush: item } });
     expect(getCritChance(state)).toBe(1.0);
@@ -236,6 +240,7 @@ describe("getComboBaseChance — equipped +combo_chance% contribution", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+combo_chance%", magnitude: 15 }],
+      fuseCount: 0,
     };
     const state = stub({ comboLevel: 10, equipped: { brush: item } });
     // base = 0.20 (from level) + 0.15 (from affix) = 0.35
@@ -264,6 +269,7 @@ describe("getCanvasSize — single unified size value", () => {
         { kind: "+size%", magnitude: 10 },
         { kind: "+size%", magnitude: 7 },
       ],
+      fuseCount: 0,
     };
     const state = stub({ equipped: { brush: item } });
     expect(getCanvasSize(state)).toBeCloseTo(1.17, 5);
@@ -273,6 +279,7 @@ describe("getCanvasSize — single unified size value", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+size%", magnitude: 10 }],
+      fuseCount: 0,
     };
     const state = stub({
       sizeLevel: 4,                 // +0.60
@@ -326,6 +333,7 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
     };
     const state = {
       purchasedNodes: {},
@@ -349,6 +357,7 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+speed%", magnitude: 10 }],
+      fuseCount: 0,
     };
     const state = {
       purchasedNodes: {},
@@ -371,6 +380,7 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+crit_chance%", magnitude: 5 }],
+      fuseCount: 0,
     };
     const state = {
       purchasedNodes: {},
