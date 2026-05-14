@@ -1,5 +1,46 @@
 # Artdle Web — Handover
 
+## Workshop UI polish + fusion UX overhaul (2026-05-14, session 3)
+
+Continuation session fixing visual bugs surfaced by browser playtesting and overhauling the fusion interaction model.
+
+### What landed
+
+**Visual fixes (3 commits)**
+
+- **Affix symbols + craft button restore** (`e129148`). Introduced `AFFIX_SYMBOL` map in `workshopAffixes.ts` (`$ » ✦ ∞ ⊕`). Item squares now render `{symbol} +{magnitude}%` instead of the raw kind string. `WorkshopRoom.module.css` had three undefined CSS custom properties: `--accent` (→ `var(--gold)`/`var(--inspi)`), `--text-sm`, `--text-lg` (→ literal `12px`/`18px`). These made the craft button invisible and the XP bar blank. TrackCard labels under the canvas now prefix with the matching affix symbol (`$ Sell Price`, `» Speed`, etc.) so the two contexts share a visual vocabulary.
+- **Item square sizing** (`d9ad03d`). Squares enlarged 72 → 104 px. Room column widened 340 → 368 px (3 × 104 + 2 × 8 px gap + 24 px padding = 344 px; fits). Affix font 9 → 14 px; tier/slot labels 9 → 12 px.
+
+**Fusion UX overhaul (1 commit, `baaa91e`)**
+
+Old model: inventory item was the fusion trigger (pulsing tier-color glow, click to fuse). New model:
+- **Left-click inventory item** → equip (always). **Right-click** → discard. The ✕ hover-button is gone; `onContextMenu` calls `discard(item.id)`.
+- **Equipped slot glows rainbow when a same-tier fusion candidate sits in inventory.** Clicking the equipped slot fuses (if affordable) or unequips (if not affordable — avoids trapping the player).
+- Rainbow border is a rotating conic gradient via `@property --rainbow-angle` animated from `0deg` to `-360deg` (anti-clockwise). Two background layers on `.equippedFusion`: layer 1 `padding-box` clip restores the tile's inner background; layer 2 `border-box` clip shows the rainbow only in the 2 px border strip. `border-color: transparent` on `.equippedFusion` removes the static tier-colour ring.
+
+**Fusion correctness fixes (2 commits)**
+
+- **Tier gate** (`b5afc6e`). `getFusionTarget` added `&& eq.tier === invItem.tier`. A magic item can no longer fuse with a normal item. Test suite updated: all `fuseItem` action tests had mismatched `inv: magic` / `eq: rare` fixtures — corrected to matching tiers. New test: `"returns null when affix kinds match but tiers differ"`.
+- **`slotFusionMap` key fix** (`52ce63f`). The map was keyed by `item.slot` (inventory item's slot) instead of `target.slot` (equipped item's slot). Because `getFusionTarget` ignores slot kinds, a "hat" inventory item can match an equipped "brush". With the wrong key, the rainbow landed on whichever equipped slot shared the inventory item's label (e.g. the magic brush) even though the actual fusion target was the normal hat — making it look like a cross-tier merge. Fix: `map.set(target.slot, ...)` and `map.has(target.slot)`.
+
+### Tests + build
+
+- **775 tests passing across 80 files** (was 774; +1 new tier-gate test).
+
+### Lessons preserved
+
+- **`slotFusionMap` must key on the equipped item's slot, not the inventory item's slot.** `getFusionTarget` deliberately ignores slot kinds (a palette in inventory can fuse with an equipped brush). Any "reverse lookup" from inventory item → equipped slot must use `target.slot`, not `item.slot`, or the rainbow indicator will land on the wrong slot.
+- **`@property` + `conic-gradient(from var(--angle))` is the correct rotating-border technique.** `box-shadow` colour cycling looks like a flash, not a rotation. Register `--rainbow-angle` as `<angle>`, animate to `-360deg` for anti-clockwise, use `background-clip: padding-box / border-box` to confine the gradient to the border strip.
+- **Undefined CSS custom properties fail silently.** `--accent`, `--text-sm`, `--text-lg` were referenced in `WorkshopRoom.module.css` but never defined in `tokens.css`. Result: invisible button, blank XP bar, wrong font sizes — no build error. Always cross-check new token names against `tokens.css` before shipping.
+
+### Next (carry-overs)
+
+- Four `as unknown as GameStore` casts remain in `WorkshopRoom`, `ConstellationRoute`, `TreeRoute`, `AscensionRoute`.
+- Chip-strip spacing for 6-stage tree chips (deferred from prior session).
+- Goldsmith class node (`gold_diggers`) playtest pending.
+
+---
+
 ## Workshop overhaul + new skill-tree nodes (2026-05-14)
 
 Two back-to-back sessions delivering the workshop overhaul spec (`docs/superpowers/specs/2026-05-14-workshop-overhaul-design.md`, plan `docs/superpowers/plans/2026-05-14-workshop-overhaul.md`) followed by wiring four new designer nodes (`docs/superpowers/plans/2026-05-14-new-skill-tree-nodes.md`). Both runs used subagent-driven execution with two-stage review per task.
