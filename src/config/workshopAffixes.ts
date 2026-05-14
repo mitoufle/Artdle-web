@@ -50,8 +50,8 @@ export const AFFIX_SYMBOL_SCALE: Record<AffixKind, number> = {
   "+sell_price%":   1.0,
   "+speed%":        1.0,
   "+crit_chance%":  1.3,
-  "+combo_chance%": 1.1,
-  "+size%":         1.3,
+  "+combo_chance%": 1.2,
+  "+size%":         1.15,
 };
 
 /**
