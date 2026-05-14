@@ -21,6 +21,20 @@
   letter-spacing: 0.12em;
   color: var(--gold);
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .level {

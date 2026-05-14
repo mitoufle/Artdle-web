@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import styles from "./TrackCard.module.css";
 import type { CanvasTrackId } from "@/store/skillTreeSlice";
 import type { AffixKind } from "@/config/workshopAffixes";
-import { AFFIX_SYMBOL, AFFIX_COLOR } from "@/config/workshopAffixes";
+import { AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 
 interface Props {
@@ -28,7 +28,8 @@ export function TrackCard({
       data-track-id={trackId}
     >
       <div className={styles.label}>
-        <span style={{ color: AFFIX_COLOR[affixKind] }}>{AFFIX_SYMBOL[affixKind]}</span>{" "}{label}
+        <span className={styles.symbol} style={{ color: AFFIX_COLOR[affixKind], fontSize: `${20 * AFFIX_SYMBOL_SCALE[affixKind]}px` }}>{AFFIX_SYMBOL[affixKind]}</span>
+        {label}
       </div>
       <div className={styles.level}>Level {level}</div>
       <div className={styles.effect}>{effectLine}</div>

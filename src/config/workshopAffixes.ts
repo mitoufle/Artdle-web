@@ -45,6 +45,15 @@ export const AFFIX_COLOR: Record<AffixKind, string> = {
   "+size%":         "#4cb87a",
 };
 
+/** Font-size scale factor to compensate for glyphs with different optical sizes. */
+export const AFFIX_SYMBOL_SCALE: Record<AffixKind, number> = {
+  "+sell_price%":   1.0,
+  "+speed%":        1.0,
+  "+crit_chance%":  1.3,
+  "+combo_chance%": 1.1,
+  "+size%":         1.3,
+};
+
 /**
  * Per-tier, per-affix-kind magnitude range. Bounds are integer percent (inclusive).
  *

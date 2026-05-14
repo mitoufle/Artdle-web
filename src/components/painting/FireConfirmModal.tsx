@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import type { Worker } from "@/store/officeSlice";
 import type { AffixKind } from "@/config/workshopAffixes";
-import { AFFIX_SYMBOL, AFFIX_COLOR } from "@/config/workshopAffixes";
+import { AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
 import styles from "./OfficeRoom.module.css";
 
 const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
@@ -37,7 +37,7 @@ export function FireConfirmModal({ worker, onConfirm, onCancel }: Props): JSX.El
         <ul className={styles.modalAffixes}>
           {worker.affixes.map((a, i) => (
             <li key={i} className={styles.modalAffixRow}>
-              <span style={{ color: AFFIX_COLOR[a.kind] }}>{AFFIX_SYMBOL[a.kind]}</span>{" "}
+              <span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>{" "}
               {AFFIX_LABEL[a.kind](a.magnitude)}
             </li>
           ))}

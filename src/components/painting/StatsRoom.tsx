@@ -24,7 +24,7 @@ import {
   COMBO_PER_LEVEL,
   SIZE_PER_LEVEL,
 } from "@/core/balance";
-import { AFFIX_SYMBOL, AFFIX_COLOR } from "@/config/workshopAffixes";
+import { AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
 import styles from "./StatsRoom.module.css";
 
 interface BreakdownLine {
@@ -168,7 +168,7 @@ export function StatsRoom(): JSX.Element {
         <article key={block.name} className={styles.block}>
           <header className={styles.blockHeader}>
             <span className={styles.blockName}>
-              <span style={{ color: AFFIX_COLOR[block.kind] }}>{AFFIX_SYMBOL[block.kind]}</span>{" "}{block.name}
+              <span style={{ color: AFFIX_COLOR[block.kind], fontSize: `${13 * AFFIX_SYMBOL_SCALE[block.kind]}px` }}>{AFFIX_SYMBOL[block.kind]}</span>{" "}{block.name}
             </span>
             <span className={styles.blockTotal}>{block.totalLabel}</span>
           </header>
@@ -191,7 +191,7 @@ export function StatsRoom(): JSX.Element {
       <article className={styles.block}>
         <header className={styles.blockHeader}>
           <span className={styles.blockName}>
-            <span style={{ color: AFFIX_COLOR["+size%"] }}>{AFFIX_SYMBOL["+size%"]}</span>{" "}Size
+            <span style={{ color: AFFIX_COLOR["+size%"], fontSize: `${13 * AFFIX_SYMBOL_SCALE["+size%"]}px` }}>{AFFIX_SYMBOL["+size%"]}</span>{" "}Size
           </span>
           <span className={styles.blockTotal}>{fmtMult(size.size)}</span>
         </header>

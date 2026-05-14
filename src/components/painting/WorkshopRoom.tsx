@@ -10,7 +10,7 @@ import {
 } from "@/store/workshopSlice";
 import type { Item } from "@/store/workshopSlice";
 import type { AffixKind, SlotKind } from "@/config/workshopAffixes";
-import { ALL_SLOT_KINDS, AFFIX_SYMBOL, AFFIX_COLOR } from "@/config/workshopAffixes";
+import { ALL_SLOT_KINDS, AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
 import { formatBig } from "@/core/formatter";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import {
@@ -304,7 +304,7 @@ export function WorkshopRoom(): JSX.Element {
                   <span className={styles.slotLabel}>{slot}</span>
                   <div className={styles.affixGrid}>
                     {item.affixes.map((a, i) => (
-                      <span key={i} className={styles.affixLine}><span style={{ color: AFFIX_COLOR[a.kind] }}>{AFFIX_SYMBOL[a.kind]}</span> {a.magnitude}%</span>
+                      <span key={i} className={styles.affixLine}><span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span> {a.magnitude}%</span>
                     ))}
                   </div>
                 </button>
@@ -345,7 +345,7 @@ export function WorkshopRoom(): JSX.Element {
                     <span className={styles.slotLabel}>{item.slot}</span>
                     <div className={styles.affixGrid}>
                       {item.affixes.map((a, i) => (
-                        <span key={i} className={styles.affixLine}><span style={{ color: AFFIX_COLOR[a.kind] }}>{AFFIX_SYMBOL[a.kind]}</span> {a.magnitude}%</span>
+                        <span key={i} className={styles.affixLine}><span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span> {a.magnitude}%</span>
                       ))}
                     </div>
                   </button>
