@@ -113,6 +113,20 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getAffixMagnitudeBonus(useGameStore.getState())).toBe(25);
   });
 
+  it("getAffixMagnitudeBonus: better_scaling adds workshopLevel pp when purchased", async () => {
+    const { getAffixMagnitudeBonus } = await import("@/core/multipliers");
+    useGameStore.setState({ purchasedNodes: { better_scaling: 1 }, workshopLevel: 10 });
+    // 0 craftsmanship + 1 × 10 (workshopLevel) = 10
+    expect(getAffixMagnitudeBonus(useGameStore.getState())).toBe(10);
+  });
+
+  it("getAffixMagnitudeBonus: better_scaling stacks with Craftsmanship", async () => {
+    const { getAffixMagnitudeBonus } = await import("@/core/multipliers");
+    useGameStore.setState({ purchasedNodes: { craftsmanship: 3, better_scaling: 1 }, workshopLevel: 5 });
+    // 3 × 5 (craftsmanship) + 1 × 5 (better_scaling × workshopLevel) = 15 + 5 = 20
+    expect(getAffixMagnitudeBonus(useGameStore.getState())).toBe(20);
+  });
+
   it("getCanvasGoldMultiplier sums equipped +sell_price% items + colors", () => {
     useGameStore.setState({
       purchasedNodes: { black_white: 1 },

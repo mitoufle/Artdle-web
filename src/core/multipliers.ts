@@ -81,6 +81,7 @@ const MUSCLE_MEMORY_PER_LEVEL = 0.05;
 const BARGAIN_PER_LEVEL = 0.05;
 const BARGAIN_DISCOUNT_FLOOR = 0.5; // never reduce tree costs below 50% of base
 const CRAFTSMANSHIP_PER_LEVEL = 5; // +5 percentage points to affix min/max per level
+const BETTER_SCALING_PER_WORKSHOP_LEVEL = 1; // +1 pp to affix bounds per workshop level
 
 /**
  * Aggregate multiplier on inspiration accrual rate.
@@ -171,10 +172,11 @@ export const getPmMultiplier = (state: Pick<GameStore, "paintMastery">): number 
 
 /**
  * Bonus added to BOTH affix min and max magnitude at roll time.
- * Wiring: Craftsmanship (+1 pp per level, 5 levels = +5 pp).
+ * Wiring: Craftsmanship (+5 pp per level) + better_scaling (+workshopLevel pp per level).
  */
-export const getAffixMagnitudeBonus = (state: Pick<GameStore, "purchasedNodes">): number =>
-  getNodeLevel(state, "craftsmanship") * CRAFTSMANSHIP_PER_LEVEL;
+export const getAffixMagnitudeBonus = (state: Pick<GameStore, "purchasedNodes" | "workshopLevel">): number =>
+  getNodeLevel(state, "craftsmanship") * CRAFTSMANSHIP_PER_LEVEL
+  + getNodeLevel(state, "better_scaling") * state.workshopLevel * BETTER_SCALING_PER_WORKSHOP_LEVEL;
 
 /**
  * Crit chance (0 to 1). Clamped at 1.0 — multi-crit is out of scope
