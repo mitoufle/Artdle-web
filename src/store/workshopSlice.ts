@@ -18,6 +18,7 @@ export type { ItemTier, Affix } from "@/core/workshopRoll";
 
 const STORAGE_PER_CHEST = 2;
 const TAYLORISM_INTERVAL_S = 10;
+const THIRD_HAND_INTERVAL_REDUCTION = 0.10; // fraction reduced per level
 
 let _itemCounter = 0;
 function nextItemId(): string {
@@ -291,8 +292,11 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     const taylorismLevel = getNodeLevel(state, "taylorsim");
     if (taylorismLevel === 0) return;
 
+    const thirdHandLevel = getNodeLevel(state, "third_hand");
+    const interval = TAYLORISM_INTERVAL_S * (1 - THIRD_HAND_INTERVAL_REDUCTION * thirdHandLevel);
+
     const next = state.autoCraftTimer + deltaSeconds;
-    const grants = Math.floor(next / TAYLORISM_INTERVAL_S);
+    const grants = Math.floor(next / interval);
     if (grants > 0) {
       // Attempt one craft per interval crossed. If a craft fails (no gold,
       // full + no shredder, etc.), keep the timer accumulated for the next try.
@@ -301,7 +305,7 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
         if (!ok) break;
       }
     }
-    set({ autoCraftTimer: next - grants * TAYLORISM_INTERVAL_S });
+    set({ autoCraftTimer: next - grants * interval });
   },
 
   resetWorkshop: () =>

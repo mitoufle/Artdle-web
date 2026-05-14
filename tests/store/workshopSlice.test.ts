@@ -19,6 +19,7 @@ function freshState() {
     workshopXp: 0,
     purchasedNodes: {},
     gold: big(0),
+    autoCraftTimer: 0,
   });
 }
 
@@ -279,6 +280,38 @@ describe("workshopSlice — workshopTick (Taylorism)", () => {
     useGameStore.getState().workshopTick(5);
     expect(useGameStore.getState().inventory.length).toBe(0);
     expect(useGameStore.getState().autoCraftTimer).toBeCloseTo(5, 5);
+  });
+
+  it("third_hand L1: autocraft fires at 9 s (10% faster interval)", () => {
+    useGameStore.setState({
+      gold: big(1_000),
+      purchasedNodes: { taylorsim: 1, third_hand: 1 },
+    });
+    // interval = 10 × (1 − 0.10 × 1) = 9 s
+    useGameStore.getState().workshopTick(9);
+    expect(useGameStore.getState().inventory.length).toBe(1);
+    expect(useGameStore.getState().autoCraftTimer).toBeCloseTo(0, 5);
+  });
+
+  it("third_hand L1: 8 s tick does not fire (interval = 9 s)", () => {
+    useGameStore.setState({
+      gold: big(1_000),
+      purchasedNodes: { taylorsim: 1, third_hand: 1 },
+    });
+    useGameStore.getState().workshopTick(8);
+    expect(useGameStore.getState().inventory.length).toBe(0);
+    expect(useGameStore.getState().autoCraftTimer).toBeCloseTo(8, 5);
+  });
+
+  it("third_hand L5: autocraft fires at 5 s (50% faster interval)", () => {
+    useGameStore.setState({
+      gold: big(1_000),
+      purchasedNodes: { taylorsim: 1, third_hand: 5 },
+    });
+    // interval = 10 × (1 − 0.10 × 5) = 5 s
+    useGameStore.getState().workshopTick(5);
+    expect(useGameStore.getState().inventory.length).toBe(1);
+    expect(useGameStore.getState().autoCraftTimer).toBeCloseTo(0, 5);
   });
 });
 
