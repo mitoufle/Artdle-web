@@ -37,6 +37,53 @@ const SLOT_UNLOCK_NODE: Partial<Record<SlotKind, string>> = {
   boots: "painters_boots",
 };
 
+const SLOT_PLACEHOLDER: Record<SlotKind, JSX.Element> = {
+  brush: (
+    <svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <line x1="30" y1="5" x2="17" y2="27" />
+      <line x1="15" y1="26" x2="19" y2="29" />
+      <path d="M15 27 Q9 33 12 37 Q17 34 19 29" />
+    </svg>
+  ),
+  palette: (
+    <svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M21 7 C29 7 35 13 33 21 C31 29 22 35 14 32 C7 29 6 19 11 13 C14 9 17 7 21 7 Z" />
+      <circle cx="20" cy="30" r="3.5" />
+      <circle cx="14" cy="16" r="2" fill="currentColor" stroke="none" />
+      <circle cx="23" cy="12" r="2" fill="currentColor" stroke="none" />
+      <circle cx="29" cy="20" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  easel: (
+    <svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <line x1="20" y1="6" x2="7" y2="37" />
+      <line x1="20" y1="6" x2="33" y2="37" />
+      <line x1="11" y1="26" x2="29" y2="26" />
+      <rect x="14" y="8" width="12" height="14" rx="1" />
+    </svg>
+  ),
+  hat: (
+    <svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <ellipse cx="20" cy="28" rx="16" ry="4.5" />
+      <path d="M7 28 C7 16 12 9 20 8 C28 9 33 16 33 28" />
+      <circle cx="25" cy="9" r="2" />
+    </svg>
+  ),
+  apron: (
+    <svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <path d="M11 22 L11 36 Q11 38 13 38 L27 38 Q29 38 29 36 L29 22 Z" />
+      <path d="M15 22 L15 15 Q15 9 20 9 Q25 9 25 15 L25 22" />
+      <line x1="11" y1="22" x2="7" y2="13" />
+      <line x1="29" y1="22" x2="33" y2="13" />
+    </svg>
+  ),
+  boots: (
+    <svg viewBox="0 0 40 40" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 6 L16 24 Q15 31 20 33 L30 33 L30 30 Q24 30 23 25 L23 6 Z" />
+    </svg>
+  ),
+};
+
 // Long-form labels used in hover bodies (tests assert these strings).
 const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
   "+sell_price%": (m) => `+${m}% sell price`,
@@ -270,7 +317,8 @@ export function WorkshopRoom(): JSX.Element {
                     body="Equip an item from your inventory."
                   >
                     <div className={styles.emptySlot} aria-label={slot}>
-                      <span className={styles.slotLabel}>—</span>
+                      <span className={styles.slotIcon}>{SLOT_PLACEHOLDER[slot]}</span>
+                      <span className={styles.slotLabel}>{slot}</span>
                     </div>
                   </Hoverable>
                 </div>
