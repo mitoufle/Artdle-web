@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-15T00:00:00.000Z",
+  "designedAt": "2026-05-14T23:52:29.097Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -326,7 +326,7 @@
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [7500],
+      "costs": [10000],
       "unlocks": [],
       "position": {
         "x": 465.26627009052766,
@@ -338,11 +338,11 @@
       "name": "No More Stains",
       "description": "Unlock the Apron equipment slot.",
       "numericEffect": "+1 apron slot",
-      "parentIds": ["socks"],
+      "parentIds": ["socks", "better_scaling"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [5000],
+      "costs": [6000],
       "unlocks": [],
       "position": {
         "x": 452.17701355457996,
@@ -377,8 +377,8 @@
       "costs": [700],
       "unlocks": ["roster_slot", "queue_slot"],
       "position": {
-        "x": 198.42156378600822,
-        "y": -205.78327579593406
+        "x": 310.846862222222,
+        "y": -109.9229827387802
       }
     },
     {
@@ -393,8 +393,8 @@
       "costs": [1200, 2000, 3000, 4500, 6500],
       "unlocks": [],
       "position": {
-        "x": 113.23637860082304,
-        "y": -216.7153816647488
+        "x": 214.846862222222,
+        "y": -119.86544533947063
       }
     },
     {
@@ -406,11 +406,11 @@
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [3000],
+      "costs": [3500],
       "unlocks": ["class_speedrunner"],
       "position": {
-        "x": 71.75489711934156,
-        "y": -152.84886843114694
+        "x": 132.92686222222198,
+        "y": -128.81366168009203
       }
     },
     {
@@ -506,11 +506,11 @@
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [7500],
+      "costs": [10000],
       "unlocks": ["class_goldsmith"],
       "position": {
-        "x": 238.20837503009096,
-        "y": -109.09717320888153
+        "x": -19.39313777777801,
+        "y": -165.6007733026467
       }
     },
     {
@@ -522,11 +522,11 @@
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 3,
-      "costs": [6000, 7500, 9500],
+      "costs": [7000, 8500, 10000],
       "unlocks": ["queue_slot"],
       "position": {
-        "x": 189.53267489711934,
-        "y": -32.59570387418492
+        "x": 72.76686222222202,
+        "y": -53.250945914844635
       }
     },
     {
@@ -538,11 +538,11 @@
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 4,
-      "costs": [4000, 5500, 7500, 10000],
+      "costs": [4500, 6000, 8000, 10000],
       "unlocks": ["roster_slot"],
       "position": {
-        "x": 143.6067489711934,
-        "y": -99.3390870732643
+        "x": 49.726862222221996,
+        "y": -119.86544533947063
       }
     },
     {
@@ -554,11 +554,11 @@
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [4000, 5500, 7000, 8500, 10000],
+      "costs": [4500, 6000, 7500, 9000, 10000],
       "unlocks": ["worker_xp_mult"],
       "position": {
-        "x": 159.90304526748972,
-        "y": -158.02723436900655
+        "x": 56.126862222222,
+        "y": -171.566250863061
       }
     },
     {
@@ -570,11 +570,11 @@
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 4,
-      "costs": [6000, 7000, 8500, 10000],
+      "costs": [7000, 8000, 9000, 10000],
       "unlocks": ["hire_cost_reduction"],
       "position": {
-        "x": 78.42156378600824,
-        "y": -69.99501342539318
+        "x": -15.553137777778005,
+        "y": -82.08408745684693
       }
     },
     {
@@ -688,15 +688,15 @@
       "name": "Better Scaling",
       "description": "for each workshop level, give +# to min and max item affix magnitude ",
       "numericEffect": "1",
-      "parentIds": ["painters_hat"],
+      "parentIds": ["painters_boots"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [10000],
+      "costs": [3500],
       "unlocks": [],
       "position": {
-        "x": 478.23621153932936,
-        "y": -582.7181473829502
+        "x": 508.83726222222225,
+        "y": -296.61326582278485
       }
     },
     {
@@ -708,11 +708,11 @@
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [3000],
+      "costs": [3500],
       "unlocks": [],
       "position": {
-        "x": 439.30936649575636,
-        "y": -301.0207584231089
+        "x": 368.0372622222222,
+        "y": -321.469422324511
       }
     }
   ]
