@@ -205,12 +205,12 @@
   opacity: 1;
 }
 
-/* Tier colors via data attribute */
-[data-tier="normal"]    { --tier-color: #9e9e9e; }
-[data-tier="magic"]     { --tier-color: #4caf50; }
-[data-tier="rare"]      { --tier-color: #4b8ef1; }
-[data-tier="epic"]      { --tier-color: #b060e0; }
-[data-tier="legendary"] { --tier-color: #e8602c; }
+/* Tier colors — scoped to .itemSquare to avoid leaking into other components */
+.itemSquare[data-tier="normal"]    { --tier-color: #9e9e9e; }
+.itemSquare[data-tier="magic"]     { --tier-color: #4caf50; }
+.itemSquare[data-tier="rare"]      { --tier-color: #4b8ef1; }
+.itemSquare[data-tier="epic"]      { --tier-color: #b060e0; }
+.itemSquare[data-tier="legendary"] { --tier-color: #e8602c; }
 
 /* Fusion glow */
 @keyframes fusionPulse {

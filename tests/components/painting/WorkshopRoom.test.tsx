@@ -77,7 +77,7 @@ describe("<WorkshopRoom />", () => {
   it("inventory item has data-tier matching its tier", () => {
     useGameStore.setState({ inventory: [sampleBrush] });
     render(<WorkshopRoom />);
-    expect(screen.getByTestId(`inventory-item-${sampleBrush.id}`)).toHaveAttribute("data-tier", "magic");
+    expect(screen.getByTestId(`inventory-equip-${sampleBrush.id}`)).toHaveAttribute("data-tier", "magic");
   });
 
   it("equipped panel shows one row per unlocked slot kind (only 'brush' default)", () => {

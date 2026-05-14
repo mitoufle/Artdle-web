@@ -266,7 +266,6 @@ export function WorkshopRoom(): JSX.Element {
                   key={item.id}
                   className={styles.itemCell}
                   data-testid={`inventory-item-${item.id}`}
-                  data-tier={item.tier}
                 >
                   <Hoverable
                     title={`${TIER_LABEL[item.tier]} ${item.slot}${isFusion ? " — FUSION" : ""}`}
