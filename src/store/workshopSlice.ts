@@ -30,6 +30,7 @@ export interface Item {
   readonly slot: SlotKind;
   readonly tier: ItemTier;
   readonly affixes: ReadonlyArray<Affix>;
+  readonly fuseCount: number;
 }
 
 export interface WorkshopState {
@@ -140,6 +141,7 @@ function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<Game
     slot,
     tier,
     affixes,
+    fuseCount: 0,
   };
 
   set((s) => {

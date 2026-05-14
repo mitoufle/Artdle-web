@@ -34,7 +34,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 14;
+const SAVE_VERSION = 15;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -88,6 +88,9 @@ const SAVE_KEY = "artdle-save";
  *
  * v13 → v14 (2026-05-12): Inspiration tree rewrite — 6 stages with new
  * part IDs. Wipe currentStage + partLevels; all other slices preserved.
+ *
+ * v14 → v15 (2026-05-14): Add fuseCount field to Item. Backfill fuseCount: 0
+ * on every item in inventory and equipped.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -249,6 +252,28 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       currentStage: 0,
       partLevels: wipedPartLevels,
     };
+  }
+
+  if (fromVersion < 15) {
+    // v14 → v15 (2026-05-14): add fuseCount field to Item. Backfill fuseCount: 0
+    // on every item in inventory and equipped.
+    const addFuseCount = (item: unknown): unknown => {
+      if (item && typeof item === "object") {
+        return { fuseCount: 0, ...(item as object) };
+      }
+      return item;
+    };
+    if (Array.isArray(state.inventory)) {
+      state = { ...state, inventory: (state.inventory as unknown[]).map(addFuseCount) };
+    }
+    const equipped = state.equipped as Record<string, unknown> | undefined;
+    if (equipped && typeof equipped === "object") {
+      const fixedEquipped: Record<string, unknown> = {};
+      for (const [slot, item] of Object.entries(equipped)) {
+        fixedEquipped[slot] = addFuseCount(item);
+      }
+      state = { ...state, equipped: fixedEquipped };
+    }
   }
 
   return state as unknown as GameStore;

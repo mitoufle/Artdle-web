@@ -77,6 +77,7 @@ describe("WorkshopRoom hover wiring", () => {
           { kind: "+sell_price%", magnitude: 12 },
           { kind: "+speed%", magnitude: 8 },
         ],
+        fuseCount: 0,
       }],
     });
     render(<WorkshopRoom />);
@@ -92,6 +93,7 @@ describe("WorkshopRoom hover wiring", () => {
       inventory: [{
         id: "x-1", slot: "palette", tier: "normal",
         affixes: [{ kind: "+sell_price%", magnitude: 3 }],
+        fuseCount: 0,
       }],
     });
     render(<WorkshopRoom />);
@@ -106,6 +108,7 @@ describe("WorkshopRoom hover wiring", () => {
         brush: {
           id: "eq-1", slot: "brush", tier: "magic",
           affixes: [{ kind: "+sell_price%", magnitude: 5 }],
+          fuseCount: 0,
         },
       },
     });

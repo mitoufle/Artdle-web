@@ -28,6 +28,7 @@ const sampleBrush: Item = {
     { kind: "+sell_price%", magnitude: 12 },
     { kind: "+speed%", magnitude: 8 },
   ],
+  fuseCount: 0,
 };
 
 describe("workshopSlice — selectors", () => {
@@ -95,6 +96,7 @@ describe("workshopSlice — selectors", () => {
       affixes: [
         { kind: "+sell_price%", magnitude: 7 },
       ],
+      fuseCount: 0,
     };
     useGameStore.setState({ equipped: { brush: sampleBrush, palette } });
     // brush has +12% canvas gold + palette has +7% = 0.19
@@ -111,6 +113,7 @@ describe("workshopSlice — selectors", () => {
         { kind: "+sell_price%", magnitude: 5 },
         { kind: "+speed%", magnitude: 6 },
       ],
+      fuseCount: 0,
     };
     useGameStore.setState({ equipped: { brush: itemWithDupes } });
     expect(getEquippedContribution(useGameStore.getState(), "+sell_price%")).toBeCloseTo(0.15, 5);
@@ -130,6 +133,7 @@ describe("workshopSlice — craft", () => {
         slot: "brush" as const,
         tier: "normal" as const,
         affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
+        fuseCount: 0,
       })),
       gold: big(1_000_000),
     });
@@ -191,6 +195,7 @@ describe("workshopSlice — craft", () => {
       slot: "brush" as const,
       tier: "normal" as const,
       affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
+      fuseCount: 0,
     }));
     useGameStore.setState({
       gold: big(1_000),
@@ -212,6 +217,7 @@ describe("workshopSlice — craft", () => {
       slot: "brush" as const,
       tier: "normal" as const,
       affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
+      fuseCount: 0,
     }));
     useGameStore.setState({ gold: big(1_000), inventory: fullInv });
     expect(useGameStore.getState().craft()).toBe(false);
@@ -264,6 +270,7 @@ describe("workshopSlice — equip / unequip", () => {
       slot: "palette",
       tier: "normal",
       affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
     };
     useGameStore.setState({ inventory: [palette] });
     // palette slot not unlocked
@@ -283,6 +290,7 @@ describe("workshopSlice — equip / unequip", () => {
       slot: "brush",
       tier: "rare",
       affixes: [{ kind: "+sell_price%", magnitude: 9 }],
+      fuseCount: 0,
     };
     useGameStore.setState({
       inventory: [newBrush],
@@ -305,6 +313,7 @@ describe("workshopSlice — equip / unequip", () => {
         slot: "brush" as const,
         tier: "normal" as const,
         affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }],
+        fuseCount: 0,
       })),
       equipped: { brush: sampleBrush },
     });

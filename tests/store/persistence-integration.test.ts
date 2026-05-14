@@ -150,6 +150,7 @@ describe("persistence integration — Phase 3 fields round-trip", () => {
           slot: "brush",
           tier: "normal",
           affixes: [{ kind: "+sell_price%", magnitude: 12 }],
+          fuseCount: 0,
         },
       },
       purchasedNodes: { get_inspired: 3, black_white: 1 },
@@ -319,7 +320,7 @@ describe("save migration v2 → v3", () => {
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(14);
+    expect(parsed.version).toBe(15);
   });
 });
 
@@ -371,7 +372,7 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     const parsed = JSON.parse(raw!);
     expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(14);
+    expect(parsed.version).toBe(15);
   });
 });
 
@@ -613,7 +614,7 @@ describe("migrate v11 → v12 (+size_gold_per_level% → +size%)", () => {
     expect(migrated.workshopXp).toBe(10);
   });
 
-  it("does not change saves at v12 (migrate is no-op when fromVersion >= 12)", () => {
+  it("v12 save migrates through v13/v14/v15 (fuseCount added by v15)", () => {
     const v12State: Record<string, unknown> = {
       inventory: [{ id: "y", slot: "easel", tier: "rare", affixes: [{ kind: "+size%", magnitude: 9 }] }],
       equipped: {},
@@ -621,7 +622,7 @@ describe("migrate v11 → v12 (+size_gold_per_level% → +size%)", () => {
       workshopXp: 40,
     };
     const migrated = migrate(v12State, 12) as unknown as Record<string, unknown>;
-    expect(migrated.inventory).toEqual([{ id: "y", slot: "easel", tier: "rare", affixes: [{ kind: "+size%", magnitude: 9 }] }]);
+    expect(migrated.inventory).toEqual([{ fuseCount: 0, id: "y", slot: "easel", tier: "rare", affixes: [{ kind: "+size%", magnitude: 9 }] }]);
     expect(migrated.workshopLevel).toBe(10);
   });
 });
@@ -677,5 +678,31 @@ describe("save migration v13 → v14 (inspiration tree rewrite)", () => {
     expect(migrated.workshopLevel).toBe(4);
     expect(migrated.purchasedNodes).toEqual({ someNode: 1 });
     expect(migrated.playerId).toBe("test-uuid");
+  });
+});
+
+describe("save migration v14 → v15 (fuseCount on items)", () => {
+  it("v14 → v15: adds fuseCount: 0 to inventory items and equipped items", () => {
+    const v14Save = {
+      inventory: [
+        { id: "it-1", slot: "brush", tier: "magic", affixes: [{ kind: "+sell_price%", magnitude: 10 }] },
+        { id: "it-2", slot: "palette", tier: "rare", affixes: [{ kind: "+speed%", magnitude: 7 }] },
+      ],
+      equipped: {
+        brush: { id: "it-3", slot: "brush", tier: "normal", affixes: [{ kind: "+speed%", magnitude: 5 }] },
+      },
+      gold: big(500),
+      workshopLevel: 3,
+      workshopXp: 5,
+    };
+    const migrated = migrate(v14Save, 14) as unknown as Record<string, unknown>;
+    const inv = migrated.inventory as Array<Record<string, unknown>>;
+    expect(inv[0]!.fuseCount).toBe(0);
+    expect(inv[1]!.fuseCount).toBe(0);
+    const eq = migrated.equipped as Record<string, Record<string, unknown>>;
+    expect(eq.brush!.fuseCount).toBe(0);
+    // Other fields preserved
+    expect(migrated.workshopLevel).toBe(3);
+    expect((migrated.gold as { toString: () => string }).toString()).toBe("500");
   });
 });
