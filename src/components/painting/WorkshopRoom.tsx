@@ -257,12 +257,9 @@ export function WorkshopRoom(): JSX.Element {
                 >
                   <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
                   <span className={styles.slotLabel}>{slot}</span>
-                  {item.affixes.slice(0, 2).map((a, i) => (
-                    <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} +{a.magnitude}%</span>
+                  {item.affixes.map((a, i) => (
+                    <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} {a.magnitude}%</span>
                   ))}
-                  {item.affixes.length > 2 && (
-                    <span className={styles.affixLine}>+{item.affixes.length - 2} more</span>
-                  )}
                 </button>
               </Hoverable>
             );
@@ -299,12 +296,9 @@ export function WorkshopRoom(): JSX.Element {
                   >
                     <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
                     <span className={styles.slotLabel}>{item.slot}</span>
-                    {item.affixes.slice(0, 2).map((a, i) => (
-                      <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} +{a.magnitude}%</span>
+                    {item.affixes.map((a, i) => (
+                      <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} {a.magnitude}%</span>
                     ))}
-                    {item.affixes.length > 2 && (
-                      <span className={styles.affixLine}>+{item.affixes.length - 2} more</span>
-                    )}
                   </button>
                 </Hoverable>
               </div>

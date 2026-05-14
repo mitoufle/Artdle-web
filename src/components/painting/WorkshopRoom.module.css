@@ -115,7 +115,8 @@
 
 .itemSquare {
   width: 104px;
-  height: 104px;
+  min-height: 80px;
+  height: auto;
   border: 2px solid var(--tier-color, #9e9e9e);
   background: color-mix(in srgb, var(--tier-color, #9e9e9e) 12%, var(--bg-stone-d));
   position: relative;
@@ -137,7 +138,7 @@
 
 .emptySlot {
   width: 104px;
-  height: 104px;
+  min-height: 80px;
   border: 2px dashed var(--ink-line);
   background: transparent;
   display: flex;
@@ -151,7 +152,7 @@
 
 .lockedSlot {
   width: 104px;
-  height: 104px;
+  min-height: 80px;
   border: 2px dashed var(--ink-line);
   background: transparent;
   display: flex;
