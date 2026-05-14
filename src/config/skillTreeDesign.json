@@ -433,6 +433,45 @@
       }
     },
     {
+      "id": "painters_hat",
+      "name": "Painter's Hat",
+      "description": "Unlock the Hat equipment slot.",
+      "numericEffect": "+1 hat slot",
+      "parentIds": ["gear_up"],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [200],
+      "unlocks": [],
+      "position": null
+    },
+    {
+      "id": "painters_apron",
+      "name": "Painter's Apron",
+      "description": "Unlock the Apron equipment slot.",
+      "numericEffect": "+1 apron slot",
+      "parentIds": ["gear_up"],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [200],
+      "unlocks": [],
+      "position": null
+    },
+    {
+      "id": "painters_boots",
+      "name": "Painter's Boots",
+      "description": "Unlock the Boots equipment slot.",
+      "numericEffect": "+1 boots slot",
+      "parentIds": ["forget_pain"],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [200],
+      "unlocks": [],
+      "position": null
+    },
+    {
       "id": "monk_internship",
       "name": "Monk Internship",
       "description": "increases #% min/max affixes magnitude",

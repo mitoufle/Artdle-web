@@ -82,6 +82,8 @@ export const AFFIX_MAGNITUDE_RANGE: Record<ItemTier, Record<AffixKind, { min: nu
 export const MAX_INVENTORY_SLOTS = 3;
 
 /** Slot kind — distinct equipment families. Each unlocked kind = one equipped slot. */
-export type SlotKind = "brush" | "palette" | "easel";
+export type SlotKind = "brush" | "palette" | "easel" | "hat" | "apron" | "boots";
 
-export const ALL_SLOT_KINDS: ReadonlyArray<SlotKind> = ["brush", "palette", "easel"];
+export const ALL_SLOT_KINDS: ReadonlyArray<SlotKind> = [
+  "brush", "palette", "easel", "hat", "apron", "boots",
+];

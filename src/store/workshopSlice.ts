@@ -65,13 +65,19 @@ export interface WorkshopSlice extends WorkshopState {
 /**
  * List of slot kinds the player has unlocked. Always includes "brush".
  * Skill-tree wiring:
- *   - gear_up        → palette
- *   - forget_pain    → easel
+ *   - gear_up          → palette
+ *   - forget_pain      → easel
+ *   - painters_hat     → hat
+ *   - painters_apron   → apron
+ *   - painters_boots   → boots
  */
 export const getUnlockedSlotKinds = (state: GameStore): ReadonlyArray<SlotKind> => {
   const out: SlotKind[] = ["brush"];
-  if (getNodeLevel(state, "gear_up") > 0) out.push("palette");
-  if (getNodeLevel(state, "forget_pain") > 0) out.push("easel");
+  if (getNodeLevel(state, "gear_up") > 0)       out.push("palette");
+  if (getNodeLevel(state, "forget_pain") > 0)    out.push("easel");
+  if (getNodeLevel(state, "painters_hat") > 0)   out.push("hat");
+  if (getNodeLevel(state, "painters_apron") > 0) out.push("apron");
+  if (getNodeLevel(state, "painters_boots") > 0) out.push("boots");
   return out;
 };
 

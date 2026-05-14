@@ -47,6 +47,21 @@ describe("workshopSlice — selectors", () => {
     expect(getUnlockedSlotKinds(useGameStore.getState())).toEqual(["brush", "palette", "easel"]);
   });
 
+  it("getUnlockedSlotKinds: includes 'hat' when painters_hat purchased", () => {
+    useGameStore.setState({ purchasedNodes: { painters_hat: 1 } });
+    expect(getUnlockedSlotKinds(useGameStore.getState())).toContain("hat");
+  });
+
+  it("getUnlockedSlotKinds: includes 'apron' when painters_apron purchased", () => {
+    useGameStore.setState({ purchasedNodes: { painters_apron: 1 } });
+    expect(getUnlockedSlotKinds(useGameStore.getState())).toContain("apron");
+  });
+
+  it("getUnlockedSlotKinds: includes 'boots' when painters_boots purchased", () => {
+    useGameStore.setState({ purchasedNodes: { painters_boots: 1 } });
+    expect(getUnlockedSlotKinds(useGameStore.getState())).toContain("boots");
+  });
+
   it("getCurrentSlotCount: total of unlocked kinds", () => {
     expect(getCurrentSlotCount(useGameStore.getState())).toBe(1);
     useGameStore.setState({ purchasedNodes: { gear_up: 1 } });
