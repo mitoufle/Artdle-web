@@ -121,9 +121,9 @@
   flex-direction: column;
   gap: var(--s-1);
   padding: var(--s-2) var(--s-3);
-  border: 1px solid var(--ink-line);
+  border: 2px solid var(--tier-color, #9e9e9e);
   border-radius: var(--r-sm);
-  background: var(--bg-2);
+  background: var(--bg-stone-d);
 }
 
 .cardHeader {
@@ -146,10 +146,10 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 2px 5px;
-  border: 1px solid var(--ink-line);
+  border: 1px solid var(--tier-color, #9e9e9e);
   border-radius: 2px;
-  background: var(--bg-stone-d);
-  color: var(--ink-2);
+  background: transparent;
+  color: var(--tier-color, #9e9e9e);
 }
 
 .levelBadge {
@@ -253,29 +253,14 @@
 }
 
 /* ============================================================================
-   Tier-colored card borders
+   Tier colors — same palette as WorkshopRoom item squares
    ========================================================================= */
 
-.card[data-tier="common"] {
-  border-color: rgba(180, 180, 180, 0.6);
-}
-
-.card[data-tier="magic"] {
-  border-color: rgba(100, 150, 255, 0.7);
-}
-
-.card[data-tier="rare"] {
-  border-color: rgba(255, 216, 106, 0.8);
-}
-
-.card[data-tier="epic"] {
-  border-color: rgba(155, 108, 214, 0.9);
-}
-
-.card[data-tier="legendary"] {
-  border-color: rgba(255, 145, 60, 1);
-  box-shadow: 0 0 8px rgba(255, 145, 60, 0.5);
-}
+.card[data-tier="common"]    { --tier-color: #9e9e9e; }
+.card[data-tier="magic"]     { --tier-color: #4caf50; }
+.card[data-tier="rare"]      { --tier-color: #4b8ef1; }
+.card[data-tier="epic"]      { --tier-color: #b060e0; }
+.card[data-tier="legendary"] { --tier-color: #e8602c; }
 
 /* ============================================================================
    Fire confirmation modal
