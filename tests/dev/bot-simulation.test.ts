@@ -46,7 +46,9 @@ const DECISION_EVERY_S = 5;
 const LOG_EVERY_S = 300;     // log a row every 5 minutes of simulated time
 const MAX_S = 3 * 60 * 60;   // 3 hours of simulated time
 const SEED = 42;
-const MIN_FAME_PER_ASCEND = 100; // wait until we can gain at least this much fame (~1M inspi)
+const ASCEND_FAME_START = 5;       // first ascend at ~125K inspi
+const ASCEND_FAME_MULTIPLIER = 2;  // double the target after each ascend
+const ASCEND_FAME_CAP = 500;       // stop raising the bar here (~3M inspi)
 
 // ─── Node priority list ───────────────────────────────────────────────────────
 // Each ID listed ONCE. Bot buys the next available level of the first affordable
@@ -303,6 +305,9 @@ describe("bot-simulation", () => {
     // Track first-time flag unlocks
     let sizUnlocked = false, critUnlocked = false, comboUnlocked = false;
 
+    // Progressive ascend target: starts small, doubles each run up to the cap
+    let ascendMinFame = ASCEND_FAME_START;
+
     console.log("\n=== Artdle Bot Simulation ===");
     console.log("Format: [H:MM:SS] G/s | I/s | SP:# Sp:# Si:# Cr:# Co:# | WS:L# | Asc:# | Fame:#\n");
 
@@ -312,16 +317,17 @@ describe("bot-simulation", () => {
       if (t % DECISION_EVERY_S === 0) {
         const state = useGameStore.getState();
 
-        // Ascend only when payout is ≥ MIN_FAME_PER_ASCEND
-        if (canAscend(state) && fameOnAscend(state.inspiration) >= MIN_FAME_PER_ASCEND) {
+        // Ascend when payout meets the current progressive target
+        if (canAscend(state) && fameOnAscend(state.inspiration) >= ascendMinFame) {
           const inspireBefore = state.inspiration.toNumber();
           const fameBefore = state.fame.toNumber();
           useGameStore.getState().performAscend();
           const newFame = useGameStore.getState().fame.toNumber() - fameBefore;
           if (firstAscendAt < 0) firstAscendAt = t;
           addMilestone(t,
-            `ASCEND #${useGameStore.getState().ascendCount} — inspi was ${fmtN(inspireBefore)}, +${newFame} fame (total: ${fmtN(useGameStore.getState().fame.toNumber())})`);
+            `ASCEND #${useGameStore.getState().ascendCount} — inspi was ${fmtN(inspireBefore)}, +${newFame} fame (total: ${fmtN(useGameStore.getState().fame.toNumber())}) [next target: ${Math.min(ASCEND_FAME_CAP, ascendMinFame * ASCEND_FAME_MULTIPLIER)} fame]`);
           setSeed(SEED + useGameStore.getState().ascendCount);
+          ascendMinFame = Math.min(ASCEND_FAME_CAP, ascendMinFame * ASCEND_FAME_MULTIPLIER);
         }
 
         decideTreeParts();
