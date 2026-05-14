@@ -7,7 +7,7 @@ import {
 import { craftCost, xpToNext, MAX_WORKSHOP_LEVEL } from "@/core/balance";
 import type { Big } from "@/core/bigNumber";
 import { rng, rngPick } from "@/core/rng";
-import { rollTier, rollAffixes, TIER_XP } from "@/core/workshopRoll";
+import { rollTier, rollAffixes, TIER_XP, ALL_ITEM_TIERS, TIER_UNLOCK_LEVEL } from "@/core/workshopRoll";
 import type { ItemTier, Affix } from "@/core/workshopRoll";
 import type { GameStore } from "@/store";
 import { getNodeLevel } from "@/store/skillTreeSlice";
@@ -41,6 +41,8 @@ export interface WorkshopState {
   readonly equipped: Partial<Record<SlotKind, Item>>;
   /** Seconds since the last Taylorism auto-craft. Wraps every TAYLORISM_INTERVAL_S. */
   readonly autoCraftTimer: number;
+  /** Tiers set to true are automatically discarded after crafting (XP + gold still apply). */
+  readonly autoDiscardTiers: Partial<Record<ItemTier, boolean>>;
 }
 
 export const initialWorkshopState: WorkshopState = Object.freeze({
@@ -49,6 +51,7 @@ export const initialWorkshopState: WorkshopState = Object.freeze({
   inventory: Object.freeze([]) as ReadonlyArray<Item>,
   equipped: Object.freeze({}) as Partial<Record<SlotKind, Item>>,
   autoCraftTimer: 0,
+  autoDiscardTiers: Object.freeze({}) as Partial<Record<ItemTier, boolean>>,
 }) as WorkshopState;
 
 export interface WorkshopSlice extends WorkshopState {
@@ -57,6 +60,7 @@ export interface WorkshopSlice extends WorkshopState {
   unequipSlot: (slot: SlotKind) => boolean;
   discard: (itemId: string) => boolean;
   fuseItem: (dropId: string) => boolean;
+  toggleAutoDiscard: (tier: ItemTier) => void;
   workshopTick: (deltaSeconds: number) => void;
   resetWorkshop: () => void;
 }
@@ -158,7 +162,10 @@ export const getFuseCost = (equippedItem: Item, workshopLevel: number): Big =>
 function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<GameStore>) => void): boolean {
   const cap = getMaxInventorySlots(state);
   const hasShredder = getNodeLevel(state, "shredder") > 0;
-  if (state.inventory.length >= cap && !hasShredder) return false;
+  const allUnlockedAutoDiscarded = ALL_ITEM_TIERS
+    .filter((t) => TIER_UNLOCK_LEVEL[t] <= state.workshopLevel)
+    .every((t) => state.autoDiscardTiers[t]);
+  if (state.inventory.length >= cap && !hasShredder && !allUnlockedAutoDiscarded) return false;
 
   const cost = craftCost(state.workshopLevel);
   if (!state.spend("gold", cost)) return false;
@@ -175,12 +182,17 @@ function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<Game
     fuseCount: 0,
   };
 
+  const autoDiscard = state.autoDiscardTiers[tier] === true;
+
   set((s) => {
     let newLevel = s.workshopLevel;
     let newXp = s.workshopXp + TIER_XP[item.tier];
     while (newLevel < MAX_WORKSHOP_LEVEL && newXp >= xpToNext(newLevel)) {
       newXp -= xpToNext(newLevel);
       newLevel += 1;
+    }
+    if (autoDiscard) {
+      return { workshopLevel: newLevel, workshopXp: newXp };
     }
     // If full + shredder, drop oldest before pushing new.
     const trimmed = s.inventory.length >= cap ? s.inventory.slice(1) : s.inventory;
@@ -281,6 +293,15 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
       equipped: { ...s.equipped, [targetSlot]: fusedItem },
     }));
     return true;
+  },
+
+  toggleAutoDiscard: (tier) => {
+    set((s) => ({
+      autoDiscardTiers: {
+        ...s.autoDiscardTiers,
+        [tier]: !s.autoDiscardTiers[tier],
+      },
+    }));
   },
 
   workshopTick: (deltaSeconds) => {

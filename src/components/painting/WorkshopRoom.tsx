@@ -105,11 +105,13 @@ export function WorkshopRoom(): JSX.Element {
   const workshopLevel = useGameStore((s) => s.workshopLevel);
   const workshopXp = useGameStore((s) => s.workshopXp);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
+  const autoDiscardTiers = useGameStore((s) => s.autoDiscardTiers);
   const craft = useGameStore((s) => s.craft);
   const equipItem = useGameStore((s) => s.equipItem);
   const unequipSlot = useGameStore((s) => s.unequipSlot);
   const discard = useGameStore((s) => s.discard);
   const fuseItem = useGameStore((s) => s.fuseItem);
+  const toggleAutoDiscard = useGameStore((s) => s.toggleAutoDiscard);
 
   const helperState = { purchasedNodes } as unknown as GameStore;
   const unlockedSlots = useMemo(
@@ -125,7 +127,10 @@ export function WorkshopRoom(): JSX.Element {
   const cost = craftCost(workshopLevel);
   const xpMax = xpToNext(workshopLevel);
   const xpPct = Math.max(0, Math.min(100, (workshopXp / xpMax) * 100));
-  const canCraft = gold.gte(cost) && (inventory.length < maxSlots || hasShredder);
+  const allUnlockedAutoDiscarded = ALL_ITEM_TIERS
+    .filter((t) => TIER_UNLOCK_LEVEL[t] <= workshopLevel)
+    .every((t) => autoDiscardTiers[t]);
+  const canCraft = gold.gte(cost) && (inventory.length < maxSlots || hasShredder || allUnlockedAutoDiscarded);
 
   const fusionTargetMap = useMemo(() => {
     const map = new Map<string, Item | null>();
@@ -185,6 +190,31 @@ export function WorkshopRoom(): JSX.Element {
             Craft · {formatBig(cost)} g
           </button>
         </Hoverable>
+      </section>
+
+      <section className={styles.filterSection}>
+        <div className={styles.subhead}>Auto-discard</div>
+        <div className={styles.tierFilterRow}>
+          {ALL_ITEM_TIERS.map((tier) => {
+            const unlockLv = TIER_UNLOCK_LEVEL[tier];
+            const locked = workshopLevel < unlockLv;
+            const active = autoDiscardTiers[tier] === true;
+            return (
+              <button
+                key={tier}
+                type="button"
+                data-tier={tier}
+                data-active={active}
+                className={`${styles.tierFilterBtn}${locked ? ` ${styles.tierFilterLocked}` : ""}`}
+                disabled={locked}
+                onClick={() => toggleAutoDiscard(tier)}
+                title={locked ? `Unlocks at Lv ${unlockLv}` : (active ? "Keeping items — click to discard" : "Discarding — click to keep")}
+              >
+                {TIER_LABEL[tier]}
+              </button>
+            );
+          })}
+        </div>
       </section>
 
       <section className={styles.section}>

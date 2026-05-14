@@ -243,3 +243,53 @@
   font-size: var(--text-sm);
   color: var(--ink-3);
 }
+
+/* ── Tier auto-discard filter ── */
+
+.filterSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.tierFilterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+}
+
+.tierFilterBtn {
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border: 2px solid var(--tier-color, #9e9e9e);
+  border-radius: var(--r-sm);
+  color: var(--tier-color, #9e9e9e);
+  background: transparent;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.tierFilterBtn[data-active="true"] {
+  background: var(--tier-color, #9e9e9e);
+  color: var(--bg-0);
+}
+
+.tierFilterBtn:hover:not(:disabled):not([data-active="true"]) {
+  background: color-mix(in srgb, var(--tier-color, #9e9e9e) 20%, transparent);
+}
+
+.tierFilterLocked {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Tier colors for filter buttons */
+.tierFilterBtn[data-tier="normal"]    { --tier-color: #9e9e9e; }
+.tierFilterBtn[data-tier="magic"]     { --tier-color: #4caf50; }
+.tierFilterBtn[data-tier="rare"]      { --tier-color: #4b8ef1; }
+.tierFilterBtn[data-tier="epic"]      { --tier-color: #b060e0; }
+.tierFilterBtn[data-tier="legendary"] { --tier-color: #e8602c; }

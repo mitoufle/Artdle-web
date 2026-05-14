@@ -68,9 +68,9 @@ describe("<WorkshopRoom />", () => {
   it("inventory item card shows tier label + slot kind badge + affix list", () => {
     useGameStore.setState({ inventory: [sampleBrush] });
     render(<WorkshopRoom />);
-    expect(screen.getByText(/magic/i)).toBeInTheDocument();
-    expect(screen.getByText(/brush/i)).toBeInTheDocument();
     const equip = screen.getByTestId(`inventory-equip-${sampleBrush.id}`);
+    expect(equip).toHaveTextContent(/magic/i);
+    expect(equip).toHaveTextContent(/brush/i);
     expect(equip).toHaveTextContent("$ 12%");
     expect(equip).toHaveTextContent("» 8%");
   });

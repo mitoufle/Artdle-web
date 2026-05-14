@@ -34,7 +34,7 @@ export type GameStore =
   & WorkshopSlice
   & GameTick;
 
-const SAVE_VERSION = 15;
+const SAVE_VERSION = 16;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -91,6 +91,8 @@ const SAVE_KEY = "artdle-save";
  *
  * v14 → v15 (2026-05-14): Add fuseCount field to Item. Backfill fuseCount: 0
  * on every item in inventory and equipped.
+ *
+ * v15 → v16 (2026-05-14): Add autoDiscardTiers. Existing saves get empty object.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -274,6 +276,10 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       }
       state = { ...state, equipped: fixedEquipped };
     }
+  }
+
+  if (fromVersion < 16) {
+    state = { ...state, autoDiscardTiers: {} };
   }
 
   return state as unknown as GameStore;
