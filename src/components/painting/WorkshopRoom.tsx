@@ -139,7 +139,7 @@ export function WorkshopRoom(): JSX.Element {
     <section className={styles.room} aria-label="Workshop room">
       <Hoverable
         as="div"
-        title={() => `Workshop Lv ${useGameStore.getState().workshopLevel}`}
+        title={`Workshop Lv ${workshopLevel}`}
         body={() => levelHoverBody()}
         footer="Higher tiers drop more XP."
       >
@@ -221,14 +221,8 @@ export function WorkshopRoom(): JSX.Element {
               <Hoverable
                 key={slot}
                 as="div"
-                title={() => {
-                  const eq = useGameStore.getState().equipped[slot];
-                  return eq ? `${TIER_LABEL[eq.tier]} ${slot} — equipped` : `${slot}`;
-                }}
-                body={() => {
-                  const eq = useGameStore.getState().equipped[slot];
-                  return eq ? itemHoverBody(eq, workshopLevel, false) : "";
-                }}
+                title={`${TIER_LABEL[item.tier]} ${slot} — equipped`}
+                body={() => itemHoverBody(item, workshopLevel, false)}
                 footer="Click to unequip."
               >
                 <button
@@ -270,7 +264,7 @@ export function WorkshopRoom(): JSX.Element {
               return (
                 <div
                   key={item.id}
-                  style={{ position: "relative" }}
+                  className={styles.itemCell}
                   data-testid={`inventory-item-${item.id}`}
                   data-tier={item.tier}
                 >

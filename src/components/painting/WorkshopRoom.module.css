@@ -197,7 +197,11 @@
   transition: opacity 0.1s;
 }
 
-.itemSquare:hover .discardBtn {
+.itemCell {
+  position: relative;
+}
+
+.itemCell:hover .discardBtn {
   opacity: 1;
 }
 
