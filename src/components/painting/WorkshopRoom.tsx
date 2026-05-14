@@ -1,17 +1,24 @@
-import type { JSX } from "react";
+import { useMemo, type JSX } from "react";
 import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import { craftCost, xpToNext } from "@/core/balance";
-import { getUnlockedSlotKinds, getMaxInventorySlots } from "@/store/workshopSlice";
+import {
+  getUnlockedSlotKinds,
+  getMaxInventorySlots,
+  getFusionTarget,
+  getFuseCost,
+} from "@/store/workshopSlice";
+import type { Item } from "@/store/workshopSlice";
+import type { AffixKind, SlotKind } from "@/config/workshopAffixes";
+import { ALL_SLOT_KINDS } from "@/config/workshopAffixes";
 import { formatBig } from "@/core/formatter";
-import type { Item, ItemTier } from "@/store/workshopSlice";
-import type { AffixKind } from "@/config/workshopAffixes";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import {
   computeTierProbabilities,
   ALL_ITEM_TIERS,
   TIER_UNLOCK_LEVEL,
 } from "@/core/workshopRoll";
+import type { ItemTier } from "@/core/workshopRoll";
 import styles from "./WorkshopRoom.module.css";
 
 const TIER_LABEL: Record<ItemTier, string> = {
@@ -22,6 +29,15 @@ const TIER_LABEL: Record<ItemTier, string> = {
   legendary: "Legendary",
 };
 
+const SLOT_UNLOCK_NODE: Partial<Record<SlotKind, string>> = {
+  palette: "gear_up",
+  easel: "forget_pain",
+  hat: "painters_hat",
+  apron: "painters_apron",
+  boots: "painters_boots",
+};
+
+// Long-form labels used in hover bodies (tests assert these strings).
 const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
   "+sell_price%": (m) => `+${m}% sell price`,
   "+speed%": (m) => `+${m}% speed`,
@@ -30,12 +46,16 @@ const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
   "+size%": (m) => `+${m}% size`,
 };
 
-function affixHoverBody(affixes: Item["affixes"]): JSX.Element {
+function itemHoverBody(item: Item, workshopLevel: number, isFusion: boolean): JSX.Element {
+  const fuseCost = isFusion ? getFuseCost(item, workshopLevel) : null;
   return (
     <>
-      {affixes.map((a, i) => (
+      {item.affixes.map((a, i) => (
         <div key={i}>{AFFIX_LABEL[a.kind](a.magnitude)}</div>
       ))}
+      {item.fuseCount > 0 && <div>Fused {item.fuseCount}×</div>}
+      {isFusion && fuseCost && <div>───</div>}
+      {isFusion && fuseCost && <div>Fuse cost: {formatBig(fuseCost)} g</div>}
     </>
   );
 }
@@ -54,8 +74,7 @@ function craftHoverBody(): JSX.Element {
         const locked = level < unlock;
         return (
           <div key={t}>
-            {TIER_LABEL[t]}: {locked ? "—" : (probs[t] * 100).toFixed(2) + "%"}
-            {locked ? `  (unlocks Lv ${unlock})` : ""}
+            {TIER_LABEL[t]}: {locked ? `— (unlocks Lv ${unlock})` : (probs[t]! * 100).toFixed(2) + "%"}
           </div>
         );
       })}
@@ -65,16 +84,15 @@ function craftHoverBody(): JSX.Element {
 
 function levelHoverBody(): JSX.Element {
   const s = useGameStore.getState();
-  const lvl = s.workshopLevel;
-  const xp = s.workshopXp;
   return (
     <>
-      <div>XP: {xp} / {xpToNext(lvl)}</div>
+      <div>XP: {s.workshopXp} / {xpToNext(s.workshopLevel)}</div>
       <div>───</div>
-      <div>Tier unlocks:</div>
       {ALL_ITEM_TIERS.filter((t) => t !== "normal").map((t) => {
         const unlock = TIER_UNLOCK_LEVEL[t];
-        return <div key={t}>{TIER_LABEL[t]} at Lv {unlock}{lvl >= unlock ? " ✓" : ""}</div>;
+        return (
+          <div key={t}>{TIER_LABEL[t]} at Lv {unlock}{s.workshopLevel >= unlock ? " ✓" : ""}</div>
+        );
       })}
     </>
   );
@@ -91,17 +109,31 @@ export function WorkshopRoom(): JSX.Element {
   const equipItem = useGameStore((s) => s.equipItem);
   const unequipSlot = useGameStore((s) => s.unequipSlot);
   const discard = useGameStore((s) => s.discard);
+  const fuseItem = useGameStore((s) => s.fuseItem);
 
   const helperState = { purchasedNodes } as unknown as GameStore;
-  const unlockedSlots = getUnlockedSlotKinds(helperState);
-  const maxSlots = getMaxInventorySlots(helperState);
+  const unlockedSlots = useMemo(
+    () => getUnlockedSlotKinds(helperState),
+    [purchasedNodes],
+  );
+  const maxSlots = useMemo(
+    () => getMaxInventorySlots(helperState),
+    [purchasedNodes],
+  );
   const hasShredder = (purchasedNodes.shredder ?? 0) > 0;
+
   const cost = craftCost(workshopLevel);
   const xpMax = xpToNext(workshopLevel);
   const xpPct = Math.max(0, Math.min(100, (workshopXp / xpMax) * 100));
-
-  // Shredder lets the craft proceed when inventory is full (oldest gets shredded).
   const canCraft = gold.gte(cost) && (inventory.length < maxSlots || hasShredder);
+
+  const fusionTargetMap = useMemo(() => {
+    const map = new Map<string, Item | null>();
+    for (const item of inventory) {
+      map.set(item.id, getFusionTarget(item, equipped));
+    }
+    return map;
+  }, [inventory, equipped]);
 
   return (
     <section className={styles.room} aria-label="Workshop room">
@@ -109,7 +141,7 @@ export function WorkshopRoom(): JSX.Element {
         as="div"
         title={() => `Workshop Lv ${useGameStore.getState().workshopLevel}`}
         body={() => levelHoverBody()}
-        footer="+1 XP per craft."
+        footer="Higher tiers drop more XP."
       >
         <header className={styles.header} data-testid="workshop-level-header">
           <h2 className={styles.title}>Workshop</h2>
@@ -118,9 +150,7 @@ export function WorkshopRoom(): JSX.Element {
             <div className={styles.xpBar}>
               <div className={styles.xpFill} style={{ width: `${xpPct}%` }} />
             </div>
-            <span className={styles.xpReadout}>
-              {workshopXp} / {xpMax}
-            </span>
+            <span className={styles.xpReadout}>{workshopXp} / {xpMax}</span>
           </div>
         </header>
       </Hoverable>
@@ -129,7 +159,7 @@ export function WorkshopRoom(): JSX.Element {
         <Hoverable
           title="Craft Item"
           body={() => craftHoverBody()}
-          footer="Craft consumes gold + 1 XP."
+          footer="Craft consumes gold. Higher tiers award more XP."
         >
           <button
             type="button"
@@ -145,50 +175,82 @@ export function WorkshopRoom(): JSX.Element {
 
       <section className={styles.section}>
         <div className={styles.subhead}>
-          Equipped{" "}
-          <span className={styles.count}>
-            {Object.keys(equipped).length}/{unlockedSlots.length}
-          </span>
+          Equipped <span className={styles.count}>{Object.keys(equipped).length}/{unlockedSlots.length}</span>
         </div>
-        <ul className={styles.list}>
-          {unlockedSlots.map((slot) => (
-            <li key={slot} className={styles.row} data-testid={`slot-${slot}`}>
-              {equipped[slot] ? (
+        <div className={styles.equippedGrid}>
+          {ALL_SLOT_KINDS.map((slot) => {
+            const isUnlocked = unlockedSlots.includes(slot);
+            const item = equipped[slot];
+            const unlockNode = SLOT_UNLOCK_NODE[slot];
+
+            if (!isUnlocked) {
+              return (
                 <Hoverable
-                  title={() => {
-                    const eq = useGameStore.getState().equipped[slot];
-                    return eq ? `${TIER_LABEL[eq.tier]} ${slot} — equipped` : `${slot}`;
-                  }}
-                  body={() => {
-                    const eq = useGameStore.getState().equipped[slot];
-                    return eq ? affixHoverBody(eq.affixes) : "";
-                  }}
-                  footer="Click to unequip."
-                >
-                  <button
-                    type="button"
-                    className={styles.itemBtn}
-                    data-tier={equipped[slot]!.tier}
-                    onClick={() => unequipSlot(slot)}
-                    data-testid={`slot-unequip-${slot}`}
-                  >
-                    <span className={styles.tierTag}>{TIER_LABEL[equipped[slot]!.tier]}</span>
-                    <span className={styles.slotBadge}>{slot}</span>
-                    <ItemAffixList affixes={equipped[slot]!.affixes} />
-                  </button>
-                </Hoverable>
-              ) : (
-                <Hoverable
+                  key={slot}
                   as="div"
-                  title={`${slot} (empty)`}
-                  body="Equip an item from your inventory."
+                  title={`${slot} (locked)`}
+                  body={unlockNode ? `Purchase "${unlockNode}" in the skill tree to unlock.` : ""}
                 >
-                  <div className={styles.emptySlot}>(empty)</div>
+                  <div className={styles.lockedSlot}>
+                    <span>{slot}</span>
+                    <span>🔒</span>
+                  </div>
                 </Hoverable>
-              )}
-            </li>
-          ))}
-        </ul>
+              );
+            }
+
+            if (!item) {
+              // data-testid is on the outer wrapper so that firstElementChild
+              // of the testid element is the Hoverable's div (needed by hover tests).
+              return (
+                <div key={slot} data-testid={`slot-${slot}`}>
+                  <Hoverable
+                    as="div"
+                    title={`${slot} (empty)`}
+                    body="Equip an item from your inventory."
+                  >
+                    <div className={styles.emptySlot} aria-label={slot}>
+                      <span className={styles.slotLabel}>—</span>
+                    </div>
+                  </Hoverable>
+                </div>
+              );
+            }
+
+            return (
+              <Hoverable
+                key={slot}
+                as="div"
+                title={() => {
+                  const eq = useGameStore.getState().equipped[slot];
+                  return eq ? `${TIER_LABEL[eq.tier]} ${slot} — equipped` : `${slot}`;
+                }}
+                body={() => {
+                  const eq = useGameStore.getState().equipped[slot];
+                  return eq ? itemHoverBody(eq, workshopLevel, false) : "";
+                }}
+                footer="Click to unequip."
+              >
+                <button
+                  type="button"
+                  className={styles.itemSquare}
+                  data-tier={item.tier}
+                  onClick={() => unequipSlot(slot)}
+                  data-testid={`slot-unequip-${slot}`}
+                >
+                  <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
+                  <span className={styles.slotLabel}>{slot}</span>
+                  {item.affixes.slice(0, 2).map((a, i) => (
+                    <span key={i} className={styles.affixLine}>{a.kind} {a.magnitude}%</span>
+                  ))}
+                  {item.affixes.length > 2 && (
+                    <span className={styles.affixLine}>+{item.affixes.length - 2} more</span>
+                  )}
+                </button>
+              </Hoverable>
+            );
+          })}
+        </div>
       </section>
 
       <section className={styles.section}>
@@ -198,57 +260,58 @@ export function WorkshopRoom(): JSX.Element {
         {inventory.length === 0 ? (
           <div className={styles.empty}>Empty — click Craft to roll an item.</div>
         ) : (
-          <ul className={styles.list}>
-            {inventory.map((item) => (
-              <li
-                key={item.id}
-                className={styles.row}
-                data-testid={`inventory-item-${item.id}`}
-                data-tier={item.tier}
-              >
-                <Hoverable
-                  title={() => `${TIER_LABEL[item.tier]} ${item.slot}`}
-                  body={() => affixHoverBody(item.affixes)}
-                  footer="Click to equip."
+          <div className={styles.inventoryGrid}>
+            {inventory.map((item) => {
+              const fusionTarget = fusionTargetMap.get(item.id) ?? null;
+              const isFusion = fusionTarget !== null;
+              const fusionTier = fusionTarget?.tier ?? item.tier;
+              const canFuse = isFusion && gold.gte(getFuseCost(fusionTarget!, workshopLevel));
+
+              return (
+                <div
+                  key={item.id}
+                  style={{ position: "relative" }}
+                  data-testid={`inventory-item-${item.id}`}
+                  data-tier={item.tier}
                 >
+                  <Hoverable
+                    title={`${TIER_LABEL[item.tier]} ${item.slot}${isFusion ? " — FUSION" : ""}`}
+                    body={() => itemHoverBody(isFusion ? fusionTarget! : item, workshopLevel, isFusion)}
+                    footer={isFusion ? (canFuse ? "Click to fuse." : "Not enough gold to fuse.") : "Click to equip."}
+                  >
+                    <button
+                      type="button"
+                      className={`${styles.itemSquare}${isFusion ? ` ${styles.fusionCandidate}` : ""}`}
+                      data-tier={isFusion ? fusionTier : item.tier}
+                      onClick={() => isFusion ? fuseItem(item.id) : equipItem(item.id)}
+                      disabled={isFusion && !canFuse}
+                      data-testid={isFusion ? `inventory-fuse-${item.id}` : `inventory-equip-${item.id}`}
+                    >
+                      <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
+                      <span className={styles.slotLabel}>{item.slot}</span>
+                      {item.affixes.slice(0, 2).map((a, i) => (
+                        <span key={i} className={styles.affixLine}>{a.kind} {a.magnitude}%</span>
+                      ))}
+                      {item.affixes.length > 2 && (
+                        <span className={styles.affixLine}>+{item.affixes.length - 2} more</span>
+                      )}
+                    </button>
+                  </Hoverable>
                   <button
                     type="button"
-                    className={styles.itemBtn}
-                    data-tier={item.tier}
-                    onClick={() => equipItem(item.id)}
-                    data-testid={`inventory-equip-${item.id}`}
+                    className={styles.discardBtn}
+                    onClick={() => discard(item.id)}
+                    data-testid={`inventory-discard-${item.id}`}
+                    aria-label={`Discard ${item.id}`}
                   >
-                    <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
-                    <span className={styles.slotBadge}>{item.slot}</span>
-                    <ItemAffixList affixes={item.affixes} />
+                    ✕
                   </button>
-                </Hoverable>
-                <button
-                  type="button"
-                  className={styles.discardBtn}
-                  onClick={() => discard(item.id)}
-                  data-testid={`inventory-discard-${item.id}`}
-                  aria-label={`Discard ${item.id}`}
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
     </section>
-  );
-}
-
-function ItemAffixList({ affixes }: { affixes: Item["affixes"] }): JSX.Element {
-  return (
-    <ul className={styles.affixList}>
-      {affixes.map((a, i) => (
-        <li key={i} className={styles.affixRow}>
-          {a.kind} {a.magnitude}%
-        </li>
-      ))}
-    </ul>
   );
 }
