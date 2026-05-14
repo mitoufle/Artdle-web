@@ -104,7 +104,7 @@ export function rollWorkerAffixes(
   const out: Affix[] = [];
   for (let i = 0; i < count; i++) {
     const kind = weightedPick(pool, weights);
-    const range = AFFIX_MAGNITUDE_RANGE[kind];
+    const range = AFFIX_MAGNITUDE_RANGE["normal"][kind];
     const magnitude = rngInt(range.min, range.max);
     out.push({ kind, magnitude });
   }

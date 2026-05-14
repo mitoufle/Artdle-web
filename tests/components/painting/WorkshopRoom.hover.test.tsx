@@ -54,8 +54,8 @@ describe("WorkshopRoom hover wiring", () => {
     expect(useGameStore.getState().hoverTitle).toBe("Workshop Lv 7");
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
     expect(container.textContent).toMatch(/XP:.*12.*\//);
-    expect(container.textContent).toMatch(/Magic.*5/);
-    expect(container.textContent).toMatch(/Legendary.*70/);
+    expect(container.textContent).toMatch(/Magic.*3/);
+    expect(container.textContent).toMatch(/Legendary.*40/);
   });
 
   it("Workshop level header at Lv 35+ marks Magic, Rare, Epic with check, Legendary unmarked", () => {
@@ -63,10 +63,10 @@ describe("WorkshopRoom hover wiring", () => {
     render(<WorkshopRoom />);
     fireEvent.mouseEnter(screen.getByTestId("workshop-level-header"));
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/Magic at Lv 5 ✓/);
-    expect(container.textContent).toMatch(/Rare at Lv 15 ✓/);
-    expect(container.textContent).toMatch(/Epic at Lv 35 ✓/);
-    expect(container.textContent).toMatch(/Legendary at Lv 70(?! ✓)/);
+    expect(container.textContent).toMatch(/Magic at Lv 3 ✓/);
+    expect(container.textContent).toMatch(/Rare at Lv 8 ✓/);
+    expect(container.textContent).toMatch(/Epic at Lv 20 ✓/);
+    expect(container.textContent).toMatch(/Legendary at Lv 40(?! ✓)/);
   });
 
   it("Inventory item hover shows tier + slot in title and affix effects in body", () => {

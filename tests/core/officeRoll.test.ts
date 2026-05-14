@@ -83,7 +83,7 @@ describe("rollWorkerAffixes", () => {
     const weights = { "+sell_price%": 1, "+speed%": 1, "+size%": 1, "+crit_chance%": 1, "+combo_chance%": 1 };
     const affixes = rollWorkerAffixes(weights, "legendary", stub());
     for (const a of affixes) {
-      const range = AFFIX_MAGNITUDE_RANGE[a.kind];
+      const range = AFFIX_MAGNITUDE_RANGE["normal"][a.kind];
       expect(a.magnitude).toBeGreaterThanOrEqual(range.min);
       expect(a.magnitude).toBeLessThanOrEqual(range.max);
     }
