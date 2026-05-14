@@ -11,7 +11,7 @@
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
-import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale } from "./balance";
+import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING } from "./balance";
 import { big, type Big } from "@/core/bigNumber";
 import type { AffixKind } from "@/config/workshopAffixes";
 
@@ -179,15 +179,20 @@ export const getAffixMagnitudeBonus = (state: Pick<GameStore, "purchasedNodes" |
   + getNodeLevel(state, "better_scaling") * state.workshopLevel * BETTER_SCALING_PER_WORKSHOP_LEVEL;
 
 /**
- * Crit chance (0 to 1). Clamped at 1.0 — multi-crit is out of scope
- * (canvas-depth spec §3.4). Consumes both critLevel and equipped +crit_chance%
- * affixes additively (already fractional via getEquippedContribution).
+ * Crit chance (0..CRIT_SOFT_CAP_CEILING). Sources sum linearly up to
+ * CRIT_SOFT_CAP_THRESHOLD; above that, exponential diminishing returns compress
+ * further investment so 100% is unreachable. Formula:
+ *   raw <= threshold  →  effective = raw
+ *   raw  > threshold  →  effective = threshold + range × (1 − exp(−excess / (range × 0.5)))
+ * where range = ceiling − threshold.
  */
 export const getCritChance = (state: CanvasMultiplierInputs): number => {
-  let chance = CRIT_PER_LEVEL * state.critLevel;
-  chance += getEquippedContribution(state, "+crit_chance%"); // already fractional
-  chance += getOfficeContribution(state, "+crit_chance%").toNumber();
-  return Math.min(1.0, chance);
+  let raw = CRIT_PER_LEVEL * state.critLevel;
+  raw += getEquippedContribution(state, "+crit_chance%");
+  raw += getOfficeContribution(state, "+crit_chance%").toNumber();
+  if (raw <= CRIT_SOFT_CAP_THRESHOLD) return raw;
+  const range = CRIT_SOFT_CAP_CEILING - CRIT_SOFT_CAP_THRESHOLD;
+  return CRIT_SOFT_CAP_THRESHOLD + range * (1 - Math.exp(-(raw - CRIT_SOFT_CAP_THRESHOLD) / (range * 0.5)));
 };
 
 /**

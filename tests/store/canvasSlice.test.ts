@@ -53,31 +53,20 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().canvasProgress).toBeCloseTo(0.5, 9);
   });
 
-  it("100% crit gives ~10× sales per second vs no crit (regression: crit-throttle bug)", () => {
-    const tickCount = 100; // simulate 100 RAF frames
-    const tickDelta = 0.016; // ~16ms each (60Hz)
+  it("crit canvas (forced) paints ~10× faster than non-crit (regression: crit-throttle bug)", () => {
+    // Non-crit: canvasProgress=0.001 bypasses the initial RNG roll. effectiveTime ≈ 1.905s.
+    // 0.25s is far less than 1.905s — no sale should fire.
+    useGameStore.setState({ critLevel: 0, isCritThisCanvas: false, canvasProgress: 0.001 });
+    useGameStore.getState().canvasTick(0.25);
+    expect(useGameStore.getState().gold.toNumber()).toBe(0);
 
-    // Baseline: no crit. critLevel=0, no crit affixes, no crit nodes.
     useGameStore.getState().resetCanvas();
     useGameStore.getState().resetRunCurrencies();
-    useGameStore.setState({ critLevel: 0, isCritThisCanvas: false });
-    for (let i = 0; i < tickCount; i++) {
-      useGameStore.getState().canvasTick(tickDelta);
-    }
-    const baselineSales = useGameStore.getState().lastSale?.id ?? 0;
 
-    // 100% crit via critLevel=100 (CRIT_PER_LEVEL=0.01 × 100 = 1.0).
-    useGameStore.getState().resetCanvas();
-    useGameStore.getState().resetRunCurrencies();
-    useGameStore.setState({ critLevel: 100, isCritThisCanvas: false, lastSale: null });
-    for (let i = 0; i < tickCount; i++) {
-      useGameStore.getState().canvasTick(tickDelta);
-    }
-    const critSales = useGameStore.getState().lastSale?.id ?? 0;
-
-    // Expected: with 100% crit, canvases take 1/10 the time, so ~10× more sales.
-    // Allow some slack (8×–12×) for tick alignment and the very first canvas's fractional progress.
-    expect(critSales / Math.max(1, baselineSales)).toBeGreaterThanOrEqual(8);
+    // Forced crit: same 0.25s tick >> crit time (≈ 0.190s), so canvas completes.
+    useGameStore.setState({ critLevel: 0, isCritThisCanvas: true, canvasProgress: 0.001 });
+    useGameStore.getState().canvasTick(0.25);
+    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThan(0);
   });
 
   it("canvasTick(huge delta) — fires multiple sales until budget exhausted (multi-sale per tick)", () => {
@@ -393,15 +382,14 @@ describe("canvasTick — crit + combo behaviour", () => {
   });
 
   it("crit canvas paints in time / 10 (CRIT_SPEED_FACTOR)", () => {
-    setSeed(42);
-    useGameStore.setState({ critLevel: 100, sizeLevel: 0 });
-    // Effective time = canvasTime(0) / (speedMult × 10)
-    // sizeLevel 0: canvasTime(0) = 2; speedMult = 1.05 (speedLevel=1 default contribution)
-    // crit time = 2 / (1.05 × 10) ≈ 0.190 s
-    useGameStore.getState().canvasTick(0.18);
-    expect(useGameStore.getState().gold.toNumber()).toBe(0); // not yet crossed
-    useGameStore.getState().canvasTick(0.02);
-    expect(useGameStore.getState().gold.gt(big(0))).toBe(true); // sale fired
+    // canvasProgress=0.001 bypasses the initial RNG roll; isCritThisCanvas=true forces crit.
+    // sizeLevel 0: canvasTime(0) = 2; speedMult = 1.05 → crit time = 2/(1.05×10) ≈ 0.190s
+    // remaining = 0.190 - 0.001 = 0.189s
+    useGameStore.setState({ critLevel: 0, sizeLevel: 0, isCritThisCanvas: true, canvasProgress: 0.001 });
+    useGameStore.getState().canvasTick(0.18); // 0.18 < 0.189 → not yet done
+    expect(useGameStore.getState().gold.toNumber()).toBe(0);
+    useGameStore.getState().canvasTick(0.02); // 0.18 + 0.02 > 0.189 → sale fires
+    expect(useGameStore.getState().gold.gt(big(0))).toBe(true);
   });
 
   it("on sale, combo bonus from PRIOR comboChain applies to this canvas's gold", () => {
@@ -442,34 +430,28 @@ describe("canvasTick — crit + combo behaviour", () => {
   });
 
   it("on sale, isCritThisCanvas is re-rolled immediately in the sale path (not deferred)", () => {
-    setSeed(42);
-    useGameStore.setState({ critLevel: 100 });
-    const effTime = (2 / 1.05) / 10; // crit-hit time
+    // canvasProgress=0.001 bypasses the initial roll; isCritThisCanvas=true forces this canvas to crit.
+    // After the sale, the sale path re-rolls with critLevel=0 (0% chance) → guaranteed false.
+    // If the re-roll were deferred, the flag would still be true from the initial setState.
+    useGameStore.setState({ critLevel: 0, isCritThisCanvas: true, canvasProgress: 0.001 });
+    const effTime = (2 / 1.05) / 10; // crit time ≈ 0.190s
     useGameStore.getState().canvasTick(effTime + 0.1);
-    // With critLevel=100 (100% chance), the re-roll in the sale path should set isCritThisCanvas = true
-    expect(useGameStore.getState().isCritThisCanvas).toBe(true);
+    expect(useGameStore.getState().isCritThisCanvas).toBe(false);
   });
 
   it("rolls crit on EACH new canvas, not just the first (regression: leftover>0 used to skip the roll)", () => {
     setSeed(1);
-    useGameStore.setState({ critLevel: 100 }); // 100% crit chance → every canvas should crit
+    // critLevel=100 → effective crit ~87.5% (soft-capped). Most canvases are crits
+    // (≈0.19s each), so many sales fire in 5s — proving rolls happen per canvas.
+    useGameStore.setState({ critLevel: 100, canvasProgress: 0.001, isCritThisCanvas: true });
 
-    // Compute effective time at 100% crit: baseTime / (speedMult × 10)
-    // sizeLevel 0, sizeMult 1: canvasTime = 2; speedMult = 1.05 → effective = 2 / (1.05 × 10) ≈ 0.19s
-    // Run for 5 sales worth, with delta that creates leftover > 0 each time
-    const dt = 0.25; // larger than effective time, ensures leftover > 0 each sale
+    const dt = 0.25; // larger than crit canvas time, ensures leftover > 0 each sale
 
-    // Run enough ticks to fire ~5 sales
     for (let i = 0; i < 20; i++) {
       useGameStore.getState().canvasTick(dt);
     }
 
-    // At 100% crit chance, every canvas should have been a crit canvas (≈0.19s effective time
-    // means many sales fire). Gold should be substantial.
+    // Many crits firing → substantial gold (would be negligible if rolls were skipped)
     expect(useGameStore.getState().gold.toNumber()).toBeGreaterThan(50);
-
-    // Plus the isCritThisCanvas flag, after a sale, should be true (since crit chance = 100%).
-    // (It's reset between sales, then re-rolled in the sale path → true.)
-    expect(useGameStore.getState().isCritThisCanvas).toBe(true);
   });
 });

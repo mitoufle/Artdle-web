@@ -12,7 +12,7 @@ import {
 import { useGameStore, type GameStore } from "@/store";
 import type { Item } from "@/store/workshopSlice";
 import { big } from "@/core/bigNumber";
-import { levelScale } from "@/core/balance";
+import { levelScale, CRIT_SOFT_CAP_CEILING } from "@/core/balance";
 
 describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
   // Helper: minimal state-shape stub. The selectors only read certain fields.
@@ -180,14 +180,23 @@ describe("multipliers — crit + combo chances", () => {
     ...over,
   } as GameStore);
 
-  it("getCritChance returns CRIT_PER_LEVEL × critLevel", () => {
+  it("getCritChance is linear below soft-cap threshold (0.30)", () => {
     expect(getCritChance(stub({ critLevel: 0 }))).toBeCloseTo(0, 5);
     expect(getCritChance(stub({ critLevel: 1 }))).toBeCloseTo(0.01, 5);
-    expect(getCritChance(stub({ critLevel: 50 }))).toBeCloseTo(0.50, 5);
+    // critLevel 30 → raw = 0.30 = threshold, still linear
+    expect(getCritChance(stub({ critLevel: 30 }))).toBeCloseTo(0.30, 5);
   });
 
-  it("getCritChance clamps at 1.0 (no multi-crit in this spec)", () => {
-    expect(getCritChance(stub({ critLevel: 200 }))).toBe(1.0);
+  it("getCritChance applies diminishing returns above threshold", () => {
+    // raw = 0.50 → 0.30 + 0.65 × (1 − exp(−0.20/0.325)) ≈ 0.599
+    expect(getCritChance(stub({ critLevel: 50 }))).toBeCloseTo(0.599, 2);
+  });
+
+  it("getCritChance never exceeds CRIT_SOFT_CAP_CEILING", () => {
+    // critLevel 200: raw=2.0 → effective ≈ 0.947, clearly below ceiling
+    expect(getCritChance(stub({ critLevel: 200 }))).toBeLessThan(CRIT_SOFT_CAP_CEILING);
+    // critLevel 9999: raw=99.99 → exp underflows to 0, formula returns exactly ceiling
+    expect(getCritChance(stub({ critLevel: 9999 }))).toBeLessThanOrEqual(CRIT_SOFT_CAP_CEILING);
   });
 
   it("getComboBaseChance returns COMBO_PER_LEVEL × comboLevel", () => {
@@ -234,14 +243,16 @@ describe("getCritChance — equipped +crit_chance% contribution", () => {
     expect(getCritChance(state)).toBeCloseTo(0.15, 5);
   });
 
-  it("clamps at 1.0 even with affix contributions", () => {
+  it("never reaches CRIT_SOFT_CAP_CEILING even with heavy affix contributions", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "epic",
       affixes: [{ kind: "+crit_chance%", magnitude: 99 }],
       fuseCount: 0,
     };
     const state = stub({ critLevel: 50, equipped: { brush: item } });
-    expect(getCritChance(state)).toBe(1.0);
+    // raw = 0.50 + 0.99 = 1.49 — well into diminishing returns
+    expect(getCritChance(state)).toBeLessThan(CRIT_SOFT_CAP_CEILING);
+    expect(getCritChance(state)).toBeGreaterThan(0.90);
   });
 });
 
@@ -390,7 +401,7 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
     expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.456, 4);
   });
 
-  it("getCritChance sums canvas + items + workers additively, clamped at 1.0", () => {
+  it("getCritChance sums canvas + items + workers additively (below threshold, linear)", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+crit_chance%", magnitude: 5 }],

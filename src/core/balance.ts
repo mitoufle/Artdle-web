@@ -37,6 +37,13 @@ export const SIZE_PER_LEVEL = 0.15;
 export const CRIT_PER_LEVEL = 0.01;
 /** Crit canvases paint in `time / CRIT_SPEED_FACTOR`. Fixed at 10× (= 90% faster). */
 export const CRIT_SPEED_FACTOR = 10;
+/**
+ * Below this raw crit value the formula is linear (no compression).
+ * Above it, diminishing returns kick in — the curve asymptotes at CRIT_SOFT_CAP_CEILING.
+ */
+export const CRIT_SOFT_CAP_THRESHOLD = 0.30;
+/** Hard ceiling — effective crit asymptotes here; cannot exceed this value. */
+export const CRIT_SOFT_CAP_CEILING = 0.95;
 /** +2% base combo chance per combo level. */
 export const COMBO_PER_LEVEL = 0.02;
 /** +10% gold per chain link. */
