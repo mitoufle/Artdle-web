@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-11T21:17:58.381Z",
+  "designedAt": "2026-05-14T17:56:46.487Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -242,7 +242,7 @@
       "id": "basic_technique",
       "name": "Basic Technique",
       "description": "canvas completion time is 2% faster.",
-      "numericEffect": "1%",
+      "numericEffect": "2%",
       "parentIds": [],
       "stacking": "additive",
       "kind": "minor",
@@ -352,7 +352,10 @@
         100
       ],
       "unlocks": [],
-      "position": null
+      "position": {
+        "x": 441.37710639620025,
+        "y": 28.23823126815205
+      }
     },
     {
       "id": "shredder",
@@ -369,7 +372,10 @@
         150
       ],
       "unlocks": [],
-      "position": null
+      "position": {
+        "x": 339.90651816090605,
+        "y": 22.7209898888417
+      }
     },
     {
       "id": "taylorsim",
@@ -387,8 +393,8 @@
       ],
       "unlocks": [],
       "position": {
-        "x": 363.50974930362116,
-        "y": -32.451093210586876
+        "x": 355.7888711020825,
+        "y": -41.41694114564106
       }
     },
     {
@@ -407,8 +413,8 @@
       ],
       "unlocks": [],
       "position": {
-        "x": 448.74651810584953,
-        "y": -25.546605293440763
+        "x": 430.81327387436494,
+        "y": -36.31394281254421
       }
     },
     {
@@ -428,48 +434,49 @@
       ],
       "unlocks": [],
       "position": {
-        "x": 413.66172398885794,
-        "y": -105.49541230635427
+        "x": 400.3722044354159,
+        "y": -96.28284152878287
       }
     },
     {
       "id": "painters_hat",
-      "name": "Painter's Hat",
+      "name": "Enjoyable Shade",
       "description": "Unlock the Hat equipment slot.",
       "numericEffect": "+1 hat slot",
-      "parentIds": ["gear_up"],
+      "parentIds": [
+        "painters_apron"
+      ],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [200],
+      "costs": [
+        1
+      ],
       "unlocks": [],
-      "position": null
+      "position": {
+        "x": 465.26627009052766,
+        "y": -474.7861373077408
+      }
     },
     {
       "id": "painters_apron",
-      "name": "Painter's Apron",
+      "name": "No More Stains",
       "description": "Unlock the Apron equipment slot.",
       "numericEffect": "+1 apron slot",
-      "parentIds": ["gear_up"],
+      "parentIds": [
+        "socks"
+      ],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [200],
+      "costs": [
+        1
+      ],
       "unlocks": [],
-      "position": null
-    },
-    {
-      "id": "painters_boots",
-      "name": "Painter's Boots",
-      "description": "Unlock the Boots equipment slot.",
-      "numericEffect": "+1 boots slot",
-      "parentIds": ["forget_pain"],
-      "stacking": "additive",
-      "kind": "major",
-      "maxLevel": 1,
-      "costs": [200],
-      "unlocks": [],
-      "position": null
+      "position": {
+        "x": 452.17701355457996,
+        "y": -383.39623735031205
+      }
     },
     {
       "id": "monk_internship",
@@ -487,8 +494,8 @@
       ],
       "unlocks": [],
       "position": {
-        "x": 422.0055710306407,
-        "y": -173.30264672036827
+        "x": 353.02553876180144,
+        "y": -180.77441192469578
       }
     },
     {
@@ -928,25 +935,88 @@
       "position": null
     },
     {
-      "id": "apprentice_pool",
-      "name": "Apprentice Pool",
-      "description": "Each level adds +1 inventory slot in the Workshop.",
-      "numericEffect": "+1",
+      "id": "third_hand",
+      "name": "Third Hand",
+      "description": "reduces the time for autocraft by #% ",
+      "numericEffect": "10",
       "parentIds": [
-        "wooden_chest"
+        "forget_pain"
       ],
       "stacking": "additive",
       "kind": "minor",
-      "maxLevel": 3,
+      "maxLevel": 5,
       "costs": [
-        30,
-        60,
-        120
+        1,
+        1,
+        1,
+        1,
+        1
       ],
       "unlocks": [],
       "position": {
-        "x": 401.1142061281337,
-        "y": 17.951668584579977
+        "x": 468.7505624223442,
+        "y": -165.94351336530917
+      }
+    },
+    {
+      "id": "painters_boots",
+      "name": "Warm Feet",
+      "description": "unlocks the boot Item slot",
+      "numericEffect": "+1 boots slot",
+      "parentIds": [
+        "monk_internship",
+        "third_hand"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        1
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 423.6555821820308,
+        "y": -230.77226800165258
+      }
+    },
+    {
+      "id": "better_scaling",
+      "name": "Better Scaling",
+      "description": "for each workshop level, give +# to min and max item affix magnitude ",
+      "numericEffect": "1",
+      "parentIds": [
+        "painters_hat"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        1
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 478.23621153932936,
+        "y": -582.7181473829502
+      }
+    },
+    {
+      "id": "socks",
+      "name": "Socks",
+      "description": "equiped boots get +#% efficency.",
+      "numericEffect": "50",
+      "parentIds": [
+        "painters_boots"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        1
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 439.30936649575636,
+        "y": -301.0207584231089
       }
     }
   ]
