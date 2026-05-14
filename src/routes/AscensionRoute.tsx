@@ -4,7 +4,7 @@ import { useGameStore } from "@/store";
 import type { GameStore } from "@/store";
 import { canAscend } from "@/systems/ascend";
 import { fameOnAscend } from "@/core/balance";
-import { formatBig } from "@/core/formatter";
+import { formatBig, formatShort } from "@/core/formatter";
 import { Cavern } from "@/components/ascension/Cavern";
 import { Portal } from "@/components/ascension/Portal";
 import { ThresholdPanel } from "@/components/ascension/ThresholdPanel";
@@ -21,8 +21,8 @@ function ascendHoverBody(): JSX.Element {
   const gain = fameOnAscend(state.inspiration);
   return (
     <>
-      <div>Current inspi: {state.inspiration.toNumber().toLocaleString("en-US")}</div>
-      <div>Fame gain: +{gain}</div>
+      <div>Current inspi: {formatBig(state.inspiration)}</div>
+      <div>Fame gain: +{formatShort(gain)}</div>
       <div>───</div>
       <div>Formula: max(1, ⌊(log₁₀(inspi)−4)⁵ × 3.2⌋)</div>
       <div>Milestones:</div>
@@ -84,7 +84,7 @@ export function AscensionRoute(): JSX.Element {
                 data-testid="step-through-btn"
               >
                 {canDo
-                  ? `✦ Step Through · +${fameGain} fame ✦`
+                  ? `✦ Step Through · +${formatShort(fameGain)} fame ✦`
                   : "✦ Step Through · need 10,000 inspiration ✦"}
               </button>
             </Hoverable>
@@ -127,7 +127,7 @@ export function AscensionRoute(): JSX.Element {
                 className={styles.confirmBtn}
                 onClick={onConfirmAscend}
               >
-                Ascend  +{fameGain} fame ✦
+                Ascend  +{formatShort(fameGain)} fame ✦
               </button>
             </div>
           </div>
