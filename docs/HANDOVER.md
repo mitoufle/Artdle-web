@@ -1,5 +1,55 @@
 # Artdle Web — Handover
 
+## Workshop UI polish — session 5 (2026-05-15)
+
+Visual polish pass (empty slot placeholders, symbol scale uniformity) and crit balance fix.
+
+### What landed
+
+**Empty slot SVG placeholders (commit `cdd9388`)**
+
+- Each empty equipped slot in the Workshop now renders a slot-specific SVG sketch instead of a bare `—` dash.
+- `SLOT_PLACEHOLDER: Record<SlotKind, JSX.Element>` map added to `WorkshopRoom.tsx` with hand-drawn inline SVGs for all six slot kinds: brush (angled handle + bristle tuft), palette (kidney shape + thumb hole + 3 paint blobs), easel (A-frame legs + crossbar + canvas rect), hat (beret dome + brim ellipse + stem dot), apron (body rect + bib + straps), boots (simplified boot profile path).
+- SVGs are wrapped in `.slotIcon` span — `opacity: 0.22`, `color: var(--ink-1)` — so they read as a faint sketch hint. Slot name text below in `.slotLabel` unchanged.
+- `.emptySlot` min-height bumped 80 px → 88 px to accommodate icon + label without cramping.
+
+**Affix symbol optical size normalisation (commit `cdd9388`)**
+
+- `AFFIX_SYMBOL_SCALE: Record<AffixKind, number>` added to `workshopAffixes.ts`. Compensates for Unicode glyphs that render at different optical sizes at the same `font-size`: `✦` and `⊕` scale ×1.3, `∞` scales ×1.1, `$` and `»` stay ×1.0.
+- Applied as `fontSize: \`${base * AFFIX_SYMBOL_SCALE[kind]}px\`` everywhere symbols are rendered: item squares (base 11 px), upgrade tiles / TrackCard (base 20 px), worker/queue cards (base 11 px), StatsRoom block headers (base 13 px), FireConfirmModal affix rows (base 11 px).
+
+**Crit chance soft cap (commit `a076c97`)**
+
+- Problem: `getCritChance` was a simple additive sum clamped at 1.0. `CRIT_PER_LEVEL = 0.01` means critLevel 100 alone hits 100%; stacked items (up to 34% per legendary affix × 6 slots) and levelled workers pushed past it trivially early.
+- Fix: two new constants in `balance.ts` — `CRIT_SOFT_CAP_THRESHOLD = 0.30` and `CRIT_SOFT_CAP_CEILING = 0.95`. Below 30% raw, the formula is linear (no change). Above 30%, exponential diminishing returns:
+  ```
+  effective = threshold + range × (1 − exp(−excess / (range × 0.5)))
+  ```
+  where `range = ceiling − threshold = 0.65`. Representative curve: 30% → 30%, 50% → ~60%, 100% raw → ~87.5%, ∞ raw → 95% (floating-point floor at ceiling).
+- `getCritChance` in `multipliers.ts` updated; `CRIT_SOFT_CAP_THRESHOLD` and `CRIT_SOFT_CAP_CEILING` imported from `balance.ts`.
+- **Canvas tests made deterministic.** Three tests previously relied on `critLevel: 100` guaranteeing 100% crits:
+  - Crit timing and regression tests now use `canvasProgress: 0.001, isCritThisCanvas: true` — the `canvasProgress > 0` check bypasses the `if (progress === 0)` RNG roll, forcing the crit flag without touching the RNG.
+  - Re-roll ordering test changed to `critLevel: 0` after the forced crit: the post-sale re-roll at line 158 then guarantees `false`, making the assertion deterministic in both directions.
+
+### Tests + build
+
+- **776 tests passing across 80 files** (was 775; +1 net from split multiplier test case).
+
+### Lessons preserved
+
+- **Hard-clamp at 1.0 is the wrong design for idle-game probabilities.** Diminishing returns above a threshold lets every upgrade continue to matter at the margin while making 100% unreachable. The threshold + exponential formula is self-contained in `getCritChance` and tunable via two constants in `balance.ts`. Combo chance should get the same treatment if it becomes an issue.
+- **Tests that assert `rng() < P` for P < 1.0 are probabilistically flaky.** Bypassing the roll entirely (`canvasProgress: 0.001` + explicit `isCritThisCanvas`) is cleaner and more maintainable than picking a seed and hoping the RNG cooperates with future balance changes. Use this pattern for any future test that needs to control whether a canvas crits.
+- **`AFFIX_SYMBOL_SCALE` belongs in the config, not inline.** Different Unicode glyphs have different optical sizes at the same `font-size`. A centralised scale map keeps all rendering sites consistent without repeated magic numbers.
+
+### Next (carry-overs)
+
+- Four `as unknown as GameStore` casts remain in `WorkshopRoom`, `ConstellationRoute`, `TreeRoute`, `AscensionRoute`.
+- Chip-strip spacing for 6-stage tree chips (deferred from prior session).
+- Goldsmith class node (`gold_diggers`) playtest pending.
+- Combo chance soft cap (same treatment as crit) if playtesting shows it also trivially maxes.
+
+---
+
 ## Workshop UI polish — session 4 (2026-05-14)
 
 Visual polish pass and fusion correctness fix.
