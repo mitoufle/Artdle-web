@@ -120,10 +120,9 @@ export const getEquippedContribution = (
 };
 
 /**
- * Returns the first equipped item whose affix kinds exactly match the
- * inventory item's affix kinds (same count, same set, order irrelevant).
- * Returns null if no match. First match wins.
- * Slot kind is intentionally ignored — fusion matches solely on affix-kind multiset.
+ * Returns the first equipped item that can fuse with the inventory item:
+ * same tier AND same affix-kind multiset (same count, same set, order irrelevant).
+ * Slot kind is intentionally ignored — tier + affix kinds are the gate.
  */
 export function getFusionTarget(
   invItem: Item,
@@ -134,7 +133,7 @@ export function getFusionTarget(
     if (!eq) continue;
     if (eq.affixes.length !== invItem.affixes.length) continue;
     const eqKinds = eq.affixes.map((a) => a.kind).sort().join(",");
-    if (invKinds === eqKinds) return eq;
+    if (invKinds === eqKinds && eq.tier === invItem.tier) return eq;
   }
   return null;
 }

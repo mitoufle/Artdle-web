@@ -443,23 +443,37 @@ describe("fusion — getFusionTarget", () => {
     expect(getFusionTarget(inv, { brush: eq })).toBeNull();
   });
 
-  it("returns equipped item when affix kinds match exactly (order irrelevant)", () => {
+  it("returns equipped item when tier and affix kinds both match exactly (order irrelevant)", () => {
     const inv: Item = {
       id: "inv-1", slot: "palette", tier: "magic",
       affixes: [{ kind: "+speed%", magnitude: 10 }, { kind: "+sell_price%", magnitude: 8 }],
       fuseCount: 0,
     };
     const eq: Item = {
-      id: "eq-1", slot: "brush", tier: "rare",
+      id: "eq-1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+sell_price%", magnitude: 12 }, { kind: "+speed%", magnitude: 7 }],
       fuseCount: 0,
     };
     expect(getFusionTarget(inv, { brush: eq })).toBe(eq);
   });
 
+  it("returns null when affix kinds match but tiers differ", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "normal",
+      affixes: [{ kind: "+sell_price%", magnitude: 8 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, { brush: eq })).toBeNull();
+  });
+
   it("slot kind of inventory item does not have to match equipped slot", () => {
     const inv: Item = {
-      id: "inv-1", slot: "hat", tier: "magic",
+      id: "inv-1", slot: "hat", tier: "rare",
       affixes: [{ kind: "+sell_price%", magnitude: 10 }],
       fuseCount: 0,
     };
@@ -524,7 +538,7 @@ describe("fusion — fuseItem action", () => {
       fuseCount: 0,
     };
     const eq: Item = {
-      id: "eq-1", slot: "brush", tier: "rare",
+      id: "eq-1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+sell_price%", magnitude: 12 }],
       fuseCount: 0,
     };
@@ -539,7 +553,7 @@ describe("fusion — fuseItem action", () => {
       fuseCount: 0,
     };
     const eq: Item = {
-      id: "eq-1", slot: "brush", tier: "rare",
+      id: "eq-1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+sell_price%", magnitude: 12 }],
       fuseCount: 0,
     };
@@ -568,7 +582,7 @@ describe("fusion — fuseItem action", () => {
     });
     const drop1: Item = makeItem("drop-1", 15);
     const drop2: Item = makeItem("drop-2", 15);
-    const eq: Item = { ...makeItem("eq-1", 10), tier: "rare" };
+    const eq: Item = makeItem("eq-1", 10);
 
     useGameStore.setState({ inventory: [drop1, drop2], equipped: { brush: eq }, gold: big(10_000), workshopLevel: 1 });
     useGameStore.getState().fuseItem("drop-1");
@@ -593,7 +607,7 @@ describe("fusion — fuseItem action", () => {
       fuseCount: 0,
     });
     const eqBase: Item = {
-      id: "eq-x", slot: "brush", tier: "rare",
+      id: "eq-x", slot: "brush", tier: "magic",
       affixes: [{ kind: "+sell_price%", magnitude: 0 }],
       fuseCount: 0,
     };
