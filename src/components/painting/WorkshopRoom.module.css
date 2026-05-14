@@ -101,21 +101,21 @@
 
 .equippedGrid {
   display: grid;
-  grid-template-columns: repeat(3, 72px);
+  grid-template-columns: repeat(3, 88px);
   gap: var(--s-2);
 }
 
 .inventoryGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 72px);
+  grid-template-columns: repeat(auto-fill, 88px);
   gap: var(--s-2);
   max-height: 300px;
   overflow-y: auto;
 }
 
 .itemSquare {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   border: 2px solid var(--tier-color, #9e9e9e);
   background: color-mix(in srgb, var(--tier-color, #9e9e9e) 12%, var(--bg-stone-d));
   position: relative;
@@ -124,9 +124,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 4px;
-  font-size: 10px;
+  gap: 3px;
+  padding: 6px;
+  font-size: 11px;
   color: var(--ink-1);
   text-align: center;
 }
@@ -136,56 +136,56 @@
 }
 
 .emptySlot {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   border: 2px dashed var(--ink-line);
   background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font-size: 10px;
+  gap: 3px;
+  font-size: 11px;
   color: var(--ink-3);
 }
 
 .lockedSlot {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   border: 2px dashed var(--ink-line);
   background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font-size: 9px;
+  gap: 3px;
+  font-size: 10px;
   color: var(--ink-line);
   opacity: 0.5;
   cursor: default;
 }
 
 .slotLabel {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--ink-3);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .tierTag {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--tier-color, #9e9e9e);
   text-transform: uppercase;
 }
 
 .affixLine {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 64px;
+  max-width: 80px;
 }
 
 .discardBtn {
