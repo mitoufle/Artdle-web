@@ -120,6 +120,29 @@ describe("workshopSlice — selectors", () => {
     useGameStore.setState({ equipped: { brush: itemWithDupes } });
     expect(getEquippedContribution(useGameStore.getState(), "+sell_price%")).toBeCloseTo(0.15, 5);
   });
+
+  it("getEquippedContribution: socks × 1.5 on boots slot only", () => {
+    const boots: Item = {
+      id: "test-boots-1",
+      slot: "boots",
+      tier: "normal",
+      affixes: [{ kind: "+sell_price%", magnitude: 20 }],
+      fuseCount: 0,
+    };
+    const brush: Item = {
+      id: "test-brush-socks",
+      slot: "brush",
+      tier: "normal",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
+    };
+    // Without socks: brush 0.10 + boots 0.20 = 0.30
+    useGameStore.setState({ equipped: { boots, brush }, purchasedNodes: {} });
+    expect(getEquippedContribution(useGameStore.getState(), "+sell_price%")).toBeCloseTo(0.30, 5);
+    // With socks: brush 0.10 + boots 0.20 × 1.5 = 0.10 + 0.30 = 0.40
+    useGameStore.setState({ purchasedNodes: { socks: 1 } });
+    expect(getEquippedContribution(useGameStore.getState(), "+sell_price%")).toBeCloseTo(0.40, 5);
+  });
 });
 
 describe("workshopSlice — craft", () => {

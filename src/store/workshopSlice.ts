@@ -100,13 +100,19 @@ export const getMaxInventorySlots = (state: GameStore): number => {
 /**
  * Sum the magnitude (as fraction) of equipped affixes matching the given kind,
  * walking every equipped item across all slot kinds.
+ * Socks skill-tree node (×1.5 on boots slot only).
  */
-export const getEquippedContribution = (state: Pick<GameStore, "equipped">, kind: AffixKind): number => {
+export const getEquippedContribution = (
+  state: Pick<GameStore, "equipped" | "purchasedNodes">,
+  kind: AffixKind,
+): number => {
+  const hasSocks = getNodeLevel(state, "socks") > 0;
   let total = 0;
-  for (const item of Object.values(state.equipped)) {
+  for (const [slot, item] of Object.entries(state.equipped) as Array<[SlotKind, Item | undefined]>) {
     if (!item) continue;
+    const mult = hasSocks && slot === "boots" ? 1.5 : 1.0;
     for (const affix of item.affixes) {
-      if (affix.kind === kind) total += affix.magnitude / 100;
+      if (affix.kind === kind) total += (affix.magnitude / 100) * mult;
     }
   }
   return total;
