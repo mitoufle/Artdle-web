@@ -92,7 +92,7 @@ const SAVE_KEY = "artdle-save";
  * v14 → v15 (2026-05-14): Add fuseCount field to Item. Backfill fuseCount: 0
  * on every item in inventory and equipped.
  *
- * v15 → v16 (2026-05-14): Add autoDiscardTiers. Existing saves get empty object.
+ * v15 → v16 (2026-05-14): Add protectedTiers. Existing saves get empty object.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -279,7 +279,7 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
   }
 
   if (fromVersion < 16) {
-    state = { ...state, autoDiscardTiers: {} };
+    state = { ...state, protectedTiers: {} };
   }
 
   return state as unknown as GameStore;
