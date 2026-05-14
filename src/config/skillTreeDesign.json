@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-14T17:56:46.487Z",
+  "designedAt": "2026-05-15T00:00:00.000Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -12,13 +12,7 @@
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        1,
-        5,
-        10,
-        15,
-        20
-      ],
+      "costs": [1, 2, 3, 5, 8],
       "unlocks": [],
       "position": null
     },
@@ -27,15 +21,11 @@
       "name": "Black & White",
       "description": "canvas sell price increase by 20%",
       "numericEffect": "20%",
-      "parentIds": [
-        "basic_technique"
-      ],
+      "parentIds": ["basic_technique"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        1
-      ],
+      "costs": [3],
       "unlocks": [],
       "position": null
     },
@@ -44,15 +34,11 @@
       "name": "Magenta",
       "description": "canvas sell price increase by 30%",
       "numericEffect": "30%",
-      "parentIds": [
-        "black_white"
-      ],
+      "parentIds": ["black_white"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        5
-      ],
+      "costs": [8],
       "unlocks": [],
       "position": null
     },
@@ -61,15 +47,11 @@
       "name": "Cyan",
       "description": "canvas sell price increase by 30%",
       "numericEffect": "30%",
-      "parentIds": [
-        "black_white"
-      ],
+      "parentIds": ["black_white"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        5
-      ],
+      "costs": [8],
       "unlocks": [],
       "position": null
     },
@@ -78,15 +60,11 @@
       "name": "Yellow",
       "description": "canvas sell price increase by 30%",
       "numericEffect": "30%",
-      "parentIds": [
-        "black_white"
-      ],
+      "parentIds": ["black_white"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        5
-      ],
+      "costs": [8],
       "unlocks": [],
       "position": null
     },
@@ -95,16 +73,11 @@
       "name": "Red",
       "description": "canvas sell price increase by 40%",
       "numericEffect": "40%",
-      "parentIds": [
-        "magenta",
-        "yellow"
-      ],
+      "parentIds": ["magenta", "yellow"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        10
-      ],
+      "costs": [20],
       "unlocks": [],
       "position": null
     },
@@ -113,16 +86,11 @@
       "name": "Green",
       "description": "canvas sell price increase by 40%",
       "numericEffect": "40%",
-      "parentIds": [
-        "yellow",
-        "cyan"
-      ],
+      "parentIds": ["yellow", "cyan"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        30
-      ],
+      "costs": [20],
       "unlocks": [],
       "position": null
     },
@@ -131,16 +99,11 @@
       "name": "Blue",
       "description": "canvas sell price increase by 40%",
       "numericEffect": "40%",
-      "parentIds": [
-        "cyan",
-        "magenta"
-      ],
+      "parentIds": ["cyan", "magenta"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        10
-      ],
+      "costs": [20],
       "unlocks": [],
       "position": null
     },
@@ -149,16 +112,11 @@
       "name": "Purple",
       "description": "canvas sell price increase by 50%",
       "numericEffect": "10%",
-      "parentIds": [
-        "blue",
-        "red"
-      ],
+      "parentIds": ["blue", "red"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        20
-      ],
+      "costs": [50],
       "unlocks": [],
       "position": null
     },
@@ -167,16 +125,11 @@
       "name": "Brown",
       "description": "canvas sell price increase by 50%",
       "numericEffect": "10%",
-      "parentIds": [
-        "green",
-        "blue"
-      ],
+      "parentIds": ["green", "blue"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        20
-      ],
+      "costs": [50],
       "unlocks": [],
       "position": null
     },
@@ -185,16 +138,11 @@
       "name": "Orange",
       "description": "canvas sell price increase by 50%",
       "numericEffect": "10%",
-      "parentIds": [
-        "red",
-        "green"
-      ],
+      "parentIds": ["red", "green"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        20
-      ],
+      "costs": [50],
       "unlocks": [],
       "position": null
     },
@@ -203,17 +151,11 @@
       "name": "Rainbow",
       "description": "Canvas sell price increase by 50%",
       "numericEffect": "50%",
-      "parentIds": [
-        "orange",
-        "brown",
-        "purple"
-      ],
+      "parentIds": ["orange", "brown", "purple"],
       "stacking": "multiplicative",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        100
-      ],
+      "costs": [150],
       "unlocks": [],
       "position": null
     },
@@ -222,19 +164,11 @@
       "name": "Poke the Tree",
       "description": "Get 100 inspiration every 10 secondes.\nEach level doubles it",
       "numericEffect": "100",
-      "parentIds": [
-        "get_inspired"
-      ],
+      "parentIds": ["get_inspired"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        5,
-        10,
-        20,
-        40,
-        80
-      ],
+      "costs": [3, 5, 8, 12, 20],
       "unlocks": [],
       "position": null
     },
@@ -247,13 +181,7 @@
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        1,
-        2,
-        3,
-        4,
-        5
-      ],
+      "costs": [1, 2, 3, 4, 5],
       "unlocks": [],
       "position": null
     },
@@ -262,19 +190,11 @@
       "name": "Muscle Memory",
       "description": "canvas completion time is 5% faster.",
       "numericEffect": "5%",
-      "parentIds": [
-        "basic_technique"
-      ],
+      "parentIds": ["basic_technique"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        5,
-        10,
-        20,
-        40,
-        80
-      ],
+      "costs": [3, 5, 8, 12, 20],
       "unlocks": [],
       "position": null
     },
@@ -283,15 +203,11 @@
       "name": "Gear Up",
       "description": "Unlocks a second equipment slot for palette items.",
       "numericEffect": "+1 palette slot",
-      "parentIds": [
-        "muscle_memory"
-      ],
+      "parentIds": ["muscle_memory"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        100
-      ],
+      "costs": [15],
       "unlocks": [],
       "position": null
     },
@@ -300,19 +216,11 @@
       "name": "Bargain",
       "description": "Each level decreases inspiration tree upgrade cost by 5%",
       "numericEffect": "5%",
-      "parentIds": [
-        "get_inspired"
-      ],
+      "parentIds": ["get_inspired"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        5,
-        10,
-        20,
-        40,
-        80
-      ],
+      "costs": [3, 5, 8, 12, 20],
       "unlocks": [],
       "position": null
     },
@@ -321,19 +229,11 @@
       "name": "Craftsmanship",
       "description": "Each level add %5 to min and max item rollable affix magnitude.",
       "numericEffect": "5%",
-      "parentIds": [
-        "gear_up"
-      ],
+      "parentIds": ["gear_up"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        100,
-        100,
-        100,
-        100,
-        100
-      ],
+      "costs": [20, 35, 60, 100, 160],
       "unlocks": [],
       "position": null
     },
@@ -342,15 +242,11 @@
       "name": "Wooden Chest",
       "description": "adds 2 item storage slots",
       "numericEffect": "2",
-      "parentIds": [
-        "craftsmanship"
-      ],
+      "parentIds": ["craftsmanship"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        100
-      ],
+      "costs": [50],
       "unlocks": [],
       "position": {
         "x": 441.37710639620025,
@@ -362,15 +258,11 @@
       "name": "shredder",
       "description": "you can craft when inventory is full, it will destroy the oldest crafted item inside.",
       "numericEffect": "1",
-      "parentIds": [
-        "craftsmanship"
-      ],
+      "parentIds": ["craftsmanship"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        150
-      ],
+      "costs": [50],
       "unlocks": [],
       "position": {
         "x": 339.90651816090605,
@@ -382,15 +274,11 @@
       "name": "Taylorism",
       "description": "Autocraft an Item every 10s. ",
       "numericEffect": "1",
-      "parentIds": [
-        "shredder"
-      ],
+      "parentIds": ["shredder"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        150
-      ],
+      "costs": [120],
       "unlocks": [],
       "position": {
         "x": 355.7888711020825,
@@ -402,15 +290,11 @@
       "name": "Steel Chest",
       "description": "adds 2 item storage slots",
       "numericEffect": "2",
-      "parentIds": [
-        "wooden_chest"
-      ],
+      "parentIds": ["wooden_chest"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        200
-      ],
+      "costs": [120],
       "unlocks": [],
       "position": {
         "x": 430.81327387436494,
@@ -422,16 +306,11 @@
       "name": "Forget your back pain",
       "description": "Unlock Easel item slot",
       "numericEffect": "1",
-      "parentIds": [
-        "steel_chest",
-        "taylorsim"
-      ],
+      "parentIds": ["steel_chest", "taylorsim"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        0
-      ],
+      "costs": [300],
       "unlocks": [],
       "position": {
         "x": 400.3722044354159,
@@ -443,15 +322,11 @@
       "name": "Enjoyable Shade",
       "description": "Unlock the Hat equipment slot.",
       "numericEffect": "+1 hat slot",
-      "parentIds": [
-        "painters_apron"
-      ],
+      "parentIds": ["painters_apron"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        1
-      ],
+      "costs": [7500],
       "unlocks": [],
       "position": {
         "x": 465.26627009052766,
@@ -463,15 +338,11 @@
       "name": "No More Stains",
       "description": "Unlock the Apron equipment slot.",
       "numericEffect": "+1 apron slot",
-      "parentIds": [
-        "socks"
-      ],
+      "parentIds": ["socks"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        1
-      ],
+      "costs": [5000],
       "unlocks": [],
       "position": {
         "x": 452.17701355457996,
@@ -483,15 +354,11 @@
       "name": "Monk Internship",
       "description": "increases #% min/max affixes magnitude",
       "numericEffect": "10",
-      "parentIds": [
-        "forget_pain"
-      ],
+      "parentIds": ["forget_pain"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        10
-      ],
+      "costs": [700],
       "unlocks": [],
       "position": {
         "x": 353.02553876180144,
@@ -503,43 +370,31 @@
       "name": "Entrepreneur",
       "description": "unlocks the Worker Office tab ",
       "numericEffect": "1",
-      "parentIds": [
-        "basic_technique"
-      ],
+      "parentIds": ["forget_pain"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        10
-      ],
-      "unlocks": [
-        "roster_slot",
-        "queue_slot"
-      ],
-      "position": null
+      "costs": [700],
+      "unlocks": ["roster_slot", "queue_slot"],
+      "position": {
+        "x": 198.42156378600822,
+        "y": -205.78327579593406
+      }
     },
     {
       "id": "education",
       "name": "Education",
       "description": "increase by #% workers affixes magnitude",
       "numericEffect": "1",
-      "parentIds": [
-        "entrepreneur"
-      ],
+      "parentIds": ["entrepreneur"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        1,
-        1,
-        1,
-        1,
-        1
-      ],
+      "costs": [1200, 2000, 3000, 4500, 6500],
       "unlocks": [],
       "position": {
-        "x": 282.3351366106128,
-        "y": 109.65336380684508
+        "x": 113.23637860082304,
+        "y": -216.7153816647488
       }
     },
     {
@@ -547,21 +402,15 @@
       "name": "Free will",
       "description": "unlocks Speedrunner worker class",
       "numericEffect": "1",
-      "parentIds": [
-        "education"
-      ],
+      "parentIds": ["education"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        1
-      ],
-      "unlocks": [
-        "class_speedrunner"
-      ],
+      "costs": [3000],
+      "unlocks": ["class_speedrunner"],
       "position": {
-        "x": 259.62623370817425,
-        "y": 32.4209215928625
+        "x": 71.75489711934156,
+        "y": -152.84886843114694
       }
     },
     {
@@ -569,18 +418,12 @@
       "name": "Size matters",
       "description": "unlocks Size upgrade for your canvas (and associated affixes)",
       "numericEffect": "1",
-      "parentIds": [
-        "muscle_memory"
-      ],
+      "parentIds": ["muscle_memory"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        5
-      ],
-      "unlocks": [
-        "canvas_size"
-      ],
+      "costs": [10],
+      "unlocks": ["canvas_size"],
       "position": null
     },
     {
@@ -588,19 +431,11 @@
       "name": "Big picture",
       "description": "each level increase by 5% canvas completion time but increases its sell value by 15% per size canvas upgrade",
       "numericEffect": "5 - 15",
-      "parentIds": [
-        "size_matters"
-      ],
+      "parentIds": ["size_matters"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        10,
-        10,
-        10,
-        10,
-        10
-      ],
+      "costs": [20, 35, 60, 100, 160],
       "unlocks": [],
       "position": null
     },
@@ -609,18 +444,12 @@
       "name": "Genius Episode",
       "description": "unlocks Critical upgrade for your canvas (and associated affixes)",
       "numericEffect": "1",
-      "parentIds": [
-        "muscle_memory"
-      ],
+      "parentIds": ["muscle_memory"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        5
-      ],
-      "unlocks": [
-        "canvas_crit"
-      ],
+      "costs": [10],
+      "unlocks": ["canvas_crit"],
       "position": null
     },
     {
@@ -628,19 +457,11 @@
       "name": "Consistency",
       "description": "increases crit chance by 1%",
       "numericEffect": "1",
-      "parentIds": [
-        "genius_episode"
-      ],
+      "parentIds": ["genius_episode"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        10,
-        10,
-        10,
-        10,
-        10
-      ],
+      "costs": [20, 35, 60, 100, 160],
       "unlocks": [],
       "position": null
     },
@@ -649,20 +470,11 @@
       "name": "Fast Learner",
       "description": "each canvas upgrade is 2% more effective",
       "numericEffect": "2",
-      "parentIds": [
-        "big_picture",
-        "consistency"
-      ],
+      "parentIds": ["big_picture", "consistency"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        20,
-        40,
-        80,
-        160,
-        320
-      ],
+      "costs": [50, 100, 200, 350, 600],
       "unlocks": [],
       "position": {
         "x": 510.12609099350044,
@@ -674,18 +486,12 @@
       "name": "unrelentless",
       "description": "unlocks Combo upgrade for your canvas (and associated affixes)",
       "numericEffect": "1",
-      "parentIds": [
-        "fast_learner"
-      ],
+      "parentIds": ["fast_learner"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        50
-      ],
-      "unlocks": [
-        "canvas_combo"
-      ],
+      "costs": [150],
+      "unlocks": ["canvas_combo"],
       "position": {
         "x": 553.2033426183845,
         "y": 121.51898734177215
@@ -696,19 +502,12 @@
       "name": "Gold diggers",
       "description": "Unlocks the Goldsmith worker class.",
       "numericEffect": "1",
-      "parentIds": [
-        "accelerator",
-        "hire_manager"
-      ],
+      "parentIds": ["accelerator", "hire_manager"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        5
-      ],
-      "unlocks": [
-        "class_goldsmith"
-      ],
+      "costs": [7500],
+      "unlocks": ["class_goldsmith"],
       "position": {
         "x": 238.20837503009096,
         "y": -109.09717320888153
@@ -719,23 +518,15 @@
       "name": "Recruiter",
       "description": "Each level adds +1 queue slot in the Office.",
       "numericEffect": "+1",
-      "parentIds": [
-        "hire_manager"
-      ],
+      "parentIds": ["hire_manager"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 3,
-      "costs": [
-        3,
-        6,
-        12
-      ],
-      "unlocks": [
-        "queue_slot"
-      ],
+      "costs": [6000, 7500, 9500],
+      "unlocks": ["queue_slot"],
       "position": {
-        "x": 160.2603713160705,
-        "y": -86.69274922217909
+        "x": 189.53267489711934,
+        "y": -32.59570387418492
       }
     },
     {
@@ -743,24 +534,15 @@
       "name": "Hire Manager",
       "description": "Each level adds +1 roster slot for hired workers.",
       "numericEffect": "+1",
-      "parentIds": [
-        "free_will"
-      ],
+      "parentIds": ["free_will"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 4,
-      "costs": [
-        5,
-        10,
-        20,
-        40
-      ],
-      "unlocks": [
-        "roster_slot"
-      ],
+      "costs": [4000, 5500, 7500, 10000],
+      "unlocks": ["roster_slot"],
       "position": {
-        "x": 197.92327581760043,
-        "y": -38.855562185379256
+        "x": 143.6067489711934,
+        "y": -99.3390870732643
       }
     },
     {
@@ -768,25 +550,15 @@
       "name": "Accelerator Program",
       "description": "Each level boosts the XP workers earn per canvas sale by +10%.",
       "numericEffect": "10%",
-      "parentIds": [
-        "free_will"
-      ],
+      "parentIds": ["free_will"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        20,
-        40,
-        80,
-        160,
-        320
-      ],
-      "unlocks": [
-        "worker_xp_mult"
-      ],
+      "costs": [4000, 5500, 7000, 8500, 10000],
+      "unlocks": ["worker_xp_mult"],
       "position": {
-        "x": 296.5769434127722,
-        "y": -57.63513001557999
+        "x": 159.90304526748972,
+        "y": -158.02723436900655
       }
     },
     {
@@ -794,24 +566,15 @@
       "name": "Bookkeeper",
       "description": "Each level reduces hire cost by 10% (floored at 10% of base).",
       "numericEffect": "-10%",
-      "parentIds": [
-        "hire_manager"
-      ],
+      "parentIds": ["hire_manager"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 4,
-      "costs": [
-        10,
-        20,
-        50,
-        100
-      ],
-      "unlocks": [
-        "hire_cost_reduction"
-      ],
+      "costs": [6000, 7000, 8500, 10000],
+      "unlocks": ["hire_cost_reduction"],
       "position": {
-        "x": 129.80496019464238,
-        "y": -31.198189702936347
+        "x": 78.42156378600824,
+        "y": -69.99501342539318
       }
     },
     {
@@ -819,21 +582,12 @@
       "name": "Afterburner",
       "description": "Each level reduces combo decay by 1 percentage point per chain link.",
       "numericEffect": "-1pp",
-      "parentIds": [
-        "unrelentless"
-      ],
+      "parentIds": ["unrelentless"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 4,
-      "costs": [
-        20,
-        40,
-        80,
-        160
-      ],
-      "unlocks": [
-        "combo_decay_reduction"
-      ],
+      "costs": [300, 500, 800, 1200],
+      "unlocks": ["combo_decay_reduction"],
       "position": {
         "x": 589.9721448467967,
         "y": 77.33026467203683
@@ -844,20 +598,12 @@
       "name": "Prismatic Eye",
       "description": "Each level adds +20% gold on crit canvases (in addition to the speed bonus).",
       "numericEffect": "20%",
-      "parentIds": [
-        "consistency"
-      ],
+      "parentIds": ["consistency"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 3,
-      "costs": [
-        30,
-        60,
-        120
-      ],
-      "unlocks": [
-        "crit_gold_bonus"
-      ],
+      "costs": [50, 100, 200],
+      "unlocks": ["crit_gold_bonus"],
       "position": {
         "x": 521.4484679665738,
         "y": 58.68814729574224
@@ -868,22 +614,12 @@
       "name": "Expanding Horizon",
       "description": "Each level adds +5% to canvas size.",
       "numericEffect": "5%",
-      "parentIds": [
-        "big_picture"
-      ],
+      "parentIds": ["big_picture"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        25,
-        50,
-        100,
-        200,
-        400
-      ],
-      "unlocks": [
-        "canvas_size_bonus"
-      ],
+      "costs": [50, 90, 150, 250, 400],
+      "unlocks": ["canvas_size_bonus"],
       "position": {
         "x": 559.2048994763231,
         "y": 242.03047952333515
@@ -894,21 +630,12 @@
       "name": "Enlightenment",
       "description": "Each level reduces the inspiration needed to ascend by 5%.",
       "numericEffect": "-5%",
-      "parentIds": [
-        "Bargain"
-      ],
+      "parentIds": ["Bargain"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 4,
-      "costs": [
-        50,
-        100,
-        200,
-        400
-      ],
-      "unlocks": [
-        "ascend_threshold_reduction"
-      ],
+      "costs": [8, 15, 25, 40],
+      "unlocks": ["ascend_threshold_reduction"],
       "position": null
     },
     {
@@ -916,22 +643,12 @@
       "name": "Patron",
       "description": "Each level boosts inspiration gain by +10% (stacks with Get Inspired).",
       "numericEffect": "10%",
-      "parentIds": [
-        "poke_tree"
-      ],
+      "parentIds": ["poke_tree"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        40,
-        80,
-        160,
-        320,
-        640
-      ],
-      "unlocks": [
-        "inspi_mult_bonus"
-      ],
+      "costs": [8, 15, 25, 40, 60],
+      "unlocks": ["inspi_mult_bonus"],
       "position": null
     },
     {
@@ -939,19 +656,11 @@
       "name": "Third Hand",
       "description": "reduces the time for autocraft by #% ",
       "numericEffect": "10",
-      "parentIds": [
-        "forget_pain"
-      ],
+      "parentIds": ["forget_pain"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 5,
-      "costs": [
-        1,
-        1,
-        1,
-        1,
-        1
-      ],
+      "costs": [600, 900, 1400, 2000, 3000],
       "unlocks": [],
       "position": {
         "x": 468.7505624223442,
@@ -963,16 +672,11 @@
       "name": "Warm Feet",
       "description": "unlocks the boot Item slot",
       "numericEffect": "+1 boots slot",
-      "parentIds": [
-        "monk_internship",
-        "third_hand"
-      ],
+      "parentIds": ["monk_internship", "third_hand"],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
-      "costs": [
-        1
-      ],
+      "costs": [1500],
       "unlocks": [],
       "position": {
         "x": 423.6555821820308,
@@ -984,15 +688,11 @@
       "name": "Better Scaling",
       "description": "for each workshop level, give +# to min and max item affix magnitude ",
       "numericEffect": "1",
-      "parentIds": [
-        "painters_hat"
-      ],
+      "parentIds": ["painters_hat"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        1
-      ],
+      "costs": [10000],
       "unlocks": [],
       "position": {
         "x": 478.23621153932936,
@@ -1004,15 +704,11 @@
       "name": "Socks",
       "description": "equiped boots get +#% efficency.",
       "numericEffect": "50",
-      "parentIds": [
-        "painters_boots"
-      ],
+      "parentIds": ["painters_boots"],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
-      "costs": [
-        1
-      ],
+      "costs": [3000],
       "unlocks": [],
       "position": {
         "x": 439.30936649575636,

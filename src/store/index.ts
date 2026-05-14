@@ -347,6 +347,7 @@ export const useGameStore = create<GameStore>()(
           hoverBody: _b,
           hoverFooter: _f,
           lastSale: _ls,
+          devFreeNodes: _dfn,
           ...rest
         } = s;
         return serializeBigs(rest) as unknown as Omit<

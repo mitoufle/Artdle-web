@@ -17,6 +17,8 @@ export function ConstellationRoute(): JSX.Element {
   const fame = useGameStore((s) => s.fame);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const buyNode = useGameStore((s) => s.buyNode);
+  const devFreeNodes = useGameStore((s) => s.devFreeNodes);
+  const toggleDevFreeNodes = useGameStore((s) => s.toggleDevFreeNodes);
 
   const [selectedId, setSelectedId] = useState<SkillNodeId | null>(null);
   const [viewport, setViewport] = useState<ViewportState>(DEFAULT_VIEWPORT);
@@ -24,7 +26,7 @@ export function ConstellationRoute(): JSX.Element {
     setViewport((current) => centerOn(current, svgX, svgY));
   };
 
-  const helperState = { fame, purchasedNodes } as unknown as GameStore;
+  const helperState = { fame, purchasedNodes, devFreeNodes } as unknown as GameStore;
 
   const nodeStates = SKILL_NODES.reduce(
     (acc, node) => {
@@ -33,7 +35,9 @@ export function ConstellationRoute(): JSX.Element {
         node.parentIds.length === 0 ||
         node.parentIds.every((p) => getNodeLevel(helperState, p) > 0);
       const nextCost = getNextCost(helperState, node.id);
-      const affordable = nextCost === null ? false : fame.gte(big(nextCost));
+      const affordable = devFreeNodes
+        ? prereqMet && nextCost !== null
+        : nextCost !== null && fame.gte(big(nextCost));
       acc[node.id] = {
         level,
         maxLevel: node.maxLevel,
@@ -59,7 +63,8 @@ export function ConstellationRoute(): JSX.Element {
     ? SKILL_NODES.find((n) => n.id === selectedId) ?? null
     : null;
   const selectedState = selectedId !== null ? nodeStates[selectedId] : null;
-  const selectedNextCost = selectedId !== null ? getNextCost(helperState, selectedId) : null;
+  const rawNextCost = selectedId !== null ? getNextCost(helperState, selectedId) : null;
+  const selectedNextCost = devFreeNodes && rawNextCost !== null ? 0 : rawNextCost;
 
   return (
     <div className={styles.layout}>
@@ -100,6 +105,13 @@ export function ConstellationRoute(): JSX.Element {
         </section>
         <MiniMap ownedById={ownedById} selectedId={selectedId} viewport={viewport} onJump={jumpTo} />
         <ClusterList ownedCount={ownedCount} totalCount={SKILL_NODES.length} />
+        <button
+          type="button"
+          className={`${styles.devToggle}${devFreeNodes ? ` ${styles.devToggleOn}` : ""}`}
+          onClick={toggleDevFreeNodes}
+        >
+          [DEV] Free nodes: {devFreeNodes ? "ON" : "OFF"}
+        </button>
       </aside>
     </div>
   );

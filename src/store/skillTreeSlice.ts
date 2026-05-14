@@ -18,11 +18,14 @@ export interface SkillTreeState {
    * POKE_TREE_INTERVAL_S seconds while `level(poke_tree) > 0`.
    */
   pokeTreeTimer: number;
+  /** Dev toggle — when true all node purchases skip the fame cost check. Not persisted. */
+  devFreeNodes: boolean;
 }
 
 export const initialSkillTreeState: SkillTreeState = Object.freeze({
   purchasedNodes: Object.freeze({}) as Partial<Record<SkillNodeId, number>>,
   pokeTreeTimer: 0,
+  devFreeNodes: false,
 }) as SkillTreeState;
 
 export interface SkillTreeSlice extends SkillTreeState {
@@ -43,6 +46,8 @@ export interface SkillTreeSlice extends SkillTreeState {
    *  v1.1+ ascends, but resetting is supported for test cleanup and future
    *  tree-wipe mechanics. */
   resetSkillTree: () => void;
+  /** Dev only — toggle free node purchases (bypasses fame cost). */
+  toggleDevFreeNodes: () => void;
 }
 
 export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlice> = (set, get) => ({
@@ -59,7 +64,7 @@ export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlic
     }
     const cost = node.costs[currentLevel];
     if (cost === undefined) return false;
-    if (!state.spend("fame", big(cost))) return false;
+    if (!state.devFreeNodes && !state.spend("fame", big(cost))) return false;
     set((s) => ({
       purchasedNodes: { ...s.purchasedNodes, [id]: currentLevel + 1 },
     }));
@@ -84,6 +89,8 @@ export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlic
   },
 
   resetSkillTree: () => set(initialSkillTreeState),
+
+  toggleDevFreeNodes: () => set((s) => ({ devFreeNodes: !s.devFreeNodes })),
 });
 
 // ============================================================================
@@ -124,6 +131,7 @@ export const canBuyNode = (state: GameStore, id: SkillNodeId): boolean => {
   }
   const cost = node.costs[level];
   if (cost === undefined) return false;
+  if (state.devFreeNodes) return true;
   return state.fame.gte(big(cost));
 };
 
