@@ -1,5 +1,51 @@
 # Artdle Web — Handover
 
+## Workshop overhaul + new skill-tree nodes (2026-05-14)
+
+Two back-to-back sessions delivering the workshop overhaul spec (`docs/superpowers/specs/2026-05-14-workshop-overhaul-design.md`, plan `docs/superpowers/plans/2026-05-14-workshop-overhaul.md`) followed by wiring four new designer nodes (`docs/superpowers/plans/2026-05-14-new-skill-tree-nodes.md`). Both runs used subagent-driven execution with two-stage review per task.
+
+### What landed
+
+**Workshop overhaul (Tasks 1–6, 10 commits)**
+
+- **Tier unlock levels and XP** (`95c32d5`). Five-tier ladder: normal unlocks at L1, magic L3, rare L8, epic L20, legendary L40. XP per craft now scales 1/2/3/4/5 by tier. Probability ranges: magic 1–30%, rare 1–15%, epic 0.5–5%, legendary 0.01–1% — all interpolated linearly from unlock level to L100.
+- **Tier-scaled affix magnitude ranges** (`a62a61d`). `AFFIX_MAGNITUDE_RANGE` reshaped from flat `Record<AffixKind, {min,max}>` to `Record<ItemTier, Record<AffixKind, {min,max}>>`. Normal 5–15, magic 8–22, rare 13–32, epic 20–44, legendary 38–56 (all ±affix-kind variation). Rolled via `AFFIX_MAGNITUDE_RANGE[tier][kind]` in `workshopRoll.ts`. Office workers hardcoded to `["normal"]` tier magnitudes — they are not item-tier-scaled by design (comment in `officeRoll.ts`).
+- **Hat / apron / boots slot kinds + fame nodes** (`38fc1b8`). Three new `SlotKind` values added to `ALL_SLOT_KINDS`. Three new fame nodes (`painters_hat`, `painters_apron`, `painters_boots`) unlock each slot. `getUnlockedSlotKinds` extended. `SLOT_UNLOCK_NODE` map in `WorkshopRoom.tsx` shows locked-slot tooltips with the unlock node name.
+- **`Item.fuseCount` + save migration v14 → v15** (`c0ad0e2`). `fuseCount: number` added to `Item`. `performCraft` initialises it to 0. Migration backfills `{ fuseCount: 0, ...item }` (spread order is idempotent) for all inventory and equipped items. All existing 40+ inline `Item` fixture literals across 5 test files updated.
+- **Fusion mechanic** (`193b13d`). `getFusionTarget(invItem, equipped)`: finds equipped item whose affix-kind multiset (count + set, order-irrelevant via sort+join) matches `invItem`. Slot kind intentionally ignored. `getFuseCost(equippedItem, workshopLevel)`: `craftCost(level) × 2^fuseCount`. `fuseItem(dropId)`: validates drop → finds target → spends gold atomically → per-affix absorption `pct = 0.05 + rng() * 0.45` ([0.05, 0.50)) → `Math.round` (can be 0 for small magnitudes — intentional) → removes drop, increments fuseCount on equipped item. Known follow-up: `new Map(drop.affixes.map(a => [a.kind, a.magnitude]))` only keeps last magnitude per kind if a drop has duplicate kinds — under-donates in that case.
+- **PoE-style Workshop UI rewrite** (`567e3d6`, `67f184e`). 72×72 item squares in CSS Modules. Tier color via `--tier-color` CSS custom property set on `.itemSquare[data-tier="..."]` selectors (scoped to avoid leakage). `fusionCandidate` animation via `@keyframes fusionPulse` using `var(--tier-color)` box-shadow. Discard button visibility via `.itemCell:hover .discardBtn` — critical: `.discardBtn` is a sibling of the Hoverable `<span>`, not a descendant of `.itemSquare`, so the selector must be on `.itemCell`. `craftHoverBody` / `levelHoverBody` use `useGameStore.getState()` (lazy, no hook) since called inside `body()` prop. `fusionTargetMap` memoised over `[inventory, equipped]`. Fusion candidate `data-tier` set to the matching equipped item's tier (not the drop's tier).
+
+**New skill-tree nodes (Tasks 1–4, 4 commits)**
+
+- **`apprentice_pool` removed** (`6efae1d`). Node dropped from `skillTreeDesign.json` by designer. `getMaxInventorySlots` line and stale test deleted.
+- **`better_scaling`** (`bfe6694`). `getAffixMagnitudeBonus` in `multipliers.ts` now adds `getNodeLevel("better_scaling") * state.workshopLevel * 1` pp when purchased (1 level max). Signature extended to `Pick<GameStore, "purchasedNodes" | "workshopLevel">`. No call-site changes needed — only caller (`performCraft`) passes full `GameStore`.
+- **`socks`** (`f04d4fa`). `getEquippedContribution` in `workshopSlice.ts` now iterates `Object.entries(equipped)` and applies ×1.5 to any affix on the `boots` slot when `socks` is purchased (1 level max). Signature extended to include `purchasedNodes`. All callers in `multipliers.ts` pass `CanvasMultiplierInputs` which already has `purchasedNodes` — no call-site changes.
+- **`third_hand`** (`948f35b`). `workshopTick` now computes `interval = 10 × (1 − 0.10 × thirdHandLevel)` before the timer math. L0 = 10 s (unchanged), L5 = 5 s. `freshState()` in tests got `autoCraftTimer: 0` (was missing, causing order-dependent test pollution in the Taylorism block).
+
+**Designer node tree changes (committed separately, `050b4ff`)**
+
+`painters_hat` renamed "Enjoyable Shade" (parent: `painters_apron`, cost 1), `painters_apron` renamed "No More Stains" (parent: `socks`, cost 1), `painters_boots` renamed "Warm Feet" (parents: `monk_internship` + `third_hand`, cost 1). `third_hand` (5 levels) and `better_scaling` (1 level) and `socks` (1 level) added. `basic_technique` numericEffect fixed "1%" → "2%". Node positions updated throughout the workshop cluster.
+
+### Tests + build
+
+- **774 tests passing across 80 files** (was 750 before this batch; +24 net). TypeScript strict clean throughout.
+
+### Lessons preserved
+
+- **`getEquippedContribution` signature must include `purchasedNodes` to support per-slot modifiers.** Before `socks`, the function iterated `Object.values` with no slot awareness. Per-slot scaling requires `Object.entries` + a slot multiplier. Any future "X slot gets bonus Y" node follows this pattern: extend `getEquippedContribution`'s slot-mult logic rather than adding a parallel accumulation.
+- **Discard button (or any hover-revealed sibling) needs a wrapper class, not a descendant selector.** `.itemSquare:hover .discardBtn` broke silently when Hoverable wrapped `.itemSquare` in a `<span>`, making `.discardBtn` a sibling. Always wrap the interactive cell in `.itemCell { position: relative }` and use `.itemCell:hover .child` for reveal logic.
+- **`Map(affixes.map(a => [a.kind, a.magnitude]))` drops duplicate-kind magnitudes.** In the fusion absorption loop, if a drop has two affixes of the same kind, the Map only keeps the last one. A future fix would sum duplicates. Filed as known follow-up; not a regression (base case is single-affix-per-kind items).
+- **`workshopTick` interval should be a variable, not the bare constant.** Adding `third_hand` only required computing `interval` before `Math.floor(next / interval)`. Any future "speed up autocraft" node follows the same pattern: modify `interval` before it's used.
+
+### Next (carry-overs)
+
+- Browser smoke test for workshop overhaul not yet confirmed: 72×72 squares readable, tier glow visible, fusion flow works end-to-end, discard button appears on hover.
+- Goldsmith class node (`gold_diggers`) playtest pending.
+- Four `as unknown as GameStore` casts remain in `WorkshopRoom`, `ConstellationRoute`, `TreeRoute`, `AscensionRoute`.
+- Chip-strip spacing for 6-stage tree chips (deferred from prior session).
+
+---
+
 ## Inspiration tree v1.x: 6 stages + auto-grow (2026-05-12)
 
 15 commits delivering the 6-stage inspiration tree expansion specified in `docs/superpowers/specs/2026-05-12-inspiration-tree-expansion-design.md`. Plan: `docs/superpowers/plans/2026-05-12-inspiration-tree-expansion.md`. Subagent-driven execution with two-stage review per task.
