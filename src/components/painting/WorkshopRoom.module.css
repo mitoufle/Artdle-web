@@ -117,8 +117,8 @@
   width: 104px;
   min-height: 80px;
   height: auto;
-  border: 2px solid var(--tier-color, #9e9e9e);
-  background: color-mix(in srgb, var(--tier-color, #9e9e9e) 12%, var(--bg-stone-d));
+  border: 3px solid var(--tier-color, #9e9e9e);
+  background: var(--bg-stone-d);
   position: relative;
   cursor: pointer;
   display: flex;
@@ -180,13 +180,20 @@
   text-transform: uppercase;
 }
 
+.affixGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 4px;
+  width: 100%;
+}
+
 .affixLine {
-  font-size: 14px;
+  font-size: 11px;
   color: var(--ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 96px;
+  text-align: center;
 }
 
 .itemCell {
@@ -215,10 +222,7 @@
   border-color: transparent;
   background-image:
     /* layer 1 (top): flat tile colour clipped to padding-box, hides gradient inside */
-    linear-gradient(
-      color-mix(in srgb, var(--tier-color, #9e9e9e) 12%, var(--bg-stone-d)),
-      color-mix(in srgb, var(--tier-color, #9e9e9e) 12%, var(--bg-stone-d))
-    ),
+    linear-gradient(var(--bg-stone-d), var(--bg-stone-d)),
     /* layer 2 (bottom): rotating rainbow visible only in the border strip */
     conic-gradient(
       from var(--rainbow-angle),

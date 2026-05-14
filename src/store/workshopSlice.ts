@@ -120,22 +120,20 @@ export const getEquippedContribution = (
 };
 
 /**
- * Returns the first equipped item that can fuse with the inventory item:
- * same tier AND same affix-kind multiset (same count, same set, order irrelevant).
- * Slot kind is intentionally ignored — tier + affix kinds are the gate.
+ * Returns the equipped item that can fuse with the inventory item:
+ * same slot kind, same tier, AND same affix-kind multiset.
  */
 export function getFusionTarget(
   invItem: Item,
   equipped: Partial<Record<SlotKind, Item>>,
 ): Item | null {
+  const eq = equipped[invItem.slot];
+  if (!eq) return null;
+  if (eq.tier !== invItem.tier) return null;
+  if (eq.affixes.length !== invItem.affixes.length) return null;
   const invKinds = invItem.affixes.map((a) => a.kind).sort().join(",");
-  for (const eq of Object.values(equipped)) {
-    if (!eq) continue;
-    if (eq.affixes.length !== invItem.affixes.length) continue;
-    const eqKinds = eq.affixes.map((a) => a.kind).sort().join(",");
-    if (invKinds === eqKinds && eq.tier === invItem.tier) return eq;
-  }
-  return null;
+  const eqKinds  = eq.affixes.map((a) => a.kind).sort().join(",");
+  return invKinds === eqKinds ? eq : null;
 }
 
 /**

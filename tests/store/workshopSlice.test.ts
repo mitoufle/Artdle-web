@@ -443,9 +443,9 @@ describe("fusion — getFusionTarget", () => {
     expect(getFusionTarget(inv, { brush: eq })).toBeNull();
   });
 
-  it("returns equipped item when tier and affix kinds both match exactly (order irrelevant)", () => {
+  it("returns equipped item when slot, tier, and affix kinds all match (order irrelevant)", () => {
     const inv: Item = {
-      id: "inv-1", slot: "palette", tier: "magic",
+      id: "inv-1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+speed%", magnitude: 10 }, { kind: "+sell_price%", magnitude: 8 }],
       fuseCount: 0,
     };
@@ -471,7 +471,7 @@ describe("fusion — getFusionTarget", () => {
     expect(getFusionTarget(inv, { brush: eq })).toBeNull();
   });
 
-  it("slot kind of inventory item does not have to match equipped slot", () => {
+  it("returns null when slot kinds differ even if tier and affix kinds match", () => {
     const inv: Item = {
       id: "inv-1", slot: "hat", tier: "rare",
       affixes: [{ kind: "+sell_price%", magnitude: 10 }],
@@ -482,7 +482,7 @@ describe("fusion — getFusionTarget", () => {
       affixes: [{ kind: "+sell_price%", magnitude: 12 }],
       fuseCount: 0,
     };
-    expect(getFusionTarget(inv, { brush: eq })).toBe(eq);
+    expect(getFusionTarget(inv, { brush: eq })).toBeNull();
   });
 });
 

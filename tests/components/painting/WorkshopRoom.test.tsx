@@ -70,8 +70,9 @@ describe("<WorkshopRoom />", () => {
     render(<WorkshopRoom />);
     expect(screen.getByText(/magic/i)).toBeInTheDocument();
     expect(screen.getByText(/brush/i)).toBeInTheDocument();
-    expect(screen.getByText("$ 12%")).toBeInTheDocument();
-    expect(screen.getByText("» 8%")).toBeInTheDocument();
+    const equip = screen.getByTestId(`inventory-equip-${sampleBrush.id}`);
+    expect(equip).toHaveTextContent("$ 12%");
+    expect(equip).toHaveTextContent("» 8%");
   });
 
   it("inventory item has data-tier matching its tier", () => {

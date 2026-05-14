@@ -3,6 +3,7 @@ import { useGameStore } from "@/store";
 import { workerXpToNext, levelScale } from "@/core/balance";
 import { formatBig } from "@/core/formatter";
 import type { AffixKind } from "@/config/workshopAffixes";
+import { AFFIX_SYMBOL, AFFIX_COLOR } from "@/config/workshopAffixes";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { FireConfirmModal } from "./FireConfirmModal";
 import type { Worker } from "@/store/officeSlice";
@@ -79,6 +80,7 @@ export function WorkerCard({ worker }: Props): JSX.Element {
           <ul className={styles.affixList}>
             {worker.affixes.map((a, i) => (
               <li key={i} className={styles.affixRow}>
+                <span style={{ color: AFFIX_COLOR[a.kind] }}>{AFFIX_SYMBOL[a.kind]}</span>{" "}
                 {AFFIX_LABEL[a.kind](parseFloat((a.magnitude * scale).toFixed(1)))}
               </li>
             ))}

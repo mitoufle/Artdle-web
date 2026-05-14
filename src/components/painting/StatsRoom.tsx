@@ -1,6 +1,7 @@
 import { useMemo, type JSX } from "react";
 import { useGameStore } from "@/store";
 import type { CanvasMultiplierInputs } from "@/core/multipliers";
+import type { AffixKind } from "@/config/workshopAffixes";
 import {
   getEquippedContribution,
 } from "@/store/workshopSlice";
@@ -23,6 +24,7 @@ import {
   COMBO_PER_LEVEL,
   SIZE_PER_LEVEL,
 } from "@/core/balance";
+import { AFFIX_SYMBOL, AFFIX_COLOR } from "@/config/workshopAffixes";
 import styles from "./StatsRoom.module.css";
 
 interface BreakdownLine {
@@ -32,6 +34,7 @@ interface BreakdownLine {
 
 interface StatBlock {
   name: string;
+  kind: AffixKind;
   totalLabel: string;
   lines: BreakdownLine[];
   multiplicatives?: Array<{ source: string; factor: number }>;
@@ -76,6 +79,7 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   return [
     {
       name: "Sell Price (gold)",
+      kind: "+sell_price%" as AffixKind,
       totalLabel: fmtMult(effectiveGold),
       lines: [
         { source: "Canvas upgrade", value: SELL_PRICE_PER_LEVEL * state.sellPriceLevel },
@@ -87,6 +91,7 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
     },
     {
       name: "Speed",
+      kind: "+speed%" as AffixKind,
       totalLabel: fmtMult(speedTotal),
       lines: [
         { source: "Canvas upgrade", value: SPEED_PER_LEVEL * state.speedLevel },
@@ -97,6 +102,7 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
     },
     {
       name: "Crit chance",
+      kind: "+crit_chance%" as AffixKind,
       totalLabel: fmtPct(critTotal),
       lines: [
         { source: "Canvas upgrade", value: CRIT_PER_LEVEL * state.critLevel },
@@ -106,6 +112,7 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
     },
     {
       name: "Combo chance",
+      kind: "+combo_chance%" as AffixKind,
       totalLabel: fmtPct(comboTotal),
       lines: [
         { source: "Canvas upgrade", value: COMBO_PER_LEVEL * state.comboLevel },
@@ -160,7 +167,9 @@ export function StatsRoom(): JSX.Element {
       {blocks.map((block) => (
         <article key={block.name} className={styles.block}>
           <header className={styles.blockHeader}>
-            <span className={styles.blockName}>{block.name}</span>
+            <span className={styles.blockName}>
+              <span style={{ color: AFFIX_COLOR[block.kind] }}>{AFFIX_SYMBOL[block.kind]}</span>{" "}{block.name}
+            </span>
             <span className={styles.blockTotal}>{block.totalLabel}</span>
           </header>
           <ul className={styles.lines}>
@@ -181,7 +190,9 @@ export function StatsRoom(): JSX.Element {
       ))}
       <article className={styles.block}>
         <header className={styles.blockHeader}>
-          <span className={styles.blockName}>Size</span>
+          <span className={styles.blockName}>
+            <span style={{ color: AFFIX_COLOR["+size%"] }}>{AFFIX_SYMBOL["+size%"]}</span>{" "}Size
+          </span>
           <span className={styles.blockTotal}>{fmtMult(size.size)}</span>
         </header>
         <ul className={styles.lines}>

@@ -10,7 +10,7 @@ import {
 } from "@/store/workshopSlice";
 import type { Item } from "@/store/workshopSlice";
 import type { AffixKind, SlotKind } from "@/config/workshopAffixes";
-import { ALL_SLOT_KINDS, AFFIX_SYMBOL } from "@/config/workshopAffixes";
+import { ALL_SLOT_KINDS, AFFIX_SYMBOL, AFFIX_COLOR } from "@/config/workshopAffixes";
 import { formatBig } from "@/core/formatter";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import {
@@ -135,16 +135,13 @@ export function WorkshopRoom(): JSX.Element {
     return map;
   }, [inventory, equipped]);
 
-  // For each equipped slot: first inventory item whose fusion target IS that slot.
-  // Key on target.slot (the equipped item's slot), not item.slot (the inventory item's
-  // slot), because getFusionTarget ignores slot kinds — a "hat" in inventory can match
-  // a "brush" that is equipped, and the rainbow must appear on the brush slot.
+  // For each inventory item that has a fusion target, record the first candidate per slot.
   const slotFusionMap = useMemo(() => {
     const map = new Map<SlotKind, { candidate: Item; canFuse: boolean }>();
     for (const item of inventory) {
       const target = fusionTargetMap.get(item.id);
-      if (!target || map.has(target.slot)) continue;
-      map.set(target.slot, {
+      if (!target || map.has(item.slot)) continue;
+      map.set(item.slot, {
         candidate: item,
         canFuse: gold.gte(getFuseCost(target, workshopLevel)),
       });
@@ -257,9 +254,11 @@ export function WorkshopRoom(): JSX.Element {
                 >
                   <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
                   <span className={styles.slotLabel}>{slot}</span>
-                  {item.affixes.map((a, i) => (
-                    <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} {a.magnitude}%</span>
-                  ))}
+                  <div className={styles.affixGrid}>
+                    {item.affixes.map((a, i) => (
+                      <span key={i} className={styles.affixLine}><span style={{ color: AFFIX_COLOR[a.kind] }}>{AFFIX_SYMBOL[a.kind]}</span> {a.magnitude}%</span>
+                    ))}
+                  </div>
                 </button>
               </Hoverable>
             );
@@ -296,9 +295,11 @@ export function WorkshopRoom(): JSX.Element {
                   >
                     <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
                     <span className={styles.slotLabel}>{item.slot}</span>
-                    {item.affixes.map((a, i) => (
-                      <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} {a.magnitude}%</span>
-                    ))}
+                    <div className={styles.affixGrid}>
+                      {item.affixes.map((a, i) => (
+                        <span key={i} className={styles.affixLine}><span style={{ color: AFFIX_COLOR[a.kind] }}>{AFFIX_SYMBOL[a.kind]}</span> {a.magnitude}%</span>
+                      ))}
+                    </div>
                   </button>
                 </Hoverable>
               </div>

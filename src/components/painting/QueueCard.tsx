@@ -3,6 +3,7 @@ import { useGameStore } from "@/store";
 import { getHireCost, getRosterCap } from "@/store/officeSlice";
 import { formatBig } from "@/core/formatter";
 import type { AffixKind } from "@/config/workshopAffixes";
+import { AFFIX_SYMBOL, AFFIX_COLOR } from "@/config/workshopAffixes";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import type { Candidate } from "@/core/officeRoll";
 import styles from "./OfficeRoom.module.css";
@@ -75,6 +76,7 @@ export function QueueCard({ candidate }: Props): JSX.Element {
           <ul className={styles.affixList}>
             {candidate.affixes.map((a, i) => (
               <li key={i} className={styles.affixRow}>
+                <span style={{ color: AFFIX_COLOR[a.kind] }}>{AFFIX_SYMBOL[a.kind]}</span>{" "}
                 {AFFIX_LABEL[a.kind](a.magnitude)}
               </li>
             ))}

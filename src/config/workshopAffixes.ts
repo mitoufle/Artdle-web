@@ -36,6 +36,15 @@ export const AFFIX_SYMBOL: Record<AffixKind, string> = {
   "+size%":         "⊕",
 };
 
+/** Accent color for each affix symbol. */
+export const AFFIX_COLOR: Record<AffixKind, string> = {
+  "+sell_price%":   "#f0b847",
+  "+speed%":        "#4fc3e8",
+  "+crit_chance%":  "#e85c5c",
+  "+combo_chance%": "#b06ee8",
+  "+size%":         "#4cb87a",
+};
+
 /**
  * Per-tier, per-affix-kind magnitude range. Bounds are integer percent (inclusive).
  *
