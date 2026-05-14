@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { useState } from "react";
 import styles from "./ActionBar.module.css";
 
 export type ActionBarStatus = "saved" | "dirty" | "saving";
@@ -12,10 +13,19 @@ interface Props {
 }
 
 export function ActionBar({ status, issueCount, onSave, onExport, onReset }: Props): JSX.Element {
-  function handleReset() {
-    if (window.confirm("Reset the entire design? This cannot be undone.")) {
-      onReset();
-    }
+  const [confirming, setConfirming] = useState(false);
+
+  function handleResetClick() {
+    setConfirming(true);
+  }
+
+  function handleConfirm() {
+    setConfirming(false);
+    onReset();
+  }
+
+  function handleCancel() {
+    setConfirming(false);
   }
 
   let statusEl: JSX.Element;
@@ -36,9 +46,21 @@ export function ActionBar({ status, issueCount, onSave, onExport, onReset }: Pro
         <button type="button" className={styles.secondary} onClick={onExport}>
           Export JSON
         </button>
-        <button type="button" className={styles.danger} onClick={handleReset}>
-          Reset
-        </button>
+        {confirming ? (
+          <>
+            <span className={styles.confirmPrompt}>Wipe everything?</span>
+            <button type="button" className={styles.danger} onClick={handleConfirm}>
+              Yes, reset
+            </button>
+            <button type="button" className={styles.secondary} onClick={handleCancel}>
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button type="button" className={styles.danger} onClick={handleResetClick}>
+            Reset
+          </button>
+        )}
       </div>
       <div className={styles.status}>
         {statusEl}

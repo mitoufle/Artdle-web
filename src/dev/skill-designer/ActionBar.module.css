@@ -65,3 +65,10 @@
 .issues {
   color: #f80;
 }
+
+.confirmPrompt {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #c44;
+  align-self: center;
+}
