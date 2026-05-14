@@ -14,7 +14,7 @@
 }
 
 .title {
-  font-size: var(--text-lg);
+  font-size: 18px;
   font-weight: 600;
   margin: 0;
 }
@@ -23,7 +23,7 @@
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  font-size: var(--text-sm);
+  font-size: 12px;
 }
 
 .levelLabel {
@@ -41,7 +41,7 @@
 
 .xpFill {
   height: 100%;
-  background: var(--accent);
+  background: var(--inspi);
   transition: width 0.2s ease;
 }
 
@@ -57,12 +57,22 @@
 
 .craftBtn {
   padding: var(--s-1) var(--s-3);
-  font-size: var(--text-sm);
-  background: var(--accent);
-  color: var(--ink-on-accent);
-  border: none;
+  font-size: 12px;
+  font-family: var(--serif);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: var(--gold);
+  color: var(--bg-0);
+  border: 1px solid var(--gold-d);
   cursor: pointer;
-  border-radius: 2px;
+  border-radius: var(--r-sm);
+  transition: background 120ms ease;
+}
+
+.craftBtn:hover:not(:disabled) {
+  background: var(--gold-d);
+  color: var(--ink-0);
 }
 
 .craftBtn:disabled {

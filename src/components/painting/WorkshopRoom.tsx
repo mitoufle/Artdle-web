@@ -10,7 +10,7 @@ import {
 } from "@/store/workshopSlice";
 import type { Item } from "@/store/workshopSlice";
 import type { AffixKind, SlotKind } from "@/config/workshopAffixes";
-import { ALL_SLOT_KINDS } from "@/config/workshopAffixes";
+import { ALL_SLOT_KINDS, AFFIX_SYMBOL } from "@/config/workshopAffixes";
 import { formatBig } from "@/core/formatter";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import {
@@ -235,7 +235,7 @@ export function WorkshopRoom(): JSX.Element {
                   <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
                   <span className={styles.slotLabel}>{slot}</span>
                   {item.affixes.slice(0, 2).map((a, i) => (
-                    <span key={i} className={styles.affixLine}>{a.kind} {a.magnitude}%</span>
+                    <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} +{a.magnitude}%</span>
                   ))}
                   {item.affixes.length > 2 && (
                     <span className={styles.affixLine}>+{item.affixes.length - 2} more</span>
@@ -283,7 +283,7 @@ export function WorkshopRoom(): JSX.Element {
                       <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
                       <span className={styles.slotLabel}>{item.slot}</span>
                       {item.affixes.slice(0, 2).map((a, i) => (
-                        <span key={i} className={styles.affixLine}>{a.kind} {a.magnitude}%</span>
+                        <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} +{a.magnitude}%</span>
                       ))}
                       {item.affixes.length > 2 && (
                         <span className={styles.affixLine}>+{item.affixes.length - 2} more</span>

@@ -70,8 +70,8 @@ describe("<WorkshopRoom />", () => {
     render(<WorkshopRoom />);
     expect(screen.getByText(/magic/i)).toBeInTheDocument();
     expect(screen.getByText(/brush/i)).toBeInTheDocument();
-    expect(screen.getByText(/\+sell_price%.*12/i)).toBeInTheDocument();
-    expect(screen.getByText(/\+speed%.*8/i)).toBeInTheDocument();
+    expect(screen.getByText("$ +12%")).toBeInTheDocument();
+    expect(screen.getByText("» +8%")).toBeInTheDocument();
   });
 
   it("inventory item has data-tier matching its tier", () => {

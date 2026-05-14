@@ -27,6 +27,15 @@ export const AFFIX_KINDS: ReadonlyArray<AffixKind> = [
   "+size%",
 ];
 
+/** Single-character symbol for each affix kind, used in compact item displays. */
+export const AFFIX_SYMBOL: Record<AffixKind, string> = {
+  "+sell_price%":   "$",
+  "+speed%":        "»",
+  "+crit_chance%":  "✦",
+  "+combo_chance%": "∞",
+  "+size%":         "⊕",
+};
+
 /**
  * Per-tier, per-affix-kind magnitude range. Bounds are integer percent (inclusive).
  *
