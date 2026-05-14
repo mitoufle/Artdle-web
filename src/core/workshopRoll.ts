@@ -17,13 +17,21 @@ export const ALL_ITEM_TIERS: ReadonlyArray<ItemTier> = [
 
 export const TIER_UNLOCK_LEVEL: Record<ItemTier, number> = {
   normal: 1,
-  magic: 5,
-  rare: 15,
-  epic: 35,
-  legendary: 70,
+  magic: 3,
+  rare: 8,
+  epic: 20,
+  legendary: 40,
 };
 
 export const TIER_AFFIX_COUNT: Record<ItemTier, number> = {
+  normal: 1,
+  magic: 2,
+  rare: 3,
+  epic: 4,
+  legendary: 5,
+};
+
+export const TIER_XP: Record<ItemTier, number> = {
   normal: 1,
   magic: 2,
   rare: 3,

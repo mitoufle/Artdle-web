@@ -4,9 +4,9 @@ import {
   type AffixKind,
   type SlotKind,
 } from "@/config/workshopAffixes";
-import { craftCost, xpToNext, MAX_WORKSHOP_LEVEL, XP_PER_CRAFT } from "@/core/balance";
+import { craftCost, xpToNext, MAX_WORKSHOP_LEVEL } from "@/core/balance";
 import { rngPick } from "@/core/rng";
-import { rollTier, rollAffixes } from "@/core/workshopRoll";
+import { rollTier, rollAffixes, TIER_XP } from "@/core/workshopRoll";
 import type { ItemTier } from "@/core/workshopRoll";
 import type { Affix } from "@/core/workshopRoll";
 import type { GameStore } from "@/store";
@@ -138,7 +138,7 @@ function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<Game
 
   set((s) => {
     let newLevel = s.workshopLevel;
-    let newXp = s.workshopXp + XP_PER_CRAFT;
+    let newXp = s.workshopXp + TIER_XP[item.tier];
     while (newLevel < MAX_WORKSHOP_LEVEL && newXp >= xpToNext(newLevel)) {
       newXp -= xpToNext(newLevel);
       newLevel += 1;

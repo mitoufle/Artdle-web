@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   TIER_UNLOCK_LEVEL,
   TIER_AFFIX_COUNT,
+  TIER_XP,
   ALL_ITEM_TIERS,
   computeTierProbabilities,
   rollTier,
@@ -25,8 +26,8 @@ describe("workshopRoll — tier probabilities", () => {
     expect(probs.legendary).toBe(0);
   });
 
-  it("at level 5: magic just unlocks at min prob 0.01", () => {
-    const probs = computeTierProbabilities(5);
+  it("at level 3: magic just unlocks at min prob 0.01", () => {
+    const probs = computeTierProbabilities(3);
     expect(probs.magic).toBeCloseTo(0.01, 4);
     expect(probs.rare).toBe(0);
     expect(probs.normal).toBeCloseTo(0.99, 4);
@@ -50,10 +51,10 @@ describe("workshopRoll — tier probabilities", () => {
   });
 
   it("a tier is 0 below its unlock level", () => {
-    expect(computeTierProbabilities(4).magic).toBe(0);
-    expect(computeTierProbabilities(14).rare).toBe(0);
-    expect(computeTierProbabilities(34).epic).toBe(0);
-    expect(computeTierProbabilities(69).legendary).toBe(0);
+    expect(computeTierProbabilities(2).magic).toBe(0);
+    expect(computeTierProbabilities(7).rare).toBe(0);
+    expect(computeTierProbabilities(19).epic).toBe(0);
+    expect(computeTierProbabilities(39).legendary).toBe(0);
   });
 
   it("a tier's prob grows monotonically from unlock to L100", () => {
@@ -88,13 +89,16 @@ describe("workshopRoll — rollTier", () => {
     }
   });
 
-  it("legendary at L70 is approximately 0.01% (within 0.05% empirical tolerance over 100k rolls)", () => {
-    let leg = 0;
+  it("at L40 (legendary first unlock) prob is ~0.01%; at L70 prob is much higher", () => {
+    setSeed(42);
+    let legAt40 = 0;
+    let legAt70 = 0;
     for (let i = 0; i < 100_000; i++) {
-      if (rollTier(70) === "legendary") leg += 1;
+      if (rollTier(40) === "legendary") legAt40++;
+      if (rollTier(70) === "legendary") legAt70++;
     }
-    // Expected ~10 over 100k. Allow wide range due to small N.
-    expect(leg).toBeLessThanOrEqual(60);
+    expect(legAt40).toBeLessThanOrEqual(100);
+    expect(legAt70).toBeGreaterThan(100);
   });
 });
 
@@ -139,10 +143,18 @@ describe("workshopRoll — rollAffixes", () => {
 describe("workshopRoll — constants", () => {
   it("unlock thresholds match spec", () => {
     expect(TIER_UNLOCK_LEVEL.normal).toBe(1);
-    expect(TIER_UNLOCK_LEVEL.magic).toBe(5);
-    expect(TIER_UNLOCK_LEVEL.rare).toBe(15);
-    expect(TIER_UNLOCK_LEVEL.epic).toBe(35);
-    expect(TIER_UNLOCK_LEVEL.legendary).toBe(70);
+    expect(TIER_UNLOCK_LEVEL.magic).toBe(3);
+    expect(TIER_UNLOCK_LEVEL.rare).toBe(8);
+    expect(TIER_UNLOCK_LEVEL.epic).toBe(20);
+    expect(TIER_UNLOCK_LEVEL.legendary).toBe(40);
+  });
+
+  it("TIER_XP has correct values per tier", () => {
+    expect(TIER_XP.normal).toBe(1);
+    expect(TIER_XP.magic).toBe(2);
+    expect(TIER_XP.rare).toBe(3);
+    expect(TIER_XP.epic).toBe(4);
+    expect(TIER_XP.legendary).toBe(5);
   });
 
   it("affix counts match spec (1..5)", () => {

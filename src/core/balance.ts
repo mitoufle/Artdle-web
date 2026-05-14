@@ -19,7 +19,6 @@ export const MAX_WORKSHOP_LEVEL = 100;
 export const CRAFT_COST_BASE = 100;
 export const CRAFT_COST_EARLY_GROWTH = 1.05;  // L1..L5 — gentle ramp
 export const CRAFT_COST_LATE_GROWTH = 1.20;   // L5+   — exponential climb
-export const XP_PER_CRAFT = 1;
 
 // ============================================================================
 // Canvas depth — see docs/superpowers/specs/2026-05-10-canvas-depth-design.md
