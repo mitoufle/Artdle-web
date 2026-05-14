@@ -101,21 +101,21 @@
 
 .equippedGrid {
   display: grid;
-  grid-template-columns: repeat(3, 88px);
+  grid-template-columns: repeat(3, 104px);
   gap: var(--s-2);
 }
 
 .inventoryGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 88px);
+  grid-template-columns: repeat(auto-fill, 104px);
   gap: var(--s-2);
-  max-height: 300px;
+  max-height: 360px;
   overflow-y: auto;
 }
 
 .itemSquare {
-  width: 88px;
-  height: 88px;
+  width: 104px;
+  height: 104px;
   border: 2px solid var(--tier-color, #9e9e9e);
   background: color-mix(in srgb, var(--tier-color, #9e9e9e) 12%, var(--bg-stone-d));
   position: relative;
@@ -126,7 +126,7 @@
   justify-content: center;
   gap: 3px;
   padding: 6px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ink-1);
   text-align: center;
 }
@@ -136,8 +136,22 @@
 }
 
 .emptySlot {
-  width: 88px;
-  height: 88px;
+  width: 104px;
+  height: 104px;
+  border: 2px dashed var(--ink-line);
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.lockedSlot {
+  width: 104px;
+  height: 104px;
   border: 2px dashed var(--ink-line);
   background: transparent;
   display: flex;
@@ -146,46 +160,32 @@
   justify-content: center;
   gap: 3px;
   font-size: 11px;
-  color: var(--ink-3);
-}
-
-.lockedSlot {
-  width: 88px;
-  height: 88px;
-  border: 2px dashed var(--ink-line);
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  font-size: 10px;
   color: var(--ink-line);
   opacity: 0.5;
   cursor: default;
 }
 
 .slotLabel {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--ink-3);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .tierTag {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--tier-color, #9e9e9e);
   text-transform: uppercase;
 }
 
 .affixLine {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 80px;
+  max-width: 96px;
 }
 
 .discardBtn {

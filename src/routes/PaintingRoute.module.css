@@ -1,6 +1,6 @@
 .layout {
   display: grid;
-  grid-template-columns: 1fr 340px 64px;
+  grid-template-columns: 1fr 368px 64px;
   grid-template-rows: 1fr auto;
   grid-template-areas:
     "stage room rail"
