@@ -528,4 +528,34 @@ describe("fusion — fuseItem action", () => {
     const secondFuseCost = goldAfterFirst - goldAfterSecond;
     expect(secondFuseCost).toBeCloseTo(firstFuseCost * 2, 0);
   });
+
+  it("absorbed gain per affix stays in [5%, 50%] of drop magnitude across many rolls", () => {
+    const DROP_MAG = 100; // large magnitude so rounding doesn't obscure fractions
+    const drop = (): Item => ({
+      id: "drop-x", slot: "brush", tier: "magic",
+      affixes: [{ kind: "+sell_price%", magnitude: DROP_MAG }],
+      fuseCount: 0,
+    });
+    const eqBase: Item = {
+      id: "eq-x", slot: "brush", tier: "rare",
+      affixes: [{ kind: "+sell_price%", magnitude: 0 }],
+      fuseCount: 0,
+    };
+
+    let minGain = Infinity;
+    let maxGain = -Infinity;
+    for (let seed = 0; seed < 200; seed++) {
+      setSeed(seed);
+      useGameStore.setState({ inventory: [drop()], equipped: { brush: { ...eqBase } }, gold: big(1_000_000), workshopLevel: 1 });
+      useGameStore.getState().fuseItem("drop-x");
+      const gain = useGameStore.getState().equipped.brush!.affixes[0]!.magnitude;
+      minGain = Math.min(minGain, gain);
+      maxGain = Math.max(maxGain, gain);
+    }
+    // gain = round(100 * pct), pct ∈ [0.05, 0.50); round can produce up to 50
+    expect(minGain).toBeGreaterThanOrEqual(5);
+    expect(maxGain).toBeLessThanOrEqual(50);
+    // Verify the range is actually spanned (not degenerate)
+    expect(maxGain - minGain).toBeGreaterThan(20);
+  });
 });

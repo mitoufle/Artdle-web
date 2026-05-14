@@ -118,6 +118,7 @@ export const getEquippedContribution = (state: Pick<GameStore, "equipped">, kind
  * Returns the first equipped item whose affix kinds exactly match the
  * inventory item's affix kinds (same count, same set, order irrelevant).
  * Returns null if no match. First match wins.
+ * Slot kind is intentionally ignored — fusion matches solely on affix-kind multiset.
  */
 export function getFusionTarget(
   invItem: Item,
@@ -261,7 +262,8 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     const dropKindMap = new Map(drop.affixes.map((a) => [a.kind, a.magnitude]));
     const newAffixes: Array<{ kind: AffixKind; magnitude: number }> = target.affixes.map((a) => {
       const dropMag = dropKindMap.get(a.kind) ?? 0;
-      const pct = 0.05 + rng() * 0.45;
+      const pct = 0.05 + rng() * 0.45; // [0.05, 0.50)
+      // Math.round: gain can be 0 for low magnitudes (e.g., mag=5, pct=0.05 → 0.25 → 0). Intentional.
       const gain = Math.round(dropMag * pct);
       return { kind: a.kind, magnitude: a.magnitude + gain };
     });
