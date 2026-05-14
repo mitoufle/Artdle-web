@@ -138,7 +138,7 @@ export function rollAffixes(
   const out: Affix[] = [];
   for (let i = 0; i < count; i++) {
     const kind = rngPick(pool);
-    const range = AFFIX_MAGNITUDE_RANGE[kind];
+    const range = AFFIX_MAGNITUDE_RANGE[tier][kind];
     const min = range.min + magnitudeBonus;
     const max = range.max + magnitudeBonus;
     const magnitude = rngInt(min, max);

@@ -4,6 +4,7 @@ import {
   AFFIX_MAGNITUDE_RANGE,
   MAX_INVENTORY_SLOTS,
 } from "@/config/workshopAffixes";
+import { ALL_ITEM_TIERS } from "@/core/workshopRoll";
 
 describe("workshopAffixes config", () => {
   it("AFFIX_KINDS has exactly 5 entries (painting-only pool: sell_price, speed, crit, combo, size)", () => {
@@ -23,22 +24,40 @@ describe("workshopAffixes config", () => {
     }
   });
 
-  it("AFFIX_MAGNITUDE_RANGE has all 5 kinds with valid bounds (min < max, all > 0)", () => {
-    for (const kind of AFFIX_KINDS) {
-      expect(AFFIX_MAGNITUDE_RANGE[kind]).toBeDefined();
-      const { min, max } = AFFIX_MAGNITUDE_RANGE[kind];
-      expect(min).toBeGreaterThan(0);
-      expect(max).toBeGreaterThan(0);
-      expect(min).toBeLessThan(max);
+  it("AFFIX_MAGNITUDE_RANGE: every tier has all 5 kinds with valid bounds (min < max, all > 0)", () => {
+    for (const tier of ALL_ITEM_TIERS) {
+      for (const kind of AFFIX_KINDS) {
+        const range = AFFIX_MAGNITUDE_RANGE[tier][kind];
+        expect(range).toBeDefined();
+        expect(range.min).toBeGreaterThan(0);
+        expect(range.max).toBeGreaterThan(0);
+        expect(range.min).toBeLessThan(range.max);
+      }
     }
   });
 
-  it("AFFIX_MAGNITUDE_RANGE has the spec bounds", () => {
-    expect(AFFIX_MAGNITUDE_RANGE["+sell_price%"]).toEqual({ min: 5, max: 15 });
-    expect(AFFIX_MAGNITUDE_RANGE["+speed%"]).toEqual({ min: 5, max: 15 });
-    expect(AFFIX_MAGNITUDE_RANGE["+size%"]).toEqual({ min: 5, max: 15 });
-    expect(AFFIX_MAGNITUDE_RANGE["+crit_chance%"]).toEqual({ min: 2, max: 8 });
-    expect(AFFIX_MAGNITUDE_RANGE["+combo_chance%"]).toEqual({ min: 5, max: 20 });
+  it("AFFIX_MAGNITUDE_RANGE: normal tier matches base ranges", () => {
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+sell_price%"]).toEqual({ min: 5, max: 15 });
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+speed%"]).toEqual({ min: 5, max: 15 });
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+size%"]).toEqual({ min: 5, max: 15 });
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+crit_chance%"]).toEqual({ min: 2, max: 8 });
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+combo_chance%"]).toEqual({ min: 5, max: 20 });
+  });
+
+  it("AFFIX_MAGNITUDE_RANGE: each tier has strictly higher bounds than the previous tier", () => {
+    const tiers = ALL_ITEM_TIERS;
+    for (let i = 1; i < tiers.length; i++) {
+      for (const kind of AFFIX_KINDS) {
+        expect(AFFIX_MAGNITUDE_RANGE[tiers[i]!][kind].min)
+          .toBeGreaterThan(AFFIX_MAGNITUDE_RANGE[tiers[i - 1]!][kind].min);
+        expect(AFFIX_MAGNITUDE_RANGE[tiers[i]!][kind].max)
+          .toBeGreaterThan(AFFIX_MAGNITUDE_RANGE[tiers[i - 1]!][kind].max);
+      }
+    }
+  });
+
+  it("AFFIX_MAGNITUDE_RANGE: legendary sell_price range matches spec (38–56)", () => {
+    expect(AFFIX_MAGNITUDE_RANGE.legendary["+sell_price%"]).toEqual({ min: 38, max: 56 });
   });
 
   it("all numeric constants are positive", () => {
