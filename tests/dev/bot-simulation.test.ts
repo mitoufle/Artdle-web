@@ -46,7 +46,7 @@ const DECISION_EVERY_S = 5;
 const LOG_EVERY_S = 300;     // log a row every 5 minutes of simulated time
 const MAX_S = 3 * 60 * 60;   // 3 hours of simulated time
 const SEED = 42;
-const MIN_FAME_PER_ASCEND = 5; // wait until we can gain at least this much fame
+const MIN_FAME_PER_ASCEND = 100; // wait until we can gain at least this much fame (~1M inspi)
 
 // ─── Node priority list ───────────────────────────────────────────────────────
 // Each ID listed ONCE. Bot buys the next available level of the first affordable
@@ -264,7 +264,7 @@ function decideHire(): void {
   const state = useGameStore.getState();
   const cap = getRosterCap(state);
   if (state.roster.length >= cap) return;
-  for (const candidate of state.hiringQueue) {
+  for (const candidate of (state.hiringQueue ?? [])) {
     const cost = getHireCost(state, candidate).toNumber();
     if (state.gold.toNumber() >= cost) {
       useGameStore.getState().hireFromQueue(candidate.id);
