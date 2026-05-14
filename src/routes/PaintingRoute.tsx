@@ -18,7 +18,6 @@ import {
   type CanvasMultiplierInputs,
 } from "@/core/multipliers";
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
-import { AFFIX_SYMBOL } from "@/config/workshopAffixes";
 import { formatBig } from "@/core/formatter";
 import { CanvasStage } from "@/components/painting/CanvasStage";
 import { TrackCard } from "@/components/painting/TrackCard";
@@ -108,7 +107,8 @@ export function PaintingRoute(): JSX.Element {
         <CanvasUpgradesStrip>
           <TrackCard
             trackId="sell_price"
-            label={`${AFFIX_SYMBOL["+sell_price%"]} Sell Price`}
+            label="Sell Price"
+            affixKind="+sell_price%"
             level={sellPriceLevel}
             effectLine={`+${fmtPct(SELL_PRICE_PER_LEVEL, 0)} gold/level`}
             costLabel={`${formatBig(sellCost)}g`}
@@ -118,7 +118,8 @@ export function PaintingRoute(): JSX.Element {
           />
           <TrackCard
             trackId="speed"
-            label={`${AFFIX_SYMBOL["+speed%"]} Speed`}
+            label="Speed"
+            affixKind="+speed%"
             level={speedLevel}
             effectLine={`+${fmtPct(SPEED_PER_LEVEL, 0)} speed/level`}
             costLabel={`${formatBig(speedCost)}g`}
@@ -128,7 +129,8 @@ export function PaintingRoute(): JSX.Element {
           />
           <TrackCard
             trackId="size"
-            label={`${AFFIX_SYMBOL["+size%"]} Size`}
+            label="Size"
+            affixKind="+size%"
             level={sizeLevel}
             effectLine={sizeLocked ? "—" : `+${fmtPct(SIZE_PER_LEVEL, 0)} size / level (gold = size², time = size)`}
             costLabel={sizeLocked ? "—" : `${formatBig(sizeCost)}g`}
@@ -138,7 +140,8 @@ export function PaintingRoute(): JSX.Element {
           />
           <TrackCard
             trackId="crit"
-            label={`${AFFIX_SYMBOL["+crit_chance%"]} Crit`}
+            label="Crit"
+            affixKind="+crit_chance%"
             level={critLevel}
             effectLine={critLocked ? "—" : `+${fmtPct(CRIT_PER_LEVEL, 0)} crit chance/level (90% faster on hit)`}
             costLabel={critLocked ? "—" : `${formatBig(critCost)}g`}
@@ -148,7 +151,8 @@ export function PaintingRoute(): JSX.Element {
           />
           <TrackCard
             trackId="combo"
-            label={`${AFFIX_SYMBOL["+combo_chance%"]} Combo`}
+            label="Combo"
+            affixKind="+combo_chance%"
             level={comboLevel}
             effectLine={comboLocked ? "—" : `+${fmtPct(COMBO_PER_LEVEL, 0)} chain chance/level`}
             costLabel={comboLocked ? "—" : `${formatBig(comboCost)}g`}

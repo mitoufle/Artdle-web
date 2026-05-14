@@ -1,11 +1,14 @@
 import type { JSX } from "react";
 import styles from "./TrackCard.module.css";
 import type { CanvasTrackId } from "@/store/skillTreeSlice";
+import type { AffixKind } from "@/config/workshopAffixes";
+import { AFFIX_SYMBOL, AFFIX_COLOR } from "@/config/workshopAffixes";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 
 interface Props {
   trackId: CanvasTrackId;
   label: string;
+  affixKind: AffixKind;
   level: number;
   effectLine: string;
   costLabel: string;
@@ -14,14 +17,8 @@ interface Props {
   onUpgrade: () => void;
 }
 
-/**
- * One of the 5 cells in the canvas upgrades strip. Renders a single track
- * (sell price / speed / size / crit / combo) with current level, current
- * effect, next-level cost, and an upgrade button. Locked variant when the
- * required fame skill-tree node hasn't been purchased yet.
- */
 export function TrackCard({
-  trackId, label, level, effectLine, costLabel, canAfford, locked, onUpgrade,
+  trackId, label, affixKind, level, effectLine, costLabel, canAfford, locked, onUpgrade,
 }: Props): JSX.Element {
   const disabled = locked || !canAfford;
   const buttonLabel = locked ? "Locked" : `Upgrade · ${costLabel}`;
@@ -30,7 +27,9 @@ export function TrackCard({
       className={`${styles.card} ${locked ? styles.locked : ""}`}
       data-track-id={trackId}
     >
-      <div className={styles.label}>{label}</div>
+      <div className={styles.label}>
+        <span style={{ color: AFFIX_COLOR[affixKind] }}>{AFFIX_SYMBOL[affixKind]}</span>{" "}{label}
+      </div>
       <div className={styles.level}>Level {level}</div>
       <div className={styles.effect}>{effectLine}</div>
       <Hoverable
