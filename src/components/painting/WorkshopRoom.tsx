@@ -135,6 +135,20 @@ export function WorkshopRoom(): JSX.Element {
     return map;
   }, [inventory, equipped]);
 
+  // For each equipped slot: first inventory item whose fusion target is that slot.
+  const slotFusionMap = useMemo(() => {
+    const map = new Map<SlotKind, { candidate: Item; canFuse: boolean }>();
+    for (const item of inventory) {
+      const target = fusionTargetMap.get(item.id);
+      if (!target || map.has(item.slot)) continue;
+      map.set(item.slot, {
+        candidate: item,
+        canFuse: gold.gte(getFuseCost(target, workshopLevel)),
+      });
+    }
+    return map;
+  }, [inventory, fusionTargetMap, gold, workshopLevel]);
+
   return (
     <section className={styles.room} aria-label="Workshop room">
       <Hoverable
@@ -200,8 +214,6 @@ export function WorkshopRoom(): JSX.Element {
             }
 
             if (!item) {
-              // data-testid is on the outer wrapper so that firstElementChild
-              // of the testid element is the Hoverable's div (needed by hover tests).
               return (
                 <div key={slot} data-testid={`slot-${slot}`}>
                   <Hoverable
@@ -217,20 +229,28 @@ export function WorkshopRoom(): JSX.Element {
               );
             }
 
+            const fusionEntry = slotFusionMap.get(slot) ?? null;
+            const hasFusion = fusionEntry !== null;
+            const canFuse = fusionEntry?.canFuse ?? false;
+
             return (
               <Hoverable
                 key={slot}
                 as="div"
-                title={`${TIER_LABEL[item.tier]} ${slot} — equipped`}
-                body={() => itemHoverBody(item, workshopLevel, false)}
-                footer="Click to unequip."
+                title={hasFusion ? `${TIER_LABEL[item.tier]} ${slot} — FUSION READY` : `${TIER_LABEL[item.tier]} ${slot} — equipped`}
+                body={() => itemHoverBody(item, workshopLevel, hasFusion)}
+                footer={
+                  hasFusion
+                    ? (canFuse ? "Click to fuse." : "Not enough gold — click to unequip.")
+                    : "Click to unequip."
+                }
               >
                 <button
                   type="button"
-                  className={styles.itemSquare}
+                  className={`${styles.itemSquare}${hasFusion && canFuse ? ` ${styles.equippedFusion}` : ""}`}
                   data-tier={item.tier}
-                  onClick={() => unequipSlot(slot)}
-                  data-testid={`slot-unequip-${slot}`}
+                  onClick={() => (hasFusion && canFuse) ? fuseItem(fusionEntry!.candidate.id) : unequipSlot(slot)}
+                  data-testid={hasFusion && canFuse ? `slot-fuse-${slot}` : `slot-unequip-${slot}`}
                 >
                   <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
                   <span className={styles.slotLabel}>{slot}</span>
@@ -255,53 +275,37 @@ export function WorkshopRoom(): JSX.Element {
           <div className={styles.empty}>Empty — click Craft to roll an item.</div>
         ) : (
           <div className={styles.inventoryGrid}>
-            {inventory.map((item) => {
-              const fusionTarget = fusionTargetMap.get(item.id) ?? null;
-              const isFusion = fusionTarget !== null;
-              const fusionTier = fusionTarget?.tier ?? item.tier;
-              const canFuse = isFusion && gold.gte(getFuseCost(fusionTarget!, workshopLevel));
-
-              return (
-                <div
-                  key={item.id}
-                  className={styles.itemCell}
-                  data-testid={`inventory-item-${item.id}`}
+            {inventory.map((item) => (
+              <div
+                key={item.id}
+                className={styles.itemCell}
+                data-testid={`inventory-item-${item.id}`}
+              >
+                <Hoverable
+                  title={`${TIER_LABEL[item.tier]} ${item.slot}`}
+                  body={() => itemHoverBody(item, workshopLevel, false)}
+                  footer="Left-click to equip · right-click to discard."
                 >
-                  <Hoverable
-                    title={`${TIER_LABEL[item.tier]} ${item.slot}${isFusion ? " — FUSION" : ""}`}
-                    body={() => itemHoverBody(isFusion ? fusionTarget! : item, workshopLevel, isFusion)}
-                    footer={isFusion ? (canFuse ? "Click to fuse." : "Not enough gold to fuse.") : "Click to equip."}
-                  >
-                    <button
-                      type="button"
-                      className={`${styles.itemSquare}${isFusion ? ` ${styles.fusionCandidate}` : ""}`}
-                      data-tier={isFusion ? fusionTier : item.tier}
-                      onClick={() => isFusion ? fuseItem(item.id) : equipItem(item.id)}
-                      disabled={isFusion && !canFuse}
-                      data-testid={isFusion ? `inventory-fuse-${item.id}` : `inventory-equip-${item.id}`}
-                    >
-                      <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
-                      <span className={styles.slotLabel}>{item.slot}</span>
-                      {item.affixes.slice(0, 2).map((a, i) => (
-                        <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} +{a.magnitude}%</span>
-                      ))}
-                      {item.affixes.length > 2 && (
-                        <span className={styles.affixLine}>+{item.affixes.length - 2} more</span>
-                      )}
-                    </button>
-                  </Hoverable>
                   <button
                     type="button"
-                    className={styles.discardBtn}
-                    onClick={() => discard(item.id)}
-                    data-testid={`inventory-discard-${item.id}`}
-                    aria-label={`Discard ${item.id}`}
+                    className={styles.itemSquare}
+                    data-tier={item.tier}
+                    onClick={() => equipItem(item.id)}
+                    onContextMenu={(e) => { e.preventDefault(); discard(item.id); }}
+                    data-testid={`inventory-equip-${item.id}`}
                   >
-                    ✕
+                    <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
+                    <span className={styles.slotLabel}>{item.slot}</span>
+                    {item.affixes.slice(0, 2).map((a, i) => (
+                      <span key={i} className={styles.affixLine}>{AFFIX_SYMBOL[a.kind]} +{a.magnitude}%</span>
+                    ))}
+                    {item.affixes.length > 2 && (
+                      <span className={styles.affixLine}>+{item.affixes.length - 2} more</span>
+                    )}
                   </button>
-                </div>
-              );
-            })}
+                </Hoverable>
+              </div>
+            ))}
           </div>
         )}
       </section>

@@ -98,7 +98,7 @@ describe("WorkshopRoom hover wiring", () => {
     });
     render(<WorkshopRoom />);
     fireEvent.mouseEnter(screen.getByTestId("inventory-equip-x-1"));
-    expect(String(useGameStore.getState().hoverFooter)).toBe("Click to equip.");
+    expect(String(useGameStore.getState().hoverFooter)).toBe("Left-click to equip · right-click to discard.");
   });
 
   it("Equipped slot hover shows item details and 'Click to unequip' footer", () => {

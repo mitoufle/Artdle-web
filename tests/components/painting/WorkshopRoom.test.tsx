@@ -106,10 +106,10 @@ describe("<WorkshopRoom />", () => {
     expect(useGameStore.getState().equipped.brush).toBeUndefined();
   });
 
-  it("discarding an inventory item removes it", () => {
+  it("right-clicking an inventory item discards it", () => {
     useGameStore.setState({ inventory: [sampleBrush] });
     render(<WorkshopRoom />);
-    fireEvent.click(screen.getByTestId(`inventory-discard-${sampleBrush.id}`));
+    fireEvent.contextMenu(screen.getByTestId(`inventory-equip-${sampleBrush.id}`));
     expect(useGameStore.getState().inventory).toEqual([]);
   });
 });
