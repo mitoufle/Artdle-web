@@ -199,19 +199,39 @@
 .itemSquare[data-tier="epic"]      { --tier-color: #b060e0; }
 .itemSquare[data-tier="legendary"] { --tier-color: #e8602c; }
 
-/* Fusion ready — rotating rainbow border on the equipped slot */
-@keyframes rainbowBorder {
-  0%   { box-shadow: 0 0 0 3px hsl(0, 100%, 60%),   0 0 12px 4px hsl(0, 100%, 60%); }
-  16%  { box-shadow: 0 0 0 3px hsl(60, 100%, 60%),  0 0 12px 4px hsl(60, 100%, 60%); }
-  33%  { box-shadow: 0 0 0 3px hsl(120, 100%, 60%), 0 0 12px 4px hsl(120, 100%, 60%); }
-  50%  { box-shadow: 0 0 0 3px hsl(180, 100%, 60%), 0 0 12px 4px hsl(180, 100%, 60%); }
-  66%  { box-shadow: 0 0 0 3px hsl(240, 100%, 60%), 0 0 12px 4px hsl(240, 100%, 60%); }
-  83%  { box-shadow: 0 0 0 3px hsl(300, 100%, 60%), 0 0 12px 4px hsl(300, 100%, 60%); }
-  100% { box-shadow: 0 0 0 3px hsl(360, 100%, 60%), 0 0 12px 4px hsl(360, 100%, 60%); }
+/* Fusion ready — conic gradient border that sweeps anti-clockwise */
+@property --rainbow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes spinRainbow {
+  to { --rainbow-angle: -360deg; }
 }
 
 .equippedFusion {
-  animation: rainbowBorder 1.5s linear infinite;
+  border-color: transparent;
+  background-image:
+    /* layer 1 (top): flat tile colour clipped to padding-box, hides gradient inside */
+    linear-gradient(
+      color-mix(in srgb, var(--tier-color, #9e9e9e) 12%, var(--bg-stone-d)),
+      color-mix(in srgb, var(--tier-color, #9e9e9e) 12%, var(--bg-stone-d))
+    ),
+    /* layer 2 (bottom): rotating rainbow visible only in the border strip */
+    conic-gradient(
+      from var(--rainbow-angle),
+      hsl(0,   100%, 65%),
+      hsl(60,  100%, 65%),
+      hsl(120, 100%, 65%),
+      hsl(180, 100%, 65%),
+      hsl(240, 100%, 65%),
+      hsl(300, 100%, 65%),
+      hsl(0,   100%, 65%)
+    );
+  background-origin: padding-box, border-box;
+  background-clip:   padding-box, border-box;
+  animation: spinRainbow 2s linear infinite;
 }
 
 .empty {
