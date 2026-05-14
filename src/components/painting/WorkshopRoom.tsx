@@ -135,13 +135,16 @@ export function WorkshopRoom(): JSX.Element {
     return map;
   }, [inventory, equipped]);
 
-  // For each equipped slot: first inventory item whose fusion target is that slot.
+  // For each equipped slot: first inventory item whose fusion target IS that slot.
+  // Key on target.slot (the equipped item's slot), not item.slot (the inventory item's
+  // slot), because getFusionTarget ignores slot kinds — a "hat" in inventory can match
+  // a "brush" that is equipped, and the rainbow must appear on the brush slot.
   const slotFusionMap = useMemo(() => {
     const map = new Map<SlotKind, { candidate: Item; canFuse: boolean }>();
     for (const item of inventory) {
       const target = fusionTargetMap.get(item.id);
-      if (!target || map.has(item.slot)) continue;
-      map.set(item.slot, {
+      if (!target || map.has(target.slot)) continue;
+      map.set(target.slot, {
         candidate: item,
         canFuse: gold.gte(getFuseCost(target, workshopLevel)),
       });
