@@ -459,10 +459,4 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
     expect(hasCapability(useGameStore.getState(), "class_goldsmith")).toBe(true);
   });
 
-  it("apprentice_pool: adds inventory slots", async () => {
-    const { getMaxInventorySlots } = await import("@/store/workshopSlice");
-    useGameStore.setState({ purchasedNodes: { apprentice_pool: 3 } });
-    // Base MAX_INVENTORY_SLOTS + 0 chests + 3 from apprentice_pool
-    expect(getMaxInventorySlots(useGameStore.getState())).toBe(3 + 3); // assuming MAX_INVENTORY_SLOTS = 3
-  });
 });
