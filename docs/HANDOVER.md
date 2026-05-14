@@ -1,5 +1,43 @@
 # Artdle Web — Handover
 
+## Workshop UI polish — session 4 (2026-05-14)
+
+Visual polish pass and fusion correctness fix.
+
+### What landed
+
+**2-column affix grid + colored symbols (commit `cd92294`)**
+
+- `AFFIX_COLOR` added to `workshopAffixes.ts`: `$` → `#f0b847` (gold), `»` → `#4fc3e8` (cyan), `✦` → `#e85c5c` (red), `∞` → `#b06ee8` (purple), `⊕` → `#4cb87a` (green).
+- Item squares (Workshop equipped + inventory) now render affixes in a 2-column CSS grid (`grid-template-columns: 1fr 1fr`). Each affix span wraps the symbol in a `<span style={{ color: AFFIX_COLOR[a.kind] }}>` so the symbol is colored and the magnitude stays in `var(--ink-2)`. Font reduced from 14 px to 11 px to fit two columns in 104 px tiles.
+- `WorkerCard` and `QueueCard` affix rows now prefix with the colored symbol followed by the long-form label.
+- `StatsRoom` block headers prepend the colored symbol before each stat name (Sell Price, Speed, Crit, Combo, Size).
+- Item tile background changed to flat `var(--bg-stone-d)` for all tiers — only the border (thickened from 2 px to 3 px) carries the tier color. `equippedFusion` layer-1 background updated to match.
+
+**Same-slot-only fusion (commit `cd92294`)**
+
+- `getFusionTarget` previously iterated all equipped slots and returned the first match on tier + affix-kind multiset, deliberately ignoring slot kinds (a "hat" in inventory could fuse with an equipped "brush"). This caused cross-slot merges (apron into boots, etc.) visible in playtesting.
+- Fix: replaced the loop with a direct lookup `equipped[invItem.slot]`. If no item is equipped in the same slot, returns `null` immediately. Slot mismatch → no fusion, regardless of tier or affixes.
+- `slotFusionMap` comment and key updated: now keys by `item.slot` (which equals `target.slot` under the new constraint).
+- Test `"slot kind of inventory item does not have to match equipped slot"` inverted to `"returns null when slot kinds differ even if tier and affix kinds match"`. Matching-test fixture corrected (`inv.slot` changed from `"palette"` to `"brush"` to match the equipped item's slot).
+
+### Tests + build
+
+- **775 tests passing across 80 files** (unchanged count; 2 tests updated to reflect new contracts).
+
+### Lessons preserved
+
+- **`getFusionTarget` must check slot — tier + affixes alone are insufficient.** The earlier design said "slot kind intentionally ignored" but that produced obviously wrong gameplay. The simpler implementation (direct slot lookup) is also correct.
+- **Colored symbols via inline style is fine for a fixed small set.** Five affix kinds, defined once in `AFFIX_COLOR`. No CSS classes needed — inline `style={{ color }}` on the symbol span is clear and co-located with the symbol string.
+
+### Next (carry-overs)
+
+- Four `as unknown as GameStore` casts remain in `WorkshopRoom`, `ConstellationRoute`, `TreeRoute`, `AscensionRoute`.
+- Chip-strip spacing for 6-stage tree chips (deferred from prior session).
+- Goldsmith class node (`gold_diggers`) playtest pending.
+
+---
+
 ## Workshop UI polish + fusion UX overhaul (2026-05-14, session 3)
 
 Continuation session fixing visual bugs surfaced by browser playtesting and overhauling the fusion interaction model.
