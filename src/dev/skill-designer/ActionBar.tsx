@@ -48,7 +48,7 @@ export function ActionBar({ status, issueCount, onSave, onExport, onReset }: Pro
         </button>
         {confirming ? (
           <>
-            <span className={styles.confirmPrompt}>Wipe everything?</span>
+            <span className={styles.confirmPrompt}>Discard changes and reload from file?</span>
             <button type="button" className={styles.danger} onClick={handleConfirm}>
               Yes, reset
             </button>

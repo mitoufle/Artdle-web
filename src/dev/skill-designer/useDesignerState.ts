@@ -120,7 +120,7 @@ export function useDesignerState(): DesignerState {
 
   const resetAll = useCallback(() => {
     clearDraft();
-    setDesign(EMPTY_DESIGN);
+    setDesign({ ...loadFileBaseline() });
     setSelectedId(null);
   }, []);
 
