@@ -1,5 +1,33 @@
 # Artdle Web — Handover
 
+## Type narrowing + test repair (2026-05-15)
+
+### What landed
+
+**Eliminated `as unknown as GameStore` casts (commit `1fb7a21`)**
+
+- `getNextCost`, `canBuyNode` in `skillTreeSlice.ts` narrowed to `Pick<GameStore, "purchasedNodes">` / `Pick<GameStore, "purchasedNodes" | "devFreeNodes" | "fame">`.
+- `getUnlockedSlotKinds`, `getCurrentSlotCount`, `getMaxInventorySlots` in `workshopSlice.ts` narrowed to `Pick<GameStore, "purchasedNodes">`.
+- `getTotalLevelsInStage`, `getProducingParts` in `treeSlice.ts` narrowed to `Pick<GameStore, "partLevels">` / `Pick<GameStore, "currentStage" | "partLevels">`.
+- `canAscend` in `ascend.ts` narrowed to `Pick<GameStore, "inspiration" | "purchasedNodes">`.
+- `ConstellationRoute`, `AscensionRoute`, `TreeRoute`, `WorkshopRoom` route/component files: `as unknown as GameStore` casts removed; unused `GameStore` type imports dropped. `equipped` removed from `TreeRoute` helperState (was never consumed by the helper calls).
+- The migration-function cast in `store/index.ts` was correctly left in place (legitimate use).
+
+**Repaired 7 pre-existing test regressions (commit `1fb7a21`)**
+
+- `skillTreeSlice.test.ts`: cost expectations updated from old `[1,5,10,15,20]` to actual `[1,2,3,5,8]` after depth-pricing rework.
+- `AscensionRoute.hover.test.tsx`: hover-body regex `/Current inspi: 10,?000/` updated to `/Current inspi: 10\.00K/` to match `formatBig` K-suffix output.
+- `useDesignerState.test.ts`: three tests assumed `resetAll()` → empty design. Now `resetAll()` reloads the file baseline (50 nodes). Add/delete tests switched to `importDesign(EMPTY_DESIGN)`; "resetAll" test updated to assert baseline reloaded + selectedId cleared.
+- `bot-simulation.test.ts`: added `30_000` ms timeout (3-hour simulation was timing out at default 5 s).
+
+### Next (carry-overs)
+
+- Goldsmith class node (`gold_diggers`) playtest: code is correct (`gold_diggers` node → `class_goldsmith` capability → `rollWorkerClass` gate in `officeRoll.ts`). Needs browser verification — enable devFreeNodes, buy `gold_diggers`, confirm Goldsmith appears in office candidate rolls. No code change expected.
+- Chip-strip spacing for 6-stage tree chips (deferred from prior session).
+- Combo chance soft cap (same treatment as crit) if playtesting shows it trivially maxes.
+
+---
+
 ## Skill tree pricing + dev tooling polish (2026-05-15)
 
 ### What landed
