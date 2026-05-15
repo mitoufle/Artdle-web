@@ -186,13 +186,10 @@ export const getPartMilestoneMultiplier = (level: number): number =>
 export const getNextPartMilestone = (level: number): number | null =>
   PART_MILESTONES.find((m) => m > level) ?? null;
 
-/** Levels-remaining window that triggers the "approaching milestone" glow. */
-export const MILESTONE_APPROACH_THRESHOLD = 5;
-
-/** True when the part is within MILESTONE_APPROACH_THRESHOLD levels of the next milestone. */
+/** True when buying one more level would hit the next milestone exactly. */
 export const isApproachingMilestone = (level: number): boolean => {
   const next = getNextPartMilestone(level);
-  return next !== null && next - level <= MILESTONE_APPROACH_THRESHOLD;
+  return next !== null && next - level === 1;
 };
 
 export const inspiPerSec = (
