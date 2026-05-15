@@ -67,7 +67,6 @@ export const createSchoolSlice: StateCreator<GameStore, [], [], SchoolSlice> = (
     const allComplete = tierDef.researches.every((r) => state.completedResearches[r.id]);
     if (!allComplete) return false;
     const examCost = big(tierDef.examCost);
-    if (state.fame.lt(examCost)) return false;
     if (!state.spend("fame", examCost)) return false;
     set({
       examsPassed: { ...state.examsPassed, [state.currentTier]: true },
@@ -77,6 +76,6 @@ export const createSchoolSlice: StateCreator<GameStore, [], [], SchoolSlice> = (
   },
 
   resetSchool: () => {
-    set({ ...initialSchoolState });
+    set(initialSchoolState);
   },
 });

@@ -61,6 +61,13 @@ describe("schoolSlice", () => {
     expect(useGameStore.getState().completedResearches["color_theory_basics"]).toBe(true);
   });
 
+  it("schoolTick completes research when delta overshoots the remaining time", () => {
+    useGameStore.getState().startResearch("color_theory_basics"); // 300s
+    useGameStore.getState().schoolTick(400); // delta > remainingSeconds
+    expect(useGameStore.getState().activeResearch).toBeNull();
+    expect(useGameStore.getState().completedResearches["color_theory_basics"]).toBe(true);
+  });
+
   it("schoolTick is a no-op when no research is active", () => {
     useGameStore.getState().schoolTick(100);
     expect(useGameStore.getState().activeResearch).toBeNull();
