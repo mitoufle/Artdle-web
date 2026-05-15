@@ -19,18 +19,6 @@ describe("<StagePanel />", () => {
     expect(screen.getByTestId("stage-chip-2")).not.toHaveAttribute("data-active", "true");
   });
 
-  it("renders the title 'Stage A → Stage B' with current and next", () => {
-    render(
-      <StagePanel
-        currentStageIndex={1}
-        currentStageName="Bud"
-        nextStageName="Leaflet"
-        totalLevelsInStage={5}
-        unlockThreshold={12}
-      />,
-    );
-    expect(screen.getByText(/Bud.*Leaflet/i)).toBeInTheDocument();
-  });
 
   it("renders the progress label '{N} / {threshold} levels in stage'", () => {
     render(
@@ -58,16 +46,4 @@ describe("<StagePanel />", () => {
     expect(screen.queryByRole("button", { name: /Grow/i })).not.toBeInTheDocument();
   });
 
-  it("renders 'Final stage' when nextStageName is undefined", () => {
-    render(
-      <StagePanel
-        currentStageIndex={5}
-        currentStageName="Verdant Shoot"
-        nextStageName={undefined}
-        totalLevelsInStage={150}
-        unlockThreshold={100}
-      />,
-    );
-    expect(screen.getByText(/Final stage/i)).toBeInTheDocument();
-  });
 });

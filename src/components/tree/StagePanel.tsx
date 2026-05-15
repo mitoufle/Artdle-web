@@ -68,16 +68,6 @@ export function StagePanel({
         aria-label="Stage progress"
         data-testid="stage-panel"
       >
-        <header className={styles.title}>
-          {isFinal ? (
-            <span>{currentStageName} · Final stage</span>
-          ) : (
-            <span>
-              {currentStageName} → {nextStageName}
-            </span>
-          )}
-        </header>
-
         <ol className={styles.chips} aria-label="Stage chain">
           {TREE_STAGES.slice(currentStageIndex, currentStageIndex + 2).map((stage, i) => {
             const idx = currentStageIndex + i;
