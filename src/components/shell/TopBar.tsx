@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useGameStore } from "@/store";
 import styles from "./TopBar.module.css";
@@ -10,15 +11,7 @@ const NAV_ITEMS: ReadonlyArray<{ to: string; label: string }> = [
   { to: "/constellation", label: "Constellation" },
 ];
 
-/**
- * Wipe persisted save + designer drafts and reload. Dev-only convenience for
- * the unreleased game; will be removed before public ship.
- */
-async function resetAllProgress(): Promise<void> {
-  const ok = window.confirm(
-    "Reset ALL progress? This wipes the save (gold, fame, tree, canvas, workshop, skill tree) and the designer draft.",
-  );
-  if (!ok) return;
+async function wipeAndReload(): Promise<void> {
   try {
     await useGameStore.persist.clearStorage();
   } catch {
@@ -34,6 +27,8 @@ async function resetAllProgress(): Promise<void> {
 
 export function TopBar(): JSX.Element {
   const { pathname } = useLocation();
+  const [confirming, setConfirming] = useState(false);
+
   return (
     <header className={styles.bar}>
       <div className={styles.brand}>
@@ -63,15 +58,35 @@ export function TopBar(): JSX.Element {
         })}
       </nav>
       <div className={styles.meta} aria-label="Autosave status">
-        <button
-          type="button"
-          className={styles.resetBtn}
-          onClick={() => void resetAllProgress()}
-          title="DEV: wipe all progress and reload"
-          data-testid="dev-reset-progress"
-        >
-          ↻ reset
-        </button>
+        {confirming ? (
+          <>
+            <span className={styles.confirmPrompt}>Wipe all progress?</span>
+            <button
+              type="button"
+              className={styles.confirmYes}
+              onClick={() => void wipeAndReload()}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className={styles.confirmNo}
+              onClick={() => setConfirming(false)}
+            >
+              No
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={styles.resetBtn}
+            onClick={() => setConfirming(true)}
+            title="DEV: wipe all progress and reload"
+            data-testid="dev-reset-progress"
+          >
+            ↻ reset
+          </button>
+        )}
         <span>Saved</span>
       </div>
     </header>
