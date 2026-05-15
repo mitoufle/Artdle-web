@@ -34,12 +34,23 @@ describe("TreeRoute (v2 visual)", () => {
     expect(screen.getAllByTestId(/stage-chip-/)).toHaveLength(2);
   });
 
-  it("renders upgrade rows for the current tier and the next one", () => {
+  it("renders upgrade rows only for currently unlocked stages (0..currentStage)", () => {
     renderTreeRoute();
-    // At currentStage=0 (Tiny Sprout): stage 0 part (cotyledon) visible.
+    // At currentStage=0: stage 0 part visible.
     expect(screen.getByTestId("upgrade-buy-cotyledon")).toBeInTheDocument();
-    // Stage 1 (next tier) is also previewed.
+    // Stage 1 is locked — its parts must NOT appear in the upgrade list.
+    expect(screen.queryByTestId("upgrade-buy-tendril")).not.toBeInTheDocument();
+  });
+
+  it("keeps previous-stage parts visible after advancing to stage 1", () => {
+    useGameStore.setState({ currentStage: 1 });
+    renderTreeRoute();
+    // Stage 0 part (cotyledon) must still be upgradeable.
+    expect(screen.getByTestId("upgrade-buy-cotyledon")).toBeInTheDocument();
+    // Stage 1 parts are now unlocked.
     expect(screen.getByTestId("upgrade-buy-tendril")).toBeInTheDocument();
+    // Stage 2 is still locked — must not appear.
+    expect(screen.queryByTestId("upgrade-buy-vein")).not.toBeInTheDocument();
   });
 
   it("buy button is disabled when player has 0 gold", () => {
