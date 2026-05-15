@@ -250,6 +250,41 @@ export const comboEffectiveChance = (
 ): number => Math.max(0, base * (1 - decay * chain));
 
 // ============================================================================
+// Skill-node effect constants (tuning numbers only — formulas stay in multipliers.ts)
+// ============================================================================
+
+/** Per-color additive gold bonus per level. Tier-scaled: root +20%, primaries +30%,
+ *  secondaries +40%, tertiaries +50%. Full color tree = +380% (4.80× base before rainbow). */
+export const COLOR_PER_LEVEL: Readonly<Record<string, number>> = {
+  black_white: 0.20,
+  magenta: 0.30,
+  cyan: 0.30,
+  yellow: 0.30,
+  red: 0.40,
+  green: 0.40,
+  blue: 0.40,
+  purple: 0.50,
+  brown: 0.50,
+  orange: 0.50,
+};
+/** Rainbow stacks multiplicatively: × (1 + RAINBOW_PER_LEVEL × level). */
+export const RAINBOW_PER_LEVEL = 0.50;
+/** get_inspired: +25% inspi rate per level (additive). */
+export const GET_INSPIRED_PER_LEVEL = 0.25;
+/** basic_technique: +2% canvas speed per level (additive). */
+export const BASIC_TECHNIQUE_PER_LEVEL = 0.02;
+/** muscle_memory: +5% canvas speed per level (additive). */
+export const MUSCLE_MEMORY_PER_LEVEL = 0.05;
+/** Bargain: -5% tree upgrade cost per level (additive discount). */
+export const BARGAIN_PER_LEVEL = 0.05;
+/** Tree upgrade cost can never drop below 50% of base, regardless of Bargain level. */
+export const BARGAIN_DISCOUNT_FLOOR = 0.5;
+/** Craftsmanship: +5 percentage points to affix min/max per level. */
+export const CRAFTSMANSHIP_PER_LEVEL = 5;
+/** better_scaling: +1 pp to affix bounds per workshop level (per node level). */
+export const BETTER_SCALING_PER_WORKSHOP_LEVEL = 1;
+
+// ============================================================================
 // Painter's Office formulas
 // ============================================================================
 

@@ -11,7 +11,7 @@
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
-import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING } from "./balance";
+import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
 import { big, type Big } from "@/core/bigNumber";
 import type { AffixKind } from "@/config/workshopAffixes";
 
@@ -54,34 +54,6 @@ export function getOfficeContribution(state: Pick<GameStore, "roster">, kind: Af
   }
   return total;
 }
-
-/**
- * Per-color additive bonus to canvas gold. Tier-scaled per the v3.2 design:
- * black_white (root) +20%, primaries +30%, secondaries +40%, tertiaries +50%.
- * Sum at full color tree = +380% (4.80× base before rainbow).
- */
-const COLOR_PER_LEVEL: Readonly<Record<string, number>> = {
-  black_white: 0.20,
-  magenta: 0.30,
-  cyan: 0.30,
-  yellow: 0.30,
-  red: 0.40,
-  green: 0.40,
-  blue: 0.40,
-  purple: 0.50,
-  brown: 0.50,
-  orange: 0.50,
-};
-
-/** Rainbow now stacks multiplicatively: × (1 + 0.50 × level). */
-const RAINBOW_PER_LEVEL = 0.50;
-const GET_INSPIRED_PER_LEVEL = 0.25;
-const BASIC_TECHNIQUE_PER_LEVEL = 0.02;
-const MUSCLE_MEMORY_PER_LEVEL = 0.05;
-const BARGAIN_PER_LEVEL = 0.05;
-const BARGAIN_DISCOUNT_FLOOR = 0.5; // never reduce tree costs below 50% of base
-const CRAFTSMANSHIP_PER_LEVEL = 5; // +5 percentage points to affix min/max per level
-const BETTER_SCALING_PER_WORKSHOP_LEVEL = 1; // +1 pp to affix bounds per workshop level
 
 /**
  * Aggregate multiplier on inspiration accrual rate.
