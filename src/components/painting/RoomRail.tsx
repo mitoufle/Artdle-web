@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { Hammer, User, GraduationCap, FlaskConical, BarChart3 } from "lucide-react";
 import { useGameStore } from "@/store";
 import { getRosterCap } from "@/store/officeSlice";
+import { countCapability } from "@/store/skillTreeSlice";
 import styles from "./RoomRail.module.css";
 
 export type RoomId = "workshop" | "office" | "school" | "lab" | "stats";
@@ -27,11 +28,16 @@ interface Props {
 
 export function RoomRail({ activeRoom, onSelect }: Props): JSX.Element {
   const officeEnabled = useGameStore((s) => getRosterCap(s) >= 1);
+  const schoolEnabled = useGameStore((s) => countCapability(s, "school_access") >= 1);
 
   return (
     <nav className={styles.rail} role="tablist" aria-label="Rooms" aria-orientation="vertical">
       {ROOMS.map(({ id, label, Icon }) => {
-        const enabled = id === "workshop" || id === "stats" || (id === "office" && officeEnabled);
+        const enabled =
+          id === "workshop" ||
+          id === "stats" ||
+          (id === "office" && officeEnabled) ||
+          (id === "school" && schoolEnabled);
         const active = activeRoom === id;
         return (
           <button

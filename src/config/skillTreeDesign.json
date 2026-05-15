@@ -714,6 +714,19 @@
         "x": 368.0372622222222,
         "y": -321.469422324511
       }
+    },
+    {
+      "id": "unlock_school",
+      "name": "Painting School",
+      "description": "Unlocks the Painting School — research permanent bonuses one at a time.",
+      "numericEffect": "",
+      "parentIds": ["fast_learner"],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [100],
+      "unlocks": ["school_access"],
+      "position": null
     }
   ]
 }
