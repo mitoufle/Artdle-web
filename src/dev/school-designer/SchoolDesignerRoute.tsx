@@ -109,12 +109,12 @@ export function SchoolDesignerRoute(): JSX.Element {
                     <input
                       className={`${styles.researchInput} ${styles.durationInput}`}
                       type="number"
-                      value={research.durationSeconds}
+                      value={Math.round(research.durationSeconds / 60)}
                       min={1}
-                      title="Duration (seconds)"
-                      onChange={(e) => { markDirty(); actions.updateResearch(tier.tier, research.id, { durationSeconds: Number(e.target.value) }); }}
+                      title="Duration (minutes)"
+                      onChange={(e) => { markDirty(); actions.updateResearch(tier.tier, research.id, { durationSeconds: Number(e.target.value) * 60 }); }}
                     />
-                    <span className={styles.durationLabel}>s</span>
+                    <span className={styles.durationLabel}>m</span>
                     <button
                       className={styles.researchDelete}
                       onClick={() => { markDirty(); actions.deleteResearch(tier.tier, research.id); }}
