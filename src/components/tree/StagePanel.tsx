@@ -77,6 +77,7 @@ export function StagePanel({
                 className={styles.chip}
                 data-testid={`stage-chip-${idx}`}
                 data-active={idx === currentStageIndex ? "true" : undefined}
+                data-preview={idx !== currentStageIndex ? "true" : undefined}
               >
                 <span>{stage.name}</span>
                 {i === 0 && !isFinal && (
