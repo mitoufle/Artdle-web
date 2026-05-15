@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useGameStore } from "@/store";
+import { persistedAdapter } from "@/systems/persistence";
 import styles from "./TopBar.module.css";
 
 const NAV_ITEMS: ReadonlyArray<{ to: string; label: string }> = [
@@ -22,6 +23,7 @@ async function wipeAndReload(): Promise<void> {
   } catch {
     // ignore
   }
+  persistedAdapter.discard(); // cancel pending write so beforeunload flush cannot restore the save
   window.location.reload();
 }
 

@@ -36,6 +36,7 @@ export const idbAdapter: SaveAdapter = {
  */
 export interface ThrottledSaveAdapter extends SaveAdapter {
   flush: () => Promise<void>;
+  discard: () => void;
 }
 
 export function throttledAdapter(
@@ -56,6 +57,14 @@ export function throttledAdapter(
     await base.setItem(p.name, p.value);
   };
 
+  const discard = (): void => {
+    if (timerId !== null) {
+      clearTimeout(timerId);
+      timerId = null;
+    }
+    pending = null;
+  };
+
   return {
     getItem: base.getItem.bind(base),
     removeItem: base.removeItem.bind(base),
@@ -73,6 +82,7 @@ export function throttledAdapter(
       }
     },
     flush,
+    discard,
   };
 }
 

@@ -144,4 +144,33 @@ describe("throttledAdapter", () => {
     await throttled.removeItem("k");
     expect(store.has("k")).toBe(false);
   });
+
+  it("discard() cancels pending write so flush() is a no-op afterward", async () => {
+    const { store, adapter: base } = makeMemAdapter();
+    const throttled = throttledAdapter(base, 1000);
+    await throttled.setItem("k", "queued");
+    expect(store.has("k")).toBe(false); // not written yet
+
+    throttled.discard();
+    await throttled.flush(); // should be a no-op
+
+    expect(store.has("k")).toBe(false);
+    // timer must also be dead — advancing past window must not write
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(store.has("k")).toBe(false);
+  });
+
+  it("clearStorage + discard prevents beforeunload flush from restoring save", async () => {
+    const { store, adapter: base } = makeMemAdapter();
+    const throttled = throttledAdapter(base, 1000);
+    // A tick queued a write
+    await throttled.setItem("artdle-save", "old-state");
+    // wipeAndReload: clearStorage deletes the key
+    await throttled.removeItem("artdle-save");
+    // wipeAndReload: discard cancels pending write before reload fires beforeunload
+    throttled.discard();
+    // beforeunload lifecycle hook calls flush
+    await throttled.flush();
+    expect(store.has("artdle-save")).toBe(false);
+  });
 });
