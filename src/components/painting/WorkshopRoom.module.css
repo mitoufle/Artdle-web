@@ -53,6 +53,7 @@
 .craftStation {
   display: flex;
   align-items: center;
+  gap: var(--s-3);
 }
 
 .craftBtn {
@@ -78,6 +79,29 @@
 .craftBtn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.autoCraftToggle {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--ink-line);
+  background: var(--bg-2);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.autoCraftToggle:hover {
+  border-color: var(--ink-1);
+  color: var(--ink-1);
+}
+
+.autoCraftOn {
+  border-color: var(--inspi);
+  color: var(--inspi);
+  background: color-mix(in srgb, var(--inspi) 12%, var(--bg-2));
 }
 
 .section {

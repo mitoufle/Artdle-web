@@ -152,12 +152,16 @@ export function WorkshopRoom(): JSX.Element {
   const workshopXp = useGameStore((s) => s.workshopXp);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const protectedTiers = useGameStore((s) => s.protectedTiers);
+  const autoCraftEnabled = useGameStore((s) => s.autoCraftEnabled);
   const craft = useGameStore((s) => s.craft);
   const equipItem = useGameStore((s) => s.equipItem);
   const unequipSlot = useGameStore((s) => s.unequipSlot);
   const discard = useGameStore((s) => s.discard);
   const fuseItem = useGameStore((s) => s.fuseItem);
   const toggleProtected = useGameStore((s) => s.toggleProtected);
+  const toggleAutoCraft = useGameStore((s) => s.toggleAutoCraft);
+
+  const hasTaylorism = (purchasedNodes.taylorsim ?? 0) > 0;
 
   const helperState = { purchasedNodes };
   const unlockedSlots = useMemo(
@@ -254,6 +258,17 @@ export function WorkshopRoom(): JSX.Element {
             Craft · {formatBig(cost)} g
           </button>
         </Hoverable>
+        {hasTaylorism && (
+          <button
+            type="button"
+            className={`${styles.autoCraftToggle}${autoCraftEnabled ? ` ${styles.autoCraftOn}` : ""}`}
+            onClick={toggleAutoCraft}
+            data-testid="autocraft-toggle"
+            title={autoCraftEnabled ? "Auto-craft enabled — click to pause" : "Auto-craft paused — click to resume"}
+          >
+            Auto {autoCraftEnabled ? "ON" : "OFF"}
+          </button>
+        )}
       </section>
 
       <section className={styles.filterSection}>

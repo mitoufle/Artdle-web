@@ -43,6 +43,8 @@ export interface WorkshopState {
   readonly autoCraftTimer: number;
   /** Tiers set to true are protected: they cannot be auto-kicked when inventory is full. */
   readonly protectedTiers: Partial<Record<ItemTier, boolean>>;
+  /** Whether Taylorism auto-crafting is active. Toggled by the player. */
+  readonly autoCraftEnabled: boolean;
 }
 
 export const initialWorkshopState: WorkshopState = Object.freeze({
@@ -52,6 +54,7 @@ export const initialWorkshopState: WorkshopState = Object.freeze({
   equipped: Object.freeze({}) as Partial<Record<SlotKind, Item>>,
   autoCraftTimer: 0,
   protectedTiers: Object.freeze({}) as Partial<Record<ItemTier, boolean>>,
+  autoCraftEnabled: true,
 }) as WorkshopState;
 
 export interface WorkshopSlice extends WorkshopState {
@@ -61,6 +64,7 @@ export interface WorkshopSlice extends WorkshopState {
   discard: (itemId: string) => boolean;
   fuseItem: (dropId: string) => boolean;
   toggleProtected: (tier: ItemTier) => void;
+  toggleAutoCraft: () => void;
   workshopTick: (deltaSeconds: number) => void;
   resetWorkshop: () => void;
 }
@@ -301,11 +305,16 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     }));
   },
 
+  toggleAutoCraft: () => {
+    set((s) => ({ autoCraftEnabled: !s.autoCraftEnabled }));
+  },
+
   workshopTick: (deltaSeconds) => {
     if (deltaSeconds <= 0) return;
     const state = get();
     const taylorismLevel = getNodeLevel(state, "taylorsim");
     if (taylorismLevel === 0) return;
+    if (!state.autoCraftEnabled) return;
 
     const thirdHandLevel = getNodeLevel(state, "third_hand");
     const interval = TAYLORISM_INTERVAL_S * (1 - THIRD_HAND_INTERVAL_REDUCTION * thirdHandLevel);
