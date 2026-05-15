@@ -1,9 +1,15 @@
 .layout {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto 1fr;
   height: 100vh;
   background: var(--bg-0);
   color: var(--ink-1);
+}
+
+.devLink {
+  padding: 4px 8px;
+  border-bottom: 1px solid #374151;
+  background: #1f2937;
 }
 
 .panes {

@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useDesignerState } from "./useDesignerState";
 import { saveToFile } from "./api";
 import { validateDesign } from "./validation";
@@ -53,6 +54,14 @@ export function SkillDesignerRoute(): JSX.Element {
         onExport={() => setExportOpen(true)}
         onReset={actions.resetAll}
       />
+      <div className={styles.devLink}>
+        <Link
+          to="/dev/school-designer"
+          style={{ color: "#60a5fa", fontSize: 12, textDecoration: "none", padding: "4px 8px" }}
+        >
+          → School Designer
+        </Link>
+      </div>
       <div className={styles.panes}>
         <NodeListRail
           nodes={design.nodes}

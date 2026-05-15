@@ -8,6 +8,7 @@ import { PaintingRoute } from "@/routes/PaintingRoute";
 import { AscensionRoute } from "@/routes/AscensionRoute";
 import { ConstellationRoute } from "@/routes/ConstellationRoute";
 import { SkillDesignerRoute } from "@/dev/skill-designer/SkillDesignerRoute";
+import { SchoolDesignerRoute } from "@/dev/school-designer/SchoolDesignerRoute";
 import styles from "./App.module.css";
 
 export function App(): JSX.Element {
@@ -18,6 +19,7 @@ export function App(): JSX.Element {
     return (
       <Routes>
         <Route path="/dev/skill-designer" element={<SkillDesignerRoute />} />
+        <Route path="/dev/school-designer" element={<SchoolDesignerRoute />} />
       </Routes>
     );
   }
