@@ -49,6 +49,9 @@ import {
   HIRE_TIER_BASE,
   XP_GOLD_FRACTION,
   HIRE_OFFICE_LEVEL_GROWTH,
+  PART_MILESTONES,
+  getPartMilestoneMultiplier,
+  getNextPartMilestone,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -521,5 +524,99 @@ describe("hireCost", () => {
     const c1 = hireCost({ tier: "common", magnitudeSum: 5, minMagnitudeSum: 5, maxMagnitudeSum: 15 }, 20);
     const c0 = hireCost({ tier: "common", magnitudeSum: 5, minMagnitudeSum: 5, maxMagnitudeSum: 15 }, 0);
     expect(c1.div(c0).toNumber()).toBeCloseTo(Math.pow(1.10, 20), 4);
+  });
+});
+
+// ============================================================================
+// Tree part milestones
+// ============================================================================
+describe("PART_MILESTONES", () => {
+  it("is [10, 25, 50, 100, 200, 400]", () => {
+    expect(PART_MILESTONES).toEqual([10, 25, 50, 100, 200, 400]);
+  });
+});
+
+describe("getPartMilestoneMultiplier", () => {
+  it("returns 1 below the first threshold (L0–L9)", () => {
+    expect(getPartMilestoneMultiplier(0)).toBe(1);
+    expect(getPartMilestoneMultiplier(9)).toBe(1);
+  });
+
+  it("doubles at L10 → ×2", () => {
+    expect(getPartMilestoneMultiplier(10)).toBe(2);
+    expect(getPartMilestoneMultiplier(24)).toBe(2);
+  });
+
+  it("doubles again at L25 → ×4", () => {
+    expect(getPartMilestoneMultiplier(25)).toBe(4);
+    expect(getPartMilestoneMultiplier(49)).toBe(4);
+  });
+
+  it("compounding: ×8 at L50, ×16 at L100, ×32 at L200, ×64 at L400", () => {
+    expect(getPartMilestoneMultiplier(50)).toBe(8);
+    expect(getPartMilestoneMultiplier(100)).toBe(16);
+    expect(getPartMilestoneMultiplier(200)).toBe(32);
+    expect(getPartMilestoneMultiplier(400)).toBe(64);
+  });
+
+  it("stays at ×64 above L400", () => {
+    expect(getPartMilestoneMultiplier(1000)).toBe(64);
+  });
+});
+
+describe("getNextPartMilestone", () => {
+  it("returns 10 when level is 0", () => {
+    expect(getNextPartMilestone(0)).toBe(10);
+  });
+
+  it("returns 10 when level is 9 (just before threshold)", () => {
+    expect(getNextPartMilestone(9)).toBe(10);
+  });
+
+  it("returns 25 once level 10 is reached", () => {
+    expect(getNextPartMilestone(10)).toBe(25);
+    expect(getNextPartMilestone(24)).toBe(25);
+  });
+
+  it("returns the correct next threshold at each step", () => {
+    expect(getNextPartMilestone(25)).toBe(50);
+    expect(getNextPartMilestone(50)).toBe(100);
+    expect(getNextPartMilestone(100)).toBe(200);
+    expect(getNextPartMilestone(200)).toBe(400);
+  });
+
+  it("returns null when all milestones passed (L400+)", () => {
+    expect(getNextPartMilestone(400)).toBeNull();
+    expect(getNextPartMilestone(1000)).toBeNull();
+  });
+});
+
+describe("inspiPerSec — milestone multiplier applied per part", () => {
+  it("applies ×2 at L10", () => {
+    // level 10 → 2^1 = ×2; rate 1; global mult 1 → 10 * 1 * 2 * 1 = 20
+    expect(inspiPerSec([{ level: 10, rate: 1 }], 1).toNumber()).toBe(20);
+  });
+
+  it("applies ×4 at L25", () => {
+    // level 25 → 2^2 = ×4; rate 1; global mult 1 → 25 * 1 * 4 = 100
+    expect(inspiPerSec([{ level: 25, rate: 1 }], 1).toNumber()).toBe(100);
+  });
+
+  it("applies different milestone multipliers per part independently", () => {
+    // part1: L9, rate 1 → 9 * 1 * 1 = 9
+    // part2: L25, rate 2 → 25 * 2 * 4 = 200
+    // total × globalMult 1 = 209
+    expect(
+      inspiPerSec([{ level: 9, rate: 1 }, { level: 25, rate: 2 }], 1).toNumber(),
+    ).toBe(209);
+  });
+
+  it("global multiplier still applies on top of milestone multipliers", () => {
+    // L10, rate 1, global ×3 → 10 * 1 * 2 * 3 = 60
+    expect(inspiPerSec([{ level: 10, rate: 1 }], 3).toNumber()).toBe(60);
+  });
+
+  it("existing sub-threshold tests unaffected (milestone mult = 1 for L<10)", () => {
+    expect(inspiPerSec([{ level: 2, rate: 1 }, { level: 3, rate: 2 }], 1).toNumber()).toBe(8);
   });
 });

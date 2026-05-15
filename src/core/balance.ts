@@ -172,12 +172,29 @@ export interface TreePartLevel {
   readonly rate: number; // base inspi/sec at level=1
 }
 
+/**
+ * Level thresholds at which a tree part's output doubles (compounding).
+ * Reaching level 10 → ×2, level 25 → ×4, level 50 → ×8, etc.
+ */
+export const PART_MILESTONES: ReadonlyArray<number> = [10, 25, 50, 100, 200, 400];
+
+/** 2^(count of milestones the part level has crossed). */
+export const getPartMilestoneMultiplier = (level: number): number =>
+  Math.pow(2, PART_MILESTONES.filter((m) => level >= m).length);
+
+/** Next milestone the part hasn't yet reached, or null if all passed. */
+export const getNextPartMilestone = (level: number): number | null =>
+  PART_MILESTONES.find((m) => m > level) ?? null;
+
 export const inspiPerSec = (
   parts: ReadonlyArray<TreePartLevel>,
   multiplier: number,
 ): Big =>
   parts
-    .reduce((acc, p) => acc.add(big(p.level).mul(p.rate)), big(0))
+    .reduce(
+      (acc, p) => acc.add(big(p.level).mul(p.rate).mul(getPartMilestoneMultiplier(p.level))),
+      big(0),
+    )
     .mul(multiplier);
 
 /**

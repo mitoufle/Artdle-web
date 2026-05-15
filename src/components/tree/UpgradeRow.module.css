@@ -53,6 +53,17 @@
   color: var(--ink-2);
 }
 
+.milestoneBadge {
+  margin-left: var(--s-2);
+  padding: 1px 4px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--inspi) 20%, transparent);
+  color: var(--inspi);
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 .cost {
   font-family: var(--mono);
   font-size: 12px;

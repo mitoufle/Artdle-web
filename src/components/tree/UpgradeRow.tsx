@@ -3,6 +3,7 @@ import styles from "./UpgradeRow.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
 import { getInspiMultiplier } from "@/core/multipliers";
+import { getPartMilestoneMultiplier, getNextPartMilestone } from "@/core/balance";
 
 interface Props {
   partId: string;
@@ -16,13 +17,18 @@ interface Props {
 
 function rowHoverBody(level: number, rate: number, cost: string): JSX.Element {
   const inspiMult = getInspiMultiplier(useGameStore.getState());
-  const contribution = level * rate * inspiMult;
+  const milestoneMult = getPartMilestoneMultiplier(level);
+  const contribution = level * rate * milestoneMult * inspiMult;
+  const nextMilestone = getNextPartMilestone(level);
   return (
     <>
       <div>Level: {level}</div>
       <div>Next cost: {cost} g</div>
       <div>───</div>
       <div>Contribution: +{contribution.toFixed(1)} inspi/sec</div>
+      {nextMilestone !== null && (
+        <div>Next milestone: Lv {nextMilestone} (×{milestoneMult * 2})</div>
+      )}
     </>
   );
 }
@@ -43,6 +49,7 @@ export function UpgradeRow({
   onBuy,
 }: Props): JSX.Element {
   const monogram = name.charAt(0).toUpperCase();
+  const milestoneMult = getPartMilestoneMultiplier(level);
   return (
     <li className={styles.row} data-part-id={partId}>
       <span className={styles.monogram} aria-hidden="true">
@@ -52,6 +59,9 @@ export function UpgradeRow({
         <span className={styles.name}>{name}</span>
         <span className={styles.meta}>
           Lv {level} · +{rate.toFixed(1)} inspi/s
+          {milestoneMult > 1 && (
+            <span className={styles.milestoneBadge}>×{milestoneMult}</span>
+          )}
         </span>
       </span>
       <Hoverable
