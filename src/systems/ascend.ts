@@ -11,7 +11,7 @@ import { getAscendThresholdReduction } from "@/core/multipliers";
  * The threshold is reduced by `getAscendThresholdReduction(state)` from
  * the `ascend_threshold_reduction` capability.
  */
-export const canAscend = (state: GameStore): boolean =>
+export const canAscend = (state: Pick<GameStore, "inspiration" | "purchasedNodes">): boolean =>
   fameOnAscend(state.inspiration, getAscendThresholdReduction(state)) >= 1;
 
 /**

@@ -149,7 +149,7 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
 // ============================================================================
 
 /** Total levels across the parts of `stageIdx`. Returns 0 for invalid index. */
-export const getTotalLevelsInStage = (state: GameStore, stageIdx: number): number => {
+export const getTotalLevelsInStage = (state: Pick<GameStore, "partLevels">, stageIdx: number): number => {
   const stage = TREE_STAGES[stageIdx];
   if (!stage) return 0;
   return stage.parts.reduce((sum, p) => sum + (state.partLevels[p.id] ?? 0), 0);
@@ -160,7 +160,7 @@ export const getTotalLevelsInStage = (state: GameStore, stageIdx: number): numbe
  * stageIdx ≤ currentStage AND level > 0.
  */
 export const getProducingParts = (
-  state: GameStore,
+  state: Pick<GameStore, "currentStage" | "partLevels">,
 ): ReadonlyArray<{ level: number; rate: number }> => {
   const out: Array<{ level: number; rate: number }> = [];
   for (let i = 0; i <= state.currentStage && i < TREE_STAGES.length; i++) {

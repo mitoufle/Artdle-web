@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { useDesignerState } from "@/dev/skill-designer/useDesignerState";
+import { EMPTY_DESIGN } from "@/dev/skill-designer/types";
 
 describe("useDesignerState", () => {
   beforeEach(() => {
@@ -16,7 +17,7 @@ describe("useDesignerState", () => {
 
   it("addNode appends a new node and gives it a unique id (after reset)", () => {
     const { result } = renderHook(() => useDesignerState());
-    act(() => result.current.actions.resetAll());
+    act(() => result.current.actions.importDesign(EMPTY_DESIGN));
     act(() => result.current.actions.addNode());
     expect(result.current.design.nodes).toHaveLength(1);
     act(() => result.current.actions.addNode());
@@ -35,7 +36,7 @@ describe("useDesignerState", () => {
 
   it("deleteNode removes the node and nulls children's parentId (after reset)", () => {
     const { result } = renderHook(() => useDesignerState());
-    act(() => result.current.actions.resetAll());
+    act(() => result.current.actions.importDesign(EMPTY_DESIGN));
     act(() => result.current.actions.addNode());
     const aId = result.current.design.nodes[0]!.id;
     act(() => result.current.actions.addNode());
@@ -53,12 +54,12 @@ describe("useDesignerState", () => {
     expect(result.current.selectedId).toBe("anything");
   });
 
-  it("resetAll clears the design and selectedId", () => {
+  it("resetAll reloads the file baseline and clears selectedId", () => {
     const { result } = renderHook(() => useDesignerState());
-    act(() => result.current.actions.addNode());
+    act(() => result.current.actions.importDesign(EMPTY_DESIGN));
     act(() => result.current.actions.selectNode("x"));
     act(() => result.current.actions.resetAll());
-    expect(result.current.design.nodes).toEqual([]);
+    expect(result.current.design.nodes.length).toBeGreaterThan(0);
     expect(result.current.selectedId).toBeNull();
   });
 });

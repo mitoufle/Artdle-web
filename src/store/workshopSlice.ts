@@ -78,7 +78,7 @@ export interface WorkshopSlice extends WorkshopState {
  *   - painters_apron   → apron
  *   - painters_boots   → boots
  */
-export const getUnlockedSlotKinds = (state: GameStore): ReadonlyArray<SlotKind> => {
+export const getUnlockedSlotKinds = (state: Pick<GameStore, "purchasedNodes">): ReadonlyArray<SlotKind> => {
   const out: SlotKind[] = ["brush"];
   if (getNodeLevel(state, "gear_up") > 0)       out.push("palette");
   if (getNodeLevel(state, "forget_pain") > 0)    out.push("easel");
@@ -89,13 +89,13 @@ export const getUnlockedSlotKinds = (state: GameStore): ReadonlyArray<SlotKind> 
 };
 
 /** Total equip-slot capacity = number of unlocked slot kinds. */
-export const getCurrentSlotCount = (state: GameStore): number =>
+export const getCurrentSlotCount = (state: Pick<GameStore, "purchasedNodes">): number =>
   getUnlockedSlotKinds(state).length;
 
 /**
  * Maximum inventory size. Base 3 + 2 per chest node (wooden + steel).
  */
-export const getMaxInventorySlots = (state: GameStore): number => {
+export const getMaxInventorySlots = (state: Pick<GameStore, "purchasedNodes">): number => {
   let cap = MAX_INVENTORY_SLOTS;
   if (getNodeLevel(state, "wooden_chest") > 0) cap += STORAGE_PER_CHEST;
   if (getNodeLevel(state, "steel_chest") > 0) cap += STORAGE_PER_CHEST;

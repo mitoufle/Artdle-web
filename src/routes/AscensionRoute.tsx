@@ -1,7 +1,6 @@
 import type { JSX } from "react";
 import { useState } from "react";
 import { useGameStore } from "@/store";
-import type { GameStore } from "@/store";
 import { canAscend } from "@/systems/ascend";
 import { fameOnAscend } from "@/core/balance";
 import { formatBig, formatShort } from "@/core/formatter";
@@ -41,13 +40,7 @@ export function AscensionRoute(): JSX.Element {
   const pastRuns = useGameStore((s) => s.pastRuns);
   const performAscend = useGameStore((s) => s.performAscend);
 
-  const helperState = {
-    inspiration,
-    ascendCount,
-    purchasedNodes,
-  } as unknown as GameStore;
-
-  const canDo = canAscend(helperState);
+  const canDo = canAscend({ inspiration, purchasedNodes });
   const fameGain = fameOnAscend(inspiration);
 
   const [confirmOpen, setConfirmOpen] = useState(false);

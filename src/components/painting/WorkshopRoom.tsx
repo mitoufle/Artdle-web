@@ -1,6 +1,5 @@
 import { useMemo, useRef, useEffect, useCallback, type JSX } from "react";
 import { useGameStore } from "@/store";
-import type { GameStore } from "@/store";
 import { craftCost, xpToNext } from "@/core/balance";
 import {
   getUnlockedSlotKinds,
@@ -160,7 +159,7 @@ export function WorkshopRoom(): JSX.Element {
   const fuseItem = useGameStore((s) => s.fuseItem);
   const toggleProtected = useGameStore((s) => s.toggleProtected);
 
-  const helperState = { purchasedNodes } as unknown as GameStore;
+  const helperState = { purchasedNodes };
   const unlockedSlots = useMemo(
     () => getUnlockedSlotKinds(helperState),
     [purchasedNodes],

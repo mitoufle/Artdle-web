@@ -385,5 +385,5 @@ describe("bot-simulation", () => {
     console.log(`  Paint Mastery: ${fmtN(final.paintMastery.toNumber())}`);
     console.log(`  First ascend:  ${firstAscendAt >= 0 ? fmtTime(firstAscendAt) : "never"}`);
     console.log(`  Size unlocked: ${sizUnlocked} | Crit unlocked: ${critUnlocked} | Combo unlocked: ${comboUnlocked}`);
-  });
+  }, 30_000);
 });

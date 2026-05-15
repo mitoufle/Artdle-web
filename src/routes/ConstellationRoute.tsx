@@ -1,7 +1,6 @@
 import type { JSX } from "react";
 import { useState } from "react";
 import { useGameStore } from "@/store";
-import type { GameStore } from "@/store";
 import { SKILL_NODES, type SkillNodeId } from "@/config/skillTreeNodes";
 import { canBuyNode, getNodeLevel, getNextCost } from "@/store/skillTreeSlice";
 import { big } from "@/core/bigNumber";
@@ -26,7 +25,7 @@ export function ConstellationRoute(): JSX.Element {
     setViewport((current) => centerOn(current, svgX, svgY));
   };
 
-  const helperState = { fame, purchasedNodes, devFreeNodes } as unknown as GameStore;
+  const helperState = { fame, purchasedNodes, devFreeNodes };
 
   const nodeStates = SKILL_NODES.reduce(
     (acc, node) => {

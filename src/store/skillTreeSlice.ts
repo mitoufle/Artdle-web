@@ -109,7 +109,7 @@ export const hasNode = (state: Pick<GameStore, "purchasedNodes">, id: SkillNodeI
  * Cost of buying the NEXT level. Returns null if maxed, unknown, or
  * cost array is malformed.
  */
-export const getNextCost = (state: GameStore, id: SkillNodeId): number | null => {
+export const getNextCost = (state: Pick<GameStore, "purchasedNodes">, id: SkillNodeId): number | null => {
   const node = getSkillNodeConfig(id);
   if (!node) return null;
   const level = getNodeLevel(state, id);
@@ -121,7 +121,7 @@ export const getNextCost = (state: GameStore, id: SkillNodeId): number | null =>
  * True iff buyNode(id) would succeed RIGHT NOW: not yet maxed, all parents
  * owned at level≥1, fame ≥ next-level cost.
  */
-export const canBuyNode = (state: GameStore, id: SkillNodeId): boolean => {
+export const canBuyNode = (state: Pick<GameStore, "purchasedNodes" | "devFreeNodes" | "fame">, id: SkillNodeId): boolean => {
   const node = getSkillNodeConfig(id);
   if (!node) return false;
   const level = getNodeLevel(state, id);

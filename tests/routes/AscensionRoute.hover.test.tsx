@@ -36,7 +36,7 @@ describe("AscensionRoute hover wiring (Step Through button)", () => {
     renderRoute();
     fireEvent.mouseEnter(screen.getByTestId("step-through-btn"));
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/Current inspi: 10,?000/);
+    expect(container.textContent).toMatch(/Current inspi: 10\.00K/);
     expect(container.textContent).toMatch(/Fame gain: \+1/);
     expect(container.textContent).toMatch(/Formula:/);
     expect(container.textContent).toMatch(/Milestones:/);

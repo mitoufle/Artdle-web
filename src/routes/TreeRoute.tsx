@@ -1,7 +1,6 @@
 import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/store";
-import type { GameStore } from "@/store";
 import { TREE_STAGES } from "@/config/treeStages";
 import { treePartCost, inspiPerSec } from "@/core/balance";
 import { getInspiMultiplier } from "@/core/multipliers";
@@ -25,12 +24,7 @@ export function TreeRoute(): JSX.Element {
   const buyPartLevel = useGameStore((s) => s.buyPartLevel);
   const buyAllAffordableTreeParts = useGameStore((s) => s.buyAllAffordableTreeParts);
 
-  const helperState = {
-    currentStage,
-    partLevels,
-    equipped,
-    purchasedNodes,
-  } as unknown as GameStore;
+  const helperState = { currentStage, partLevels, purchasedNodes };
 
   const rate = inspiPerSec(getProducingParts(helperState), getInspiMultiplier(helperState));
   const stageConfig = TREE_STAGES[currentStage];
