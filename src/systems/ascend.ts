@@ -24,11 +24,8 @@ export const canAscend = (state: Pick<GameStore, "inspiration" | "purchasedNodes
  *
  * Preserved (NOT touched): fame (existing balance + new gain), ascendCount (incremented),
  * purchasedNodes, playerId, save schema version.
- *
- * Called by metaSlice.performAscend() (Task 7).
  */
 export const performAscendOrchestrator = (
-  set: StoreApi<GameStore>["setState"],
   get: StoreApi<GameStore>["getState"],
 ): boolean => {
   const state = get();
@@ -52,11 +49,8 @@ export const performAscendOrchestrator = (
   // 4. Bump ascendCount.
   state.incrementAscendCount();
 
-  // 5. Append to past-runs ledger (v2.0 Round 3).
+  // 5. Append to past-runs ledger.
   state.addPastRun({ fame: fameGain, ascendedAt: Date.now() });
-
-  // `set` parameter retained for future cross-slice writes.
-  void set;
 
   return true;
 };

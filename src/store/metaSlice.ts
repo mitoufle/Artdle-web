@@ -43,5 +43,5 @@ export const createMetaSlice: StateCreator<GameStore, [], [], MetaSlice> = (set,
   addPastRun: (run) =>
     set((s) => ({ pastRuns: [...s.pastRuns, run] as ReadonlyArray<PastRun> })),
   _setPlayerId: (id) => set({ playerId: id }),
-  performAscend: () => performAscendOrchestrator(set, get),
+  performAscend: () => performAscendOrchestrator(get),
 });

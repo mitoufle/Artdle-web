@@ -1,5 +1,4 @@
 import type { Big } from "./bigNumber";
-import { big } from "./bigNumber";
 
 const SUFFIXES: ReadonlyArray<readonly [number, string]> = [
   [1e15, "Q"],
@@ -33,5 +32,3 @@ export function formatBig(value: Big): string {
   // Beyond Quintillion: scientific notation
   return value.toExponential(2);
 }
-
-export const _internal = { SUFFIXES, big };

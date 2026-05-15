@@ -36,7 +36,7 @@ describe("systems/ascend", () => {
     useGameStore.getState().add("gold", big(500));
     useGameStore.getState().add("inspiration", big(12_000));
     expect(
-      performAscendOrchestrator(useGameStore.setState, useGameStore.getState),
+      performAscendOrchestrator(useGameStore.getState),
     ).toBe(true);
     expect(useGameStore.getState().gold.toNumber()).toBe(0);
     expect(useGameStore.getState().inspiration.toNumber()).toBe(0);
@@ -46,14 +46,14 @@ describe("systems/ascend", () => {
     useGameStore.getState().add("inspiration", big(12_000));
     const expectedFameGain = fameOnAscend(big(12_000));
     const beforeFame = useGameStore.getState().fame.toNumber();
-    performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+    performAscendOrchestrator(useGameStore.getState);
     expect(useGameStore.getState().fame.toNumber()).toBe(beforeFame + expectedFameGain);
   });
 
   it("performAscendOrchestrator on success: ascendCount increments by 1", () => {
     useGameStore.getState().add("inspiration", big(12_000));
     const beforeCount = useGameStore.getState().ascendCount;
-    performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+    performAscendOrchestrator(useGameStore.getState);
     expect(useGameStore.getState().ascendCount).toBe(beforeCount + 1);
   });
 
@@ -63,7 +63,7 @@ describe("systems/ascend", () => {
     useGameStore.setState({ currentStage: 1 });
     useGameStore.getState().buyPartLevel("tendril");
     useGameStore.getState().add("inspiration", big(12_000));
-    performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+    performAscendOrchestrator(useGameStore.getState);
     const s = useGameStore.getState();
     expect(s.currentStage).toBe(0);
     expect(s.partLevels.cotyledon).toBe(0);
@@ -73,7 +73,7 @@ describe("systems/ascend", () => {
   it("performAscendOrchestrator on success: canvas resets (canvasProgress=0)", () => {
     useGameStore.setState({ canvasProgress: 7.5 });
     useGameStore.getState().add("inspiration", big(12_000));
-    performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+    performAscendOrchestrator(useGameStore.getState);
     expect(useGameStore.getState().canvasProgress).toBe(0);
   });
 
@@ -99,7 +99,7 @@ describe("systems/ascend", () => {
       },
     });
     useGameStore.getState().add("inspiration", big(12_000));
-    performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+    performAscendOrchestrator(useGameStore.getState);
     const s = useGameStore.getState();
     expect(s.inventory).toEqual([]);
     expect(s.equipped).toEqual({});
@@ -110,7 +110,7 @@ describe("systems/ascend", () => {
       purchasedNodes: { get_inspired: 2, black_white: 1 },
     });
     useGameStore.getState().add("inspiration", big(12_000));
-    performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+    performAscendOrchestrator(useGameStore.getState);
     expect(useGameStore.getState().purchasedNodes).toEqual({
       get_inspired: 2,
       black_white: 1,
@@ -120,16 +120,16 @@ describe("systems/ascend", () => {
   it("performAscendOrchestrator on success: playerId UNCHANGED", () => {
     const beforeId = useGameStore.getState().playerId;
     useGameStore.getState().add("inspiration", big(12_000));
-    performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+    performAscendOrchestrator(useGameStore.getState);
     expect(useGameStore.getState().playerId).toBe(beforeId);
   });
 
   it("performAscendOrchestrator multiple times: ascendCount increments each time", () => {
     useGameStore.getState().add("inspiration", big(12_000));
-    performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+    performAscendOrchestrator(useGameStore.getState);
     expect(useGameStore.getState().ascendCount).toBe(1);
     useGameStore.getState().add("inspiration", big(15_000));
-    performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+    performAscendOrchestrator(useGameStore.getState);
     expect(useGameStore.getState().ascendCount).toBe(2);
   });
 
@@ -138,7 +138,7 @@ describe("systems/ascend", () => {
     const beforeFame = useGameStore.getState().fame.toNumber();
     const beforeCount = useGameStore.getState().ascendCount;
     expect(
-      performAscendOrchestrator(useGameStore.setState, useGameStore.getState),
+      performAscendOrchestrator(useGameStore.getState),
     ).toBe(false);
     expect(useGameStore.getState().fame.toNumber()).toBe(beforeFame);
     expect(useGameStore.getState().ascendCount).toBe(beforeCount);
@@ -189,7 +189,7 @@ describe("systems/ascend", () => {
       useGameStore.setState({ inspiration: big(12_000) });
       useGameStore.getState()._setPaintMastery(big(12_345));
       useGameStore.getState()._setLifetimeGold(big(99_999));
-      performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+      performAscendOrchestrator(useGameStore.getState);
       expect(useGameStore.getState().paintMastery.toNumber()).toBe(12_345);
       expect(useGameStore.getState().lifetimeGold.toNumber()).toBe(99_999);
     });
@@ -198,7 +198,7 @@ describe("systems/ascend", () => {
       // Run 1: set 100 PM directly, ascend.
       useGameStore.setState({ inspiration: big(12_000) });
       useGameStore.getState()._setPaintMastery(big(100));
-      performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+      performAscendOrchestrator(useGameStore.getState);
       expect(useGameStore.getState().paintMastery.toNumber()).toBe(100);
 
       // Run 2: bypass the tick formula — set PM and lifetimeGold directly to
@@ -209,7 +209,7 @@ describe("systems/ascend", () => {
 
       // Ascend run 2 (count 1 → palier 2000).
       useGameStore.setState({ inspiration: big(12_000) });
-      performAscendOrchestrator(useGameStore.setState, useGameStore.getState);
+      performAscendOrchestrator(useGameStore.getState);
       // PM accumulates and survives across ascends (not reset).
       expect(useGameStore.getState().paintMastery.toNumber()).toBe(105);
       expect(useGameStore.getState().lifetimeGold.toNumber()).toBe(5_000);
