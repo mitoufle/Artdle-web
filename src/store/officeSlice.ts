@@ -91,36 +91,32 @@ export const getHireCost = (
 
 const LEVEL_UP_CAP = 1000;
 
-function applyWorkerLevelUps(worker: Worker): Worker {
-  let level = worker.level;
-  let xp = worker.xp;
+function applyLevelUps(
+  level: number,
+  xp: Big,
+  xpToNextFn: (level: number) => number,
+  warnTag: string,
+): { level: number; xp: Big } {
   let i = 0;
   for (; i < LEVEL_UP_CAP; i++) {
-    const cost = workerXpToNext(level);
+    const cost = xpToNextFn(level);
     if (xp.lt(cost)) break;
     xp = xp.sub(cost);
     level += 1;
   }
   if (import.meta.env.DEV && i === LEVEL_UP_CAP) {
-    console.warn(`applyWorkerLevelUps hit ${LEVEL_UP_CAP}-level cap; worker ${worker.id} still has unspent XP. Remainder will resolve on next sale.`);
+    console.warn(`${warnTag} hit ${LEVEL_UP_CAP}-level cap; still has unspent XP. Remainder will resolve on next sale.`);
   }
+  return { level, xp };
+}
+
+function applyWorkerLevelUps(worker: Worker): Worker {
+  const { level, xp } = applyLevelUps(worker.level, worker.xp, workerXpToNext, `worker ${worker.id}`);
   return { ...worker, level, xp };
 }
 
 function applyOfficeLevelUps(currentLevel: number, currentXp: Big): { level: number; xp: Big } {
-  let level = currentLevel;
-  let xp = currentXp;
-  let i = 0;
-  for (; i < LEVEL_UP_CAP; i++) {
-    const cost = officeXpToNext(level);
-    if (xp.lt(cost)) break;
-    xp = xp.sub(cost);
-    level += 1;
-  }
-  if (import.meta.env.DEV && i === LEVEL_UP_CAP) {
-    console.warn(`applyOfficeLevelUps hit ${LEVEL_UP_CAP}-level cap; office still has unspent XP. Remainder will resolve on next sale.`);
-  }
-  return { level, xp };
+  return applyLevelUps(currentLevel, currentXp, officeXpToNext, "office");
 }
 
 export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (set, get) => ({
