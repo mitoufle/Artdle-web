@@ -726,7 +726,7 @@
       "maxLevel": 1,
       "costs": [100],
       "unlocks": ["school_access"],
-      "position": null
+      "position": { "x": 475, "y": 215 }
     }
   ]
 }

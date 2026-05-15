@@ -46,7 +46,7 @@ export function SchoolDesignerRoute(): JSX.Element {
         </button>
         <button
           className={styles.btn}
-          onClick={() => { markDirty(); actions.resetAll(); }}
+          onClick={() => { actions.resetAll(); setStatus("saved"); }}
           type="button"
         >
           Reset
@@ -66,15 +66,14 @@ export function SchoolDesignerRoute(): JSX.Element {
                 onChange={(e) => { markDirty(); actions.updateTier(tier.tier, { label: e.target.value }); }}
               />
               <input
-                className={styles.tierInput}
+                className={`${styles.tierInput} ${styles.examCostInput}`}
                 type="number"
                 value={tier.examCost}
                 min={0}
-                style={{ width: 70 }}
                 title="Exam cost (fame)"
                 onChange={(e) => { markDirty(); actions.updateTier(tier.tier, { examCost: Number(e.target.value) }); }}
               />
-              <span style={{ color: "#6b7280", fontSize: 10 }}>⭐ exam</span>
+              <span className={styles.examLabel}>⭐ exam</span>
               <button
                 className={styles.tierDelete}
                 onClick={() => { markDirty(); actions.deleteTier(tier.tier); }}
@@ -86,33 +85,30 @@ export function SchoolDesignerRoute(): JSX.Element {
             </div>
 
             <div className={styles.researches}>
-              {tier.researches.map((research) => (
-                <div key={research.id} className={styles.research}>
+              {tier.researches.map((research, ri) => (
+                <div key={`${tier.tier}_${ri}`} className={styles.research}>
                   <div className={styles.researchRow}>
                     <input
-                      className={styles.researchInput}
+                      className={`${styles.researchInput} ${styles.researchIdInput}`}
                       value={research.id}
                       placeholder="id"
-                      style={{ width: 180 }}
                       onChange={(e) => { markDirty(); actions.updateResearch(tier.tier, research.id, { id: e.target.value }); }}
                     />
                     <input
-                      className={styles.researchInput}
+                      className={`${styles.researchInput} ${styles.researchNameInput}`}
                       value={research.name}
                       placeholder="Name"
-                      style={{ flex: 1 }}
                       onChange={(e) => { markDirty(); actions.updateResearch(tier.tier, research.id, { name: e.target.value }); }}
                     />
                     <input
-                      className={styles.researchInput}
+                      className={`${styles.researchInput} ${styles.durationInput}`}
                       type="number"
                       value={research.durationSeconds}
                       min={1}
-                      style={{ width: 70 }}
                       title="Duration (seconds)"
                       onChange={(e) => { markDirty(); actions.updateResearch(tier.tier, research.id, { durationSeconds: Number(e.target.value) }); }}
                     />
-                    <span style={{ color: "#6b7280", fontSize: 10 }}>s</span>
+                    <span className={styles.durationLabel}>s</span>
                     <button
                       className={styles.researchDelete}
                       onClick={() => { markDirty(); actions.deleteResearch(tier.tier, research.id); }}
@@ -123,8 +119,8 @@ export function SchoolDesignerRoute(): JSX.Element {
                   </div>
 
                   <div className={styles.effects}>
-                    {research.effects.map((effect, ei) => (
-                      <div key={ei} className={styles.effectRow}>
+                    {research.effects.map((effect) => (
+                      <div key={effect.id} className={styles.effectRow}>
                         <input
                           className={styles.effectKindInput}
                           list="effect-kinds"
@@ -132,8 +128,8 @@ export function SchoolDesignerRoute(): JSX.Element {
                           placeholder="kind (e.g. canvas_gold_pct)"
                           onChange={(e) => {
                             markDirty();
-                            const newEffects: ReadonlyArray<DesignResearchEffect> = research.effects.map((ef, i) =>
-                              i === ei ? { ...ef, kind: e.target.value } : ef,
+                            const newEffects: ReadonlyArray<DesignResearchEffect> = research.effects.map((ef) =>
+                              ef.id === effect.id ? { ...ef, kind: e.target.value } : ef,
                             );
                             actions.updateResearch(tier.tier, research.id, { effects: newEffects });
                           }}
@@ -147,8 +143,8 @@ export function SchoolDesignerRoute(): JSX.Element {
                           title="Fractional value (0.15 = 15%)"
                           onChange={(e) => {
                             markDirty();
-                            const newEffects: ReadonlyArray<DesignResearchEffect> = research.effects.map((ef, i) =>
-                              i === ei ? { ...ef, value: Number(e.target.value) } : ef,
+                            const newEffects: ReadonlyArray<DesignResearchEffect> = research.effects.map((ef) =>
+                              ef.id === effect.id ? { ...ef, value: Number(e.target.value) } : ef,
                             );
                             actions.updateResearch(tier.tier, research.id, { effects: newEffects });
                           }}
@@ -158,7 +154,7 @@ export function SchoolDesignerRoute(): JSX.Element {
                           type="button"
                           onClick={() => {
                             markDirty();
-                            const newEffects = research.effects.filter((_, i) => i !== ei);
+                            const newEffects = research.effects.filter((ef) => ef.id !== effect.id);
                             actions.updateResearch(tier.tier, research.id, { effects: newEffects });
                           }}
                         >
@@ -173,7 +169,7 @@ export function SchoolDesignerRoute(): JSX.Element {
                         markDirty();
                         const newEffects: ReadonlyArray<DesignResearchEffect> = [
                           ...research.effects,
-                          { kind: "canvas_gold_pct", value: 0 },
+                          { id: crypto.randomUUID(), kind: "canvas_gold_pct", value: 0 },
                         ];
                         actions.updateResearch(tier.tier, research.id, { effects: newEffects });
                       }}
