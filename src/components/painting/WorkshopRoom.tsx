@@ -259,15 +259,18 @@ export function WorkshopRoom(): JSX.Element {
           </button>
         </Hoverable>
         {hasTaylorism && (
-          <button
-            type="button"
-            className={`${styles.autoCraftToggle}${autoCraftEnabled ? ` ${styles.autoCraftOn}` : ""}`}
-            onClick={toggleAutoCraft}
-            data-testid="autocraft-toggle"
-            title={autoCraftEnabled ? "Auto-craft enabled — click to pause" : "Auto-craft paused — click to resume"}
-          >
-            Auto {autoCraftEnabled ? "ON" : "OFF"}
-          </button>
+          <div className={styles.autoCraftRow}>
+            <span className={styles.autoCraftLabel}>Auto</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoCraftEnabled}
+              className={`${styles.autoCraftToggle}${autoCraftEnabled ? ` ${styles.autoCraftOn}` : ""}`}
+              onClick={toggleAutoCraft}
+              data-testid="autocraft-toggle"
+              title={autoCraftEnabled ? "Auto-craft enabled — click to pause" : "Auto-craft paused — click to resume"}
+            />
+          </div>
         )}
       </section>
 

@@ -81,27 +81,56 @@
   cursor: not-allowed;
 }
 
-.autoCraftToggle {
-  font-family: var(--mono);
-  font-size: 11px;
-  padding: var(--s-1) var(--s-2);
-  border-radius: var(--r-sm);
-  border: 1px solid var(--ink-line);
-  background: var(--bg-2);
-  color: var(--ink-2);
-  cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+.autoCraftRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
 }
 
-.autoCraftToggle:hover {
-  border-color: var(--ink-1);
-  color: var(--ink-1);
+.autoCraftLabel {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  user-select: none;
+}
+
+/* pill track */
+.autoCraftToggle {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  border: 1px solid var(--ink-line);
+  background: var(--bg-3);
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+/* knob */
+.autoCraftToggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ink-2);
+  transition: transform 150ms ease, background 150ms ease;
 }
 
 .autoCraftOn {
+  background: color-mix(in srgb, var(--inspi) 22%, var(--bg-2));
   border-color: var(--inspi);
-  color: var(--inspi);
-  background: color-mix(in srgb, var(--inspi) 12%, var(--bg-2));
+  box-shadow: var(--inspi-glow);
+}
+
+.autoCraftOn::after {
+  transform: translateX(16px);
+  background: var(--inspi);
 }
 
 .section {
