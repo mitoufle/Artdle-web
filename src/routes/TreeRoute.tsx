@@ -32,8 +32,8 @@ export function TreeRoute(): JSX.Element {
   const nextStageConfig = TREE_STAGES[currentStage + 1];
   const totalLevels = getTotalLevelsInStage(helperState, currentStage);
 
-  // Visible parts: every part of stages 0..currentStage.
-  const visibleParts = TREE_STAGES.slice(0, currentStage + 1).flatMap((stage) => stage.parts);
+  // Visible parts: current tier and the next one only.
+  const visibleParts = TREE_STAGES.slice(currentStage, currentStage + 2).flatMap((stage) => stage.parts);
 
   // Stage-up toast — show for 2s when currentStage advances.
   const lastStageRef = useRef(currentStage);

@@ -34,12 +34,12 @@ describe("TreeRoute (v2 visual)", () => {
     expect(screen.getAllByTestId(/stage-chip-/)).toHaveLength(6);
   });
 
-  it("renders upgrade rows for the parts visible at the current stage", () => {
+  it("renders upgrade rows for the current tier and the next one", () => {
     renderTreeRoute();
-    // At currentStage=0 (Tiny Sprout), 1 part visible: cotyledon.
+    // At currentStage=0 (Tiny Sprout): stage 0 part (cotyledon) visible.
     expect(screen.getByTestId("upgrade-buy-cotyledon")).toBeInTheDocument();
-    // stage 1 part tendril is not yet visible (locked)
-    expect(screen.queryByTestId("upgrade-buy-tendril")).not.toBeInTheDocument();
+    // Stage 1 (next tier) is also previewed.
+    expect(screen.getByTestId("upgrade-buy-tendril")).toBeInTheDocument();
   });
 
   it("buy button is disabled when player has 0 gold", () => {
