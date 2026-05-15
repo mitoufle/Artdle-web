@@ -7,12 +7,12 @@
   border-radius: var(--r-sm);
   background: var(--bg-1);
   list-style: none;
-  transition: transform 140ms ease, border-color 140ms ease;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .row:hover {
   border-color: var(--inspi);
-  transform: translateX(2px);
+  box-shadow: var(--inspi-glow);
 }
 
 .monogram {
