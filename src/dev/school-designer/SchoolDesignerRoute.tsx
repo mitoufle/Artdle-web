@@ -19,6 +19,11 @@ export function SchoolDesignerRoute(): JSX.Element {
   const { design, actions } = useSchoolDesignerState();
   const [status, setStatus] = useState<Status>("saved");
 
+  const usedKinds = new Set(
+    design.flatMap((t) => t.researches.flatMap((r) => r.effects.map((e) => e.kind))),
+  );
+  const effectKindOptions = [...new Set([...KNOWN_EFFECT_KINDS, ...usedKinds])].filter((k) => k !== "");
+
   const markDirty = useCallback(() => setStatus("dirty"), []);
 
   const handleSave = useCallback(async () => {
@@ -120,21 +125,45 @@ export function SchoolDesignerRoute(): JSX.Element {
                   </div>
 
                   <div className={styles.effects}>
-                    {research.effects.map((effect) => (
+                    {research.effects.map((effect) => {
+                      const isCustomKind = !KNOWN_EFFECT_KINDS.includes(effect.kind);
+                      return (
                       <div key={effect.id} className={styles.effectRow}>
-                        <input
+                        <select
+                          data-testid="effect-kind-select"
                           className={styles.effectKindInput}
-                          list="effect-kinds"
-                          value={effect.kind}
-                          placeholder="kind (e.g. canvas_gold_pct)"
+                          value={isCustomKind ? "__custom__" : effect.kind}
                           onChange={(e) => {
                             markDirty();
+                            const v = e.target.value;
+                            const newKind = v === "__custom__" ? "" : v;
                             const newEffects: ReadonlyArray<DesignResearchEffect> = research.effects.map((ef) =>
-                              ef.id === effect.id ? { ...ef, kind: e.target.value } : ef,
+                              ef.id === effect.id ? { ...ef, kind: newKind } : ef,
                             );
                             actions.updateResearch(tier.tier, research.id, { effects: newEffects });
                           }}
-                        />
+                        >
+                          {effectKindOptions.map((k) => (
+                            <option key={k} value={k}>{k}</option>
+                          ))}
+                          <option value="__custom__">custom…</option>
+                        </select>
+                        {isCustomKind && (
+                          <input
+                            data-testid="effect-kind-custom-input"
+                            className={styles.effectKindInput}
+                            type="text"
+                            value={effect.kind}
+                            placeholder="effect kind"
+                            onChange={(e) => {
+                              markDirty();
+                              const newEffects: ReadonlyArray<DesignResearchEffect> = research.effects.map((ef) =>
+                                ef.id === effect.id ? { ...ef, kind: e.target.value } : ef,
+                              );
+                              actions.updateResearch(tier.tier, research.id, { effects: newEffects });
+                            }}
+                          />
+                        )}
                         <input
                           className={styles.effectValueInput}
                           type="number"
@@ -162,7 +191,7 @@ export function SchoolDesignerRoute(): JSX.Element {
                           ✕
                         </button>
                       </div>
-                    ))}
+                    );})}
                     <button
                       className={styles.addEffectBtn}
                       type="button"
@@ -201,9 +230,6 @@ export function SchoolDesignerRoute(): JSX.Element {
         </button>
       </div>
 
-      <datalist id="effect-kinds">
-        {KNOWN_EFFECT_KINDS.map((k) => <option key={k} value={k} />)}
-      </datalist>
     </div>
   );
 }
