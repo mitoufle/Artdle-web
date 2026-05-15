@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useSchoolDesignerState } from "./useSchoolDesignerState";
 import { saveToFile } from "./api";
+import { uuid } from "./storage";
 import type { DesignResearchEffect } from "./types";
 import styles from "./SchoolDesignerRoute.module.css";
 
@@ -169,7 +170,7 @@ export function SchoolDesignerRoute(): JSX.Element {
                         markDirty();
                         const newEffects: ReadonlyArray<DesignResearchEffect> = [
                           ...research.effects,
-                          { id: crypto.randomUUID(), kind: "canvas_gold_pct", value: 0 },
+                          { id: uuid(), kind: "canvas_gold_pct", value: 0 },
                         ];
                         actions.updateResearch(tier.tier, research.id, { effects: newEffects });
                       }}
