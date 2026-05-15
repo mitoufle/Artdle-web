@@ -1,4 +1,5 @@
 export interface DesignResearchEffect {
+  id: string;
   kind: string;
   value: number;
 }

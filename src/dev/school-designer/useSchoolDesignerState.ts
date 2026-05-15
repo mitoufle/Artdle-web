@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { DesignFile, DesignTier, DesignResearch } from "./types";
 import { EMPTY_DESIGN } from "./types";
-import { loadDraft, saveDraft, clearDraft } from "./storage";
+import { loadDraft, saveDraft, clearDraft, migrateDesign } from "./storage";
 import rawTiers from "@/config/schoolResearches.json";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -23,7 +23,7 @@ export interface SchoolDesignerState {
 }
 
 function loadFileBaseline(): DesignFile {
-  return rawTiers as DesignFile;
+  return migrateDesign(rawTiers);
 }
 
 export function useSchoolDesignerState(): SchoolDesignerState {

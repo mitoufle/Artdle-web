@@ -12,6 +12,15 @@
   background: #1f2937;
 }
 
+.devLinkAnchor {
+  color: #60a5fa;
+  font-size: 12px;
+  text-decoration: none;
+  padding: 4px 8px;
+}
+
+.devLinkAnchor:hover { text-decoration: underline; }
+
 .panes {
   display: grid;
   grid-template-columns: 240px 1fr 320px;

@@ -55,10 +55,7 @@ export function SkillDesignerRoute(): JSX.Element {
         onReset={actions.resetAll}
       />
       <div className={styles.devLink}>
-        <Link
-          to="/dev/school-designer"
-          style={{ color: "#60a5fa", fontSize: 12, textDecoration: "none", padding: "4px 8px" }}
-        >
+        <Link className={styles.devLinkAnchor} to="/dev/school-designer">
           → School Designer
         </Link>
       </div>

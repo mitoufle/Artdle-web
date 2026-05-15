@@ -205,3 +205,10 @@
 }
 
 .addEffectBtn:hover { color: #9ca3af; }
+
+.examCostInput { width: 70px; }
+.examLabel { color: #6b7280; font-size: 10px; }
+.researchIdInput { width: 180px; }
+.researchNameInput { flex: 1; }
+.durationInput { width: 70px; }
+.durationLabel { color: #6b7280; font-size: 10px; }
