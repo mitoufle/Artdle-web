@@ -45,6 +45,7 @@ export function PaintingRoute(): JSX.Element {
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const paintMastery = useGameStore((s) => s.paintMastery);
   const roster = useGameStore((s) => s.roster);
+  const completedResearches = useGameStore((s) => s.completedResearches);
   const upgradeSellPrice = useGameStore((s) => s.upgradeSellPrice);
   const upgradeSpeed = useGameStore((s) => s.upgradeSpeed);
   const upgradeSize = useGameStore((s) => s.upgradeSize);
@@ -56,6 +57,7 @@ export function PaintingRoute(): JSX.Element {
   const helperState: CanvasMultiplierInputs = {
     equipped, purchasedNodes, paintMastery, roster,
     sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
+    completedResearches,
   };
 
   const size = getCanvasSize(helperState);

@@ -11,6 +11,7 @@
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
+import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
 import { big, type Big } from "@/core/bigNumber";
 import type { AffixKind } from "@/config/workshopAffixes";
@@ -35,6 +36,7 @@ export type CanvasMultiplierInputs = Pick<GameStore,
   | "sizeLevel"
   | "critLevel"
   | "comboLevel"
+  | "completedResearches"
 >;
 
 /**
@@ -84,6 +86,7 @@ export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number =
     bonus += getNodeLevel(state, id) * perLevel;
   }
   bonus += SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
+  bonus += getSchoolBonus(state, "canvas_gold_pct");
   const additive = 1 + bonus;
   const rainbowMul = 1 + getNodeLevel(state, "rainbow") * RAINBOW_PER_LEVEL;
   return additive * rainbowMul;
@@ -105,6 +108,7 @@ export const getCanvasSpeedMultiplier = (state: CanvasMultiplierInputs): number 
   bonus += SPEED_PER_LEVEL * state.speedLevel;
   bonus += getEquippedContribution(state, "+speed%"); // already fractional
   bonus += getOfficeContribution(state, "+speed%").toNumber();
+  bonus += getSchoolBonus(state, "speed_pct");
   return 1 + bonus;
 };
 
@@ -197,9 +201,11 @@ export const getCanvasSize = (state: CanvasMultiplierInputs): number => {
     + countCapability(state, "canvas_size_bonus") * 0.05;
 };
 
-/** Worker XP gain per canvas sale, multiplied by accelerator nodes. */
-export const getWorkerXpMultiplier = (state: Pick<GameStore, "purchasedNodes">): number =>
-  1 + countCapability(state, "worker_xp_mult") * 0.10;
+/** Worker XP gain per canvas sale, multiplied by accelerator nodes and school bonuses. */
+export const getWorkerXpMultiplier = (
+  state: Pick<GameStore, "purchasedNodes" | "completedResearches">,
+): number =>
+  1 + countCapability(state, "worker_xp_mult") * 0.10 + getSchoolBonus(state, "worker_xp_pct");
 
 /** Hire cost reduction, floored at 90% (so cost can't go below 10% of base). */
 export const getHireCostMultiplier = (state: Pick<GameStore, "purchasedNodes">): number =>

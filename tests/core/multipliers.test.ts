@@ -23,6 +23,7 @@ describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
     sellPriceLevel: 1,
     speedLevel: 1,
     paintMastery: big(0),
+    completedResearches: {},
     ...over,
   } as GameStore);
 
@@ -212,7 +213,7 @@ describe("multipliers — crit + combo chances", () => {
 
 describe("getCanvasSpeedMultiplier — equipped +speed% contribution", () => {
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
-    purchasedNodes: {}, equipped: {}, roster: [], speedLevel: 1, ...over,
+    purchasedNodes: {}, equipped: {}, roster: [], speedLevel: 1, completedResearches: {}, ...over,
   } as GameStore);
 
   it("includes equipped +speed% magnitudes additively", () => {
@@ -366,6 +367,7 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
       sellPriceLevel: 5,
       speedLevel: 0, critLevel: 0, comboLevel: 0,
       paintMastery: big(0),
+      completedResearches: {},
       roster: [
         {
           id: "w1", class: "generalist", tier: "common", level: 1, xp: big(0),
@@ -389,6 +391,7 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
       equipped: { brush: item },
       sellPriceLevel: 0, speedLevel: 4, critLevel: 0, comboLevel: 0,
       paintMastery: big(0),
+      completedResearches: {},
       roster: [
         {
           id: "w1", class: "speedrunner", tier: "common", level: 1, xp: big(0),
@@ -445,7 +448,7 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
 
   it("accelerator: worker_xp_mult returns 1 + 0.10 × level", async () => {
     const { getWorkerXpMultiplier } = await import("@/core/multipliers");
-    const state = { purchasedNodes: { accelerator: 4 } } as unknown as GameStore;
+    const state = { purchasedNodes: { accelerator: 4 }, completedResearches: {} } as unknown as GameStore;
     expect(getWorkerXpMultiplier(state)).toBeCloseTo(1.40, 4);
   });
 
