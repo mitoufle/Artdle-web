@@ -1,5 +1,48 @@
 # Artdle Web — Handover
 
+## Skill tree pricing + dev tooling polish (2026-05-15)
+
+### What landed
+
+**BFS-depth pricing for all skill tree nodes (commit `ff75de3`)**
+
+- All 52 nodes in `skillTreeDesign.json` now have cost arrays scaled by BFS depth from the two roots (`get_inspired` d0, `basic_technique` d0) — max parent depth + 1 for multi-parent nodes.
+- Pricing ladder: d0 costs ~[1–8], d11 nodes (`painters_hat`, `gold_diggers`) cost 10,000 fame. Full scale in the commit diff.
+
+**In-game dev toggle: "Free nodes" (commit `ff75de3`)**
+
+- `devFreeNodes: boolean` added to `skillTreeSlice` — default `false`, excluded from persist (transient).
+- `canBuyNode` and `buyNode` both short-circuit when `devFreeNodes = true` (skip fame check / spend).
+- Toggle button in `ConstellationRoute` rail: `[DEV] Free nodes: ON/OFF`. When ON, cost display shows `0`.
+- `toggleDevFreeNodes` action wired through store.
+
+**Skill designer Reset button fixed (commit `ff75de3` / earlier)**
+
+- `window.confirm()` is silently suppressed in cross-origin (localtunnel) contexts.
+- `ActionBar.tsx` replaced with inline two-step confirm: "Discard changes and reload from file? / Yes, reset / Cancel".
+- `resetAll` in `useDesignerState` now calls `setDesign({ ...loadFileBaseline() })` — guarantees a new object reference so React re-renders and the auto-save `useEffect` doesn't fight the reset.
+
+**Top bar reset button fixed (commit `ba4cd3d`)**
+
+- Same `window.confirm()` suppression issue in `TopBar.tsx`.
+- Replaced with inline confirm: "Wipe all progress? Yes / No" rendered inside the meta bar strip.
+- "Yes" calls `useGameStore.persist.clearStorage()` + `localStorage.clear()` + `location.reload()`.
+
+### Lessons preserved
+
+- `window.confirm()` / `window.alert()` are silently suppressed in cross-origin iframes and tunnels (localtunnel, ngrok). Always use inline React state for destructive-action confirmation.
+- Zustand `Object.is` comparison: passing the same object reference to `setState` is a no-op even if the object's contents differ. Always spread or construct a new object when resetting state.
+
+### Next (carry-overs)
+
+- Four `as unknown as GameStore` casts remain in `WorkshopRoom`, `ConstellationRoute`, `TreeRoute`, `AscensionRoute`.
+- Chip-strip spacing for 6-stage tree chips (deferred from prior session).
+- Goldsmith class node (`gold_diggers`) playtest pending.
+- Combo chance soft cap (same treatment as crit) if playtesting shows it trivially maxes.
+- `StatsRoom.tsx` has an uncommitted modification (flagged in git status at session start) — verify before next session.
+
+---
+
 ## Workshop UI polish — session 5 (2026-05-15)
 
 Visual polish pass (empty slot placeholders, symbol scale uniformity) and crit balance fix.
