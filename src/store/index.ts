@@ -10,6 +10,7 @@ import { createPaintMasterySlice, type PaintMasterySlice } from "./paintMasteryS
 import { createSkillTreeSlice, type SkillTreeSlice } from "./skillTreeSlice";
 import { createWorkshopSlice, type WorkshopSlice } from "./workshopSlice";
 import { createOfficeSlice, type OfficeSlice } from "./officeSlice";
+import { createSchoolSlice, type SchoolSlice } from "./schoolSlice";
 import { big, isBig } from "@/core/bigNumber";
 
 export interface GameTick {
@@ -32,9 +33,10 @@ export type GameStore =
   & PaintMasterySlice
   & SkillTreeSlice
   & WorkshopSlice
+  & SchoolSlice
   & GameTick;
 
-const SAVE_VERSION = 16;
+const SAVE_VERSION = 17;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -282,6 +284,18 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     state = { ...state, protectedTiers: {} };
   }
 
+  if (fromVersion < 17) {
+    // v16 → v17 (2026-05-15): Painting School launch. Adds school progression
+    // fields. All default to empty — school starts from scratch on first play.
+    state = {
+      ...state,
+      completedResearches: {},
+      currentTier: 1,
+      activeResearch: null,
+      examsPassed: {},
+    };
+  }
+
   return state as unknown as GameStore;
 };
 
@@ -326,6 +340,7 @@ export const useGameStore = create<GameStore>()(
       ...createSkillTreeSlice(set, get, store),
       ...createWorkshopSlice(set, get, store),
       ...createOfficeSlice(set, get, store),
+      ...createSchoolSlice(set, get, store),
       tickAll: (deltaSeconds: number) => {
         const s = get();
         s.treeTick(deltaSeconds);
@@ -333,6 +348,7 @@ export const useGameStore = create<GameStore>()(
         s.skillTreeTick(deltaSeconds);
         s.workshopTick(deltaSeconds);
         s.tickOffice(deltaSeconds);
+        s.schoolTick(deltaSeconds);
       },
     }),
     {
