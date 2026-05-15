@@ -3,6 +3,7 @@ import type { StoreApi } from "zustand";
 import { big } from "@/core/bigNumber";
 import { fameOnAscend } from "@/core/balance";
 import { getAscendThresholdReduction } from "@/core/multipliers";
+import { getSchoolBonus } from "@/core/schoolMultipliers";
 
 /**
  * True iff the current inspiration would yield at least 1 fame. Below
@@ -32,7 +33,8 @@ export const performAscendOrchestrator = (
   if (!canAscend(state)) return false;
 
   // 1. Capture fame gain BEFORE inspiration is reset.
-  const fameGain = fameOnAscend(state.inspiration, getAscendThresholdReduction(state));
+  const rawFameGain = fameOnAscend(state.inspiration, getAscendThresholdReduction(state));
+  const fameGain = Math.floor(rawFameGain * (1 + getSchoolBonus(state, "+% Fame gain")));
 
   // 2. Reset run state via existing slice actions.
   state.resetRunCurrencies(); // gold + inspiration → 0; fame preserved

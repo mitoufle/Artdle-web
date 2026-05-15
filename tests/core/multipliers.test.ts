@@ -428,6 +428,39 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
   });
 });
 
+describe("school bonuses on multipliers", () => {
+  it("getInspiMultiplier: school +% inspiration gain stacks additively", () => {
+    // closer_to_nature: kind="+% inspiration gain", value=0.15
+    const state = {
+      purchasedNodes: {},
+      completedResearches: { closer_to_nature: true },
+    } as unknown as GameStore;
+    expect(getInspiMultiplier(state)).toBeCloseTo(1.15, 5);
+  });
+
+  it("getInspiMultiplier: stacks school bonus with get_inspired nodes", () => {
+    const state = {
+      purchasedNodes: { get_inspired: 2 },
+      completedResearches: { closer_to_nature: true },
+    } as unknown as GameStore;
+    // 1 + 2*0.25 + 0.15 = 1.65
+    expect(getInspiMultiplier(state)).toBeCloseTo(1.65, 5);
+  });
+
+  it("getSchoolAffixMagnitudeMultiplier: 1.0 with no completed research", async () => {
+    const { getSchoolAffixMagnitudeMultiplier } = await import("@/core/multipliers");
+    const state = { completedResearches: {} } as unknown as GameStore;
+    expect(getSchoolAffixMagnitudeMultiplier(state)).toBeCloseTo(1.0, 5);
+  });
+
+  it("getSchoolAffixMagnitudeMultiplier: 1.10 with expensive_machinery completed", async () => {
+    const { getSchoolAffixMagnitudeMultiplier } = await import("@/core/multipliers");
+    const state = { completedResearches: { expensive_machinery: true } } as unknown as GameStore;
+    // 1 + 0.1 = 1.10
+    expect(getSchoolAffixMagnitudeMultiplier(state)).toBeCloseTo(1.10, 5);
+  });
+});
+
 describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
   it("patron: inspi_mult_bonus adds +10% per level on top of get_inspired", async () => {
     const { getInspiMultiplier } = await import("@/core/multipliers");

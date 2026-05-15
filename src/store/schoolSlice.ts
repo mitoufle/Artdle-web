@@ -2,6 +2,7 @@ import type { StateCreator } from "zustand";
 import { SCHOOL_TIERS } from "@/config/schoolResearches";
 import { big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
+import { getSchoolBonus } from "@/core/schoolMultipliers";
 
 export interface SchoolState {
   completedResearches: Record<string, true>;
@@ -36,7 +37,9 @@ export const createSchoolSlice: StateCreator<GameStore, [], [], SchoolSlice> = (
     if (!tierDef) return false;
     const research = tierDef.researches.find((r) => r.id === id);
     if (!research) return false;
-    set({ activeResearch: { id, remainingSeconds: research.durationSeconds } });
+    const reductionSeconds = getSchoolBonus(state, "School Research flat reduction (mnt)") * 60;
+    const remainingSeconds = Math.max(60, research.durationSeconds - reductionSeconds);
+    set({ activeResearch: { id, remainingSeconds } });
     return true;
   },
 

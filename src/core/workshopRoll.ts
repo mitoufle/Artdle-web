@@ -129,6 +129,7 @@ export function rollAffixes(
   tier: ItemTier,
   state: GameStore,
   magnitudeBonus = 0,
+  magnitudeMultiplier = 1,
 ): ReadonlyArray<Affix> {
   const count = TIER_AFFIX_COUNT[tier];
   const pool = availableKinds(state);
@@ -139,8 +140,8 @@ export function rollAffixes(
   for (let i = 0; i < count; i++) {
     const kind = rngPick(pool);
     const range = AFFIX_MAGNITUDE_RANGE[tier][kind];
-    const min = range.min + magnitudeBonus;
-    const max = range.max + magnitudeBonus;
+    const min = Math.round(range.min * magnitudeMultiplier) + magnitudeBonus;
+    const max = Math.round(range.max * magnitudeMultiplier) + magnitudeBonus;
     const magnitude = rngInt(min, max);
     out.push({ kind, magnitude });
   }

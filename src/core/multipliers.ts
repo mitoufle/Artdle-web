@@ -64,9 +64,10 @@ export function getOfficeContribution(state: Pick<GameStore, "roster">, kind: Af
  *   - get_inspired: +25% per level (additive). 5 levels = +125%.
  *   - workshop items: do NOT contribute (painting-only by design).
  */
-export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes">): number => {
+export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedResearches">): number => {
   const bonus = getNodeLevel(state, "get_inspired") * GET_INSPIRED_PER_LEVEL
-    + countCapability(state, "inspi_mult_bonus") * 0.10;
+    + countCapability(state, "inspi_mult_bonus") * 0.10
+    + getSchoolBonus(state, "+% inspiration gain");
   return 1 + bonus;
 };
 
@@ -222,3 +223,8 @@ export const getCritGoldBonus = (state: Pick<GameStore, "purchasedNodes">): numb
 /** Ascend threshold reduction in log10-space (used by canAscend + fameOnAscend). */
 export const getAscendThresholdReduction = (state: Pick<GameStore, "purchasedNodes">): number =>
   countCapability(state, "ascend_threshold_reduction") * 0.05;
+
+/** Multiplicative boost on both affix min and max magnitude at roll time (school bonus). */
+export const getSchoolAffixMagnitudeMultiplier = (
+  state: Pick<GameStore, "completedResearches">,
+): number => 1 + getSchoolBonus(state, "Item min/max affix magnitude");

@@ -105,6 +105,26 @@ describe("systems/ascend", () => {
     expect(s.equipped).toEqual({});
   });
 
+  it("performAscendOrchestrator applies +% Fame gain school bonus (Math.floor)", () => {
+    // branding: kind="+% Fame gain", value=0.02 → +2% more fame
+    // use 1,000,000 inspi (≈102 fame) so 2% is non-trivial: floor(102*1.02)=104
+    useGameStore.setState({ completedResearches: { branding: true } });
+    useGameStore.getState().add("inspiration", big(1_000_000));
+    const baseFame = fameOnAscend(big(1_000_000));
+    performAscendOrchestrator(useGameStore.getState);
+    const expectedFame = Math.floor(baseFame * (1 + 0.02));
+    expect(expectedFame).toBeGreaterThan(baseFame); // sanity: 2% bonus must change the result
+    expect(useGameStore.getState().fame.toNumber()).toBe(expectedFame);
+  });
+
+  it("performAscendOrchestrator applies no bonus when school research not completed", () => {
+    useGameStore.setState({ completedResearches: {} });
+    useGameStore.getState().add("inspiration", big(1_000_000));
+    const baseFame = fameOnAscend(big(1_000_000));
+    performAscendOrchestrator(useGameStore.getState);
+    expect(useGameStore.getState().fame.toNumber()).toBe(baseFame);
+  });
+
   it("performAscendOrchestrator on success: purchasedNodes UNCHANGED (preserved)", () => {
     useGameStore.setState({
       purchasedNodes: { get_inspired: 2, black_white: 1 },

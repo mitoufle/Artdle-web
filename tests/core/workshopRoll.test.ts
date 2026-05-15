@@ -140,6 +140,43 @@ describe("workshopRoll — rollAffixes", () => {
   });
 });
 
+describe("rollAffixes — magnitudeMultiplier param", () => {
+  beforeEach(() => { setSeed(42); });
+
+  it("default magnitudeMultiplier=1 keeps magnitudes in original range", () => {
+    const s = baseStub();
+    const origMax = AFFIX_MAGNITUDE_RANGE["normal"]["+sell_price%"].max;
+    for (let i = 0; i < 100; i++) {
+      const affixes = rollAffixes("normal", s);
+      expect(affixes[0]!.magnitude).toBeLessThanOrEqual(origMax);
+    }
+  });
+
+  it("magnitudeMultiplier=2 allows magnitudes above original range max", () => {
+    const s = baseStub();
+    const origMax = AFFIX_MAGNITUDE_RANGE["normal"]["+sell_price%"].max;
+    let sawAbove = false;
+    for (let i = 0; i < 200; i++) {
+      const affixes = rollAffixes("normal", s, 0, 2);
+      if (affixes[0]!.magnitude > origMax) sawAbove = true;
+    }
+    expect(sawAbove).toBe(true);
+  });
+
+  it("magnitudeBonus and magnitudeMultiplier both apply: multiplier first, then bonus", () => {
+    setSeed(1);
+    const s = baseStub();
+    const range = AFFIX_MAGNITUDE_RANGE["normal"]["+sell_price%"];
+    const expectedMin = Math.round(range.min * 2) + 5;
+    const expectedMax = Math.round(range.max * 2) + 5;
+    for (let i = 0; i < 200; i++) {
+      const affixes = rollAffixes("normal", s, 5, 2);
+      expect(affixes[0]!.magnitude).toBeGreaterThanOrEqual(expectedMin);
+      expect(affixes[0]!.magnitude).toBeLessThanOrEqual(expectedMax);
+    }
+  });
+});
+
 describe("workshopRoll — constants", () => {
   it("unlock thresholds match spec", () => {
     expect(TIER_UNLOCK_LEVEL.normal).toBe(1);

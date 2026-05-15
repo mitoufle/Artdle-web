@@ -13,6 +13,10 @@ const KNOWN_EFFECT_KINDS = [
   "canvas_gold_pct",
   "speed_pct",
   "worker_xp_pct",
+  "+% inspiration gain",
+  "+% Fame gain",
+  "School Research flat reduction (mnt)",
+  "Item min/max affix magnitude",
 ];
 
 export function SchoolDesignerRoute(): JSX.Element {

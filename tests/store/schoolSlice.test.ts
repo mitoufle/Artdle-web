@@ -24,7 +24,25 @@ describe("schoolSlice", () => {
     const active = useGameStore.getState().activeResearch;
     expect(active).not.toBeNull();
     expect(active?.id).toBe("color_theory_basics");
-    expect(active?.remainingSeconds).toBe(300);
+    expect(active?.remainingSeconds).toBe(18000); // 300 min in seconds
+  });
+
+  it("startResearch reduces duration by completed 'School Research flat reduction (mnt)'", () => {
+    // quick_thinking: value=10 → 10 min = 600s reduction
+    // color_theory_basics: 18000s → 18000 - 600 = 17400s
+    useGameStore.setState({ completedResearches: { quick_thinking: true } });
+    useGameStore.getState().startResearch("color_theory_basics");
+    const active = useGameStore.getState().activeResearch;
+    expect(active?.remainingSeconds).toBe(17400);
+  });
+
+  it("startResearch floors reduced duration at 60s minimum", () => {
+    // Simulate a hypothetical 10-minute research with a 15-minute reduction
+    // brushwork_basics: 7200s (120 min), minus 10 min = 110 min = 6600s
+    useGameStore.setState({ completedResearches: { quick_thinking: true } });
+    useGameStore.getState().startResearch("brushwork_basics");
+    const active = useGameStore.getState().activeResearch;
+    expect(active?.remainingSeconds).toBe(6600); // 7200 - 600 = 6600
   });
 
   it("startResearch returns false when another research is active", () => {
@@ -49,21 +67,21 @@ describe("schoolSlice", () => {
   });
 
   it("schoolTick decrements remainingSeconds", () => {
-    useGameStore.getState().startResearch("color_theory_basics"); // 300s
+    useGameStore.getState().startResearch("color_theory_basics"); // 18000s
     useGameStore.getState().schoolTick(10);
-    expect(useGameStore.getState().activeResearch?.remainingSeconds).toBeCloseTo(290, 1);
+    expect(useGameStore.getState().activeResearch?.remainingSeconds).toBeCloseTo(17990, 1);
   });
 
   it("schoolTick completes research when timer reaches 0", () => {
-    useGameStore.getState().startResearch("color_theory_basics"); // 300s
-    useGameStore.getState().schoolTick(300);
+    useGameStore.getState().startResearch("color_theory_basics"); // 18000s
+    useGameStore.getState().schoolTick(18000);
     expect(useGameStore.getState().activeResearch).toBeNull();
     expect(useGameStore.getState().completedResearches["color_theory_basics"]).toBe(true);
   });
 
   it("schoolTick completes research when delta overshoots the remaining time", () => {
-    useGameStore.getState().startResearch("color_theory_basics"); // 300s
-    useGameStore.getState().schoolTick(400); // delta > remainingSeconds
+    useGameStore.getState().startResearch("color_theory_basics"); // 18000s
+    useGameStore.getState().schoolTick(18001); // delta > remainingSeconds
     expect(useGameStore.getState().activeResearch).toBeNull();
     expect(useGameStore.getState().completedResearches["color_theory_basics"]).toBe(true);
   });
@@ -96,6 +114,10 @@ describe("schoolSlice", () => {
         color_theory_basics: true,
         brushwork_basics: true,
         light_and_shadow: true,
+        closer_to_nature: true,
+        branding: true,
+        quick_thinking: true,
+        expensive_machinery: true,
       },
       fame: big(100),
     });
