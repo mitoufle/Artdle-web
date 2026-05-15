@@ -26,6 +26,7 @@ import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
 import { WorkshopRoom } from "@/components/painting/WorkshopRoom";
 import { OfficeRoom } from "@/components/painting/OfficeRoom";
 import { StatsRoom } from "@/components/painting/StatsRoom";
+import { SchoolRoom } from "@/components/painting/SchoolRoom";
 import { FloatingGoldText } from "@/ui/widgets/FloatingGoldText";
 import styles from "./PaintingRoute.module.css";
 
@@ -169,6 +170,7 @@ export function PaintingRoute(): JSX.Element {
         {activeRoom === "workshop" && <WorkshopRoom />}
         {activeRoom === "office" && <OfficeRoom />}
         {activeRoom === "stats" && <StatsRoom />}
+        {activeRoom === "school" && <SchoolRoom />}
       </aside>
 
       <aside className={styles.railArea}>

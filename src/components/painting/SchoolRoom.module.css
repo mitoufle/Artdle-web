@@ -1,0 +1,212 @@
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  color: #a78bfa;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.tierBadge {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.tierProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tierProgressRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tierLabel {
+  color: #c4b5fd;
+  font-size: 12px;
+}
+
+.tierCount {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.progressBar {
+  background: #1f2937;
+  border-radius: 2px;
+  height: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #7c3aed;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.activeCard {
+  background: #1c1917;
+  border: 1px solid #92400e;
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.activeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.activeName {
+  color: #fbbf24;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.activeTimer {
+  color: #fcd34d;
+  font-size: 11px;
+}
+
+.activeEffect {
+  color: #d97706;
+  font-size: 11px;
+}
+
+.activeProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  border-radius: 2px;
+  transition: width 0.5s linear;
+}
+
+.cancelBtn {
+  align-self: flex-end;
+  background: #374151;
+  color: #9ca3af;
+  border: none;
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  background: #4b5563;
+  color: #e5e7eb;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.cardDone {
+  background: #064e3b;
+  border-radius: 4px;
+  padding: 6px;
+  cursor: default;
+}
+
+.cardActive {
+  background: #78350f;
+  border: 1px solid #92400e;
+  border-radius: 4px;
+  padding: 6px;
+}
+
+.cardAvailable {
+  background: #1f2937;
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.cardAvailable:hover {
+  background: #374151;
+  outline: 1px solid #3730a3;
+}
+
+.cardName {
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.cardDone .cardName { color: #34d399; }
+.cardActive .cardName { color: #fbbf24; }
+.cardAvailable .cardName { color: #9ca3af; }
+
+.cardEffect {
+  font-size: 10px;
+}
+
+.cardDone .cardEffect { color: #059669; }
+.cardActive .cardEffect { color: #d97706; }
+.cardAvailable .cardEffect { color: #6b7280; }
+
+.cardDuration {
+  font-size: 9px;
+  color: #4b5563;
+  margin-top: 2px;
+}
+
+.examGate {
+  background: #1f2937;
+  border: 1px dashed #4b5563;
+  border-radius: 5px;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.examTitle {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.examHint {
+  color: #4b5563;
+  font-size: 10px;
+}
+
+.examBtn {
+  background: #374151;
+  color: #4b5563;
+  border: none;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: not-allowed;
+}
+
+.examBtn:not(:disabled) {
+  background: #4c1d95;
+  color: #c4b5fd;
+  cursor: pointer;
+}
+
+.examBtn:not(:disabled):hover {
+  background: #5b21b6;
+}
