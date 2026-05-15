@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useGameStore } from "@/store";
 import { canAscend } from "@/systems/ascend";
 import { fameOnAscend } from "@/core/balance";
+import { getAscendThresholdReduction } from "@/core/multipliers";
 import { formatBig, formatShort } from "@/core/formatter";
 import { Cavern } from "@/components/ascension/Cavern";
 import { Portal } from "@/components/ascension/Portal";
@@ -17,7 +18,7 @@ function ascendHoverBody(): JSX.Element {
   if (!canAscend(state)) {
     return <div>Need 10,000 inspiration to gain your first fame point.</div>;
   }
-  const gain = fameOnAscend(state.inspiration);
+  const gain = fameOnAscend(state.inspiration, getAscendThresholdReduction(state));
   return (
     <>
       <div>Current inspi: {formatBig(state.inspiration)}</div>
@@ -41,7 +42,7 @@ export function AscensionRoute(): JSX.Element {
   const performAscend = useGameStore((s) => s.performAscend);
 
   const canDo = canAscend({ inspiration, purchasedNodes });
-  const fameGain = fameOnAscend(inspiration);
+  const fameGain = fameOnAscend(inspiration, getAscendThresholdReduction({ purchasedNodes }));
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -88,7 +89,7 @@ export function AscensionRoute(): JSX.Element {
       <aside className={styles.rail}>
         <ThresholdPanel currentInspi={formatBig(inspiration)} />
         <FamePreviewCard fameGain={fameGain} />
-        <PastRunsLedger runs={pastRuns} totalFame={fame.toNumber()} />
+        <PastRunsLedger runs={pastRuns} totalFame={pastRuns.reduce((acc, r) => acc + r.fame, 0)} />
       </aside>
 
       {confirmOpen && (

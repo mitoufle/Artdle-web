@@ -35,7 +35,7 @@ function screenToSvg(svg: SVGSVGElement, clientX: number, clientY: number): { x:
 function fameHubBody(): JSX.Element {
   const s = useGameStore.getState();
   const lifetimeBonus = s.pastRuns.reduce((acc, r) => acc + r.fame, 0);
-  const lifetime = s.fame.add(big(lifetimeBonus));
+  const lifetime = big(lifetimeBonus);
   return (
     <>
       <div>To spend: {formatBig(s.fame)}</div>
