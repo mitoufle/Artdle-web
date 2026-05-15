@@ -85,3 +85,13 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+@keyframes milestoneGlow {
+  0%, 100% { box-shadow: var(--inspi-glow); border-color: var(--inspi); }
+  50%       { box-shadow: 0 0 22px rgba(155,108,214,0.85); border-color: var(--inspi); }
+}
+
+.costGlowing {
+  animation: milestoneGlow 1.4s ease-in-out infinite;
+  border-color: var(--inspi);
+}

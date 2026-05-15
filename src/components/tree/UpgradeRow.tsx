@@ -3,7 +3,7 @@ import styles from "./UpgradeRow.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
 import { getInspiMultiplier } from "@/core/multipliers";
-import { getPartMilestoneMultiplier, getNextPartMilestone } from "@/core/balance";
+import { getPartMilestoneMultiplier, getNextPartMilestone, isApproachingMilestone } from "@/core/balance";
 
 interface Props {
   partId: string;
@@ -50,6 +50,7 @@ export function UpgradeRow({
 }: Props): JSX.Element {
   const monogram = name.charAt(0).toUpperCase();
   const milestoneMult = getPartMilestoneMultiplier(level);
+  const approaching = isApproachingMilestone(level);
   return (
     <li className={styles.row} data-part-id={partId}>
       <span className={styles.monogram} aria-hidden="true">
@@ -71,7 +72,7 @@ export function UpgradeRow({
       >
         <button
           type="button"
-          className={styles.cost}
+          className={`${styles.cost}${approaching ? ` ${styles.costGlowing}` : ""}`}
           disabled={!canAfford}
           onClick={canAfford ? onBuy : undefined}
           data-testid={`upgrade-buy-${partId}`}
