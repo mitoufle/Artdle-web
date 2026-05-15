@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { StagePanel } from "@/components/tree/StagePanel";
 
 describe("<StagePanel />", () => {
-  it("renders all 6 stage chips with the current one marked active", () => {
+  it("renders 2 chips (current + next) with the current one marked active", () => {
     render(
       <StagePanel
         currentStageIndex={1}
@@ -14,9 +14,9 @@ describe("<StagePanel />", () => {
       />,
     );
     const chips = screen.getAllByTestId(/stage-chip-/);
-    expect(chips).toHaveLength(6);
+    expect(chips).toHaveLength(2);
     expect(screen.getByTestId("stage-chip-1")).toHaveAttribute("data-active", "true");
-    expect(screen.getByTestId("stage-chip-0")).not.toHaveAttribute("data-active", "true");
+    expect(screen.getByTestId("stage-chip-2")).not.toHaveAttribute("data-active", "true");
   });
 
   it("renders the title 'Stage A → Stage B' with current and next", () => {

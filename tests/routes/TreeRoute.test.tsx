@@ -29,9 +29,9 @@ describe("TreeRoute (v2 visual)", () => {
     expect(screen.getByText(/Stage · Tiny Sprout/i)).toBeInTheDocument();
   });
 
-  it("renders 6 stage chips in the right rail", () => {
+  it("renders 2 stage chips (current + next) in the right rail", () => {
     renderTreeRoute();
-    expect(screen.getAllByTestId(/stage-chip-/)).toHaveLength(6);
+    expect(screen.getAllByTestId(/stage-chip-/)).toHaveLength(2);
   });
 
   it("renders upgrade rows for the current tier and the next one", () => {

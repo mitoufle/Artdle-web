@@ -79,19 +79,22 @@ export function StagePanel({
         </header>
 
         <ol className={styles.chips} aria-label="Stage chain">
-          {TREE_STAGES.map((stage, idx) => (
-            <li
-              key={stage.id}
-              className={styles.chip}
-              data-testid={`stage-chip-${idx}`}
-              data-active={idx === currentStageIndex ? "true" : undefined}
-            >
-              <span>{stage.name}</span>
-              {idx < TREE_STAGES.length - 1 && (
-                <span className={styles.arrow} aria-hidden="true">→</span>
-              )}
-            </li>
-          ))}
+          {TREE_STAGES.slice(currentStageIndex, currentStageIndex + 2).map((stage, i) => {
+            const idx = currentStageIndex + i;
+            return (
+              <li
+                key={stage.id}
+                className={styles.chip}
+                data-testid={`stage-chip-${idx}`}
+                data-active={idx === currentStageIndex ? "true" : undefined}
+              >
+                <span>{stage.name}</span>
+                {i === 0 && !isFinal && (
+                  <span className={styles.arrow} aria-hidden="true">→</span>
+                )}
+              </li>
+            );
+          })}
         </ol>
 
         {!isFinal && (
