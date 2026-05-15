@@ -1,0 +1,52 @@
+[
+  {
+    "tier": 1,
+    "label": "Apprenti",
+    "examCost": 50,
+    "researches": [
+      { "id": "color_theory_basics", "name": "Color Theory Basics", "durationSeconds": 300, "effects": [{ "kind": "canvas_gold_pct", "value": 0.15 }] },
+      { "id": "brushwork_basics", "name": "Brushwork Basics", "durationSeconds": 240, "effects": [{ "kind": "canvas_gold_pct", "value": 0.10 }] },
+      { "id": "light_and_shadow", "name": "Light & Shadow", "durationSeconds": 480, "effects": [{ "kind": "speed_pct", "value": 0.08 }] }
+    ]
+  },
+  {
+    "tier": 2,
+    "label": "Élève",
+    "examCost": 100,
+    "researches": [
+      { "id": "composition", "name": "Composition", "durationSeconds": 600, "effects": [{ "kind": "canvas_gold_pct", "value": 0.12 }] },
+      { "id": "perspective", "name": "Perspective", "durationSeconds": 720, "effects": [{ "kind": "canvas_gold_pct", "value": 0.10 }] },
+      { "id": "color_mixing", "name": "Color Mixing", "durationSeconds": 480, "effects": [{ "kind": "speed_pct", "value": 0.07 }] }
+    ]
+  },
+  {
+    "tier": 3,
+    "label": "Compagnon",
+    "examCost": 200,
+    "researches": [
+      { "id": "anatomy_basics", "name": "Anatomy Basics", "durationSeconds": 900, "effects": [{ "kind": "canvas_gold_pct", "value": 0.15 }] },
+      { "id": "still_life_studies", "name": "Still Life Studies", "durationSeconds": 900, "effects": [{ "kind": "speed_pct", "value": 0.12 }] },
+      { "id": "texture_techniques", "name": "Texture Techniques", "durationSeconds": 720, "effects": [{ "kind": "worker_xp_pct", "value": 0.10 }] }
+    ]
+  },
+  {
+    "tier": 4,
+    "label": "Maître",
+    "examCost": 400,
+    "researches": [
+      { "id": "oil_painting", "name": "Oil Painting", "durationSeconds": 1200, "effects": [{ "kind": "canvas_gold_pct", "value": 0.20 }] },
+      { "id": "watercolor_mastery", "name": "Watercolor Mastery", "durationSeconds": 1200, "effects": [{ "kind": "speed_pct", "value": 0.15 }] },
+      { "id": "portrait_study", "name": "Portrait Study", "durationSeconds": 1500, "effects": [{ "kind": "worker_xp_pct", "value": 0.15 }] }
+    ]
+  },
+  {
+    "tier": 5,
+    "label": "Expert",
+    "examCost": 800,
+    "researches": [
+      { "id": "master_composition", "name": "Master Composition", "durationSeconds": 1800, "effects": [{ "kind": "canvas_gold_pct", "value": 0.25 }] },
+      { "id": "advanced_technique", "name": "Advanced Technique", "durationSeconds": 1800, "effects": [{ "kind": "speed_pct", "value": 0.20 }] },
+      { "id": "studio_discipline", "name": "Studio Discipline", "durationSeconds": 2400, "effects": [{ "kind": "worker_xp_pct", "value": 0.20 }] }
+    ]
+  }
+]
