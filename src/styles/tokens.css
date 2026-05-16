@@ -39,11 +39,11 @@
   --fame-glow:   0 0 14px rgba(255,216,106,0.55);
 
   /* ---------- type stacks ---------- */
-  --pixel:  'Press Start 2P', monospace;
-  --pixelL: 'VT323',          monospace;
-  --serif:  'Cinzel',         serif;            /* headings, nav, prestige labels */
-  --mono:   'JetBrains Mono', ui-monospace, monospace; /* numbers, meta, labels */
-  --sans:   'Inter',          system-ui, sans-serif;  /* body */
+  --pixel:  'Pixelify Sans', sans-serif;
+  --pixelL: 'Pixelify Sans', sans-serif;
+  --serif:  'Pixelify Sans', sans-serif;
+  --mono:   'JetBrains Mono', ui-monospace, monospace; /* numbers, values */
+  --sans:   'Pixelify Sans', sans-serif;
 
   /* ---------- item rarity (loot affixes) ---------- */
   --tier-rare:        #6fb1ff;
@@ -74,7 +74,4 @@
   --shadow-card:   inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 32px rgba(0,0,0,0.35);
 }
 
-/* fonts to load: */
-/*
-  https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=JetBrains+Mono:wght@400;600&family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&display=swap
-*/
+/* fonts loaded in index.html: Pixelify Sans + JetBrains Mono */
