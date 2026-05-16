@@ -56,7 +56,7 @@ export function TrackCard({
           onClick={!disabled ? onUpgrade : undefined}
           data-testid={`track-card-upgrade-${trackId}`}
         >
-          {locked ? "Locked" : <>Upgrade · {coinIcon}</>}
+          {locked ? "Locked" : coinIcon}
         </button>
       </Hoverable>
     </div>
