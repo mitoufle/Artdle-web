@@ -308,7 +308,7 @@
 
 .tierFilterRow {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--s-1);
 }
 
@@ -318,7 +318,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 3px 8px;
+  padding: 3px 5px;
   border: 2px solid var(--tier-color, #9e9e9e);
   border-radius: var(--r-sm);
   color: var(--tier-color, #9e9e9e);
