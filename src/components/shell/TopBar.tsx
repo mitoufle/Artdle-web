@@ -3,6 +3,8 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useGameStore } from "@/store";
 import { persistedAdapter } from "@/systems/persistence";
+import { useMusic } from "@/ui/hooks/useMusic";
+import { MusicControls } from "./MusicControls";
 import styles from "./TopBar.module.css";
 
 const NAV_ITEMS: ReadonlyArray<{ to: string; label: string }> = [
@@ -30,6 +32,7 @@ async function wipeAndReload(): Promise<void> {
 export function TopBar(): JSX.Element {
   const { pathname } = useLocation();
   const [confirming, setConfirming] = useState(false);
+  const music = useMusic();
 
   return (
     <header className={styles.bar}>
@@ -60,6 +63,7 @@ export function TopBar(): JSX.Element {
         })}
       </nav>
       <div className={styles.meta} aria-label="Autosave status">
+        <MusicControls controls={music} />
         {confirming ? (
           <>
             <span className={styles.confirmPrompt}>Wipe all progress?</span>
