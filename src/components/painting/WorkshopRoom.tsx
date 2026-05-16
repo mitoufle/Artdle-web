@@ -311,7 +311,7 @@ export function WorkshopRoom(): JSX.Element {
         <div className={styles.subhead}>
           Equipped <span className={styles.count}>{Object.keys(equipped).length}/{unlockedSlots.length}</span>
         </div>
-        <div className={styles.equippedGrid}>
+        <div className={styles.itemList}>
           {ALL_SLOT_KINDS.map((slot) => {
             const isUnlocked = unlockedSlots.includes(slot);
             const item = equipped[slot];
@@ -325,7 +325,8 @@ export function WorkshopRoom(): JSX.Element {
                   title={`${slot} (locked)`}
                   body={unlockNode ? `Purchase "${unlockNode}" in the skill tree to unlock.` : ""}
                 >
-                  <div className={styles.lockedSlot}>
+                  <div className={styles.lockedRow}>
+                    <span className={styles.itemRowIcon}>{SLOT_PLACEHOLDER[slot]}</span>
                     <span>{slot}</span>
                     <span>🔒</span>
                   </div>
@@ -341,9 +342,10 @@ export function WorkshopRoom(): JSX.Element {
                     title={`${slot} (empty)`}
                     body="Equip an item from your inventory."
                   >
-                    <div className={styles.emptySlot} aria-label={slot}>
-                      <span className={styles.slotIcon}>{SLOT_PLACEHOLDER[slot]}</span>
-                      <span className={styles.slotLabel}>{slot}</span>
+                    <div className={styles.emptyRow} aria-label={slot}>
+                      <span className={styles.itemRowIcon}>{SLOT_PLACEHOLDER[slot]}</span>
+                      <span className={styles.slotName}>{slot}</span>
+                      <span style={{ color: "var(--ink-3)", fontSize: 10 }}>— empty</span>
                     </div>
                   </Hoverable>
                 </div>
@@ -368,16 +370,22 @@ export function WorkshopRoom(): JSX.Element {
               >
                 <button
                   type="button"
-                  className={`${styles.itemSquare}${hasFusion && canFuse ? ` ${styles.equippedFusion}` : ""}`}
+                  className={`${styles.itemRow}${hasFusion && canFuse ? ` ${styles.itemRowFusion}` : ""}`}
                   data-tier={item.tier}
                   onClick={() => (hasFusion && canFuse) ? fuseItem(fusionEntry!.candidate.id) : unequipSlot(slot)}
                   data-testid={hasFusion && canFuse ? `slot-fuse-${slot}` : `slot-unequip-${slot}`}
                 >
-                  <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
-                  <span className={styles.slotLabel}>{slot}</span>
-                  <div className={styles.affixGrid}>
+                  <span className={styles.itemRowIcon}>{SLOT_PLACEHOLDER[slot]}</span>
+                  <div className={styles.itemRowMeta}>
+                    <span className={styles.tierBadge}>{TIER_LABEL[item.tier]}</span>
+                    <span className={styles.slotName}>{slot}</span>
+                  </div>
+                  <div className={styles.itemRowAffixes}>
                     {item.affixes.map((a, i) => (
-                      <span key={i} className={styles.affixLine}><span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span> {a.magnitude}%</span>
+                      <span key={i} className={styles.affixChip}>
+                        <span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
+                        {a.magnitude}%
+                      </span>
                     ))}
                   </div>
                 </button>
@@ -394,7 +402,7 @@ export function WorkshopRoom(): JSX.Element {
         {inventory.length === 0 ? (
           <div className={styles.empty}>Empty — click Craft to roll an item.</div>
         ) : (
-          <div className={styles.inventoryGrid}>
+          <div className={styles.inventoryList}>
             {inventory.map((item) => (
               <div
                 key={item.id}
@@ -408,17 +416,23 @@ export function WorkshopRoom(): JSX.Element {
                 >
                   <button
                     type="button"
-                    className={styles.itemSquare}
+                    className={styles.itemRow}
                     data-tier={item.tier}
                     onClick={() => equipItem(item.id)}
                     onContextMenu={(e) => { e.preventDefault(); discard(item.id); }}
                     data-testid={`inventory-equip-${item.id}`}
                   >
-                    <span className={styles.tierTag}>{TIER_LABEL[item.tier]}</span>
-                    <span className={styles.slotLabel}>{item.slot}</span>
-                    <div className={styles.affixGrid}>
+                    <span className={styles.itemRowIcon}>{SLOT_PLACEHOLDER[item.slot]}</span>
+                    <div className={styles.itemRowMeta}>
+                      <span className={styles.tierBadge}>{TIER_LABEL[item.tier]}</span>
+                      <span className={styles.slotName}>{item.slot}</span>
+                    </div>
+                    <div className={styles.itemRowAffixes}>
                       {item.affixes.map((a, i) => (
-                        <span key={i} className={styles.affixLine}><span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span> {a.magnitude}%</span>
+                        <span key={i} className={styles.affixChip}>
+                          <span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
+                          {a.magnitude}%
+                        </span>
                       ))}
                     </div>
                   </button>
