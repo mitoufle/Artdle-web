@@ -125,7 +125,7 @@ export function CurrencyChip({ kind, label, value, rate, dimmed }: Props): JSX.E
         data-kind={kind}
         data-dimmed={dimmed ? "true" : undefined}
       >
-        <img src={ICON_SRC[kind]} className={styles.icon} width={16} height={16} aria-hidden="true" />
+        <img src={ICON_SRC[kind]} className={styles.icon} width={22} height={22} aria-hidden="true" />
         <span className={styles.label}>{label}</span>
         <span className={styles.value}>{value}</span>
         {rate && <span className={styles.rate}>{rate}</span>}
