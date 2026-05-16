@@ -41,7 +41,9 @@ export function PastRunsLedger({ runs, totalFame }: Props): JSX.Element {
           const date = new Date(run.ascendedAt).toLocaleDateString();
           return (
             <li key={startIdx + i} className={styles.row}>
-              {`Run ${runNum} `}<CurrencyAmount kind="fame" value={run.fame} size={13} />{` ${date}`}
+              <span className={styles.runLabel}>Run {runNum}</span>
+              <span className={styles.runFame}><CurrencyAmount kind="fame" value={run.fame} size={13} /></span>
+              <span className={styles.runDate}>{date}</span>
             </li>
           );
         })}
