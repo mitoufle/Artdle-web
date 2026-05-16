@@ -78,7 +78,7 @@ export function AscensionRoute(): JSX.Element {
                 data-testid="step-through-btn"
               >
                 {canDo
-                  ? `✦ Step Through · +${formatShort(fameGain)} fame ✦`
+                  ? <>✦ Step Through · {formatShort(fameGain)} <img src="/assets/artdle/Currency/fame.png" width={18} height={18} aria-hidden="true" style={{ imageRendering: "pixelated" }} /> ✦</>
                   : "✦ Step Through · need 10,000 inspiration ✦"}
               </button>
             </Hoverable>
@@ -121,7 +121,7 @@ export function AscensionRoute(): JSX.Element {
                 className={styles.confirmBtn}
                 onClick={onConfirmAscend}
               >
-                Ascend  +{formatShort(fameGain)} fame ✦
+                Ascend · {formatShort(fameGain)} <img src="/assets/artdle/Currency/fame.png" width={16} height={16} aria-hidden="true" style={{ imageRendering: "pixelated" }} /> ✦
               </button>
             </div>
           </div>

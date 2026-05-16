@@ -40,13 +40,18 @@ export function PastRunsLedger({ runs, totalFame }: Props): JSX.Element {
           const date = new Date(run.ascendedAt).toLocaleDateString();
           return (
             <li key={startIdx + i} className={styles.row}>
-              {`Run ${runNum} +${run.fame} ${date}`}
+              {`Run ${runNum} `}
+              {run.fame}
+              <img src="/assets/artdle/Currency/fame.png" width={13} height={13} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle", marginLeft: "3px" }} />
+              {` ${date}`}
             </li>
           );
         })}
       </ol>
       <div className={styles.footer}>
-        ✦ Total · {totalFame} fame ✦
+        ✦ Total · {totalFame}
+        <img src="/assets/artdle/Currency/fame.png" width={14} height={14} aria-hidden="true" style={{ imageRendering: "pixelated" }} />
+        ✦
       </div>
     </section>
   );

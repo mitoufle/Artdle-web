@@ -34,7 +34,10 @@ export function ThresholdPanel({ currentInspi }: Props): JSX.Element {
         data-testid="threshold-panel"
       >
         <div className={styles.subhead}>Current inspiration</div>
-        <div className={styles.value}>{currentInspi}</div>
+        <div className={styles.value}>
+          <img src="/assets/artdle/Currency/Inspiration.png" width={24} height={24} aria-hidden="true" style={{ imageRendering: "pixelated" }} />
+          {currentInspi}
+        </div>
       </section>
     </Hoverable>
   );

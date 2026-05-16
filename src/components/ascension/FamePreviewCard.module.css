@@ -3,10 +3,10 @@
   flex-direction: column;
   gap: var(--s-2);
   padding: var(--s-4);
-  border: 1px solid var(--fame-d);
+  border: 1px solid var(--pm-d);
   border-radius: var(--r-md);
   background: var(--bg-1);
-  box-shadow: var(--fame-glow);
+  box-shadow: var(--pm-glow);
 }
 
 .subhead {
@@ -21,9 +21,12 @@
   font-family: var(--serif);
   font-size: 36px;
   font-weight: 700;
-  color: var(--fame);
-  text-shadow: var(--fame-glow);
+  color: var(--pm);
+  text-shadow: var(--pm-glow);
   line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
 }
 
 .caption {

@@ -3,9 +3,10 @@
   flex-direction: column;
   gap: var(--s-2);
   padding: var(--s-4);
-  border: var(--border-subtle);
+  border: 1px solid var(--pm-d);
   border-radius: var(--r-md);
   background: var(--bg-1);
+  box-shadow: var(--pm-glow);
 }
 
 .subhead {
@@ -22,5 +23,8 @@
   font-weight: 600;
   color: var(--inspi);
   text-shadow: var(--inspi-glow);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
 }
 
