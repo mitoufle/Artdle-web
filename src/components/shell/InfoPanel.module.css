@@ -1,18 +1,16 @@
 .panel {
-  height: 64px;
+  min-height: 52px;
   border-top: var(--border-subtle);
   background: var(--bg-2);
-  overflow: hidden;
   display: flex;
-  align-items: center;
+  align-items: stretch;
 }
 
 .titleZone {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  height: 100%;
-  padding: 0 var(--s-5);
+  padding: var(--s-3) var(--s-5);
   border-right: var(--border-subtle);
 }
 
@@ -26,33 +24,30 @@
   white-space: nowrap;
 }
 
-/* Body items (divs / spans from callers) line up horizontally as flex items */
+/* Body items line up horizontally; wrap when content is too wide */
 .bodyZone {
   flex: 1;
   display: flex;
   flex-direction: row;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--s-4);
-  padding: 0 var(--s-5);
-  overflow: hidden;
+  padding: var(--s-3) var(--s-5);
   font-family: var(--mono);
   font-size: 12px;
   color: var(--ink-2);
-  white-space: nowrap;
 }
 
 .footerZone {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  height: 100%;
-  padding: 0 var(--s-5);
+  padding: var(--s-3) var(--s-5);
   border-left: var(--border-subtle);
   font-family: var(--mono);
   font-size: 11px;
   color: var(--ink-3);
-  white-space: nowrap;
-  max-width: 320px;
+  max-width: 280px;
 }
 
 .idle {
