@@ -5,8 +5,8 @@ const KEY_VOL = "artdle-music-volume";
 const KEY_MUTED = "artdle-music-muted";
 
 function loadVolume(): number {
-  const v = parseFloat(localStorage.getItem(KEY_VOL) ?? "0.4");
-  return isNaN(v) ? 0.4 : Math.max(0, Math.min(1, v));
+  const v = parseFloat(localStorage.getItem(KEY_VOL) ?? "0.2");
+  return isNaN(v) ? 0.2 : Math.max(0, Math.min(1, v));
 }
 
 function loadMuted(): boolean {

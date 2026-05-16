@@ -65,7 +65,6 @@ export function AscensionRoute(): JSX.Element {
             <Portal />
           </div>
           <div className={styles.cta}>
-            <div className={styles.ctaLabel}>— Step Through —</div>
             <Hoverable
               title="Ascend"
               body={() => ascendHoverBody()}
