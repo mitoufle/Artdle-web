@@ -10,6 +10,13 @@ import { TREE_STAGES } from "@/config/treeStages";
 
 export type CurrencyKind = "gold" | "inspi" | "fame" | "pm";
 
+const ICON_SRC: Record<CurrencyKind, string> = {
+  gold:  "/assets/artdle/Currency/coin.png",
+  inspi: "/assets/artdle/Currency/Inspiration.png",
+  fame:  "/assets/artdle/Currency/fame.png",
+  pm:    "/assets/artdle/Currency/Painting_mastery.png",
+};
+
 interface Props {
   kind: CurrencyKind;
   label: string;
@@ -118,7 +125,7 @@ export function CurrencyChip({ kind, label, value, rate, dimmed }: Props): JSX.E
         data-kind={kind}
         data-dimmed={dimmed ? "true" : undefined}
       >
-        <span className={styles.icon} data-icon={kind} aria-hidden="true" />
+        <img src={ICON_SRC[kind]} className={styles.icon} width={16} height={16} aria-hidden="true" />
         <span className={styles.label}>{label}</span>
         <span className={styles.value}>{value}</span>
         {rate && <span className={styles.rate}>{rate}</span>}

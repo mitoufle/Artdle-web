@@ -15,35 +15,12 @@
 }
 
 .icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex: none;
   display: inline-block;
-}
-
-.icon[data-icon="gold"] {
-  background: var(--gold);
-  border-radius: 50%;
-  box-shadow: var(--gold-glow), inset 0 -2px 0 var(--gold-d);
-}
-
-.icon[data-icon="inspi"] {
-  background: var(--inspi);
-  clip-path: polygon(50% 0%, 60% 35%, 100% 50%, 60% 65%, 50% 100%, 40% 65%, 0% 50%, 40% 35%);
-  box-shadow: var(--inspi-glow);
-}
-
-.icon[data-icon="fame"] {
-  background: var(--fame);
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-  box-shadow: var(--fame-glow);
-}
-
-.icon[data-icon="pm"] {
-  background: var(--pm);
-  border-radius: 2px;
-  box-shadow: var(--pm-glow);
-  /* Placeholder pixel-paintbrush look; real sprite in a polish round. */
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .label {
