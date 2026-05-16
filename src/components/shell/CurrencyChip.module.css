@@ -36,20 +36,19 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-0);
-  font-variant-numeric: tabular-nums;
-  min-width: 5.5ch;
+  width: 7.5ch;
   text-align: right;
+  overflow: hidden;
 }
 
 .rate {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Per-currency value tints */
 .chip[data-kind="gold"] .value { color: var(--gold); }
 .chip[data-kind="inspi"] .value { color: var(--inspi); }
-.chip[data-kind="fame"] .value { color: var(--fame); }
+.chip[data-kind="fame"] .value { color: var(--pm); }
 .chip[data-kind="pm"] .value { color: var(--pm); }
