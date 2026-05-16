@@ -182,6 +182,7 @@
   text-align: left;
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
   transition: filter 100ms ease;
+  position: relative;
 }
 
 .itemRow:hover {
@@ -281,14 +282,35 @@
 .itemRow[data-tier="epic"]      { --tier-color: #b060e0; }
 .itemRow[data-tier="legendary"] { --tier-color: #e8602c; }
 
-/* Fusion ready — pulsing left border */
-@keyframes fusionPulse {
-  0%, 100% { border-left-color: var(--tier-color, #9e9e9e); }
-  50% { border-left-color: #fff; box-shadow: -3px 0 10px rgba(255,255,255,0.5); }
+/* Fusion ready — rainbow caterpillar crawling down the left bar */
+@keyframes caterpillarDown {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
 }
 
 .itemRowFusion {
-  animation: fusionPulse 1.2s ease-in-out infinite;
+  border-left-color: transparent;
+}
+
+.itemRowFusion::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    hsl(0,   100%, 65%),
+    hsl(60,  100%, 65%),
+    hsl(120, 100%, 65%),
+    hsl(180, 100%, 65%),
+    hsl(240, 100%, 65%),
+    hsl(300, 100%, 65%),
+    hsl(0,   100%, 65%)
+  );
+  background-size: 100% 200%;
+  animation: caterpillarDown 1.5s linear infinite;
 }
 
 .empty {
