@@ -63,17 +63,20 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  background: var(--gold);
-  color: var(--bg-0);
+  background: var(--bg-2);
+  color: var(--gold);
   border: 1px solid var(--gold-d);
   cursor: pointer;
   border-radius: var(--r-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
   transition: background 120ms ease;
 }
 
 .craftBtn:hover:not(:disabled) {
-  background: var(--gold-d);
-  color: var(--ink-0);
+  background: var(--bg-3);
+  color: var(--gold);
 }
 
 .craftBtn:disabled {

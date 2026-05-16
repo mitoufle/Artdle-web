@@ -73,6 +73,9 @@
   border-radius: var(--r-sm);
   background: var(--bg-2);
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
   transition: background-color 120ms ease, color 120ms ease;
 }
 

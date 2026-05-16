@@ -114,7 +114,7 @@ export function PaintingRoute(): JSX.Element {
             affixKind="+sell_price%"
             level={sellPriceLevel}
             effectLine={`+${fmtPct(SELL_PRICE_PER_LEVEL, 0)} gold/level`}
-            costLabel={`${formatBig(sellCost)}g`}
+            costLabel={`${formatBig(sellCost)}`}
             canAfford={gold.gte(sellCost)}
             locked={false}
             onUpgrade={upgradeSellPrice}
@@ -125,7 +125,7 @@ export function PaintingRoute(): JSX.Element {
             affixKind="+speed%"
             level={speedLevel}
             effectLine={`+${fmtPct(SPEED_PER_LEVEL, 0)} speed/level`}
-            costLabel={`${formatBig(speedCost)}g`}
+            costLabel={`${formatBig(speedCost)}`}
             canAfford={gold.gte(speedCost)}
             locked={false}
             onUpgrade={upgradeSpeed}
@@ -136,7 +136,7 @@ export function PaintingRoute(): JSX.Element {
             affixKind="+size%"
             level={sizeLevel}
             effectLine={sizeLocked ? "—" : `+${fmtPct(SIZE_PER_LEVEL, 0)} size / level (gold = size², time = size)`}
-            costLabel={sizeLocked ? "—" : `${formatBig(sizeCost)}g`}
+            costLabel={sizeLocked ? "—" : `${formatBig(sizeCost)}`}
             canAfford={gold.gte(sizeCost)}
             locked={sizeLocked}
             onUpgrade={upgradeSize}
@@ -147,7 +147,7 @@ export function PaintingRoute(): JSX.Element {
             affixKind="+crit_chance%"
             level={critLevel}
             effectLine={critLocked ? "—" : `+${fmtPct(CRIT_PER_LEVEL, 0)} crit chance/level (90% faster on hit)`}
-            costLabel={critLocked ? "—" : `${formatBig(critCost)}g`}
+            costLabel={critLocked ? "—" : `${formatBig(critCost)}`}
             canAfford={gold.gte(critCost)}
             locked={critLocked}
             onUpgrade={upgradeCrit}
@@ -158,7 +158,7 @@ export function PaintingRoute(): JSX.Element {
             affixKind="+combo_chance%"
             level={comboLevel}
             effectLine={comboLocked ? "—" : `+${fmtPct(COMBO_PER_LEVEL, 0)} chain chance/level`}
-            costLabel={comboLocked ? "—" : `${formatBig(comboCost)}g`}
+            costLabel={comboLocked ? "—" : `${formatBig(comboCost)}`}
             canAfford={gold.gte(comboCost)}
             locked={comboLocked}
             onUpgrade={upgradeCombo}

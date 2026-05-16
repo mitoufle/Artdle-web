@@ -57,17 +57,21 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--bg-0);
+  color: var(--gold);
   padding: var(--s-2) var(--s-3);
   border: 1px solid var(--gold-d);
   border-radius: var(--r-sm);
-  background: var(--gold);
+  background: var(--bg-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1);
   transition: background-color 120ms ease, opacity 120ms ease;
 }
 
 .upgradeBtn:hover:not(:disabled) {
-  background: var(--gold-d);
-  color: var(--ink-0);
+  background: var(--bg-3);
+  color: var(--gold);
 }
 
 .upgradeBtn:disabled {

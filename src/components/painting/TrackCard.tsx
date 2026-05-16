@@ -21,7 +21,7 @@ export function TrackCard({
   trackId, label, affixKind, level, effectLine, costLabel, canAfford, locked, onUpgrade,
 }: Props): JSX.Element {
   const disabled = locked || !canAfford;
-  const buttonLabel = locked ? "Locked" : `Upgrade · ${costLabel}`;
+  const coinIcon = <img src="/assets/artdle/Currency/coin.png" width={13} height={13} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />;
   return (
     <div
       className={`${styles.card} ${locked ? styles.locked : ""}`}
@@ -42,7 +42,7 @@ export function TrackCard({
           ) : (
             <>
               <div>Current effect:  {effectLine}</div>
-              <div>Next-level cost: {costLabel}</div>
+              <div>Next-level cost: {costLabel} {coinIcon}</div>
             </>
           )
         )}
@@ -55,7 +55,7 @@ export function TrackCard({
           onClick={!disabled ? onUpgrade : undefined}
           data-testid={`track-card-upgrade-${trackId}`}
         >
-          {buttonLabel}
+          {locked ? "Locked" : <>{`Upgrade · ${costLabel} `}{coinIcon}</>}
         </button>
       </Hoverable>
     </div>
