@@ -1,7 +1,8 @@
 .panel {
-  min-height: 52px;
+  height: 72px;
   border-top: var(--border-subtle);
   background: var(--bg-2);
+  overflow: hidden;
   display: flex;
   align-items: stretch;
 }
