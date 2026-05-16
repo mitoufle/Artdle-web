@@ -36,12 +36,16 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-0);
+  font-variant-numeric: tabular-nums;
+  min-width: 5.5ch;
+  text-align: right;
 }
 
 .rate {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Per-currency value tints */
