@@ -33,3 +33,4 @@ tests/**/*.jsx
 *.njsproj
 *.sln
 *.sw?
+.vercel
