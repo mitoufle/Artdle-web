@@ -81,7 +81,7 @@ export function QueueCard({ candidate }: Props): JSX.Element {
               </li>
             ))}
           </ul>
-          <span className={styles.cost}>{formatBig(cost)} <img src="/assets/artdle/Currency/coin.png" width={13} height={13} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} /></span>
+          <span className={styles.cost}>{formatBig(cost)} <img src="/assets/artdle/Currency/coin.png" width={18} height={18} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} /></span>
           <div className={styles.cardActions}>
             <button
               type="button"

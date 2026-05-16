@@ -255,7 +255,7 @@ export function WorkshopRoom(): JSX.Element {
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); craft(); } }}
             data-testid="craft-button"
           >
-            Craft · {formatBig(cost)} <img src="/assets/artdle/Currency/coin.png" width={13} height={13} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />
+            Craft · {formatBig(cost)} <img src="/assets/artdle/Currency/coin.png" width={18} height={18} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />
           </button>
         </Hoverable>
         {hasTaylorism && (

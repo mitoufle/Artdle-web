@@ -77,7 +77,7 @@ export function UpgradeRow({
           onClick={canAfford ? onBuy : undefined}
           data-testid={`upgrade-buy-${partId}`}
         >
-          ⬢ {cost} <img src="/assets/artdle/Currency/coin.png" width={13} height={13} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />
+          {cost} <img src="/assets/artdle/Currency/coin.png" width={18} height={18} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />
         </button>
       </Hoverable>
     </li>

@@ -21,7 +21,7 @@ export function TrackCard({
   trackId, label, affixKind, level, effectLine, costLabel, canAfford, locked, onUpgrade,
 }: Props): JSX.Element {
   const disabled = locked || !canAfford;
-  const coinIcon = <img src="/assets/artdle/Currency/coin.png" width={13} height={13} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />;
+  const coinIcon = <img src="/assets/artdle/Currency/coin.png" width={18} height={18} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />;
   return (
     <div
       className={`${styles.card} ${locked ? styles.locked : ""}`}
