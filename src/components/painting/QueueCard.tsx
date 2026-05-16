@@ -2,6 +2,7 @@ import { useMemo, type JSX } from "react";
 import { useGameStore } from "@/store";
 import { getHireCost, getRosterCap } from "@/store/officeSlice";
 import { formatBig } from "@/core/formatter";
+import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 import type { AffixKind } from "@/config/workshopAffixes";
 import { AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
 import { Hoverable } from "@/ui/widgets/Hoverable";
@@ -81,7 +82,7 @@ export function QueueCard({ candidate }: Props): JSX.Element {
               </li>
             ))}
           </ul>
-          <span className={styles.cost}>{formatBig(cost)} <img src="/assets/artdle/Currency/coin.png" width={18} height={18} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} /></span>
+          <span className={styles.cost}><CurrencyAmount kind="gold" value={formatBig(cost)} /></span>
           <div className={styles.cardActions}>
             <button
               type="button"

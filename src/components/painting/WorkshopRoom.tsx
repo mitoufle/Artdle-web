@@ -12,6 +12,7 @@ import type { AffixKind, SlotKind } from "@/config/workshopAffixes";
 import { ALL_SLOT_KINDS, AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
 import { formatBig } from "@/core/formatter";
 import { Hoverable } from "@/ui/widgets/Hoverable";
+import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 import {
   computeTierProbabilities,
   ALL_ITEM_TIERS,
@@ -255,7 +256,7 @@ export function WorkshopRoom(): JSX.Element {
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); craft(); } }}
             data-testid="craft-button"
           >
-            Craft · {formatBig(cost)} <img src="/assets/artdle/Currency/coin.png" width={18} height={18} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />
+            Craft · <CurrencyAmount kind="gold" value={formatBig(cost)} />
           </button>
         </Hoverable>
         {hasTaylorism && (

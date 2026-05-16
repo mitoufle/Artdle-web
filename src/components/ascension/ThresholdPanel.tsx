@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { Hoverable } from "@/ui/widgets/Hoverable";
+import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 import styles from "./ThresholdPanel.module.css";
 
 interface Props {
@@ -35,8 +36,7 @@ export function ThresholdPanel({ currentInspi }: Props): JSX.Element {
       >
         <div className={styles.subhead}>Current inspiration</div>
         <div className={styles.value}>
-          <img src="/assets/artdle/Currency/Inspiration.png" width={24} height={24} aria-hidden="true" style={{ imageRendering: "pixelated" }} />
-          {currentInspi}
+          <CurrencyAmount kind="inspi" value={currentInspi} size={24} />
         </div>
       </section>
     </Hoverable>

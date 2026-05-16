@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import styles from "./UpgradeRow.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
+import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 import { useGameStore } from "@/store";
 import { getInspiMultiplier } from "@/core/multipliers";
 import { getPartMilestoneMultiplier, getNextPartMilestone, isApproachingMilestone } from "@/core/balance";
@@ -77,7 +78,7 @@ export function UpgradeRow({
           onClick={canAfford ? onBuy : undefined}
           data-testid={`upgrade-buy-${partId}`}
         >
-          {cost} <img src="/assets/artdle/Currency/coin.png" width={18} height={18} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />
+          <CurrencyAmount kind="gold" value={cost} />
         </button>
       </Hoverable>
     </li>

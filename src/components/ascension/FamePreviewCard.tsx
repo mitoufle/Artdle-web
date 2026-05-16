@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { formatShort } from "@/core/formatter";
+import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 import styles from "./FamePreviewCard.module.css";
 
 interface Props {
@@ -11,8 +12,7 @@ export function FamePreviewCard({ fameGain }: Props): JSX.Element {
     <section className={styles.card} aria-label="Fame preview">
       <div className={styles.subhead}>If you ascend now</div>
       <div className={styles.value}>
-        {formatShort(fameGain)}
-        <img src="/assets/artdle/Currency/fame.png" width={28} height={28} aria-hidden="true" style={{ imageRendering: "pixelated" }} />
+        <CurrencyAmount kind="fame" value={formatShort(fameGain)} size={28} />
       </div>
       <div className={styles.caption}>
         Fame is permanent · spent in the constellation.

@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 import styles from "./PastRunsLedger.module.css";
 
 interface PastRun {
@@ -40,18 +41,13 @@ export function PastRunsLedger({ runs, totalFame }: Props): JSX.Element {
           const date = new Date(run.ascendedAt).toLocaleDateString();
           return (
             <li key={startIdx + i} className={styles.row}>
-              {`Run ${runNum} `}
-              {run.fame}
-              <img src="/assets/artdle/Currency/fame.png" width={13} height={13} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle", marginLeft: "3px" }} />
-              {` ${date}`}
+              {`Run ${runNum} `}<CurrencyAmount kind="fame" value={run.fame} size={13} />{` ${date}`}
             </li>
           );
         })}
       </ol>
       <div className={styles.footer}>
-        ✦ Total · {totalFame}
-        <img src="/assets/artdle/Currency/fame.png" width={14} height={14} aria-hidden="true" style={{ imageRendering: "pixelated" }} />
-        ✦
+        ✦ Total · <CurrencyAmount kind="fame" value={totalFame} size={14} /> ✦
       </div>
     </section>
   );

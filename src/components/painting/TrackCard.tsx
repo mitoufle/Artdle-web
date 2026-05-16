@@ -4,6 +4,7 @@ import type { CanvasTrackId } from "@/store/skillTreeSlice";
 import type { AffixKind } from "@/config/workshopAffixes";
 import { AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
 import { Hoverable } from "@/ui/widgets/Hoverable";
+import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 
 interface Props {
   trackId: CanvasTrackId;
@@ -21,7 +22,7 @@ export function TrackCard({
   trackId, label, affixKind, level, effectLine, costLabel, canAfford, locked, onUpgrade,
 }: Props): JSX.Element {
   const disabled = locked || !canAfford;
-  const coinIcon = <img src="/assets/artdle/Currency/coin.png" width={18} height={18} aria-hidden="true" style={{ imageRendering: "pixelated", verticalAlign: "middle" }} />;
+  const coinIcon = <CurrencyAmount kind="gold" value={costLabel} />;
   return (
     <div
       className={`${styles.card} ${locked ? styles.locked : ""}`}
@@ -42,7 +43,7 @@ export function TrackCard({
           ) : (
             <>
               <div>Current effect:  {effectLine}</div>
-              <div>Next-level cost: {costLabel} {coinIcon}</div>
+              <div>Next-level cost: <CurrencyAmount kind="gold" value={costLabel} size={13} /></div>
             </>
           )
         )}
@@ -55,7 +56,7 @@ export function TrackCard({
           onClick={!disabled ? onUpgrade : undefined}
           data-testid={`track-card-upgrade-${trackId}`}
         >
-          {locked ? "Locked" : <>{`Upgrade · ${costLabel} `}{coinIcon}</>}
+          {locked ? "Locked" : <>Upgrade · {coinIcon}</>}
         </button>
       </Hoverable>
     </div>
