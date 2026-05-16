@@ -276,7 +276,14 @@ export function WorkshopRoom(): JSX.Element {
       </section>
 
       <section className={styles.filterSection}>
-        <div className={styles.subhead}>Protect tiers</div>
+        <Hoverable
+          as="div"
+          title="Protect Tiers"
+          body="When auto-craft needs to free a slot, it will only discard items whose tier is not protected. Toggle a tier button to mark it as safe — protected items are never auto-kicked."
+          footer="Items you equip are never discarded regardless of protection."
+        >
+          <div className={styles.subhead} style={{ cursor: "default" }}>Protect tiers</div>
+        </Hoverable>
         <div className={styles.tierFilterRow}>
           {ALL_ITEM_TIERS.map((tier) => {
             const unlockLv = TIER_UNLOCK_LEVEL[tier];
