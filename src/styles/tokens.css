@@ -39,11 +39,11 @@
   --fame-glow:   0 0 14px rgba(255,216,106,0.55);
 
   /* ---------- type stacks ---------- */
-  --pixel:  'Pixelify Sans', sans-serif;
-  --pixelL: 'Pixelify Sans', sans-serif;
-  --serif:  'Pixelify Sans', sans-serif;
-  --mono:   'Pixelify Sans', sans-serif;
-  --sans:   'Pixelify Sans', sans-serif;
+  --pixel:  'Silkscreen', sans-serif;
+  --pixelL: 'Silkscreen', sans-serif;
+  --serif:  'Silkscreen', sans-serif;
+  --mono:   'Silkscreen', sans-serif;
+  --sans:   'Silkscreen', sans-serif;
 
   /* ---------- item rarity (loot affixes) ---------- */
   --tier-rare:        #6fb1ff;
