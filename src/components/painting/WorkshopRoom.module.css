@@ -284,8 +284,8 @@
 
 /* Fusion ready — rainbow caterpillar crawling down the left bar */
 @keyframes caterpillarDown {
-  0%   { background-position: 0% 0%; }
-  100% { background-position: 0% 100%; }
+  from { background-position: 0 0; }
+  to   { background-position: 0 40px; }
 }
 
 .itemRowFusion {
@@ -295,11 +295,11 @@
 .itemRowFusion::before {
   content: "";
   position: absolute;
-  left: 0;
+  left: -3px;
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(
+  background: repeating-linear-gradient(
     180deg,
     hsl(0,   100%, 65%),
     hsl(60,  100%, 65%),
@@ -307,10 +307,9 @@
     hsl(180, 100%, 65%),
     hsl(240, 100%, 65%),
     hsl(300, 100%, 65%),
-    hsl(0,   100%, 65%)
+    hsl(0,   100%, 65%) 40px
   );
-  background-size: 100% 200%;
-  animation: caterpillarDown 1.5s linear infinite;
+  animation: caterpillarDown 0.8s linear infinite;
 }
 
 .empty {
