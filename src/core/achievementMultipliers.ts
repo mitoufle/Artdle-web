@@ -1,9 +1,10 @@
 import { ACHIEVEMENTS } from "@/config/achievementConfig";
 
 export function getAchievementBonus(
-  state: { completedAchievements: Record<string, true> },
+  state: { completedAchievements?: Record<string, true> },
   kind: string,
 ): number {
+  if (!state.completedAchievements) return 0;
   let total = 0;
   for (const achievement of ACHIEVEMENTS) {
     if (!state.completedAchievements[achievement.id]) continue;
