@@ -1,10 +1,10 @@
 import type { JSX } from "react";
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { useGameStore } from "@/store";
-import { ACHIEVEMENTS, type Achievement, type AchievementCategory } from "@/config/achievementConfig";
-import { big } from "@/core/bigNumber";
+import { useAchievementDesignerState } from "./useAchievementDesignerState";
 import { saveToFile } from "./api";
+import { uuid } from "./storage";
+import type { DesignEffect } from "./types";
 import styles from "./AchievementDesignerRoute.module.css";
 
 type Status = "saved" | "dirty" | "saving";
@@ -37,36 +37,17 @@ const KNOWN_STATS = [
   "run.schoolResearchesCompleted",
 ];
 
-const CATEGORIES: AchievementCategory[] = ["canvas", "workshop", "ascension", "school_office", "secret"];
-
-let _idCounter = Date.now();
-const uid = () => `a_${(_idCounter++).toString(36)}`;
-
-function defaultAchievement(): Achievement {
-  return {
-    id: uid(),
-    name: "New Achievement",
-    description: "",
-    icon: "⭐",
-    category: "canvas",
-    condition: { stat: "lifetime.canvasesSold", op: ">=", value: 1 },
-    effects: [],
-  };
-}
+const CATEGORIES = ["canvas", "workshop", "ascension", "school_office", "secret"] as const;
+const OPS = [">=", ">", "==", "<=", "<"] as const;
 
 export function AchievementDesignerRoute(): JSX.Element {
-  const [design, setDesign] = useState<Achievement[]>(() => [...ACHIEVEMENTS] as Achievement[]);
-  const [selected, setSelected] = useState<string | null>(design[0]?.id ?? null);
+  const { design, actions } = useAchievementDesignerState();
   const [status, setStatus] = useState<Status>("saved");
 
-  const selectedAch = design.find((a) => a.id === selected) ?? null;
+  const usedKinds = new Set(design.flatMap((a) => a.effects.map((e) => e.kind)));
+  const effectKindOptions = [...new Set([...KNOWN_EFFECT_KINDS, ...usedKinds])].filter((k) => k !== "");
 
   const markDirty = useCallback(() => setStatus("dirty"), []);
-
-  const update = useCallback((id: string, patch: Partial<Achievement>) => {
-    setDesign((prev) => prev.map((a) => a.id === id ? { ...a, ...patch } : a));
-    markDirty();
-  }, [markDirty]);
 
   const handleSave = useCallback(async () => {
     setStatus("saving");
@@ -74,148 +55,174 @@ export function AchievementDesignerRoute(): JSX.Element {
     setStatus(result.ok ? "saved" : "dirty");
   }, [design]);
 
-  const handleTestFire = useCallback(() => {
-    if (!selectedAch) return;
-    const state = useGameStore.getState();
-    if (!state.completedAchievements[selectedAch.id]) {
-      const pmGain = selectedAch.effects
-        .filter((e) => e.kind === "paint_mastery_flat")
-        .reduce((sum, e) => sum + e.value, 0);
-      state.addPaintMastery(big(pmGain));
-      useGameStore.setState((s) => ({
-        completedAchievements: { ...s.completedAchievements, [selectedAch.id]: true as const },
-        notificationQueue: [...s.notificationQueue, { id: selectedAch.id, name: selectedAch.name, icon: selectedAch.icon, effects: selectedAch.effects }],
-      }));
-      if (!useGameStore.getState().activeNotification) {
-        useGameStore.getState().advanceNotification();
-      }
-    }
-  }, [selectedAch]);
-
-  const liveStatValue = useGameStore((state) => {
-    if (!selectedAch) return null;
-    const stat = selectedAch.condition.stat;
-    if (stat === "lifetime.goldEarned") return state.lifetimeGold.toNumber();
-    if (stat === "lifetime.ascensions") return state.ascendCount;
-    if (stat.startsWith("lifetime.")) return (state.statsLifetime as Record<string, number>)[stat.slice(9)] ?? 0;
-    if (stat.startsWith("run.")) {
-      const v = (state.statsRun as Record<string, unknown>)[stat.slice(4)] ?? 0;
-      return typeof v === "number" ? v : (v as { toNumber(): number }).toNumber();
-    }
-    return 0;
-  });
-
   return (
     <div className={styles.layout}>
       <div className={styles.topBar}>
         <span className={styles.title}>Achievement Designer</span>
-        <span className={status === "saved" ? styles.statusSaved : status === "saving" ? styles.statusSaving : styles.statusDirty}>
+        <span className={
+          status === "saved" ? styles.statusSaved :
+          status === "saving" ? styles.statusSaving :
+          styles.statusDirty
+        }>
           {status === "saved" ? "Saved" : status === "saving" ? "Saving…" : "Unsaved changes"}
         </span>
-        <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSave}>Save to file</button>
-        <Link className={styles.link} to="/dev/school-designer">→ School Designer</Link>
+        <button
+          className={`${styles.btn} ${styles.btnPrimary}`}
+          onClick={handleSave}
+          type="button"
+        >
+          Save to file
+        </button>
+        <button
+          className={styles.btn}
+          onClick={() => { actions.resetAll(); setStatus("saved"); }}
+          type="button"
+        >
+          Reset
+        </button>
+        <Link className={styles.link} to="/dev/school-designer">→ School</Link>
         <Link className={styles.link} to="/tree">← Game</Link>
       </div>
 
       <div className={styles.content}>
-        <aside className={styles.rail}>
-          <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => {
-            const a = defaultAchievement();
-            setDesign((prev) => [...prev, a]);
-            setSelected(a.id);
-            markDirty();
-          }}>+ New Achievement</button>
-          <div className={styles.list}>
-            {design.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                className={selected === a.id ? `${styles.listItem} ${styles.listItemActive}` : styles.listItem}
-                onClick={() => setSelected(a.id)}
+        {design.map((ach) => (
+          <div key={ach.id} className={styles.card}>
+            <div className={styles.cardHeader}>
+              <input
+                className={`${styles.input} ${styles.inputIcon}`}
+                value={ach.icon}
+                placeholder="icon"
+                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { icon: e.target.value }); }}
+              />
+              <input
+                className={`${styles.input} ${styles.inputId}`}
+                value={ach.id}
+                placeholder="id"
+                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { id: e.target.value }); }}
+              />
+              <input
+                className={`${styles.input} ${styles.inputName}`}
+                value={ach.name}
+                placeholder="Name"
+                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { name: e.target.value }); }}
+              />
+              <select
+                className={styles.select}
+                value={ach.category}
+                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { category: e.target.value as typeof ach.category }); }}
               >
-                {a.icon} {a.name}
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <button
+                className={styles.deleteBtn}
+                onClick={() => { markDirty(); actions.deleteAchievement(ach.id); }}
+                type="button"
+                title="Delete achievement"
+              >
+                ✕
               </button>
-            ))}
-          </div>
-        </aside>
+            </div>
 
-        <main className={styles.form}>
-          {!selectedAch ? (
-            <p className={styles.empty}>Select an achievement to edit.</p>
-          ) : (
-            <>
-              <div className={styles.row}>
-                <label className={styles.label}>ID</label>
-                <input className={styles.input} value={selectedAch.id} onChange={(e) => {
-                  update(selectedAch.id, { id: e.target.value });
-                  setSelected(e.target.value);
-                }} />
-              </div>
-              <div className={styles.row}>
-                <label className={styles.label}>Name</label>
-                <input className={styles.input} value={selectedAch.name} onChange={(e) => update(selectedAch.id, { name: e.target.value })} />
-              </div>
-              <div className={styles.row}>
-                <label className={styles.label}>Description</label>
-                <input className={styles.input} value={selectedAch.description} onChange={(e) => update(selectedAch.id, { description: e.target.value })} />
-              </div>
-              <div className={styles.row}>
-                <label className={styles.label}>Icon</label>
-                <input className={styles.iconInput} value={selectedAch.icon} onChange={(e) => update(selectedAch.id, { icon: e.target.value })} />
-              </div>
-              <div className={styles.row}>
-                <label className={styles.label}>Category</label>
-                <select className={styles.select} value={selectedAch.category} onChange={(e) => update(selectedAch.id, { category: e.target.value as AchievementCategory })}>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
+            <div className={styles.descRow}>
+              <input
+                className={`${styles.input} ${styles.inputDesc}`}
+                value={ach.description}
+                placeholder="Description"
+                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { description: e.target.value }); }}
+              />
+            </div>
 
-              <fieldset className={styles.fieldset}>
-                <legend className={styles.legend}>Condition</legend>
-                <div className={styles.conditionRow}>
-                  <select className={styles.select} value={selectedAch.condition.stat} onChange={(e) => update(selectedAch.id, { condition: { ...selectedAch.condition, stat: e.target.value } })}>
-                    {KNOWN_STATS.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  <select className={styles.opSelect} value={selectedAch.condition.op} onChange={(e) => update(selectedAch.id, { condition: { ...selectedAch.condition, op: e.target.value as ">=" } })}>
-                    {[">=", ">", "==", "<=", "<"].map((op) => <option key={op} value={op}>{op}</option>)}
-                  </select>
-                  <input className={styles.numInput} type="number" value={selectedAch.condition.value} onChange={(e) => update(selectedAch.id, { condition: { ...selectedAch.condition, value: Number(e.target.value) } })} />
-                  {liveStatValue !== null && (
-                    <span className={styles.liveValue}>current: {liveStatValue}</span>
-                  )}
-                </div>
-              </fieldset>
+            <div className={styles.conditionRow}>
+              <span className={styles.conditionLabel}>if</span>
+              <select
+                className={`${styles.select} ${styles.selectStat}`}
+                value={ach.condition.stat}
+                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { condition: { ...ach.condition, stat: e.target.value } }); }}
+              >
+                {KNOWN_STATS.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select
+                className={`${styles.select} ${styles.selectOp}`}
+                value={ach.condition.op}
+                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { condition: { ...ach.condition, op: e.target.value as typeof ach.condition.op } }); }}
+              >
+                {OPS.map((op) => <option key={op} value={op}>{op}</option>)}
+              </select>
+              <input
+                className={`${styles.input} ${styles.inputNum}`}
+                type="number"
+                value={ach.condition.value}
+                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { condition: { ...ach.condition, value: Number(e.target.value) } }); }}
+              />
+            </div>
 
-              <fieldset className={styles.fieldset}>
-                <legend className={styles.legend}>Effects</legend>
-                {selectedAch.effects.map((effect, i) => (
-                  <div key={i} className={styles.effectRow}>
-                    <select className={styles.select} value={effect.kind} onChange={(e) => {
-                      const newEffects = selectedAch.effects.map((ef, j) => j === i ? { ...ef, kind: e.target.value } : ef);
-                      update(selectedAch.id, { effects: newEffects });
-                    }}>
-                      {KNOWN_EFFECT_KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
+            <div className={styles.effects}>
+              {ach.effects.map((effect) => {
+                const isCustomKind = !KNOWN_EFFECT_KINDS.includes(effect.kind);
+                return (
+                  <div key={effect.id} className={styles.effectRow}>
+                    <select
+                      className={styles.effectKindSelect}
+                      value={isCustomKind ? "__custom__" : effect.kind}
+                      onChange={(e) => {
+                        markDirty();
+                        const v = e.target.value;
+                        const newKind = v === "__custom__" ? "" : v;
+                        actions.updateEffect(ach.id, effect.id, { kind: newKind });
+                      }}
+                    >
+                      {effectKindOptions.map((k) => <option key={k} value={k}>{k}</option>)}
+                      <option value="__custom__">custom…</option>
                     </select>
-                    <input className={styles.numInput} type="number" step="0.01" value={effect.value} onChange={(e) => {
-                      const newEffects = selectedAch.effects.map((ef, j) => j === i ? { ...ef, value: Number(e.target.value) } : ef);
-                      update(selectedAch.id, { effects: newEffects });
-                    }} />
-                    <button type="button" className={styles.deleteBtn} onClick={() => {
-                      update(selectedAch.id, { effects: selectedAch.effects.filter((_, j) => j !== i) });
-                    }}>&times;</button>
+                    {isCustomKind && (
+                      <input
+                        className={`${styles.input} ${styles.effectKindInput}`}
+                        type="text"
+                        value={effect.kind}
+                        placeholder="effect kind"
+                        onChange={(e) => { markDirty(); actions.updateEffect(ach.id, effect.id, { kind: e.target.value }); }}
+                      />
+                    )}
+                    <input
+                      className={`${styles.input} ${styles.effectValueInput}`}
+                      type="number"
+                      step="0.01"
+                      value={effect.value}
+                      title="Value (0.15 = 15%)"
+                      onChange={(e) => { markDirty(); actions.updateEffect(ach.id, effect.id, { value: Number(e.target.value) }); }}
+                    />
+                    <button
+                      className={styles.effectDelete}
+                      type="button"
+                      onClick={() => { markDirty(); actions.deleteEffect(ach.id, effect.id); }}
+                    >
+                      ✕
+                    </button>
                   </div>
-                ))}
-                <button type="button" className={styles.btn} onClick={() => {
-                  update(selectedAch.id, { effects: [...selectedAch.effects, { kind: "canvas_gold_pct", value: 0 }] });
-                }}>+ Effect</button>
-              </fieldset>
-
-              <button type="button" className={`${styles.btn} ${styles.btnDanger}`} onClick={handleTestFire}>
-                Test Fire
+                );
+              })}
+              <button
+                className={styles.addEffectBtn}
+                type="button"
+                onClick={() => {
+                  markDirty();
+                  actions.addEffect(ach.id);
+                  // Assign a stable id via uuid — addEffect in the hook does this internally
+                }}
+              >
+                + effect
               </button>
-            </>
-          )}
-        </main>
+            </div>
+          </div>
+        ))}
+
+        <button
+          className={`${styles.btn} ${styles.btnPrimary}`}
+          type="button"
+          onClick={() => { markDirty(); actions.addAchievement(); }}
+        >
+          + Achievement
+        </button>
       </div>
     </div>
   );
