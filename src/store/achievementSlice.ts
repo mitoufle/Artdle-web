@@ -6,6 +6,7 @@ import { ACHIEVEMENTS, type AchievementEffect } from "@/config/achievementConfig
 export interface AchievementNotification {
   id: string;
   name: string;
+  icon: string;
   effects: ReadonlyArray<AchievementEffect>;
 }
 
@@ -55,6 +56,9 @@ function checkCondition(actual: number, op: string, threshold: number): boolean 
   }
 }
 
+// Module-level timer handle — outside the StateCreator
+let _notifTimer: ReturnType<typeof setTimeout> | null = null;
+
 export const createAchievementSlice: StateCreator<GameStore, [], [], AchievementSlice> = (set, get) => ({
   ...initialAchievementState,
 
@@ -67,7 +71,7 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
       const actual = resolveStatValue(state, achievement.condition.stat);
       if (!checkCondition(actual, achievement.condition.op, achievement.condition.value)) continue;
 
-      newly.push({ id: achievement.id, name: achievement.name, effects: achievement.effects });
+      newly.push({ id: achievement.id, name: achievement.name, icon: achievement.icon, effects: achievement.effects });
 
       // Apply paint_mastery_flat one-shot immediately.
       for (const effect of achievement.effects) {
@@ -97,7 +101,11 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
     if (state.notificationQueue.length === 0) return;
     const [next, ...rest] = state.notificationQueue;
     set({ activeNotification: next, notificationQueue: rest });
-    setTimeout(() => get().clearNotification(), 5000);
+    if (_notifTimer !== null) clearTimeout(_notifTimer);
+    _notifTimer = setTimeout(() => {
+      _notifTimer = null;
+      get().clearNotification();
+    }, 5000);
   },
 
   clearNotification: () => {
