@@ -11,6 +11,7 @@ import { createSkillTreeSlice, type SkillTreeSlice } from "./skillTreeSlice";
 import { createWorkshopSlice, type WorkshopSlice } from "./workshopSlice";
 import { createOfficeSlice, type OfficeSlice } from "./officeSlice";
 import { createSchoolSlice, type SchoolSlice } from "./schoolSlice";
+import { createStatsSlice, type StatsSlice } from "./statsSlice";
 import { big, isBig } from "@/core/bigNumber";
 
 export interface GameTick {
@@ -34,9 +35,10 @@ export type GameStore =
   & SkillTreeSlice
   & WorkshopSlice
   & SchoolSlice
+  & StatsSlice
   & GameTick;
 
-const SAVE_VERSION = 17;
+const SAVE_VERSION = 18;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -296,6 +298,25 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     };
   }
 
+  if (fromVersion < 18) {
+    // v17 → v18 (2026-05-17): Achievement system. Add statsLifetime, statsRun,
+    // completedAchievements. All default to empty — no retroactive stat credit.
+    state = {
+      ...state,
+      statsLifetime: {
+        canvasesSold: 0, critsLanded: 0, maxComboChain: 0,
+        workshopItemsCrafted: 0, workshopItemsFused: 0,
+        schoolResearchesCompleted: 0, schoolTiersPassed: 0, officeWorkersHired: 0,
+      },
+      statsRun: {
+        canvasesSold: 0, critsLanded: 0, currentCritStreak: 0, maxCritStreak: 0,
+        maxComboChain: 0, goldEarned: big(0), workshopItemsCrafted: 0,
+        schoolResearchesCompleted: 0,
+      },
+      completedAchievements: {},
+    };
+  }
+
   return state as unknown as GameStore;
 };
 
@@ -341,6 +362,7 @@ export const useGameStore = create<GameStore>()(
       ...createWorkshopSlice(set, get, store),
       ...createOfficeSlice(set, get, store),
       ...createSchoolSlice(set, get, store),
+      ...createStatsSlice(set, get, store),
       tickAll: (deltaSeconds: number) => {
         const s = get();
         s.treeTick(deltaSeconds);
