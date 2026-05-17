@@ -12,6 +12,10 @@ import {
   getSkillTreeSpeedContribution,
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
+  getSchoolGoldContribution,
+  getAchievementGoldContribution,
+  getSchoolSpeedContribution,
+  getAchievementSpeedContribution,
   getPmMultiplier,
   getCritChance,
   getComboBaseChance,
@@ -61,6 +65,10 @@ function fmtMult(v: number, digits = 2): string {
 function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   const goldTotal = getCanvasGoldMultiplier(state);
   const speedTotal = getCanvasSpeedMultiplier(state);
+  const schoolGold = getSchoolGoldContribution(state);
+  const achievementGold = getAchievementGoldContribution(state);
+  const schoolSpeed = getSchoolSpeedContribution(state);
+  const achievementSpeed = getAchievementSpeedContribution(state);
   const critTotal = getCritChance(state);
   const comboTotal = getComboBaseChance(state);
   const size = getCanvasSize(state);
@@ -86,6 +94,8 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
         { source: "Skill tree (color)", value: getColorTreeContribution(state) },
         { source: "Items", value: getEquippedContribution(state, "+sell_price%") },
         { source: "Workers", value: getOfficeContribution(state, "+sell_price%").toNumber() },
+        ...(schoolGold > 0 ? [{ source: "School", value: schoolGold }] : []),
+        ...(achievementGold > 0 ? [{ source: "Achievements", value: achievementGold }] : []),
       ],
       ...(sellMultiplicatives.length > 0 ? { multiplicatives: sellMultiplicatives } : {}),
     },
@@ -98,6 +108,8 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
         { source: "Skill tree", value: getSkillTreeSpeedContribution(state) },
         { source: "Items", value: getEquippedContribution(state, "+speed%") },
         { source: "Workers", value: getOfficeContribution(state, "+speed%").toNumber() },
+        ...(schoolSpeed > 0 ? [{ source: "School", value: schoolSpeed }] : []),
+        ...(achievementSpeed > 0 ? [{ source: "Achievements", value: achievementSpeed }] : []),
       ],
     },
     {

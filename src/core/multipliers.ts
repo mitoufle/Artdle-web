@@ -131,6 +131,22 @@ export const getColorTreeContribution = (state: Pick<GameStore, "purchasedNodes"
 export const getRainbowMultiplier = (state: Pick<GameStore, "purchasedNodes">): number =>
   1 + getNodeLevel(state, "rainbow") * RAINBOW_PER_LEVEL;
 
+/** School bonus contribution to canvas gold (additive fraction). */
+export const getSchoolGoldContribution = (state: Pick<GameStore, "completedResearches">): number =>
+  getSchoolBonus(state, "canvas_gold_pct");
+
+/** Achievement bonus contribution to canvas gold (additive fraction). */
+export const getAchievementGoldContribution = (state: { completedAchievements?: Record<string, true> }): number =>
+  getAchievementBonus(state, "canvas_gold_pct");
+
+/** School bonus contribution to canvas speed (additive fraction). */
+export const getSchoolSpeedContribution = (state: Pick<GameStore, "completedResearches">): number =>
+  getSchoolBonus(state, "speed_pct");
+
+/** Achievement bonus contribution to canvas speed (additive fraction). */
+export const getAchievementSpeedContribution = (state: { completedAchievements?: Record<string, true> }): number =>
+  getAchievementBonus(state, "speed_pct");
+
 /** Sum of skill-tree contributions to canvas speed (additive, fractional). */
 export const getSkillTreeSpeedContribution = (state: Pick<GameStore, "purchasedNodes">): number =>
   getNodeLevel(state, "basic_technique") * BASIC_TECHNIQUE_PER_LEVEL +

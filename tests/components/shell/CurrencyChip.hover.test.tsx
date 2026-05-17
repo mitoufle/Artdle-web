@@ -51,7 +51,7 @@ describe("CurrencyChip hover wiring", () => {
     expect(container.textContent).toMatch(/Ascends:.*3/);
   });
 
-  it("PM chip hover shows current + multiplier + next-tick threshold", () => {
+  it("PM chip hover shows current + multiplier + achievement source", () => {
     useGameStore.setState({ paintMastery: big(0), lifetimeGold: big(500) });
     render(<CurrencyChip kind="pm" label="PM" value="0" />);
     fireEvent.mouseEnter(screen.getByTestId("currency-chip-pm"));
@@ -59,6 +59,6 @@ describe("CurrencyChip hover wiring", () => {
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
     expect(container.textContent).toMatch(/Current:.*0/);
     expect(container.textContent).toMatch(/Multiplier:.*×/);
-    expect(container.textContent).toMatch(/Next tick at:/);
+    expect(container.textContent).toMatch(/Earned from: completing achievements/);
   });
 });

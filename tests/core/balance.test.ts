@@ -5,10 +5,7 @@ import {
   canvasGold,
   canvasTime,
   inspiPerSec,
-  pmGainPerSale,
-  pmFromLifetime,
   pmMult,
-  pmThreshold,
   PM_LOG_FACTOR,
   craftCost,
   xpToNext,
@@ -180,57 +177,6 @@ describe("canvasTime (linear size scaling)", () => {
   });
 });
 
-describe("pmGainPerSale (linear)", () => {
-  it("returns constant rate: every 1000 gold of sale = +1 PM at the differential", () => {
-    // At lt=0: a 1000 gold sale ticks +1 PM
-    expect(pmGainPerSale(big(1000), big(0)).toNumber()).toBe(1);
-    // At lt=999: a 1 gold sale crosses the 1000 boundary → +1 PM
-    expect(pmGainPerSale(big(1), big(999)).toNumber()).toBe(1);
-    // At lt=1000: a 999 gold sale stays under the next boundary → 0 PM
-    expect(pmGainPerSale(big(999), big(1000)).toNumber()).toBe(0);
-    // At lt=1M: a 1k gold sale ticks +1 PM (same rate, no slowdown)
-    expect(pmGainPerSale(big(1000), big(1_000_000)).toNumber()).toBe(1);
-  });
-
-  it("at high lifetime gold, gain rate is still 1 PM per 1k gold (no ratcheting)", () => {
-    // At lt=1e15 (way past old ratchet phases), 1k gold sale still gives +1 PM
-    // pmFromLifetime(1e15) = 1e12, pmFromLifetime(1e15 + 1000) = 1e12 + 1
-    expect(pmGainPerSale(big(1000), big("1000000000000000")).toNumber()).toBe(1);
-  });
-
-  it("0g sale grants 0 PM", () => {
-    expect(pmGainPerSale(big(0), big(0)).toNumber()).toBe(0);
-  });
-
-  it("returns a Big (not a number)", () => {
-    const result = pmGainPerSale(big(1000), big(0));
-    expect(typeof result.toNumber).toBe("function");
-    expect(result.toNumber()).toBe(1);
-  });
-});
-
-describe("pmFromLifetime (linear)", () => {
-  it("returns floor(lifetimeGold / 1000)", () => {
-    expect(pmFromLifetime(big(0)).toNumber()).toBe(0);
-    expect(pmFromLifetime(big(999)).toNumber()).toBe(0);
-    expect(pmFromLifetime(big(1000)).toNumber()).toBe(1);
-    expect(pmFromLifetime(big(1500)).toNumber()).toBe(1);
-    expect(pmFromLifetime(big(1_000_000)).toNumber()).toBe(1000);
-    expect(pmFromLifetime(big(1_000_000_000)).toNumber()).toBe(1_000_000);
-  });
-
-  it("grows past the old 30k phase-cap (no ratcheting)", () => {
-    expect(pmFromLifetime(big("1e9")).toNumber()).toBeCloseTo(1e6, -2);
-    expect(pmFromLifetime(big("1e12")).toNumber()).toBeCloseTo(1e9, -4);
-  });
-
-  it("handles Big values past Number.MAX_SAFE_INTEGER", () => {
-    const lt = big("1e30");
-    const pm = pmFromLifetime(lt);
-    // PM = lt / 1000 = 1e27
-    expect(pm.gt(big("1e26"))).toBe(true);
-  });
-});
 
 describe("pmMult (v1.1)", () => {
   it("PM = 0 returns exactly 1.0 (no mult)", () => {
@@ -265,21 +211,6 @@ describe("pmMult — uncapped via Big.log10", () => {
   });
 });
 
-describe("pmFromLifetime — high lifetime gold", () => {
-  it("doesn't cap at 30,000 PM (loop bound bumped to 100)", () => {
-    // lt = 10^200: should yield ~66 phases × ~1000 PM = ~66k PM, not 30k cap
-    const pm = pmFromLifetime(big("1e200"));
-    expect(pm.gt(big(40000))).toBe(true);
-  });
-});
-
-describe("pmThreshold (linear) — constant 1000", () => {
-  it("returns 1000 regardless of lifetime gold", () => {
-    expect(pmThreshold(big(0)).toNumber()).toBe(1000);
-    expect(pmThreshold(big(1_000_000)).toNumber()).toBe(1000);
-    expect(pmThreshold(big("1e30")).toNumber()).toBe(1000);
-  });
-});
 
 // ============================================================================
 // Workshop leveling

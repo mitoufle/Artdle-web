@@ -20,6 +20,7 @@ const ROUTE_PROMINENCE: Record<string, ReadonlySet<CurrencyKind>> = {
   "/painting":      new Set(["gold", "pm"]),
   "/ascension":     new Set(["inspi", "fame"]),
   "/constellation": new Set(["fame"]),
+  "/achievements":  new Set([]),
 };
 
 const DEFAULT_PROMINENT: ReadonlySet<CurrencyKind> = new Set(["gold", "inspi"]);

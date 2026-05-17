@@ -4,7 +4,7 @@ import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
 import { formatBig } from "@/core/formatter";
-import { inspiPerSec, pmThreshold } from "@/core/balance";
+import { inspiPerSec } from "@/core/balance";
 import { getInspiMultiplier, getPmMultiplier } from "@/core/multipliers";
 import { TREE_STAGES } from "@/config/treeStages";
 
@@ -72,7 +72,7 @@ function pmBody(): JSX.Element {
     <>
       <div>Current: {formatBig(s.paintMastery)} PM</div>
       <div>Multiplier: ×{getPmMultiplier(s).toFixed(2)}</div>
-      <div>Next tick at: {formatBig(pmThreshold(s.lifetimeGold))} g lifetime</div>
+      <div>Earned from: completing achievements</div>
     </>
   );
 }

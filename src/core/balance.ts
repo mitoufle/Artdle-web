@@ -119,34 +119,6 @@ export const canvasTime = (size: number): number =>
   CANVAS_TIME_BASE * size;
 
 /**
- * Total PM accumulated at a given lifetime canvas gold.
- *
- * Linear: `floor(lifetimeGold / 1000)`. Every 1000 gold of lifetime earnings
- * grants +1 PM, continuously. Original v1.1 design ratcheted the per-PM cost
- * by 1000× at each phase boundary (1k → 1M → 1B → ...), which felt "stuck"
- * to players once lifetime gold crossed 1M. Now uncapped + linear; pmMult's
- * log10 curve keeps the overall reward shape gentle without phase plateaus.
- *
- * Big-typed for cross-precision arithmetic; the result is always integer-valued.
- */
-export const pmFromLifetime = (lt: Big): Big => {
-  if (lt.lte(0)) return big(0);
-  return lt.div(1000).floor();
-};
-
-/**
- * Paint Mastery gained per canvas sale.
- * Linear: gain = floor((lifetimeGold + saleGold) / 1000) - floor(lifetimeGold / 1000).
- * Equivalently: each canvas sale ticks +1 PM whenever it crosses a 1000-gold boundary.
- */
-export const pmGainPerSale = (saleGold: Big, lifetimeGold: Big): Big => {
-  if (saleGold.lte(0)) return big(0);
-  const newLt = lifetimeGold.add(saleGold);
-  const diff = pmFromLifetime(newLt).sub(pmFromLifetime(lifetimeGold));
-  return diff.lte(0) ? big(0) : diff;
-};
-
-/**
  * Paint Mastery multiplier on canvas gold output.
  * `1 + PM_LOG_FACTOR × log10(pm + 1)`. Returns a plain number — composes with
  * existing `getCanvasGoldMultiplier` (additive `1 + Σ`) by simple multiplication
@@ -202,12 +174,6 @@ export const inspiPerSec = (
       big(0),
     )
     .mul(multiplier);
-
-/**
- * Cost-per-PM at the given lifetime canvas gold. Constant 1000 (linear design).
- * Kept as a function for API stability with the v1.1 ratcheting era.
- */
-export const pmThreshold = (_lifetimeGold: Big): Big => big(1000);
 
 /**
  * Cost in gold per craft attempt at the given workshop level.

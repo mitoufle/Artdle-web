@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import { SCHOOL_TIERS } from "@/config/schoolResearches";
 import { big } from "@/core/bigNumber";
+import { Hoverable } from "@/ui/widgets/Hoverable";
 import styles from "./SchoolRoom.module.css";
 
 function formatDuration(seconds: number): string {
@@ -24,8 +25,6 @@ export function SchoolRoom(): JSX.Element {
   const startResearch = useGameStore((s) => s.startResearch);
   const cancelResearch = useGameStore((s) => s.cancelResearch);
   const passExam = useGameStore((s) => s.passExam);
-  const pushHoverInfo = useGameStore((s) => s.pushHoverInfo);
-  const clearHoverInfo = useGameStore((s) => s.clearHoverInfo);
 
   const tierDef = SCHOOL_TIERS.find((t) => t.tier === currentTier);
   if (!tierDef) return <div className={styles.room}>School unavailable</div>;
@@ -91,34 +90,35 @@ export function SchoolRoom(): JSX.Element {
           const summary = effectSummary(research.effects);
 
           return (
-            <div
+            <Hoverable
               key={research.id}
-              className={done ? styles.cardDone : isActive ? styles.cardActive : styles.cardAvailable}
-              onClick={() => {
-                if (!done && !isActive && !activeResearch) startResearch(research.id);
-              }}
-              onMouseEnter={() =>
-                pushHoverInfo(
-                  research.name,
-                  summary,
-                  done
-                    ? "Completed"
-                    : isActive
-                      ? `${formatDuration(Math.max(0, activeResearch!.remainingSeconds))} remaining`
-                      : `${formatDuration(research.durationSeconds)} to complete`,
-                )
+              as="div"
+              title={research.name}
+              body={summary}
+              footer={
+                done
+                  ? "Completed"
+                  : isActive
+                  ? `${formatDuration(Math.max(0, activeResearch!.remainingSeconds))} remaining`
+                  : `${formatDuration(research.durationSeconds)} to complete`
               }
-              onMouseLeave={clearHoverInfo}
             >
-              <div className={styles.cardName}>
-                {done ? "✓ " : isActive ? "⏳ " : "○ "}
-                {research.name}
+              <div
+                className={done ? styles.cardDone : isActive ? styles.cardActive : styles.cardAvailable}
+                onClick={() => {
+                  if (!done && !isActive && !activeResearch) startResearch(research.id);
+                }}
+              >
+                <div className={styles.cardName}>
+                  {done ? "✓ " : isActive ? "⏳ " : "○ "}
+                  {research.name}
+                </div>
+                <div className={styles.cardEffect}>{summary}</div>
+                {!done && !isActive && (
+                  <div className={styles.cardDuration}>{formatDuration(research.durationSeconds)}</div>
+                )}
               </div>
-              <div className={styles.cardEffect}>{summary}</div>
-              {!done && !isActive && (
-                <div className={styles.cardDuration}>{formatDuration(research.durationSeconds)}</div>
-              )}
-            </div>
+            </Hoverable>
           );
         })}
       </div>
