@@ -1,5 +1,34 @@
 # Artdle Web — Handover
 
+## Code audit — structural discrepancies (2026-05-17)
+
+Full audit of 40+ files. Five structural categories found; fix plan written.
+
+**Full audit:** [`docs/superpowers/plans/2026-05-17-code-audit.md`](superpowers/plans/2026-05-17-code-audit.md)
+
+### Summary of findings
+
+**Category 1 — Player-visible bugs (fix first):**
+- `StatsRoom.tsx`: Sell Price and Speed totals include School and Achievement bonuses but the breakdown rows do not list them. The panel is wrong for any player who has unlocked school researches or achievements.
+- `BottomBar.tsx`: `/achievements` missing from `ROUTE_PROMINENCE`; falls through to gold+inspi prominence, which is wrong for that tab.
+- `SchoolRoom.tsx`: uses raw `pushHoverInfo`/`clearHoverInfo` instead of `<Hoverable>` like every other room.
+
+**Category 2 — Stringly-typed cross-references:** Effect kind strings, school bonus keys, and capability tags are runtime strings — a misspelling silently returns 0. The `taylorsim` node-ID typo is the canonical example (consistent and working, but fragile). Accepted trade-off for node IDs per existing comment; untreated for effect kinds.
+
+**Category 3 — Helper-state hand-construction:** Every multiplier caller manually assembles its `CanvasMultiplierInputs` object. `tests/core/multipliers.test.ts` uses `as GameStore` casts, bypassing the type safety that `CanvasMultiplierInputs` was created to enforce. Prior runtime `TypeError` in `TreeRoute` (missing `completedAchievements`) is the precedent.
+
+**Category 4 — Reset orchestration hard-coded:** `performAscendOrchestrator` names each reset explicitly; adding a run-scoped slice requires touching it. `resetOffice()` misleadingly omits level/XP. `resetSchool()` is exported and tested but never called in production (school is permanent by design).
+
+**Category 5 — Dead code:** `pmGainPerSale`, `pmThreshold`, `pmFromLifetime` in `balance.ts` — old passive PM drip system, replaced by achievement-only grants. `resetSchool()` is a dead stub.
+
+### Proposed reshape (see full doc for tasks)
+
+- **Reshape A (do now):** Fix the four panel/dead-code bugs. 1–2 sessions, low risk.
+- **Reshape B (fold into A):** Named `useCanvasMultiplierInputs()` hook + fix `as GameStore` test stubs. Restores compile-time safety net.
+- **Reshape C (defer):** Declarative run-scope registry in ascend orchestrator. Only worth doing when adding a new run-scoped slice.
+
+---
+
 ## Achievement designer rebuilt as inline flat-list (2026-05-17)
 
 ### What landed
