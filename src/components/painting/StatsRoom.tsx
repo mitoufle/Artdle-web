@@ -151,14 +151,16 @@ export function StatsRoom(): JSX.Element {
 
   const paintMastery = useGameStore((s) => s.paintMastery);
   const completedResearches = useGameStore((s) => s.completedResearches);
+  const completedAchievements = useGameStore((s) => s.completedAchievements);
   const { blocks, size } = useMemo(() => {
     const helperState: CanvasMultiplierInputs = {
       equipped, purchasedNodes, roster, paintMastery,
       sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
       completedResearches,
+      completedAchievements,
     };
     return { blocks: statBlocks(helperState), size: sizeBlock(helperState) };
-  }, [equipped, purchasedNodes, roster, paintMastery, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel, completedResearches]);
+  }, [equipped, purchasedNodes, roster, paintMastery, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel, completedResearches, completedAchievements]);
 
   return (
     <section className={styles.room} aria-label="Stats">
