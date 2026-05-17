@@ -1,0 +1,219 @@
+[
+  {
+    "id": "first_canvas",
+    "name": "First Sale",
+    "description": "Sell your very first canvas.",
+    "icon": "🖼️",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.canvasesSold", "op": ">=", "value": 1 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 5 }]
+  },
+  {
+    "id": "canvas_hundred",
+    "name": "Century Brushwork",
+    "description": "Sell 100 canvases across your lifetime.",
+    "icon": "💯",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.canvasesSold", "op": ">=", "value": 100 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 15 }]
+  },
+  {
+    "id": "canvas_thousand",
+    "name": "Thousand Strokes",
+    "description": "Sell 1,000 canvases across your lifetime.",
+    "icon": "🎨",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.canvasesSold", "op": ">=", "value": 1000 },
+    "effects": [
+      { "kind": "paint_mastery_flat", "value": 40 },
+      { "kind": "canvas_gold_pct", "value": 0.05 }
+    ]
+  },
+  {
+    "id": "crit_streak_five",
+    "name": "Laser Focus",
+    "description": "Land 5 critical canvases in a row.",
+    "icon": "🎯",
+    "category": "canvas",
+    "condition": { "stat": "run.currentCritStreak", "op": ">=", "value": 5 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 20 }]
+  },
+  {
+    "id": "combo_ten",
+    "name": "Combo Virtuoso",
+    "description": "Hit a 10-canvas combo chain in a single run.",
+    "icon": "⚡",
+    "category": "canvas",
+    "condition": { "stat": "run.maxComboChain", "op": ">=", "value": 10 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 25 }]
+  },
+  {
+    "id": "crits_lifetime_hundred",
+    "name": "Critical Eye",
+    "description": "Land 100 critical canvases across your lifetime.",
+    "icon": "👁️",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.critsLanded", "op": ">=", "value": 100 },
+    "effects": [
+      { "kind": "paint_mastery_flat", "value": 20 },
+      { "kind": "speed_pct", "value": 0.05 }
+    ]
+  },
+  {
+    "id": "first_craft",
+    "name": "First Forge",
+    "description": "Craft your first workshop item.",
+    "icon": "⚒️",
+    "category": "workshop",
+    "condition": { "stat": "lifetime.workshopItemsCrafted", "op": ">=", "value": 1 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 10 }]
+  },
+  {
+    "id": "craft_ten",
+    "name": "Apprentice Smith",
+    "description": "Craft 10 workshop items across your lifetime.",
+    "icon": "🔨",
+    "category": "workshop",
+    "condition": { "stat": "lifetime.workshopItemsCrafted", "op": ">=", "value": 10 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 20 }]
+  },
+  {
+    "id": "craft_fifty",
+    "name": "Master Smith",
+    "description": "Craft 50 workshop items across your lifetime.",
+    "icon": "🔥",
+    "category": "workshop",
+    "condition": { "stat": "lifetime.workshopItemsCrafted", "op": ">=", "value": 50 },
+    "effects": [
+      { "kind": "paint_mastery_flat", "value": 40 },
+      { "kind": "canvas_gold_pct", "value": 0.05 }
+    ]
+  },
+  {
+    "id": "items_fused_three",
+    "name": "The Alchemist",
+    "description": "Fuse 3 workshop items.",
+    "icon": "📦",
+    "category": "workshop",
+    "condition": { "stat": "lifetime.workshopItemsFused", "op": ">=", "value": 3 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 15 }]
+  },
+  {
+    "id": "first_ascension",
+    "name": "New Horizon",
+    "description": "Complete your first ascension.",
+    "icon": "🌅",
+    "category": "ascension",
+    "condition": { "stat": "lifetime.ascensions", "op": ">=", "value": 1 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 50 }]
+  },
+  {
+    "id": "three_ascensions",
+    "name": "Seasoned Wanderer",
+    "description": "Complete 3 ascensions.",
+    "icon": "🔄",
+    "category": "ascension",
+    "condition": { "stat": "lifetime.ascensions", "op": ">=", "value": 3 },
+    "effects": [
+      { "kind": "paint_mastery_flat", "value": 25 },
+      { "kind": "inspi_pct", "value": 0.05 }
+    ]
+  },
+  {
+    "id": "ten_ascensions",
+    "name": "Eternal Cycle",
+    "description": "Complete 10 ascensions.",
+    "icon": "♾️",
+    "category": "ascension",
+    "condition": { "stat": "lifetime.ascensions", "op": ">=", "value": 10 },
+    "effects": [
+      { "kind": "paint_mastery_flat", "value": 75 },
+      { "kind": "canvas_gold_pct", "value": 0.10 }
+    ]
+  },
+  {
+    "id": "hundred_run_canvases",
+    "name": "Dedicated Run",
+    "description": "Sell 100 canvases in a single run.",
+    "icon": "🏃",
+    "category": "ascension",
+    "condition": { "stat": "run.canvasesSold", "op": ">=", "value": 100 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 20 }]
+  },
+  {
+    "id": "first_research",
+    "name": "Curious Mind",
+    "description": "Complete your first school research.",
+    "icon": "📚",
+    "category": "school_office",
+    "condition": { "stat": "lifetime.schoolResearchesCompleted", "op": ">=", "value": 1 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 10 }]
+  },
+  {
+    "id": "ten_researches",
+    "name": "Scholar",
+    "description": "Complete 10 school researches across your lifetime.",
+    "icon": "🎓",
+    "category": "school_office",
+    "condition": { "stat": "lifetime.schoolResearchesCompleted", "op": ">=", "value": 10 },
+    "effects": [
+      { "kind": "paint_mastery_flat", "value": 30 },
+      { "kind": "inspi_pct", "value": 0.05 }
+    ]
+  },
+  {
+    "id": "first_hire",
+    "name": "First Hire",
+    "description": "Hire your first office worker.",
+    "icon": "🤝",
+    "category": "school_office",
+    "condition": { "stat": "lifetime.officeWorkersHired", "op": ">=", "value": 1 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 10 }]
+  },
+  {
+    "id": "tier_up",
+    "name": "Class Graduation",
+    "description": "Pass the Tier 1 school exam.",
+    "icon": "📜",
+    "category": "school_office",
+    "condition": { "stat": "lifetime.schoolTiersPassed", "op": ">=", "value": 1 },
+    "effects": [{ "kind": "paint_mastery_flat", "value": 40 }]
+  },
+  {
+    "id": "secret_crit_ten",
+    "name": "Unstoppable",
+    "description": "Land 10 critical canvases in a row.",
+    "icon": "💥",
+    "category": "secret",
+    "condition": { "stat": "run.currentCritStreak", "op": ">=", "value": 10 },
+    "effects": [
+      { "kind": "paint_mastery_flat", "value": 50 },
+      { "kind": "speed_pct", "value": 0.10 }
+    ]
+  },
+  {
+    "id": "secret_combo_twenty",
+    "name": "In The Zone",
+    "description": "Hit a 20-canvas combo chain.",
+    "icon": "🌀",
+    "category": "secret",
+    "condition": { "stat": "run.maxComboChain", "op": ">=", "value": 20 },
+    "effects": [
+      { "kind": "paint_mastery_flat", "value": 75 },
+      { "kind": "canvas_gold_pct", "value": 0.10 }
+    ]
+  },
+  {
+    "id": "secret_marathon",
+    "name": "The Long Game",
+    "description": "Sell 10,000 canvases across your lifetime.",
+    "icon": "🏆",
+    "category": "secret",
+    "condition": { "stat": "lifetime.canvasesSold", "op": ">=", "value": 10000 },
+    "effects": [
+      { "kind": "paint_mastery_flat", "value": 100 },
+      { "kind": "canvas_gold_pct", "value": 0.15 },
+      { "kind": "inspi_pct", "value": 0.10 }
+    ]
+  }
+]
