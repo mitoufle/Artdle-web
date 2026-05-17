@@ -10,6 +10,7 @@ import { ConstellationRoute } from "@/routes/ConstellationRoute";
 import { AchievementsRoute } from "@/routes/AchievementsRoute";
 import { SkillDesignerRoute } from "@/dev/skill-designer/SkillDesignerRoute";
 import { SchoolDesignerRoute } from "@/dev/school-designer/SchoolDesignerRoute";
+import { AchievementDesignerRoute } from "@/dev/achievement-designer/AchievementDesignerRoute";
 import styles from "./App.module.css";
 
 export function App(): JSX.Element {
@@ -21,6 +22,7 @@ export function App(): JSX.Element {
       <Routes>
         <Route path="/dev/skill-designer" element={<SkillDesignerRoute />} />
         <Route path="/dev/school-designer" element={<SchoolDesignerRoute />} />
+        <Route path="/dev/achievement-designer" element={<AchievementDesignerRoute />} />
       </Routes>
     );
   }
