@@ -201,7 +201,7 @@ describe("canvasSlice — size-aware tick (canvas-depth)", () => {
     expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(14.5475, 3);
   });
 
-  it("sale credits PM via addGoldEarned (11g at lt=0 is sub-threshold → 0 PM)", () => {
+  it("sale calls trackSaleGold — lifetimeGold increments, PM stays 0 (no PM drip)", () => {
     const effTime = 2 / 1.05;
     useGameStore.getState().canvasTick(effTime);
     expect(useGameStore.getState().paintMastery.toNumber()).toBe(0);

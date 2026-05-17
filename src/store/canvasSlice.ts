@@ -16,7 +16,7 @@ import {
   getCritGoldBonus,
 } from "@/core/multipliers";
 import type { GameStore } from "@/store";
-import type { Big } from "@/core/bigNumber";
+import { big, type Big } from "@/core/bigNumber";
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { rng } from "@/core/rng";
 
@@ -116,6 +116,21 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
     const MAX_SALES_PER_TICK = 1000;
     let sales = 0;
 
+    // Stat accumulators — committed after the loop to avoid per-sale set() calls.
+    let localCritStreak = 0;
+    let localMaxCritStreak = 0;
+    let localMaxCombo = 0;
+    let critsThisTick = 0;
+    let salesThisTick = 0;
+    let tickGoldTotal = big(0);
+    // Capture current run streak so we carry it across tick boundaries.
+    const prevCritStreak = state.statsRun.currentCritStreak;
+    const prevMaxCritStreak = state.statsRun.maxCritStreak;
+    const prevMaxCombo = state.statsRun.maxComboChain;
+    localCritStreak = prevCritStreak;
+    localMaxCritStreak = prevMaxCritStreak;
+    localMaxCombo = prevMaxCombo;
+
     while (timeBudget > 0 && sales < MAX_SALES_PER_TICK) {
       const size = getCanvasSize(state);
       const baseTime = canvasTime(size);
@@ -144,8 +159,19 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       const gain = baseGold.mul(comboBonusFactor(chain));
 
       state.add("gold", gain);
-      state.addGoldEarned(gain);
+      state.trackSaleGold(gain);
       state.awardOfficeXp(gain);
+
+      salesThisTick += 1;
+      tickGoldTotal = tickGoldTotal.add(gain);
+      if (critFlag) {
+        critsThisTick += 1;
+        localCritStreak += 1;
+        if (localCritStreak > localMaxCritStreak) localMaxCritStreak = localCritStreak;
+      } else {
+        localCritStreak = 0;
+      }
+      if (chain > localMaxCombo) localMaxCombo = chain;
 
       // Roll combo for the chain decision (after sale paid out).
       const baseChance = getComboBaseChance(state);
@@ -160,9 +186,26 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       lastSaleAmount = gain;
 
       // Refresh state to capture gold / lifetimeGold / officeXp updates from the
-      // sale we just credited. Multipliers don't depend on these but PM does
-      // (compounds within a busy tick).
+      // sale we just credited.
       state = get();
+    }
+
+    if (salesThisTick > 0) {
+      const st = get();
+      st.incrementStat("lifetime", "canvasesSold", salesThisTick);
+      st.incrementStat("lifetime", "critsLanded", critsThisTick);
+      if (localMaxCombo > st.statsLifetime.maxComboChain) {
+        st.incrementStat("lifetime", "maxComboChain", localMaxCombo - st.statsLifetime.maxComboChain);
+      }
+      st.incrementStat("run", "canvasesSold", salesThisTick);
+      st.incrementStat("run", "critsLanded", critsThisTick);
+      get().patchRunStats({
+        currentCritStreak: localCritStreak,
+        maxCritStreak: localMaxCritStreak,
+        maxComboChain: localMaxCombo,
+        goldEarned: get().statsRun.goldEarned.add(tickGoldTotal),
+      });
+      get().evaluateAchievements();
     }
 
     set({
