@@ -60,6 +60,9 @@ export const createSchoolSlice: StateCreator<GameStore, [], [], SchoolSlice> = (
       completedResearches: { ...state.completedResearches, [state.activeResearch.id]: true },
       activeResearch: null,
     });
+    get().incrementStat("lifetime", "schoolResearchesCompleted");
+    get().incrementStat("run", "schoolResearchesCompleted");
+    get().evaluateAchievements();
   },
 
   passExam: () => {
@@ -75,6 +78,8 @@ export const createSchoolSlice: StateCreator<GameStore, [], [], SchoolSlice> = (
       examsPassed: { ...state.examsPassed, [state.currentTier]: true },
       currentTier: state.currentTier + 1,
     });
+    get().incrementStat("lifetime", "schoolTiersPassed");
+    get().evaluateAchievements();
     return true;
   },
 

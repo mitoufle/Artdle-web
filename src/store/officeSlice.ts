@@ -167,6 +167,8 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
       roster: [...state.roster, worker],
       queue: state.queue.filter((c) => c.id !== candidateId),
     });
+    get().incrementStat("lifetime", "officeWorkersHired");
+    get().evaluateAchievements();
     return true;
   },
   rejectFromQueue: (candidateId: string): boolean => {

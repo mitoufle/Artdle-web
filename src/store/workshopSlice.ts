@@ -163,7 +163,11 @@ export const getFuseCost = (equippedItem: Item, workshopLevel: number): Big =>
  * Shredder note: when inventory is full AND shredder ≥ 1, we drop the OLDEST
  * (index 0) inventory item before pushing the new one (keeps inventory bounded).
  */
-function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<GameStore>) => void): boolean {
+function performCraft(
+  state: GameStore,
+  set: (fn: (s: GameStore) => Partial<GameStore>) => void,
+  get: () => GameStore,
+): boolean {
   const cap = getMaxInventorySlots(state);
   const hasShredder = getNodeLevel(state, "shredder") > 0;
   if (state.inventory.length >= cap) {
@@ -203,6 +207,9 @@ function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<Game
     }
     return { inventory: [...s.inventory, item], workshopLevel: newLevel, workshopXp: newXp };
   });
+  get().incrementStat("lifetime", "workshopItemsCrafted");
+  get().incrementStat("run", "workshopItemsCrafted");
+  get().evaluateAchievements();
   return true;
 }
 
@@ -213,7 +220,7 @@ function performCraft(state: GameStore, set: (fn: (s: GameStore) => Partial<Game
 export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice> = (set, get) => ({
   ...initialWorkshopState,
 
-  craft: () => performCraft(get(), set),
+  craft: () => performCraft(get(), set, get),
 
   equipItem: (itemId) => {
     const state = get();
@@ -293,6 +300,8 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
       inventory: s.inventory.filter((i) => i.id !== dropId),
       equipped: { ...s.equipped, [targetSlot]: fusedItem },
     }));
+    get().incrementStat("lifetime", "workshopItemsFused");
+    get().evaluateAchievements();
     return true;
   },
 
@@ -325,7 +334,7 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
       // Attempt one craft per interval crossed. If a craft fails (no gold,
       // full + no shredder, etc.), keep the timer accumulated for the next try.
       for (let i = 0; i < grants; i++) {
-        const ok = performCraft(get(), set);
+        const ok = performCraft(get(), set, get);
         if (!ok) break;
       }
     }
