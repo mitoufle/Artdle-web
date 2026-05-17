@@ -1,5 +1,24 @@
 # Artdle Web — Handover
 
+## Achievement designer rebuilt as inline flat-list (2026-05-17)
+
+### What landed
+
+**`/dev/achievement-designer` — full rewrite (commit `40c3a27`)**
+
+Replaced the left-rail + detail-panel layout with a flat inline-editable card list, matching the school and skill-tree designer UX. Each achievement renders as a self-contained card with all fields editable directly — no click-to-select, no side panel.
+
+- **`storage.ts`** — localStorage draft (`artdle:achievement-design:draft`) with `uuid()`, `migrateDesign/Achievement/Condition/Effect`, `loadDraft`, `saveDraft`, `clearDraft`. Idiomatic clone of the school designer's storage layer.
+- **`useAchievementDesignerState.ts`** — 500 ms debounced draft save; actions: `addAchievement`, `deleteAchievement`, `updateAchievement`, `addEffect`, `updateEffect`, `deleteEffect`, `resetAll`, `importDesign`. Baseline loaded from `achievementsDesign.json` when no draft exists.
+- **`api.ts`** — `stripEffectIds()` removes ephemeral `id` from each effect before writing `achievementsDesign.json` via `/__superpowers__/write-json`.
+- **`types.ts`** — `DesignEffect` carries an ephemeral `id: string` for React keys; `DesignCondition`, `DesignAchievement`, `DesignFile`, `EMPTY_DESIGN`.
+- **Card layout per achievement:** icon · id · name · category select · delete button / description / `if [stat] [op] [value]` condition row / effect rows (kind select + custom fallback + value input + delete) / `+ effect` button.
+- **Top bar:** Save to file · Reset · links to School Designer and Game.
+
+Test-Fire feature from the old designer removed (used left-rail selected state; not needed in flat list — just run the game).
+
+---
+
 ## Achievement system + test suite green (2026-05-17)
 
 ### What landed
