@@ -1,0 +1,97 @@
+.page {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted, #9ca3af);
+  margin: 0;
+}
+
+.filterBar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filterChip {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--border, #374151);
+  background: transparent;
+  color: var(--text-muted, #9ca3af);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.filterChipActive {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--accent, #a78bfa);
+  background: var(--accent-bg, #1e1b4b);
+  color: var(--accent, #a78bfa);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.empty {
+  color: var(--text-muted, #9ca3af);
+  font-size: 13px;
+}
+
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categoryLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted, #9ca3af);
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 1px solid var(--border, #374151);
+  border-radius: 8px;
+  cursor: default;
+}
+
+.icon {
+  font-size: 24px;
+}
+
+.tileName {
+  font-size: 9px;
+  text-align: center;
+  color: var(--text-muted, #9ca3af);
+  line-height: 1.2;
+}

@@ -12,6 +12,7 @@ const NAV_ITEMS: ReadonlyArray<{ to: string; label: string }> = [
   { to: "/painting",      label: "Painting" },
   { to: "/ascension",     label: "Ascension" },
   { to: "/constellation", label: "Constellation" },
+  { to: "/achievements",  label: "Achievements" },
 ];
 
 async function wipeAndReload(): Promise<void> {

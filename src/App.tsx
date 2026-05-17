@@ -7,6 +7,7 @@ import { TreeRoute } from "@/routes/TreeRoute";
 import { PaintingRoute } from "@/routes/PaintingRoute";
 import { AscensionRoute } from "@/routes/AscensionRoute";
 import { ConstellationRoute } from "@/routes/ConstellationRoute";
+import { AchievementsRoute } from "@/routes/AchievementsRoute";
 import { SkillDesignerRoute } from "@/dev/skill-designer/SkillDesignerRoute";
 import { SchoolDesignerRoute } from "@/dev/school-designer/SchoolDesignerRoute";
 import styles from "./App.module.css";
@@ -34,6 +35,7 @@ export function App(): JSX.Element {
           <Route path="/painting" element={<PaintingRoute />} />
           <Route path="/ascension" element={<AscensionRoute />} />
           <Route path="/constellation" element={<ConstellationRoute />} />
+          <Route path="/achievements" element={<AchievementsRoute />} />
           <Route path="*" element={<Navigate to="/tree" replace />} />
         </Routes>
       </main>
