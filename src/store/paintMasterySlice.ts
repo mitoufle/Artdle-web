@@ -39,6 +39,12 @@ export interface PaintMasterySlice extends PaintMasteryState {
    */
   addGoldEarned: (saleGold: Big) => void;
 
+  /**
+   * Directly credit `amount` to paintMastery. Used by achievementSlice to
+   * apply `paint_mastery_flat` one-shot rewards on achievement completion.
+   */
+  addPaintMastery: (amount: Big) => void;
+
   /** Test/debug helper — overwrite the PM value. Not used in production. */
   _setPaintMastery: (value: Big) => void;
 
@@ -64,6 +70,10 @@ export const createPaintMasterySlice: StateCreator<GameStore, [], [], PaintMaste
       paintMastery: state.paintMastery.add(gain),
       lifetimeGold: state.lifetimeGold.add(saleGold),
     });
+  },
+
+  addPaintMastery: (amount) => {
+    set((s) => ({ paintMastery: s.paintMastery.add(amount) }));
   },
 
   _setPaintMastery: (value) => set({ paintMastery: value }),

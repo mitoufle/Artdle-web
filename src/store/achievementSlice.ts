@@ -1,0 +1,109 @@
+import type { StateCreator } from "zustand";
+import { big } from "@/core/bigNumber";
+import type { GameStore } from "@/store";
+import { ACHIEVEMENTS, type AchievementEffect } from "@/config/achievementConfig";
+
+export interface AchievementNotification {
+  id: string;
+  name: string;
+  effects: ReadonlyArray<AchievementEffect>;
+}
+
+export interface AchievementState {
+  completedAchievements: Record<string, true>;
+  activeNotification: AchievementNotification | null;
+  notificationQueue: ReadonlyArray<AchievementNotification>;
+}
+
+export interface AchievementSlice extends AchievementState {
+  evaluateAchievements: () => void;
+  advanceNotification: () => void;
+  clearNotification: () => void;
+}
+
+const initialAchievementState: AchievementState = {
+  completedAchievements: {},
+  activeNotification: null,
+  notificationQueue: [],
+};
+
+function resolveStatValue(state: GameStore, stat: string): number {
+  if (stat === "lifetime.goldEarned") return state.lifetimeGold.toNumber();
+  if (stat === "lifetime.ascensions") return state.ascendCount;
+  if (stat.startsWith("lifetime.")) {
+    const key = stat.slice("lifetime.".length);
+    return (state.statsLifetime as Record<string, number>)[key] ?? 0;
+  }
+  if (stat.startsWith("run.")) {
+    const key = stat.slice("run.".length);
+    const val = (state.statsRun as Record<string, unknown>)[key] ?? 0;
+    if (typeof val === "number") return val;
+    // Big value (e.g. goldEarned)
+    return (val as { toNumber(): number }).toNumber();
+  }
+  return 0;
+}
+
+function checkCondition(actual: number, op: string, threshold: number): boolean {
+  switch (op) {
+    case ">=": return actual >= threshold;
+    case ">":  return actual >  threshold;
+    case "==": return actual === threshold;
+    case "<=": return actual <= threshold;
+    case "<":  return actual <  threshold;
+    default:   return false;
+  }
+}
+
+export const createAchievementSlice: StateCreator<GameStore, [], [], AchievementSlice> = (set, get) => ({
+  ...initialAchievementState,
+
+  evaluateAchievements: () => {
+    const state = get();
+    const newly: AchievementNotification[] = [];
+
+    for (const achievement of ACHIEVEMENTS) {
+      if (state.completedAchievements[achievement.id]) continue;
+      const actual = resolveStatValue(state, achievement.condition.stat);
+      if (!checkCondition(actual, achievement.condition.op, achievement.condition.value)) continue;
+
+      newly.push({ id: achievement.id, name: achievement.name, effects: achievement.effects });
+
+      // Apply paint_mastery_flat one-shot immediately.
+      for (const effect of achievement.effects) {
+        if (effect.kind === "paint_mastery_flat") {
+          get().addPaintMastery(big(effect.value));
+        }
+      }
+    }
+
+    if (newly.length === 0) return;
+
+    set((s) => {
+      const updated: Record<string, true> = { ...s.completedAchievements };
+      for (const n of newly) updated[n.id] = true;
+      const combinedQueue = [...s.notificationQueue, ...newly];
+      return { completedAchievements: updated, notificationQueue: combinedQueue };
+    });
+
+    // Drain queue into activeNotification if idle.
+    if (get().activeNotification === null) {
+      get().advanceNotification();
+    }
+  },
+
+  advanceNotification: () => {
+    const state = get();
+    if (state.notificationQueue.length === 0) return;
+    const [next, ...rest] = state.notificationQueue;
+    set({ activeNotification: next, notificationQueue: rest });
+    setTimeout(() => get().clearNotification(), 5000);
+  },
+
+  clearNotification: () => {
+    set({ activeNotification: null });
+    if (get().notificationQueue.length > 0) {
+      get().advanceNotification();
+    }
+  },
+});

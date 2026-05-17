@@ -12,6 +12,7 @@ import { createWorkshopSlice, type WorkshopSlice } from "./workshopSlice";
 import { createOfficeSlice, type OfficeSlice } from "./officeSlice";
 import { createSchoolSlice, type SchoolSlice } from "./schoolSlice";
 import { createStatsSlice, type StatsSlice } from "./statsSlice";
+import { createAchievementSlice, type AchievementSlice } from "./achievementSlice";
 import { big, isBig } from "@/core/bigNumber";
 
 export interface GameTick {
@@ -36,6 +37,7 @@ export type GameStore =
   & WorkshopSlice
   & SchoolSlice
   & StatsSlice
+  & AchievementSlice
   & GameTick;
 
 const SAVE_VERSION = 18;
@@ -363,6 +365,7 @@ export const useGameStore = create<GameStore>()(
       ...createOfficeSlice(set, get, store),
       ...createSchoolSlice(set, get, store),
       ...createStatsSlice(set, get, store),
+      ...createAchievementSlice(set, get, store),
       tickAll: (deltaSeconds: number) => {
         const s = get();
         s.treeTick(deltaSeconds);
@@ -386,6 +389,8 @@ export const useGameStore = create<GameStore>()(
           hoverFooter: _f,
           lastSale: _ls,
           devFreeNodes: _dfn,
+          activeNotification: _an,
+          notificationQueue: _nq,
           ...rest
         } = s;
         return serializeBigs(rest) as unknown as Omit<
