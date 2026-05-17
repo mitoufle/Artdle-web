@@ -71,8 +71,8 @@ describe("<WorkshopRoom />", () => {
     const equip = screen.getByTestId(`inventory-equip-${sampleBrush.id}`);
     expect(equip).toHaveTextContent(/magic/i);
     expect(equip).toHaveTextContent(/brush/i);
-    expect(equip).toHaveTextContent("$ 12%");
-    expect(equip).toHaveTextContent("» 8%");
+    expect(equip).toHaveTextContent("$12%");
+    expect(equip).toHaveTextContent("»8%");
   });
 
   it("inventory item has data-tier matching its tier", () => {

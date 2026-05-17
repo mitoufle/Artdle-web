@@ -56,7 +56,7 @@ function inspiBody(): JSX.Element {
 function fameBody(): JSX.Element {
   const s = useGameStore.getState();
   const pastRunsTotal = s.pastRuns.reduce((acc, r) => acc + r.fame, 0);
-  const lifetime = big(pastRunsTotal);
+  const lifetime = s.fame.add(pastRunsTotal);
   return (
     <>
       <div>Current: {formatBig(s.fame)}</div>

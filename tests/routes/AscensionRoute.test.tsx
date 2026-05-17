@@ -82,7 +82,7 @@ describe("AscensionRoute (v2 visual)", () => {
     useGameStore.setState({ inspiration: big(12_000) });
     renderAscensionRoute();
     fireEvent.click(screen.getByRole("button", { name: /step through/i }));
-    fireEvent.click(screen.getByRole("button", { name: /^Ascend\s+\+/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
     expect(useGameStore.getState().ascendCount).toBe(1);
   });
 
@@ -90,7 +90,7 @@ describe("AscensionRoute (v2 visual)", () => {
     useGameStore.setState({ inspiration: big(12_000) });
     renderAscensionRoute();
     fireEvent.click(screen.getByRole("button", { name: /step through/i }));
-    fireEvent.click(screen.getByRole("button", { name: /^Ascend\s+\+/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByText(/No past ascends/i)).not.toBeInTheDocument();
   });

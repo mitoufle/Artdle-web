@@ -8,6 +8,7 @@ describe("<TrackCard>", () => {
     render(
       <TrackCard
         trackId="sell_price"
+        affixKind="+sell_price%"
         label="Sell Price"
         level={3}
         effectLine="+30% gold per sale"
@@ -27,6 +28,7 @@ describe("<TrackCard>", () => {
     render(
       <TrackCard
         trackId="size"
+        affixKind="+size%"
         label="Size"
         level={0}
         effectLine="—"
@@ -38,7 +40,7 @@ describe("<TrackCard>", () => {
     );
     expect(screen.getByText(/Size/i)).toBeInTheDocument();
     expect(screen.getByText(/Locked/i)).toBeInTheDocument();
-    const btn = screen.queryByRole("button", { name: /Upgrade/i });
+    const btn = screen.queryByRole("button");
     expect(btn === null || (btn as HTMLButtonElement).disabled).toBe(true);
   });
 
@@ -46,6 +48,7 @@ describe("<TrackCard>", () => {
     render(
       <TrackCard
         trackId="speed"
+        affixKind="+speed%"
         label="Speed"
         level={1}
         effectLine="+5% speed"
@@ -55,7 +58,7 @@ describe("<TrackCard>", () => {
         onUpgrade={() => {}}
       />,
     );
-    const btn = screen.getByRole("button", { name: /Upgrade/i }) as HTMLButtonElement;
+    const btn = screen.getByTestId("track-card-upgrade-speed") as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
   });
 
@@ -64,6 +67,7 @@ describe("<TrackCard>", () => {
     render(
       <TrackCard
         trackId="speed"
+        affixKind="+speed%"
         label="Speed"
         level={1}
         effectLine="+5% speed"
@@ -73,7 +77,7 @@ describe("<TrackCard>", () => {
         onUpgrade={fn}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Upgrade/i }));
+    fireEvent.click(screen.getByTestId("track-card-upgrade-speed"));
     expect(fn).toHaveBeenCalledTimes(1);
   });
 });
@@ -87,6 +91,7 @@ describe("<TrackCard> — hover info", () => {
     render(
       <TrackCard
         trackId="sell_price"
+        affixKind="+sell_price%"
         label="Sell Price"
         level={1}
         effectLine="+10% gold/level"
@@ -107,6 +112,7 @@ describe("<TrackCard> — hover info", () => {
     render(
       <TrackCard
         trackId="size"
+        affixKind="+size%"
         label="Size"
         level={0}
         effectLine="—"
