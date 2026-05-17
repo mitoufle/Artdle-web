@@ -1,7 +1,8 @@
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { useState } from "react";
 import { useGameStore } from "@/store";
-import { ACHIEVEMENTS, type AchievementCategory } from "@/config/achievementConfig";
+import { ACHIEVEMENTS, type Achievement, type AchievementCategory } from "@/config/achievementConfig";
+import { Hoverable } from "@/ui/widgets/Hoverable";
 import styles from "./AchievementsRoute.module.css";
 
 const CATEGORIES: { id: AchievementCategory; label: string }[] = [
@@ -11,6 +12,29 @@ const CATEGORIES: { id: AchievementCategory; label: string }[] = [
   { id: "school_office", label: "School & Office" },
   { id: "secret",        label: "Secrets" },
 ];
+
+function effectLabel(kind: string, value: number): string {
+  if (kind === "paint_mastery_flat") return `+${value} PM`;
+  if (kind === "canvas_gold_pct") return `+${Math.round(value * 100)}% canvas gold`;
+  if (kind === "speed_pct") return `+${Math.round(value * 100)}% speed`;
+  if (kind === "inspi_pct") return `+${Math.round(value * 100)}% inspiration`;
+  return `+${value} ${kind}`;
+}
+
+function achievementBody(a: Achievement): ReactNode {
+  return (
+    <>
+      <div>{a.description}</div>
+      {a.effects.length > 0 && (
+        <div style={{ marginTop: 4 }}>
+          {a.effects.map((e, i) => (
+            <div key={i}>{effectLabel(e.kind, e.value)}</div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
 
 export function AchievementsRoute(): JSX.Element {
   const completedAchievements = useGameStore((s) => s.completedAchievements);
@@ -69,14 +93,17 @@ export function AchievementsRoute(): JSX.Element {
               <h2 className={styles.categoryLabel}>{label}</h2>
               <div className={styles.grid}>
                 {group.map((a) => (
-                  <div
+                  <Hoverable
                     key={a.id}
-                    className={styles.tile}
-                    title={`${a.name}: ${a.description}`}
+                    as="div"
+                    title={`${a.icon} ${a.name}`}
+                    body={() => achievementBody(a)}
                   >
-                    <span className={styles.icon}>{a.icon}</span>
-                    <span className={styles.tileName}>{a.name}</span>
-                  </div>
+                    <div className={styles.tile}>
+                      <span className={styles.icon}>{a.icon}</span>
+                      <span className={styles.tileName}>{a.name}</span>
+                    </div>
+                  </Hoverable>
                 ))}
               </div>
             </section>
