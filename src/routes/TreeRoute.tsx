@@ -22,10 +22,11 @@ export function TreeRoute(): JSX.Element {
   const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const completedResearches = useGameStore((s) => s.completedResearches);
+  const completedAchievements = useGameStore((s) => s.completedAchievements);
   const buyPartLevel = useGameStore((s) => s.buyPartLevel);
   const buyAllAffordableTreeParts = useGameStore((s) => s.buyAllAffordableTreeParts);
 
-  const helperState = { currentStage, partLevels, purchasedNodes, completedResearches };
+  const helperState = { currentStage, partLevels, purchasedNodes, completedResearches, completedAchievements };
 
   const rate = inspiPerSec(getProducingParts(helperState), getInspiMultiplier(helperState));
   const stageConfig = TREE_STAGES[currentStage];
