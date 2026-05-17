@@ -92,20 +92,18 @@ export function AchievementDesignerRoute(): JSX.Element {
     }
   }, [selectedAch]);
 
-  const liveStatValue = selectedAch
-    ? (() => {
-        const storeState = useGameStore.getState();
-        const stat = selectedAch.condition.stat;
-        if (stat === "lifetime.goldEarned") return storeState.lifetimeGold.toNumber();
-        if (stat === "lifetime.ascensions") return storeState.ascendCount;
-        if (stat.startsWith("lifetime.")) return (storeState.statsLifetime as Record<string, number>)[stat.slice(9)] ?? 0;
-        if (stat.startsWith("run.")) {
-          const v = (storeState.statsRun as Record<string, unknown>)[stat.slice(4)] ?? 0;
-          return typeof v === "number" ? v : (v as { toNumber(): number }).toNumber();
-        }
-        return 0;
-      })()
-    : null;
+  const liveStatValue = useGameStore((state) => {
+    if (!selectedAch) return null;
+    const stat = selectedAch.condition.stat;
+    if (stat === "lifetime.goldEarned") return state.lifetimeGold.toNumber();
+    if (stat === "lifetime.ascensions") return state.ascendCount;
+    if (stat.startsWith("lifetime.")) return (state.statsLifetime as Record<string, number>)[stat.slice(9)] ?? 0;
+    if (stat.startsWith("run.")) {
+      const v = (state.statsRun as Record<string, unknown>)[stat.slice(4)] ?? 0;
+      return typeof v === "number" ? v : (v as { toNumber(): number }).toNumber();
+    }
+    return 0;
+  });
 
   return (
     <div className={styles.layout}>
@@ -148,7 +146,10 @@ export function AchievementDesignerRoute(): JSX.Element {
             <>
               <div className={styles.row}>
                 <label className={styles.label}>ID</label>
-                <input className={styles.input} value={selectedAch.id} onChange={(e) => update(selectedAch.id, { id: e.target.value })} />
+                <input className={styles.input} value={selectedAch.id} onChange={(e) => {
+                  update(selectedAch.id, { id: e.target.value });
+                  setSelected(e.target.value);
+                }} />
               </div>
               <div className={styles.row}>
                 <label className={styles.label}>Name</label>
