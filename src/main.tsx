@@ -44,6 +44,14 @@ function Bootstrap(): JSX.Element {
     return installLifecycle(defaultLifecycleHooks);
   }, [hydrated]);
 
+  // Retroactive achievement evaluation on rehydration.
+  // Fires once when the save is loaded, completing any achievements whose
+  // conditions are already met.
+  useEffect(() => {
+    if (!hydrated) return;
+    useGameStore.getState().evaluateAchievements();
+  }, [hydrated]);
+
   if (!hydrated) return <LoadingScreen />;
   return (
     <BrowserRouter>

@@ -54,5 +54,12 @@ export const performAscendOrchestrator = (
   // 5. Append to past-runs ledger.
   state.addPastRun({ fame: fameGain, ascendedAt: Date.now() });
 
+  // 6. Reset run stats and evaluate ascension achievements.
+  // Reset run stats for the new run.
+  state.resetRunStats();
+  // Evaluate achievements for ascension-milestone conditions.
+  // Must happen AFTER incrementAscendCount so lifetime.ascensions alias is current.
+  state.evaluateAchievements();
+
   return true;
 };
