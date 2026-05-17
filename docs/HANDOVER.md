@@ -1,31 +1,58 @@
 # Artdle Web — Handover
 
+## Reshape A — panel bugs fixed + dead PM drip code deleted (2026-05-18)
+
+### What landed
+
+**Commit `d765c0e` — all five Reshape A tasks**
+
+**`src/components/painting/StatsRoom.tsx`**
+- Added `getSchoolGoldContribution`, `getAchievementGoldContribution`, `getSchoolSpeedContribution`, `getAchievementSpeedContribution` helper exports to `src/core/multipliers.ts` (one-liners over the existing school/achievement bonus functions, named to match the `getColorTreeContribution` / `getSkillTreeSpeedContribution` pattern).
+- Both Sell Price and Speed stat blocks now include conditional "School" and "Achievements" rows (only shown when > 0). Displayed total now equals the sum of listed rows for all players.
+
+**`src/components/shell/BottomBar.tsx`**
+- Added `"/achievements": new Set([])` to `ROUTE_PROMINENCE`. The achievements tab now dims all currencies (informational tab — no currency is prominent there).
+
+**`src/components/painting/SchoolRoom.tsx`**
+- Removed raw `pushHoverInfo`/`clearHoverInfo` store subscriptions. Each research card is now wrapped in `<Hoverable as="div" title body footer>`, consistent with WorkshopRoom, OfficeRoom, and AchievementsRoute. Grid CSS uses only descendant selectors — no direct-child selectors broken by the wrapper.
+
+**`src/components/shell/CurrencyChip.tsx`**
+- Removed `pmThreshold` import. Replaced stale "Next tick at: X g lifetime" in the PM hover panel with "Earned from: completing achievements" (the old tick mechanic no longer exists).
+
+**`src/core/balance.ts` + `tests/core/balance.test.ts`**
+- Deleted `pmFromLifetime`, `pmGainPerSale`, `pmThreshold` — remnants of the passive PM-per-sale drip system removed when PM became achievement-only. Corresponding test `describe` blocks deleted. `pmMult` is live and untouched.
+
+**Test suite: 848 tests green** (one test updated: `CurrencyChip.hover.test.tsx` PM assertion updated to match new copy).
+
+### Remaining from the audit
+
+- **Reshape B (next):** `tests/core/multipliers.test.ts` uses `as GameStore` casts that bypass the `CanvasMultiplierInputs` type safety net. Create a `useCanvasMultiplierInputs()` hook and replace test stubs with properly typed `CanvasMultiplierInputs` objects. See [`docs/superpowers/plans/2026-05-17-code-audit.md`](superpowers/plans/2026-05-17-code-audit.md) §Category 3 + Reshape B for full task list.
+- **Reshape C (deferred):** Declarative run-scope registry. Only worth doing when adding a new run-scoped slice.
+- **Browser verification pending:** StatsRoom school/achievement rows need a live playtest pass — unlock a school research with `canvas_gold_pct` effect and an achievement with the same kind, then confirm the breakdown rows appear and the total matches their sum.
+
+### Audit doc
+
+Full original audit: [`docs/superpowers/plans/2026-05-17-code-audit.md`](superpowers/plans/2026-05-17-code-audit.md)
+
+---
+
 ## Code audit — structural discrepancies (2026-05-17)
 
-Full audit of 40+ files. Five structural categories found; fix plan written.
+Full audit of 40+ files. Five structural categories found; fix plan written. **Reshape A executed 2026-05-18 (see above).**
 
 **Full audit:** [`docs/superpowers/plans/2026-05-17-code-audit.md`](superpowers/plans/2026-05-17-code-audit.md)
 
 ### Summary of findings
 
-**Category 1 — Player-visible bugs (fix first):**
-- `StatsRoom.tsx`: Sell Price and Speed totals include School and Achievement bonuses but the breakdown rows do not list them. The panel is wrong for any player who has unlocked school researches or achievements.
-- `BottomBar.tsx`: `/achievements` missing from `ROUTE_PROMINENCE`; falls through to gold+inspi prominence, which is wrong for that tab.
-- `SchoolRoom.tsx`: uses raw `pushHoverInfo`/`clearHoverInfo` instead of `<Hoverable>` like every other room.
+**Category 1 — Player-visible bugs: FIXED in Reshape A**
 
-**Category 2 — Stringly-typed cross-references:** Effect kind strings, school bonus keys, and capability tags are runtime strings — a misspelling silently returns 0. The `taylorsim` node-ID typo is the canonical example (consistent and working, but fragile). Accepted trade-off for node IDs per existing comment; untreated for effect kinds.
+**Category 2 — Stringly-typed cross-references:** Effect kind strings, school bonus keys, and capability tags are runtime strings — a misspelling silently returns 0. The `taylorsim` node-ID typo is the canonical example. Accepted trade-off for node IDs; untreated for effect kinds. No fix scheduled.
 
-**Category 3 — Helper-state hand-construction:** Every multiplier caller manually assembles its `CanvasMultiplierInputs` object. `tests/core/multipliers.test.ts` uses `as GameStore` casts, bypassing the type safety that `CanvasMultiplierInputs` was created to enforce. Prior runtime `TypeError` in `TreeRoute` (missing `completedAchievements`) is the precedent.
+**Category 3 — Helper-state hand-construction: Reshape B pending.** `tests/core/multipliers.test.ts` uses `as GameStore` casts bypassing compile-time safety.
 
-**Category 4 — Reset orchestration hard-coded:** `performAscendOrchestrator` names each reset explicitly; adding a run-scoped slice requires touching it. `resetOffice()` misleadingly omits level/XP. `resetSchool()` is exported and tested but never called in production (school is permanent by design).
+**Category 4 — Reset orchestration hard-coded:** `performAscendOrchestrator` names each reset explicitly. `resetOffice()` misleadingly omits level/XP. `resetSchool()` exported but never called in production (school is permanent by design). Deferred.
 
-**Category 5 — Dead code:** `pmGainPerSale`, `pmThreshold`, `pmFromLifetime` in `balance.ts` — old passive PM drip system, replaced by achievement-only grants. `resetSchool()` is a dead stub.
-
-### Proposed reshape (see full doc for tasks)
-
-- **Reshape A (do now):** Fix the four panel/dead-code bugs. 1–2 sessions, low risk.
-- **Reshape B (fold into A):** Named `useCanvasMultiplierInputs()` hook + fix `as GameStore` test stubs. Restores compile-time safety net.
-- **Reshape C (defer):** Declarative run-scope registry in ascend orchestrator. Only worth doing when adding a new run-scoped slice.
+**Category 5 — Dead code: FIXED in Reshape A** (`pmGainPerSale`, `pmThreshold`, `pmFromLifetime` deleted).
 
 ---
 
