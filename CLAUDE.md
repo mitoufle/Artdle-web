@@ -59,6 +59,13 @@ docs/
 - `docs/agent_docs/conventions.md` — TypeScript strictness, file structure, slice anatomy, formula testing discipline.
 - `docs/agent_docs/workflow.md` — subagent-driven dev, plan execution, commit cadence, what to do when stuck.
 
+## Deployment
+
+- **Production URL:** https://artdle-web.vercel.app
+- **Deploy command:** `npx vercel --prod` from the repo root. This builds and pushes to production directly. Do not use localtunnel.
+- **Vercel is not wired to auto-deploy from git push** — always run `npx vercel --prod` after pushing to trigger a production build.
+- **Verify deployment:** after `npx vercel --prod` completes, fetch `/assets/index-<hash>.js` from the production URL and grep for a known string (e.g. a route name) to confirm the new bundle is live.
+
 ## Out of scope (permanently)
 
 Mobile-first design, multiplayer, French language. The game ships in English on desktop browsers only.
