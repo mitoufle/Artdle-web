@@ -1,5 +1,88 @@
 # Artdle Web — Handover
 
+## Achievement system + test suite green (2026-05-17)
+
+### What landed
+
+**Achievement system — full implementation (commits `6009542`→`f58dac1`)**
+
+PM passive drip (per-canvas-sale accumulation) removed. PM is now earned exclusively by completing achievements via `paint_mastery_flat` one-shot effects. The system ships three layers:
+
+**Stats ledger (`statsSlice`, commit `6009542`)**
+- `StatsLifetime` (never reset): `canvasesSold`, `critsLanded`, `maxComboChain`, `workshopItemsCrafted`, `workshopItemsFused`, `schoolResearchesCompleted`, `schoolTiersPassed`, `officeWorkersHired`.
+- `StatsRun` (reset on ascension): same canvas counters + `currentCritStreak`, `maxCritStreak`, `goldEarned: Big`.
+- `patchRunStats` added alongside `incrementStat` — needed for fields that require exact-value sets (crit streak reset to 0 mid-run, not just increments).
+- Aliased fields (`lifetime.goldEarned` → `paintMasterySlice.lifetimeGold`, `lifetime.ascensions` → `metaSlice.ascendCount`) resolved at evaluation time; no duplication in `statsSlice`.
+- `incrementStat` + `evaluateAchievements` wired into: `canvasTick`, `workshopSlice` (craft + fuse), `schoolSlice` (research + exam), `officeSlice` (hire), ascend orchestrator, app startup (retroactive check on rehydration).
+
+**Achievement engine (`achievementSlice`, commit `d614af3`)**
+- `completedAchievements: Record<string, true>` — JSON-safe (not `Set`), persisted, survives ascensions.
+- FIFO notification queue with module-level `_notifTimer` to prevent timer leaks on rapid simultaneous unlocks.
+- `evaluateAchievements()` scans all incomplete achievements; `paint_mastery_flat` effects credited via `addPaintMastery()` (one-shot, not continuous).
+- `AchievementNotification: { id, name, icon, effects }` — `icon` field required so InfoPanel renders per-achievement emoji.
+
+**21 achievement definitions (`achievementsDesign.json`, commit `5552c0f`)**
+- 6 canvas, 4 workshop, 4 ascension, 4 school_office, 3 secret.
+- Condition DSL: `{ stat: string, op: ">=" | ">" | "==" | "<=" | "<", value: number }`.
+- Effects: `canvas_gold_pct`, `speed_pct`, `inspi_pct`, `paint_mastery_flat`.
+
+**Multipliers (`achievementMultipliers.ts`, commit `12c1d3a`)**
+- `getAchievementBonus(state, kind)` wired into `getCanvasGoldMultiplier`, `getCanvasSpeedMultiplier`, `getInspiMultiplier`.
+- `completedAchievements` made optional in the type signature — guards against partial-state stubs in tests (fix in `f58dac1`).
+- `CanvasMultiplierInputs` and `getInspiMultiplier` picks updated; `TreeRoute.tsx` was missing `completedAchievements` in its `helperState` (caught by code reviewer — would have been a runtime `TypeError`).
+
+**InfoPanel notification mode (commit `558f4a7`)**
+- `activeNotification !== null` takes priority over hover info for 5 s.
+- Rainbow title: `@keyframes notifRainbow` cycling `hsl(0°..360°, 80%, 65%)` — same technique as workshop rainbow caterpillar.
+- Body: `motion.div` with `animate={{ y: [0, -3, 0] }}`, 1.5 s ease-in-out loop.
+- FIFO drain: each notification gets its own 5 s window; simultaneous unlocks queue correctly.
+
+**Achievements tab (`AchievementsRoute`, commit `21f361d`)**
+- Completed-only grid (`repeat(auto-fill, minmax(64px, 1fr))`); hidden achievements absent from DOM.
+- 5 labeled category sections; chip filter bar (All + 5 categories).
+- Header: `N / total completed` + total PM earned from achievements.
+- Nav item added to `TopBar`.
+
+**`/dev/achievement-designer` (commit `9bdef69`)**
+- Left rail: achievement list + New button. Right form: id/name/description/icon/category, condition builder with live reactive stat value display, effects builder.
+- Test Fire: bypasses condition check, credits PM, pushes notification — tests the full pipeline without grinding.
+- Saves to `achievementsDesign.json` via `/__superpowers__/write-json`.
+- `liveStatValue` uses reactive `useGameStore` selector (not a snapshot); ID edit syncs `selected` state to prevent form disappearing.
+
+**SAVE_VERSION 17→18 (commit `6009542`)**
+- Migration seeds `statsLifetime`, `statsRun`, `completedAchievements: {}` for existing saves.
+- `activeNotification` and `notificationQueue` excluded from `partialize` (transient).
+
+**Test suite: all 857 tests green (commits `687ed39`, `f58dac1`, `a600e90`)**
+- Persistence integration tests updated for SAVE_VERSION 18.
+- `TopBar.test.tsx`: mocked `useMusic` (pre-existing jsdom crash) + updated nav count 4→5.
+- `getAchievementBonus`: `completedAchievements?.[id]` guard prevents crash on partial-state stubs.
+- **Bug fixed in `CurrencyChip` + `StarCanvas`:** `fameBody` was computing `Lifetime earned` from past runs only, excluding current fame balance. Fixed: `s.fame.add(pastTotal)`.
+- `FamePreviewCard`, `PastRunsLedger`, `TrackCard`, `WorkshopRoom`, `AscensionRoute` tests updated to match current component output (CurrencyAmount widget splits text across DOM nodes; button labels changed; affix format `$12%` not `$ 12%`).
+
+### Deployment
+
+- **Production URL:** https://artdle-web.vercel.app
+- **Deploy command:** `npx vercel --prod` — Vercel does NOT auto-deploy on git push from this repo; always run the command manually after pushing.
+- Latest deployment confirmed live with achievement system bundle (`index-DcNgzMnl.js`).
+
+### Lessons preserved
+
+- **`completedAchievements` must be `Record<string, true>` not `Set`** — Zustand's JSON-based persist middleware cannot serialize `Set`. `has()` → `[id]` truthiness check is equivalent.
+- **Timer leaks in FIFO notification queues:** store the `setTimeout` handle at module level and call `clearTimeout` before each new timer. Multiple rapid unlocks otherwise produce stale timers that fire against the wrong notification.
+- **Multi-element text assertions in RTL:** `CurrencyAmount` splits numbers and icons into separate DOM nodes. Use `container.textContent` for cross-element assertions; `getByText` only works for elements whose full text content matches.
+- **TypeScript structural widening can hide missing required fields:** `TreeRoute`'s `helperState` passed to `getInspiMultiplier` was missing `completedAchievements`. TypeScript did not catch it because the type widened structurally. Code review caught it; would have been a runtime `TypeError`.
+
+### Next
+
+- Goldsmith class node (`gold_diggers`) playtest: still pending browser verification (no code change expected).
+- Chip-strip spacing for 6-stage tree chips (deferred).
+- Combo chance soft cap (same treatment as crit) if playtesting shows it trivially maxes.
+- **Lab / pigment hatchery** — brainstorm notes in `docs/superpowers/specs/2026-05-17-lab-pigment-hatchery-notes.md`. 5 open questions remain (simultaneous breeds, unlock gate, consume formula, balance parameters, T1 type count) before design can start.
+- Balance pass on achievement PM rewards and multiplier values (deferred — designer tool ready for iteration).
+
+---
+
 ## Type narrowing + test repair (2026-05-15)
 
 ### What landed
