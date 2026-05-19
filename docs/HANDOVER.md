@@ -1,5 +1,45 @@
 # Artdle Web — Handover
 
+## Achievement craft→game pipeline + rainbow unlock toast (2026-05-19)
+
+### What landed
+
+**Commit `c6802cd` — achievement designer pipeline + designer UX**
+
+- **`/dev/achievement-designer` condition field is now plain text.** Raw text is the persisted source of truth (`conditionText`, ephemeral — stripped on save like effect ids, ignored by `migrateAchievement` unless present), parsed best-effort into the structured `{stat,op,value}`. Never reverts on blur/re-render. `ConditionInput` is fully controlled; invalid text shows a red border but is kept. (`types.ts`, `storage.ts`, `api.ts`, `AchievementDesignerRoute.tsx`/`.module.css`).
+- **Save endpoint added.** `/api/achievement-design` Vite middleware in `vite.config.ts` (mirrors the skill/school writers). Previously the achievement designer POSTed to a non-existent `/__superpowers__/write-json` → every "Save to file" 404'd silently → file never updated. **Requires dev-server restart after pulling** (vite.config change).
+- **File is source of truth on load.** `useAchievementDesignerState` now `useState(() => loadFileBaseline())` — the localStorage draft no longer overrides the file. Draft still auto-saves. This was a user-approved decision: stale drafts were silently reverting out-of-band wiring (and earlier caused a 219→1 data loss). Skill/school designers left unchanged.
+- **One-char-at-a-time id input fixed** — achievement cards key by index, not the editable `ach.id`.
+- **Shared `DevTabBar`** (`src/dev/DevTabBar.tsx`/`.module.css`) across skill/school/achievement designers (tabs persist on every designer page; active-tab underline).
+- **Skill designer theming** — `.layout` overrides the game design tokens (`--mono/--sans/--serif`, `--bg-*`, `--ink-*`, `--border-subtle`) to a system-font grey palette so it visually matches school/achievement (was rendering the game's Silkscreen/purple theme via shared CSS vars). ActionBar usage replaced with an inline topBar.
+
+**Achievement wiring (the craft→game loop)**
+
+- New synthetic stat in `resolveStatValue` (`achievementSlice.ts`): `audio.musicVolumePct` reads localStorage mirroring `useMusic.ts` defaults (absent volume → 20, muted → 0). Convention: `audio.*` stats are localStorage side-channels.
+- `Sound_Blasting` gated on `audio.musicVolumePct >= 100`, grants `inspi_pct 0.1` (feeds `getInspiMultiplier`). Verified: fresh game = 20 (no unlock), maxed = 100 (unlocks).
+- Engine tests decoupled from the mutable design config via `vi.mock("@/config/achievementConfig", …)` in `tests/store/achievementSlice.test.ts` and `tests/core/achievementMultipliers.test.ts` — editing `achievementsDesign.json` can no longer break them.
+
+**⚠️ Data note:** `src/config/achievementsDesign.json` was **intentionally reduced to the single `Sound_Blasting` achievement** per explicit user decision this session. The prior ~21-achievement set remains in git history (pre-`c6802cd`). Restore from history if the full set is wanted.
+
+**Commit `b8daa13` — rainbow achievement-unlock toast**
+
+- New `AchievementToast` overlay (`src/components/shell/AchievementToast.tsx`/`.module.css`), fixed top-right, mounted in `App.tsx`. Spring slide-in from the corner (vertical), ~5s hold (existing store `clearNotification` timer), exit collapses/folds back into the top-right corner (`transform-origin: top right`).
+- Animated conic-gradient rainbow border (`@property --rb-angle` spin) + one-shot entry sheen; honors `prefers-reduced-motion`. Shows icon, name, and a rainbow category pill.
+- `category` added to `AchievementNotification` (populated in `evaluateAchievements`).
+- `InfoPanel` reverted to hover-only (notification no longer double-displayed); dead `notifRainbow`/`.notificationTitle` CSS removed.
+
+### Status
+
+- **848 tests green**, tsc clean.
+- Both commits pushed (`master` → `b8daa13`) and deployed to production (https://artdle-web.vercel.app); new bundles verified live (grepped `musicVolumePct`, then `Achievement Unlocked`).
+- Untracked, intentionally not committed: `.mcp.json`, `docs/superpowers/plans/2026-05-17-achievement-system.md`.
+
+### Workflow note
+
+Achievement loop is now: **user crafts the shell** (name/icon/category/description, placeholder condition) in the designer and saves; **agent translates the description's intent** into the real condition/effects and adds any new synthetic stat to `resolveStatValue`. Reusing existing stats (`lifetime.*`, `run.*`) + existing effect kinds (`paint_mastery_flat`, `canvas_gold_pct`, `speed_pct`, `inspi_pct`) needs zero code.
+
+---
+
 ## Reshape A — panel bugs fixed + dead PM drip code deleted (2026-05-18)
 
 ### What landed
