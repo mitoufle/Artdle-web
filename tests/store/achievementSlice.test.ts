@@ -1,5 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create } from "zustand";
+
+// Engine tests must not depend on the mutable design config
+// (src/config/achievementsDesign.json — edited via the achievement designer).
+// Mock a stable fixture so these test the evaluation engine, not the data.
+vi.mock("@/config/achievementConfig", () => ({
+  ACHIEVEMENTS: [
+    {
+      id: "first_canvas",
+      name: "First Canvas",
+      description: "",
+      icon: "🖼️",
+      category: "canvas",
+      condition: { stat: "lifetime.canvasesSold", op: ">=", value: 1 },
+      effects: [{ kind: "paint_mastery_flat", value: 5 }],
+    },
+    {
+      id: "canvas_hundred",
+      name: "Hundred Canvases",
+      description: "",
+      icon: "💯",
+      category: "canvas",
+      condition: { stat: "lifetime.canvasesSold", op: ">=", value: 100 },
+      effects: [{ kind: "canvas_gold_pct", value: 0.1 }],
+    },
+  ],
+}));
+
 import { createAchievementSlice, type AchievementSlice } from "@/store/achievementSlice";
 import { big } from "@/core/bigNumber";
 

@@ -4,7 +4,7 @@
   height: 100vh;
   background: #111827;
   color: #e5e7eb;
-  font-family: monospace;
+  font-family: system-ui, sans-serif;
 }
 
 .topBar {

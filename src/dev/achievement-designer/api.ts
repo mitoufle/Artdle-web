@@ -5,8 +5,8 @@ export interface SaveResult {
   error?: string;
 }
 
-function stripEffectIds(design: DesignFile): unknown {
-  return design.map((a) => ({
+function stripEphemeral(design: DesignFile): unknown {
+  return design.map(({ conditionText: _drop, ...a }) => ({
     ...a,
     effects: a.effects.map(({ kind, value }) => ({ kind, value })),
   }));
@@ -14,10 +14,10 @@ function stripEffectIds(design: DesignFile): unknown {
 
 export async function saveToFile(design: DesignFile): Promise<SaveResult> {
   try {
-    const res = await fetch("/__superpowers__/write-json", {
+    const res = await fetch("/api/achievement-design", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "src/config/achievementsDesign.json", data: stripEffectIds(design) }),
+      body: JSON.stringify(stripEphemeral(design)),
     });
     return { ok: res.ok };
   } catch (e) {

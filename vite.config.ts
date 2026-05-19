@@ -76,8 +76,41 @@ const schoolDesignWriterPlugin = {
   },
 };
 
+const achievementDesignWriterPlugin = {
+  name: "artdle-achievement-design-writer",
+  configureServer(server: any) {
+    server.middlewares.use(
+      "/api/achievement-design",
+      async (req: any, res: any, next: any) => {
+        if (req.method !== "POST") return next();
+        try {
+          const chunks: Buffer[] = [];
+          for await (const chunk of req) chunks.push(chunk);
+          const body = Buffer.concat(chunks).toString("utf-8");
+          const parsed = JSON.parse(body);
+          if (!Array.isArray(parsed)) {
+            res.statusCode = 400;
+            res.setHeader("content-type", "application/json");
+            res.end(JSON.stringify({ ok: false, error: "Expected array" }));
+            return;
+          }
+          const target = path.resolve(__dirname, "src/config/achievementsDesign.json");
+          await fs.writeFile(target, JSON.stringify(parsed, null, 2), "utf-8");
+          res.statusCode = 200;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+          res.statusCode = 500;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ ok: false, error: String(e) }));
+        }
+      },
+    );
+  },
+};
+
 export default defineConfig({
-  plugins: [react(), skillDesignWriterPlugin, schoolDesignWriterPlugin],
+  plugins: [react(), skillDesignWriterPlugin, schoolDesignWriterPlugin, achievementDesignWriterPlugin],
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },
   },

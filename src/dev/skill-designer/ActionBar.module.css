@@ -27,7 +27,7 @@
 .primary {
   border: 1px solid var(--gold);
   background: var(--gold);
-  color: var(--bg-0);
+  color: #c4b5fd;
 }
 
 .secondary {

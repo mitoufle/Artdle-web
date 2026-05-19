@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { DesignFile, DesignAchievement, DesignEffect } from "./types";
 import { EMPTY_DESIGN } from "./types";
-import { loadDraft, saveDraft, clearDraft, migrateDesign, uuid } from "./storage";
+import { saveDraft, clearDraft, migrateDesign, uuid } from "./storage";
 import rawAchievements from "@/config/achievementsDesign.json";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -27,9 +27,10 @@ function loadFileBaseline(): DesignFile {
 }
 
 export function useAchievementDesignerState(): AchievementDesignerState {
-  const [design, setDesign] = useState<DesignFile>(
-    () => loadDraft() ?? loadFileBaseline(),
-  );
+  // File is the source of truth. The draft still auto-saves (crash recovery)
+  // but never overrides the file on load — prevents stale drafts silently
+  // reverting changes wired into achievementsDesign.json out-of-band.
+  const [design, setDesign] = useState<DesignFile>(() => loadFileBaseline());
   const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {

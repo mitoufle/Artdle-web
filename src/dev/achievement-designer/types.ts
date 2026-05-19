@@ -20,6 +20,10 @@ export interface DesignAchievement {
   icon: string;
   category: AchievementCategory;
   condition: DesignCondition;
+  // Raw text the designer typed for the condition. Source of truth for the
+  // input field; parsed best-effort into `condition`. Ephemeral — stripped
+  // before saving to the config JSON (like DesignEffect.id).
+  conditionText?: string;
   effects: ReadonlyArray<DesignEffect>;
 }
 

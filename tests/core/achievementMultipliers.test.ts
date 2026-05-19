@@ -1,4 +1,20 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// Decouple from the mutable design config (edited via the achievement designer).
+vi.mock("@/config/achievementConfig", () => ({
+  ACHIEVEMENTS: [
+    { id: "first_canvas", name: "", description: "", icon: "", category: "canvas",
+      condition: { stat: "lifetime.canvasesSold", op: ">=", value: 1 },
+      effects: [{ kind: "paint_mastery_flat", value: 5 }] },
+    { id: "canvas_thousand", name: "", description: "", icon: "", category: "canvas",
+      condition: { stat: "lifetime.canvasesSold", op: ">=", value: 1000 },
+      effects: [{ kind: "canvas_gold_pct", value: 0.05 }] },
+    { id: "craft_fifty", name: "", description: "", icon: "", category: "workshop",
+      condition: { stat: "lifetime.workshopItemsCrafted", op: ">=", value: 50 },
+      effects: [{ kind: "canvas_gold_pct", value: 0.05 }] },
+  ],
+}));
+
 import { getAchievementBonus } from "@/core/achievementMultipliers";
 
 const baseState = {

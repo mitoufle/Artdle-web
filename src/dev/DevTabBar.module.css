@@ -1,0 +1,23 @@
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid #374151;
+  background: #1f2937;
+  flex-shrink: 0;
+}
+
+.tab {
+  color: #9ca3af;
+  font-size: 12px;
+  font-family: system-ui, sans-serif;
+  text-decoration: none;
+  padding: 6px 16px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover { color: #e5e7eb; }
+
+.tabActive {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}

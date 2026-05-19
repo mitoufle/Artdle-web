@@ -40,7 +40,8 @@ describe("<SchoolDesignerRoute />", () => {
 
   it("renders the top bar with title and save button", () => {
     renderWithRouter();
-    expect(screen.getByText(/school designer/i)).toBeInTheDocument();
+    // Title <span>, disambiguated from the DevTabBar's "School Designer" <a> tab.
+    expect(screen.getByText(/school designer/i, { selector: "span" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /save to file/i })).toBeInTheDocument();
   });
 

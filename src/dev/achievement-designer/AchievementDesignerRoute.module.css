@@ -4,7 +4,7 @@
   height: 100vh;
   background: #111827;
   color: #e5e7eb;
-  font-family: monospace;
+  font-family: system-ui, sans-serif;
 }
 
 .topBar {
@@ -110,11 +110,13 @@
   font-family: monospace;
 }
 
-.inputIcon { width: 36px; text-align: center; font-size: 14px; }
-.inputId   { width: 180px; }
-.inputName { flex: 1; }
-.inputDesc { flex: 1; color: #9ca3af; }
-.inputNum  { width: 80px; }
+.inputIcon      { width: 36px; text-align: center; font-size: 14px; }
+.inputId        { width: 180px; }
+.inputName      { flex: 1; }
+.inputDesc      { flex: 1; color: #9ca3af; }
+.inputNum       { width: 80px; }
+.inputCondition { flex: 1; }
+.inputInvalid   { border-color: #ef4444; }
 
 .select {
   background: #111827;

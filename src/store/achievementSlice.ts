@@ -29,6 +29,17 @@ const initialAchievementState: AchievementState = {
 };
 
 function resolveStatValue(state: GameStore, stat: string): number {
+  // `audio.*` stats read from localStorage, mirroring useMusic.ts (music
+  // volume/mute are not in the game store). Defaults match loadVolume/loadMuted.
+  if (stat.startsWith("audio.")) {
+    if (typeof localStorage === "undefined") return 0;
+    if (stat === "audio.musicVolumePct") {
+      if (localStorage.getItem("artdle-music-muted") === "true") return 0;
+      const v = parseFloat(localStorage.getItem("artdle-music-volume") ?? "0.2");
+      return (isNaN(v) ? 0.2 : Math.max(0, Math.min(1, v))) * 100;
+    }
+    return 0;
+  }
   if (stat === "lifetime.goldEarned") return state.lifetimeGold.toNumber();
   if (stat === "lifetime.ascensions") return state.ascendCount;
   if (stat.startsWith("lifetime.")) {

@@ -1,10 +1,10 @@
 import type { JSX } from "react";
 import { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
 import { useAchievementDesignerState } from "./useAchievementDesignerState";
+import { DevTabBar } from "../DevTabBar";
 import { saveToFile } from "./api";
 import { uuid } from "./storage";
-import type { DesignEffect } from "./types";
+import type { DesignEffect, DesignCondition, AchievementOp } from "./types";
 import styles from "./AchievementDesignerRoute.module.css";
 
 type Status = "saved" | "dirty" | "saving";
@@ -16,29 +16,39 @@ const KNOWN_EFFECT_KINDS = [
   "inspi_pct",
 ];
 
-const KNOWN_STATS = [
-  "lifetime.canvasesSold",
-  "lifetime.critsLanded",
-  "lifetime.maxComboChain",
-  "lifetime.workshopItemsCrafted",
-  "lifetime.workshopItemsFused",
-  "lifetime.schoolResearchesCompleted",
-  "lifetime.schoolTiersPassed",
-  "lifetime.officeWorkersHired",
-  "lifetime.goldEarned",
-  "lifetime.ascensions",
-  "run.canvasesSold",
-  "run.critsLanded",
-  "run.currentCritStreak",
-  "run.maxCritStreak",
-  "run.maxComboChain",
-  "run.goldEarned",
-  "run.workshopItemsCrafted",
-  "run.schoolResearchesCompleted",
-];
-
 const CATEGORIES = ["canvas", "workshop", "ascension", "school_office", "secret"] as const;
-const OPS = [">=", ">", "==", "<=", "<"] as const;
+
+const CONDITION_RE = /^(.+?)\s*(>=|<=|==|>|<)\s*(-?\d+(?:\.\d+)?)$/;
+
+function formatCondition(c: DesignCondition): string {
+  return `${c.stat} ${c.op} ${c.value}`;
+}
+
+function parseCondition(text: string): DesignCondition | null {
+  const m = text.trim().match(CONDITION_RE);
+  if (!m) return null;
+  return { stat: m[1].trim(), op: m[2] as AchievementOp, value: Number(m[3]) };
+}
+
+// Fully controlled. `value` is the raw text the designer typed (the source of
+// truth, persisted in the design model). It never reverts on blur or re-render.
+function ConditionInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (text: string, parsed: DesignCondition | null) => void;
+}): JSX.Element {
+  const valid = parseCondition(value) !== null;
+  return (
+    <input
+      className={`${styles.input} ${styles.inputCondition}${valid ? "" : ` ${styles.inputInvalid}`}`}
+      value={value}
+      placeholder="stat >= value  (e.g. lifetime.canvasesSold >= 10)"
+      onChange={(e) => onChange(e.target.value, parseCondition(e.target.value))}
+    />
+  );
+}
 
 export function AchievementDesignerRoute(): JSX.Element {
   const { design, actions } = useAchievementDesignerState();
@@ -80,13 +90,12 @@ export function AchievementDesignerRoute(): JSX.Element {
         >
           Reset
         </button>
-        <Link className={styles.link} to="/dev/school-designer">→ School</Link>
-        <Link className={styles.link} to="/tree">← Game</Link>
       </div>
+      <DevTabBar />
 
       <div className={styles.content}>
-        {design.map((ach) => (
-          <div key={ach.id} className={styles.card}>
+        {design.map((ach, i) => (
+          <div key={i} className={styles.card}>
             <div className={styles.cardHeader}>
               <input
                 className={`${styles.input} ${styles.inputIcon}`}
@@ -134,25 +143,15 @@ export function AchievementDesignerRoute(): JSX.Element {
 
             <div className={styles.conditionRow}>
               <span className={styles.conditionLabel}>if</span>
-              <select
-                className={`${styles.select} ${styles.selectStat}`}
-                value={ach.condition.stat}
-                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { condition: { ...ach.condition, stat: e.target.value } }); }}
-              >
-                {KNOWN_STATS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <select
-                className={`${styles.select} ${styles.selectOp}`}
-                value={ach.condition.op}
-                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { condition: { ...ach.condition, op: e.target.value as typeof ach.condition.op } }); }}
-              >
-                {OPS.map((op) => <option key={op} value={op}>{op}</option>)}
-              </select>
-              <input
-                className={`${styles.input} ${styles.inputNum}`}
-                type="number"
-                value={ach.condition.value}
-                onChange={(e) => { markDirty(); actions.updateAchievement(ach.id, { condition: { ...ach.condition, value: Number(e.target.value) } }); }}
+              <ConditionInput
+                value={ach.conditionText ?? formatCondition(ach.condition)}
+                onChange={(text, parsed) => {
+                  markDirty();
+                  actions.updateAchievement(ach.id, {
+                    conditionText: text,
+                    ...(parsed ? { condition: parsed } : {}),
+                  });
+                }}
               />
             </div>
 

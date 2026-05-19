@@ -42,6 +42,7 @@ function migrateAchievement(a: unknown): DesignAchievement {
       ? (ach.category as DesignAchievement["category"])
       : "canvas",
     condition: migrateCondition(ach.condition ?? {}),
+    ...(typeof ach.conditionText === "string" ? { conditionText: ach.conditionText } : {}),
     effects: Array.isArray(ach.effects) ? ach.effects.map(migrateEffect) : [],
   };
 }

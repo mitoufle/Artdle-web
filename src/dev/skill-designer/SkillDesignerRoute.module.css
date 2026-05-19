@@ -2,24 +2,73 @@
   display: grid;
   grid-template-rows: auto auto 1fr;
   height: 100vh;
-  background: var(--bg-0);
-  color: var(--ink-1);
+  background: #111827;
+  color: #e5e7eb;
+  font-family: system-ui, sans-serif;
+  --mono:         ui-monospace, 'Courier New', monospace;
+  --sans:         system-ui, sans-serif;
+  --serif:        system-ui, sans-serif;
+  --bg-0:         #111827;
+  --bg-1:         #1f2937;
+  --bg-2:         #374151;
+  --ink-0:        #e5e7eb;
+  --ink-1:        #e5e7eb;
+  --ink-2:        #9ca3af;
+  --ink-3:        #6b7280;
+  --ink-line:     #374151;
+  --border-subtle: 1px solid #374151;
 }
 
-.devLink {
-  padding: 4px 8px;
-  border-bottom: 1px solid #374151;
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
   background: #1f2937;
+  border-bottom: 1px solid #374151;
+  flex-shrink: 0;
 }
 
-.devLinkAnchor {
-  color: #60a5fa;
+.title {
+  color: #a78bfa;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.statusSaved  { color: #34d399; font-size: 12px; }
+.statusDirty  { color: #fbbf24; font-size: 12px; }
+.statusSaving { color: #60a5fa; font-size: 12px; }
+
+.issues { color: #fbbf24; font-size: 12px; }
+
+.btn {
+  background: #374151;
+  color: #e5e7eb;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 12px;
   font-size: 12px;
-  text-decoration: none;
-  padding: 4px 8px;
+  cursor: pointer;
 }
 
-.devLinkAnchor:hover { text-decoration: underline; }
+.btn:hover { background: #4b5563; }
+
+.btnPrimary { background: #4c1d95; color: #c4b5fd; }
+.btnPrimary:hover { background: #5b21b6; }
+
+.btnDanger {
+  background: transparent;
+  color: #f87171;
+  border: 1px solid #f87171;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btnDanger:hover { background: #3b1212; }
+
+.confirmPrompt { color: #fbbf24; font-size: 12px; }
 
 .panes {
   display: grid;

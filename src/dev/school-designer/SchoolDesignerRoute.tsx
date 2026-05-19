@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
 import { useSchoolDesignerState } from "./useSchoolDesignerState";
+import { DevTabBar } from "../DevTabBar";
 import { saveToFile } from "./api";
 import { uuid } from "./storage";
 import type { DesignResearchEffect } from "./types";
@@ -61,8 +61,8 @@ export function SchoolDesignerRoute(): JSX.Element {
         >
           Reset
         </button>
-        <Link className={styles.link} to="/dev/skill-designer">→ Skill Designer</Link>
       </div>
+      <DevTabBar />
 
       <div className={styles.content}>
         {design.map((tier) => (
