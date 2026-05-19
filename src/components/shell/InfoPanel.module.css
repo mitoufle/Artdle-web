@@ -60,19 +60,3 @@
   letter-spacing: 0.05em;
   opacity: 0.4;
 }
-
-@keyframes notifRainbow {
-  0%   { color: hsl(0,   80%, 65%); }
-  14%  { color: hsl(50,  80%, 65%); }
-  28%  { color: hsl(100, 80%, 65%); }
-  42%  { color: hsl(150, 80%, 65%); }
-  57%  { color: hsl(200, 80%, 65%); }
-  71%  { color: hsl(260, 80%, 65%); }
-  85%  { color: hsl(310, 80%, 65%); }
-  100% { color: hsl(360, 80%, 65%); }
-}
-
-.notificationTitle {
-  animation: notifRainbow 2s linear infinite;
-  font-weight: 700;
-}

@@ -1,0 +1,156 @@
+@property --rb-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.anchor {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.card {
+  position: relative;
+  min-width: 280px;
+  max-width: 380px;
+  padding: 16px 22px 18px;
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(155, 108, 214, 0.18), transparent 60%),
+    var(--bg-1);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.55),
+    0 0 28px rgba(155, 108, 214, 0.35);
+  backdrop-filter: blur(2px);
+  overflow: hidden;
+}
+
+/* Animated rainbow border via masked conic-gradient ring. */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2.5px;
+  background: conic-gradient(
+    from var(--rb-angle),
+    #ff0040, #ff8a00, #ffe600, #00ff66,
+    #00d4ff, #7a5cff, #ff00c8, #ff0040
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: rbSpin 2.4s linear infinite;
+  pointer-events: none;
+}
+
+/* Soft inner sheen sweeping across once on entry. */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  animation: rbSheen 1.1s ease-out 0.15s 1 both;
+  pointer-events: none;
+}
+
+@keyframes rbSpin {
+  to { --rb-angle: 360deg; }
+}
+
+@keyframes rbSheen {
+  to { transform: translateX(120%); }
+}
+
+.eyebrow {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 12px;
+  animation: rbHue 2s linear infinite;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  font-size: 30px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink-0);
+  letter-spacing: 0.01em;
+}
+
+.category {
+  align-self: flex-start;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bg-0);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffe600, #00ff66, #00d4ff, #7a5cff, #ff00c8);
+  background-size: 300% 100%;
+  animation: rbShift 3s linear infinite;
+}
+
+@keyframes rbHue {
+  0%   { color: hsl(0,   85%, 68%); }
+  25%  { color: hsl(90,  85%, 68%); }
+  50%  { color: hsl(180, 85%, 68%); }
+  75%  { color: hsl(270, 85%, 68%); }
+  100% { color: hsl(360, 85%, 68%); }
+}
+
+@keyframes rbShift {
+  0%   { background-position: 0% 0; }
+  100% { background-position: 300% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card::before { animation: none; }
+  .card::after { animation: none; opacity: 0; }
+  .eyebrow, .category { animation: none; }
+}
