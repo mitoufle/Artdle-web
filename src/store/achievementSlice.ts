@@ -48,6 +48,8 @@ function resolveStatValue(state: GameStore, stat: string): number {
   if (stat === "lifetime.goldgain") return state.lifetimeGold.toNumber();
   if (stat === "lifetime.inspirationgain") return state.lifetimeInspiration.toNumber();
   if (stat === "lifetime.ascensions") return state.ascendCount;
+  // Tree tier displayed in the UI is 1-indexed (Tier 1 = Tiny Sprout = stage 0).
+  if (stat === "tree.tier") return state.currentStage + 1;
   if (stat.startsWith("lifetime.")) {
     const key = stat.slice("lifetime.".length);
     return (state.statsLifetime as Record<string, number>)[key] ?? 0;

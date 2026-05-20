@@ -9,7 +9,13 @@ export interface AchievementEffect {
   value: number;
 }
 
-export type AchievementCategory = "canvas" | "workshop" | "ascension" | "school_office" | "secret";
+export type AchievementCategory =
+  | "canvas"
+  | "workshop"
+  | "ascension"
+  | "school_office"
+  | "secret"
+  | "inspiration";
 
 export interface Achievement {
   id: string;
@@ -46,7 +52,7 @@ export const ACHIEVEMENTS: ReadonlyArray<Achievement> = [
   {
     id: "Piggy_bank",
     name: "Piggy Bank",
-    description: "Increases gold gain when player reaches a set lifetime gold acquired threshold",
+    description: "Increases gold gain when player reaches 1K lifetime gold acquired",
     icon: "🐽",
     category: "canvas",
     condition: { stat: "lifetime.goldgain", op: ">=", value: 1000 },
@@ -55,7 +61,7 @@ export const ACHIEVEMENTS: ReadonlyArray<Achievement> = [
   {
     id: "Millionaire",
     name: "Millionaire",
-    description: "Increases gold gain when player reaches a set lifetime gold acquired threshold",
+    description: "Increases gold gain when player reaches 1M lifetime gold acquired",
     icon: "💰",
     category: "canvas",
     condition: { stat: "lifetime.goldgain", op: ">=", value: 1_000_000 },
@@ -64,19 +70,46 @@ export const ACHIEVEMENTS: ReadonlyArray<Achievement> = [
   {
     id: "Nerbard_alnaurt",
     name: "Nerbard Alnaurt",
-    description: "Increases gold gain when player reaches a set lifetime gold acquired threshold",
+    description: "Increases gold gain when player reaches 1B lifetime gold acquired",
     icon: "🤑",
     category: "canvas",
     condition: { stat: "lifetime.goldgain", op: ">=", value: 1_000_000_000 },
     effects: [{ kind: "canvas_gold_pct", value: 0.25 }],
   },
   {
-    id: "psychedelic_enjoyer",
-    name: "psychedelic_enjoyer",
-    description: "Increases inspiration gain when player reaches a set lifetime inspiration acquired threshold",
+    id: "Psychedelic_enjoyer",
+    name: "Psychedelic Enjoyer",
+    description: "Increases inspiration gain when player reaches 1K lifetime inspiration acquired",
     icon: "🌿",
-    category: "canvas",
+    category: "inspiration",
     condition: { stat: "lifetime.inspirationgain", op: ">=", value: 1000 },
     effects: [{ kind: "inspi_pct", value: 0.15 }],
+  },
+  {
+    id: "T2",
+    name: "Tier 2",
+    description: "increases gold gain upon reaching Tier 2 Tree",
+    icon: "2️⃣",
+    category: "inspiration",
+    condition: { stat: "tree.tier", op: ">=", value: 2 },
+    effects: [{ kind: "canvas_gold_pct", value: 1 }],
+  },
+  {
+    id: "T3",
+    name: "Tier 3",
+    description: "increases gold gain upon reaching Tier 3 Tree",
+    icon: "3️⃣",
+    category: "inspiration",
+    condition: { stat: "tree.tier", op: ">=", value: 3 },
+    effects: [{ kind: "canvas_gold_pct", value: 1 }],
+  },
+  {
+    id: "T4",
+    name: "Tier 4",
+    description: "increases gold gain upon reaching Tier 4 Tree",
+    icon: "4️⃣",
+    category: "inspiration",
+    condition: { stat: "tree.tier", op: ">=", value: 4 },
+    effects: [{ kind: "canvas_gold_pct", value: 1 }],
   },
 ];

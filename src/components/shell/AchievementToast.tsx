@@ -10,6 +10,7 @@ const CATEGORY_LABEL: Record<AchievementCategory, string> = {
   ascension: "Ascension",
   school_office: "School & Office",
   secret: "Secret",
+  inspiration: "Inspiration",
 };
 
 export function AchievementToast(): JSX.Element {

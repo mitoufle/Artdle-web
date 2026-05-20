@@ -42,6 +42,15 @@ vi.mock("@/config/achievementConfig", () => ({
       condition: { stat: "lifetime.inspirationgain", op: ">=", value: 1000 },
       effects: [{ kind: "inspi_pct", value: 0.15 }],
     },
+    {
+      id: "tier_two_test",
+      name: "Tier Two Test",
+      description: "",
+      icon: "2️⃣",
+      category: "inspiration",
+      condition: { stat: "tree.tier", op: ">=", value: 2 },
+      effects: [{ kind: "canvas_gold_pct", value: 1 }],
+    },
   ],
 }));
 
@@ -57,6 +66,7 @@ type TestStore = AchievementSlice & {
   lifetimeGold: ReturnType<typeof big>;
   lifetimeInspiration: ReturnType<typeof big>;
   ascendCount: number;
+  currentStage: number;
   addPaintMastery: (amount: ReturnType<typeof big>) => void;
 };
 
@@ -68,6 +78,7 @@ function makeStore(overrides: Partial<TestStore> = {}) {
     lifetimeGold: big(0),
     lifetimeInspiration: big(0),
     ascendCount: 0,
+    currentStage: 0,
     addPaintMastery: (amount) => set((s) => ({ paintMastery: s.paintMastery.add(amount) })),
     ...createAchievementSlice(set as never, get as never, store as never),
     ...overrides,
@@ -143,6 +154,19 @@ describe("evaluateAchievements", () => {
     const store = makeStore({ lifetimeInspiration: big(999) } as Partial<TestStore>);
     store.getState().evaluateAchievements();
     expect(store.getState().completedAchievements["psychedelic_test"]).toBeUndefined();
+  });
+
+  it("resolves tree.tier as currentStage + 1 (1-indexed) and fires when reached", () => {
+    // currentStage 1 (Bud) → tier 2 → tier_two_test condition (tree.tier >= 2) met
+    const store = makeStore({ currentStage: 1 } as Partial<TestStore>);
+    store.getState().evaluateAchievements();
+    expect(store.getState().completedAchievements["tier_two_test"]).toBe(true);
+  });
+
+  it("does not fire tier_two_test at currentStage 0 (tier 1)", () => {
+    const store = makeStore({ currentStage: 0 } as Partial<TestStore>);
+    store.getState().evaluateAchievements();
+    expect(store.getState().completedAchievements["tier_two_test"]).toBeUndefined();
   });
 
   it("FIFO: multiple unlocks drain queue in order", () => {

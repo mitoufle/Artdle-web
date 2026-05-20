@@ -5,7 +5,9 @@ import type { DesignAchievement, DesignCondition, AchievementOp } from "./types"
 import { KNOWN_EFFECT_KINDS } from "./types";
 import styles from "./AchievementDesignerRoute.module.css";
 
-const CONDITION_RE = /^(.+?)\s*(>=|<=|==|>|<)\s*(-?\d+(?:\.\d+)?)$/;
+// Accept `=` as a synonym for `==` so condition text like `tree.tier = 2`
+// parses correctly. The parser normalizes to `==` for storage.
+const CONDITION_RE = /^(.+?)\s*(>=|<=|==|=|>|<)\s*(-?\d+(?:\.\d+)?)$/;
 
 function formatCondition(c: DesignCondition): string {
   return `${c.stat} ${c.op} ${c.value}`;
@@ -14,7 +16,9 @@ function formatCondition(c: DesignCondition): string {
 function parseCondition(text: string): DesignCondition | null {
   const m = text.trim().match(CONDITION_RE);
   if (!m) return null;
-  return { stat: m[1]!.trim(), op: m[2]! as AchievementOp, value: Number(m[3]!) };
+  const rawOp = m[2]!;
+  const op: AchievementOp = rawOp === "=" ? "==" : (rawOp as AchievementOp);
+  return { stat: m[1]!.trim(), op, value: Number(m[3]!) };
 }
 
 function ConditionInput({

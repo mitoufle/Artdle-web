@@ -10,6 +10,7 @@ const CATEGORIES: { id: AchievementCategory; label: string }[] = [
   { id: "workshop",      label: "Workshop" },
   { id: "ascension",     label: "Ascension" },
   { id: "school_office", label: "School & Office" },
+  { id: "inspiration",   label: "Inspiration" },
   { id: "secret",        label: "Secrets" },
 ];
 

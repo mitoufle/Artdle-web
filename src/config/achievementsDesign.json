@@ -74,9 +74,9 @@
   {
     "id": "Psychedelic_enjoyer",
     "name": "Psychedelic Enjoyer",
-    "description": "Increases inspiration gain when player reaches a set lifetime inspiration acquired threshold",
+    "description": "Increases inspiration gain when player reaches 1K lifetime inspiration acquired",
     "icon": "🌿",
-    "category": "canvas",
+    "category": "inspiration",
     "condition": {
       "stat": "lifetime.inspirationgain",
       "op": ">=",
@@ -86,6 +86,60 @@
       {
         "kind": "inspi_pct",
         "value": 0.15
+      }
+    ]
+  },
+  {
+    "id": "T2",
+    "name": "Tier 2",
+    "description": "increases gold gain upon reaching Tier 2 Tree",
+    "icon": "2️⃣",
+    "category": "inspiration",
+    "condition": {
+      "stat": "tree.tier",
+      "op": ">=",
+      "value": 2
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 1
+      }
+    ]
+  },
+  {
+    "id": "T3",
+    "name": "Tier 3",
+    "description": "increases gold gain upon reaching Tier 3 Tree",
+    "icon": "3️⃣",
+    "category": "inspiration",
+    "condition": {
+      "stat": "tree.tier",
+      "op": ">=",
+      "value": 3
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 1
+      }
+    ]
+  },
+  {
+    "id": "T4",
+    "name": "Tier 4",
+    "description": "increases gold gain upon reaching Tier 4 Tree",
+    "icon": "4️⃣",
+    "category": "inspiration",
+    "condition": {
+      "stat": "tree.tier",
+      "op": ">=",
+      "value": 4
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 1
       }
     ]
   }
