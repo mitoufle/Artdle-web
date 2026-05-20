@@ -5,6 +5,7 @@ import type { DesignAchievement, DesignFile } from "@/dev/achievement-designer/t
 function ach(id: string, category: DesignAchievement["category"]): DesignAchievement {
   return {
     id,
+    _stableKey: id,
     name: id,
     description: "",
     icon: "",

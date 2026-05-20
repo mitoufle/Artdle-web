@@ -6,7 +6,7 @@ export interface SaveResult {
 }
 
 function stripEphemeral(design: DesignFile): unknown {
-  return design.map(({ conditionText: _drop, ...a }) => ({
+  return design.map(({ conditionText: _ct, _stableKey: _sk, ...a }) => ({
     ...a,
     effects: a.effects.map(({ kind, value }) => ({ kind, value })),
   }));

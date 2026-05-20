@@ -42,15 +42,15 @@ export function AchievementDesignerRoute(): JSX.Element {
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    const activeAch = design.find((a) => a.id === activeId);
-    const overAch = design.find((a) => a.id === overId);
+    const activeKey = String(active.id);
+    const overKey = String(over.id);
+    const activeAch = design.find((a) => a._stableKey === activeKey);
+    const overAch = design.find((a) => a._stableKey === overKey);
     if (!activeAch || !overAch) return;
     if (activeAch.category !== overAch.category) return;
-    const toIndex = design.findIndex((a) => a.id === overId);
+    const toIndex = design.findIndex((a) => a._stableKey === overKey);
     markDirty();
-    actions.moveAchievement(activeId, toIndex);
+    actions.moveAchievement(activeAch.id, toIndex);
   }, [design, actions, markDirty]);
 
   const handleSave = useCallback(async () => {
@@ -96,11 +96,11 @@ export function AchievementDesignerRoute(): JSX.Element {
               count={group.achievements.length}
               expanded={expanded.has(group.category)}
               onToggle={() => toggleCategory(group.category)}
-              itemIds={group.achievements.map((a) => a.id)}
+              itemIds={group.achievements.map((a) => a._stableKey)}
             >
               {group.achievements.map((ach) => (
                 <SortableCard
-                  key={ach.id}
+                  key={ach._stableKey}
                   ach={ach}
                   effectKindOptions={effectKindOptions}
                   onMarkDirty={markDirty}

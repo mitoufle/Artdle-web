@@ -58,7 +58,7 @@ export function SortableCard({
   onUpdateEffect,
   onDeleteEffect,
 }: SortableCardProps): JSX.Element {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ach.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ach._stableKey });
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,

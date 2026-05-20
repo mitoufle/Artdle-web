@@ -6,6 +6,7 @@ import type { DesignAchievement, DesignFile } from "@/dev/achievement-designer/t
 function ach(id: string, category: DesignAchievement["category"] = "canvas"): DesignAchievement {
   return {
     id,
+    _stableKey: id,
     name: id,
     description: "",
     icon: "",
@@ -61,5 +62,15 @@ describe("useAchievementDesignerState — moveAchievement", () => {
     const { result } = setup([ach("a"), ach("b"), ach("c")]);
     act(() => result.current.actions.moveAchievement("a", 99));
     expect(result.current.design.map((a) => a.id)).toEqual(["b", "c", "a"]);
+  });
+
+  it("addAchievement assigns a non-empty _stableKey", () => {
+    const hook = renderHook(() => useAchievementDesignerState());
+    act(() => hook.result.current.actions.importDesign([]));
+    act(() => hook.result.current.actions.addAchievement());
+    const added = hook.result.current.design[0];
+    expect(added).toBeDefined();
+    expect(typeof added!._stableKey).toBe("string");
+    expect(added!._stableKey.length).toBeGreaterThan(0);
   });
 });

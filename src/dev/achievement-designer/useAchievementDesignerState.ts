@@ -47,6 +47,7 @@ export function useAchievementDesignerState(): AchievementDesignerState {
       const newId = `achievement_${d.length + 1}`;
       const newAch: DesignAchievement = {
         id: newId,
+        _stableKey: uuid(),
         name: "New Achievement",
         description: "",
         icon: "⭐",

@@ -33,6 +33,7 @@ function migrateAchievement(a: unknown): DesignAchievement {
   const ach = a as Record<string, unknown>;
   return {
     id: typeof ach.id === "string" ? ach.id : uuid(),
+    _stableKey: typeof ach._stableKey === "string" && ach._stableKey ? ach._stableKey : uuid(),
     name: typeof ach.name === "string" ? ach.name : "",
     description: typeof ach.description === "string" ? ach.description : "",
     icon: typeof ach.icon === "string" ? ach.icon : "⭐",
