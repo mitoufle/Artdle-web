@@ -37,11 +37,10 @@ function migrateAchievement(a: unknown): DesignAchievement {
     name: typeof ach.name === "string" ? ach.name : "",
     description: typeof ach.description === "string" ? ach.description : "",
     icon: typeof ach.icon === "string" ? ach.icon : "⭐",
-    category: (["canvas", "workshop", "ascension", "school_office", "secret"] as const).includes(
-      ach.category as "canvas",
-    )
-      ? (ach.category as DesignAchievement["category"])
-      : "canvas",
+    category:
+      typeof ach.category === "string" && ach.category.length > 0
+        ? ach.category
+        : "canvas",
     condition: migrateCondition(ach.condition ?? {}),
     ...(typeof ach.conditionText === "string" ? { conditionText: ach.conditionText } : {}),
     effects: Array.isArray(ach.effects) ? ach.effects.map(migrateEffect) : [],

@@ -14,7 +14,7 @@ import { saveToFile } from "./api";
 import { SortableCard } from "./SortableCard";
 import { groupByCategory } from "./groupByCategory";
 import { CategoryGroup } from "./CategoryGroup";
-import { KNOWN_EFFECT_KINDS } from "./types";
+import { KNOWN_EFFECT_KINDS, DEFAULT_CATEGORIES } from "./types";
 import styles from "./AchievementDesignerRoute.module.css";
 
 type Status = "saved" | "dirty" | "saving";
@@ -34,6 +34,8 @@ export function AchievementDesignerRoute(): JSX.Element {
 
   const usedKinds = new Set(design.flatMap((a) => a.effects.map((e) => e.kind)));
   const effectKindOptions = [...new Set([...KNOWN_EFFECT_KINDS, ...usedKinds])].filter((k) => k !== "");
+
+  const categoryOptions = [...new Set([...DEFAULT_CATEGORIES, ...design.map((a) => a.category)])].filter((c) => c !== "");
 
   const markDirty = useCallback(() => setStatus("dirty"), []);
 
@@ -103,6 +105,7 @@ export function AchievementDesignerRoute(): JSX.Element {
                   key={ach._stableKey}
                   ach={ach}
                   effectKindOptions={effectKindOptions}
+                  categoryOptions={categoryOptions}
                   onMarkDirty={markDirty}
                   onUpdateAchievement={actions.updateAchievement}
                   onDeleteAchievement={actions.deleteAchievement}

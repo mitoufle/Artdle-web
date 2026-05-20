@@ -1,5 +1,22 @@
 export type AchievementOp = ">=" | ">" | "==" | "<=" | "<";
-export type AchievementCategory = "canvas" | "workshop" | "ascension" | "school_office" | "secret";
+
+/**
+ * Category is a free-form string in the designer. The five `DEFAULT_CATEGORIES`
+ * below are always offered in the dropdown; the user can add any other string
+ * via the `+ new category…` option. The runtime `AchievementCategory` in
+ * `src/config/achievementConfig.ts` is the agent-curated subset that the game
+ * actually displays — that union is updated by the agent when wiring a new
+ * achievement whose category isn't already known.
+ */
+export type AchievementCategory = string;
+
+export const DEFAULT_CATEGORIES = [
+  "canvas",
+  "workshop",
+  "ascension",
+  "school_office",
+  "secret",
+] as const;
 
 export interface DesignEffect {
   id: string;  // ephemeral — stripped before saving

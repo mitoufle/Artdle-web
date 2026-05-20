@@ -5,8 +5,6 @@ import type { DesignAchievement, DesignCondition, AchievementOp } from "./types"
 import { KNOWN_EFFECT_KINDS } from "./types";
 import styles from "./AchievementDesignerRoute.module.css";
 
-const CATEGORIES = ["canvas", "workshop", "ascension", "school_office", "secret"] as const;
-
 const CONDITION_RE = /^(.+?)\s*(>=|<=|==|>|<)\s*(-?\d+(?:\.\d+)?)$/;
 
 function formatCondition(c: DesignCondition): string {
@@ -40,6 +38,7 @@ function ConditionInput({
 export interface SortableCardProps {
   ach: DesignAchievement;
   effectKindOptions: ReadonlyArray<string>;
+  categoryOptions: ReadonlyArray<string>;
   onMarkDirty: () => void;
   onUpdateAchievement: (id: string, patch: Partial<Omit<DesignAchievement, "effects">>) => void;
   onDeleteAchievement: (id: string) => void;
@@ -51,6 +50,7 @@ export interface SortableCardProps {
 export function SortableCard({
   ach,
   effectKindOptions,
+  categoryOptions,
   onMarkDirty,
   onUpdateAchievement,
   onDeleteAchievement,
@@ -96,9 +96,18 @@ export function SortableCard({
           <select
             className={styles.select}
             value={ach.category}
-            onChange={(e) => { onMarkDirty(); onUpdateAchievement(ach.id, { category: e.target.value as typeof ach.category }); }}
+            onChange={(e) => {
+              onMarkDirty();
+              if (e.target.value === "__new_category__") {
+                const name = window.prompt("New category name:")?.trim();
+                if (name) onUpdateAchievement(ach.id, { category: name });
+              } else {
+                onUpdateAchievement(ach.id, { category: e.target.value });
+              }
+            }}
           >
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            {categoryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+            <option value="__new_category__">+ new category…</option>
           </select>
           <button
             className={styles.deleteBtn}

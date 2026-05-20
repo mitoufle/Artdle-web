@@ -144,7 +144,7 @@ Add to `dependencies` (not `devDependencies` — the designer route ships in the
 
 ```
 @dnd-kit/core      ^6.x
-@dnd-kit/sortable  ^8.x
+@dnd-kit/sortable  ^10.x (current latest at install time)
 ```
 
 Transitive: `@dnd-kit/utilities`. No other new packages.
