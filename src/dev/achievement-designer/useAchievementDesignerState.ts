@@ -13,6 +13,7 @@ export interface AchievementDesignerActions {
   addEffect: (achievementId: string) => void;
   updateEffect: (achievementId: string, effectId: string, patch: Partial<DesignEffect>) => void;
   deleteEffect: (achievementId: string, effectId: string) => void;
+  moveAchievement: (id: string, toIndex: number) => void;
   resetAll: () => void;
   importDesign: (design: DesignFile) => void;
 }
@@ -102,6 +103,19 @@ export function useAchievementDesignerState(): AchievementDesignerState {
     );
   }, []);
 
+  const moveAchievement = useCallback((id: string, toIndex: number) => {
+    setDesign((d) => {
+      const currentIndex = d.findIndex((a) => a.id === id);
+      if (currentIndex === -1) return d;
+      const clamped = Math.max(0, Math.min(toIndex, d.length - 1));
+      if (clamped === currentIndex) return d;
+      const next = d.slice();
+      const [moved] = next.splice(currentIndex, 1);
+      next.splice(clamped, 0, moved!);
+      return next;
+    });
+  }, []);
+
   const resetAll = useCallback(() => {
     clearDraft();
     setDesign([...loadFileBaseline()]);
@@ -120,6 +134,7 @@ export function useAchievementDesignerState(): AchievementDesignerState {
       addEffect,
       updateEffect,
       deleteEffect,
+      moveAchievement,
       resetAll,
       importDesign,
     },
