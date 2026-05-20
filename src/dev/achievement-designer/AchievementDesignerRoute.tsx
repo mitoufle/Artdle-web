@@ -4,6 +4,8 @@ import { useAchievementDesignerState } from "./useAchievementDesignerState";
 import { DevTabBar } from "../DevTabBar";
 import { saveToFile } from "./api";
 import { SortableCard } from "./SortableCard";
+import { groupByCategory } from "./groupByCategory";
+import { CategoryGroup } from "./CategoryGroup";
 import styles from "./AchievementDesignerRoute.module.css";
 
 type Status = "saved" | "dirty" | "saving";
@@ -18,6 +20,15 @@ const KNOWN_EFFECT_KINDS = [
 export function AchievementDesignerRoute(): JSX.Element {
   const { design, actions } = useAchievementDesignerState();
   const [status, setStatus] = useState<Status>("saved");
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const toggleCategory = useCallback((category: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }, []);
 
   const usedKinds = new Set(design.flatMap((a) => a.effects.map((e) => e.kind)));
   const effectKindOptions = [...new Set([...KNOWN_EFFECT_KINDS, ...usedKinds])].filter((k) => k !== "");
@@ -59,18 +70,28 @@ export function AchievementDesignerRoute(): JSX.Element {
       <DevTabBar />
 
       <div className={styles.content}>
-        {design.map((ach) => (
-          <SortableCard
-            key={ach.id}
-            ach={ach}
-            effectKindOptions={effectKindOptions}
-            onMarkDirty={markDirty}
-            onUpdateAchievement={actions.updateAchievement}
-            onDeleteAchievement={actions.deleteAchievement}
-            onAddEffect={actions.addEffect}
-            onUpdateEffect={actions.updateEffect}
-            onDeleteEffect={actions.deleteEffect}
-          />
+        {groupByCategory(design).map((group) => (
+          <CategoryGroup
+            key={group.category}
+            category={group.category}
+            count={group.achievements.length}
+            expanded={expanded.has(group.category)}
+            onToggle={() => toggleCategory(group.category)}
+          >
+            {group.achievements.map((ach) => (
+              <SortableCard
+                key={ach.id}
+                ach={ach}
+                effectKindOptions={effectKindOptions}
+                onMarkDirty={markDirty}
+                onUpdateAchievement={actions.updateAchievement}
+                onDeleteAchievement={actions.deleteAchievement}
+                onAddEffect={actions.addEffect}
+                onUpdateEffect={actions.updateEffect}
+                onDeleteEffect={actions.deleteEffect}
+              />
+            ))}
+          </CategoryGroup>
         ))}
 
         <button

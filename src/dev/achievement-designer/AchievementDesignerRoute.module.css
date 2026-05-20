@@ -211,3 +211,54 @@
 }
 
 .addEffectBtn:hover { color: #9ca3af; }
+
+.group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.groupHeader:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.groupChevron {
+  display: inline-block;
+  width: 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.groupName {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.groupCount {
+  margin-left: auto;
+  opacity: 0.6;
+  font-size: 0.85em;
+}
+
+.groupBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0 0.5rem 0.75rem;
+}
