@@ -27,19 +27,22 @@ describe("<TreeScene />", () => {
     expect(container.querySelector('[data-testid="fireflies"]')).toBeInTheDocument();
   });
 
-  it("renders the tree group with tier-mapped data-tree-stage (floor(stage/2))", () => {
-    // stages 0-1 → seed, stages 2-3 → sapling, stages 4-5 → tree
+  it("renders a phase backdrop image whose src changes per stage and clamps past the last phase", () => {
     const { container, rerender } = render(<TreeScene stage={0} />);
-    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "seed");
-    rerender(<TreeScene stage={1} />);
-    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "seed");
-    rerender(<TreeScene stage={2} />);
-    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "sapling");
-    rerender(<TreeScene stage={3} />);
-    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "sapling");
-    rerender(<TreeScene stage={4} />);
-    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "tree");
+    const initial = container.querySelector('[data-testid="phase-image"]') as HTMLImageElement | null;
+    expect(initial).toBeInTheDocument();
+    const stage0Src = initial?.getAttribute("src") ?? "";
+    expect(stage0Src).toMatch(/phase1\./);
+
     rerender(<TreeScene stage={5} />);
-    expect(container.querySelector('[data-testid="tree"]')).toHaveAttribute("data-tree-stage", "tree");
+    const stage5 = container.querySelector('[data-testid="phase-image"]') as HTMLImageElement | null;
+    const stage5Src = stage5?.getAttribute("src") ?? "";
+    expect(stage5Src).toMatch(/phase6\./);
+    expect(stage5Src).not.toBe(stage0Src);
+
+    // Stages past the last phase clamp to phase6 (no crash, no broken src).
+    rerender(<TreeScene stage={42} />);
+    const stageHigh = container.querySelector('[data-testid="phase-image"]') as HTMLImageElement | null;
+    expect(stageHigh?.getAttribute("src")).toBe(stage5Src);
   });
 });
