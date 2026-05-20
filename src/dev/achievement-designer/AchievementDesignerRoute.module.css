@@ -262,3 +262,33 @@
   gap: 0.5rem;
   padding: 0.5rem 0 0.5rem 0.75rem;
 }
+
+.cardWithGrip {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  cursor: grab;
+  user-select: none;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 1.1rem;
+}
+
+.grip:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.grip:active {
+  cursor: grabbing;
+}
+
+.cardDragging {
+  opacity: 0.6;
+}

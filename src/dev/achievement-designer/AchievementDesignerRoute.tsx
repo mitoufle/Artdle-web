@@ -1,5 +1,13 @@
 import type { JSX } from "react";
 import { useState, useCallback } from "react";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { useAchievementDesignerState } from "./useAchievementDesignerState";
 import { DevTabBar } from "../DevTabBar";
 import { saveToFile } from "./api";
@@ -35,6 +43,22 @@ export function AchievementDesignerRoute(): JSX.Element {
 
   const markDirty = useCallback(() => setStatus("dirty"), []);
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const activeAch = design.find((a) => a.id === activeId);
+    const overAch = design.find((a) => a.id === overId);
+    if (!activeAch || !overAch) return;
+    if (activeAch.category !== overAch.category) return;
+    const toIndex = design.findIndex((a) => a.id === overId);
+    markDirty();
+    actions.moveAchievement(activeId, toIndex);
+  }, [design, actions, markDirty]);
+
   const handleSave = useCallback(async () => {
     setStatus("saving");
     const result = await saveToFile(design);
@@ -69,39 +93,42 @@ export function AchievementDesignerRoute(): JSX.Element {
       </div>
       <DevTabBar />
 
-      <div className={styles.content}>
-        {groupByCategory(design).map((group) => (
-          <CategoryGroup
-            key={group.category}
-            category={group.category}
-            count={group.achievements.length}
-            expanded={expanded.has(group.category)}
-            onToggle={() => toggleCategory(group.category)}
-          >
-            {group.achievements.map((ach) => (
-              <SortableCard
-                key={ach.id}
-                ach={ach}
-                effectKindOptions={effectKindOptions}
-                onMarkDirty={markDirty}
-                onUpdateAchievement={actions.updateAchievement}
-                onDeleteAchievement={actions.deleteAchievement}
-                onAddEffect={actions.addEffect}
-                onUpdateEffect={actions.updateEffect}
-                onDeleteEffect={actions.deleteEffect}
-              />
-            ))}
-          </CategoryGroup>
-        ))}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <div className={styles.content}>
+          {groupByCategory(design).map((group) => (
+            <CategoryGroup
+              key={group.category}
+              category={group.category}
+              count={group.achievements.length}
+              expanded={expanded.has(group.category)}
+              onToggle={() => toggleCategory(group.category)}
+              itemIds={group.achievements.map((a) => a.id)}
+            >
+              {group.achievements.map((ach) => (
+                <SortableCard
+                  key={ach.id}
+                  ach={ach}
+                  effectKindOptions={effectKindOptions}
+                  onMarkDirty={markDirty}
+                  onUpdateAchievement={actions.updateAchievement}
+                  onDeleteAchievement={actions.deleteAchievement}
+                  onAddEffect={actions.addEffect}
+                  onUpdateEffect={actions.updateEffect}
+                  onDeleteEffect={actions.deleteEffect}
+                />
+              ))}
+            </CategoryGroup>
+          ))}
 
-        <button
-          className={`${styles.btn} ${styles.btnPrimary}`}
-          type="button"
-          onClick={() => { markDirty(); actions.addAchievement(); }}
-        >
-          + Achievement
-        </button>
-      </div>
+          <button
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            type="button"
+            onClick={() => { markDirty(); actions.addAchievement(); }}
+          >
+            + Achievement
+          </button>
+        </div>
+      </DndContext>
     </div>
   );
 }
