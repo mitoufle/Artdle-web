@@ -2,14 +2,8 @@ import type { JSX, CSSProperties } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { DesignAchievement, DesignCondition, AchievementOp } from "./types";
+import { KNOWN_EFFECT_KINDS } from "./types";
 import styles from "./AchievementDesignerRoute.module.css";
-
-const KNOWN_EFFECT_KINDS = [
-  "paint_mastery_flat",
-  "canvas_gold_pct",
-  "speed_pct",
-  "inspi_pct",
-];
 
 const CATEGORIES = ["canvas", "workshop", "ascension", "school_office", "secret"] as const;
 

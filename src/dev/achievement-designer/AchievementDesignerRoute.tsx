@@ -14,16 +14,10 @@ import { saveToFile } from "./api";
 import { SortableCard } from "./SortableCard";
 import { groupByCategory } from "./groupByCategory";
 import { CategoryGroup } from "./CategoryGroup";
+import { KNOWN_EFFECT_KINDS } from "./types";
 import styles from "./AchievementDesignerRoute.module.css";
 
 type Status = "saved" | "dirty" | "saving";
-
-const KNOWN_EFFECT_KINDS = [
-  "paint_mastery_flat",
-  "canvas_gold_pct",
-  "speed_pct",
-  "inspi_pct",
-];
 
 export function AchievementDesignerRoute(): JSX.Element {
   const { design, actions } = useAchievementDesignerState();

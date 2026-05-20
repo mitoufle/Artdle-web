@@ -20,6 +20,7 @@ export function CategoryGroup({
   itemIds,
   children,
 }: CategoryGroupProps): JSX.Element {
+  const bodyId = `category-${category}-body`;
   return (
     <section className={styles.group}>
       <button
@@ -27,14 +28,15 @@ export function CategoryGroup({
         className={styles.groupHeader}
         onClick={onToggle}
         aria-expanded={expanded}
+        aria-controls={bodyId}
       >
         <span className={styles.groupChevron} aria-hidden="true">{expanded ? "▾" : "▸"}</span>
-        <span className={styles.groupName}>{category}</span>
+        <span className={styles.groupName}>{category.replace(/_/g, " ")}</span>
         {" "}
         <span className={styles.groupCount}>({count})</span>
       </button>
       {expanded && (
-        <div className={styles.groupBody}>
+        <div id={bodyId} className={styles.groupBody}>
           <SortableContext items={[...itemIds]} strategy={verticalListSortingStrategy}>
             {children}
           </SortableContext>

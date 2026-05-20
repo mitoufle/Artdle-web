@@ -30,3 +30,16 @@ export interface DesignAchievement {
 export type DesignFile = ReadonlyArray<DesignAchievement>;
 
 export const EMPTY_DESIGN: DesignFile = [];
+
+/**
+ * Effect kinds the engine knows how to apply (see `core/multipliers.ts` and
+ * `core/schoolMultipliers.ts`). The designer lists these in the kind
+ * dropdown; effects whose kind is NOT in this list are flagged "custom" and
+ * get a free-text input. Keep in sync with the runtime resolver.
+ */
+export const KNOWN_EFFECT_KINDS = [
+  "paint_mastery_flat",
+  "canvas_gold_pct",
+  "speed_pct",
+  "inspi_pct",
+] as const;
