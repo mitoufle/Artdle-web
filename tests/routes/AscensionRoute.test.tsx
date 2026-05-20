@@ -27,14 +27,9 @@ describe("AscensionRoute (v2 visual)", () => {
     });
   });
 
-  it("renders the cavern with crystals", () => {
-    renderAscensionRoute();
-    expect(screen.getByTestId("crystal-0")).toBeInTheDocument();
-  });
-
-  it("renders the portal SVG", () => {
+  it("renders the cavern video backdrop", () => {
     const { container } = renderAscensionRoute();
-    expect(container.querySelector('[data-testid="portal-keystone"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-testid="cavern-video"]')).toBeInTheDocument();
   });
 
   it("renders the right-rail panels (threshold + fame preview + past runs)", () => {

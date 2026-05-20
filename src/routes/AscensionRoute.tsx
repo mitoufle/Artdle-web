@@ -6,7 +6,6 @@ import { fameOnAscend } from "@/core/balance";
 import { getAscendThresholdReduction } from "@/core/multipliers";
 import { formatBig, formatShort } from "@/core/formatter";
 import { Cavern } from "@/components/ascension/Cavern";
-import { Portal } from "@/components/ascension/Portal";
 import { ThresholdPanel } from "@/components/ascension/ThresholdPanel";
 import { FamePreviewCard } from "@/components/ascension/FamePreviewCard";
 import { PastRunsLedger } from "@/components/ascension/PastRunsLedger";
@@ -61,9 +60,6 @@ export function AscensionRoute(): JSX.Element {
     <div className={styles.layout}>
       <div className={styles.cavernArea}>
         <Cavern>
-          <div className={styles.portalCenter}>
-            <Portal />
-          </div>
           <div className={styles.cta}>
             <Hoverable
               title="Ascend"

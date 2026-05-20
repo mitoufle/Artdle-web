@@ -8,17 +8,14 @@ describe("<Cavern />", () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
-  it("renders 5 crystals", () => {
+  it("renders the looping muted backdrop video", () => {
     const { container } = render(<Cavern />);
-    const crystals = container.querySelectorAll('[data-testid^="crystal-"]');
-    expect(crystals).toHaveLength(5);
-  });
-
-  it("each crystal has data-testid='crystal-{N}'", () => {
-    render(<Cavern />);
-    for (let i = 0; i < 5; i++) {
-      expect(screen.getByTestId(`crystal-${i}`)).toBeInTheDocument();
-    }
+    const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
+    expect(video).not.toBeNull();
+    expect(video?.loop).toBe(true);
+    expect(video?.muted).toBe(true);
+    expect(video?.autoplay).toBe(true);
+    expect(video?.getAttribute("src") ?? "").toMatch(/gate_animated/);
   });
 
   it("renders children inside the cavern", () => {
