@@ -112,4 +112,13 @@ export const ACHIEVEMENTS: ReadonlyArray<Achievement> = [
     condition: { stat: "tree.tier", op: ">=", value: 4 },
     effects: [{ kind: "canvas_gold_pct", value: 1 }],
   },
+  {
+    id: "Rising_star",
+    name: "Rising Star",
+    description: "Increases canvas speed when player reaches 1000 lifetime canvases sold",
+    icon: "✨",
+    category: "canvas",
+    condition: { stat: "lifetime.canvasesSold", op: ">=", value: 1000 },
+    effects: [{ kind: "speed_pct", value: 0.2 }],
+  },
 ];
