@@ -73,19 +73,28 @@ describe("AscensionRoute (v2 visual)", () => {
     expect(useGameStore.getState().ascendCount).toBe(0);
   });
 
-  it("confirmation Ascend button performs the ascend", () => {
+  it("confirmation Ascend swaps to the opening video, then fires performAscend on ended", () => {
     useGameStore.setState({ inspiration: big(12_000) });
-    renderAscensionRoute();
+    const { container } = renderAscensionRoute();
     fireEvent.click(screen.getByRole("button", { name: /step through/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    // Modal closes and the cavern swaps to the gate-opening video. The ascend
+    // hasn't happened yet — it fires when the video ends.
+    expect(useGameStore.getState().ascendCount).toBe(0);
+    const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
+    expect(video).not.toBeNull();
+    expect(video?.getAttribute("data-phase")).toBe("opening");
+    fireEvent.ended(video!);
     expect(useGameStore.getState().ascendCount).toBe(1);
   });
 
   it("ledger reflects past ascends after performing one", () => {
     useGameStore.setState({ inspiration: big(12_000) });
-    renderAscensionRoute();
+    const { container } = renderAscensionRoute();
     fireEvent.click(screen.getByRole("button", { name: /step through/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
+    fireEvent.ended(video!);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByText(/No past ascends/i)).not.toBeInTheDocument();
   });

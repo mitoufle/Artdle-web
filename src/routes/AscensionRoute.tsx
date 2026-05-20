@@ -5,7 +5,7 @@ import { canAscend } from "@/systems/ascend";
 import { fameOnAscend } from "@/core/balance";
 import { getAscendThresholdReduction } from "@/core/multipliers";
 import { formatBig, formatShort } from "@/core/formatter";
-import { Cavern } from "@/components/ascension/Cavern";
+import { Cavern, type CavernPhase } from "@/components/ascension/Cavern";
 import { ThresholdPanel } from "@/components/ascension/ThresholdPanel";
 import { FamePreviewCard } from "@/components/ascension/FamePreviewCard";
 import { PastRunsLedger } from "@/components/ascension/PastRunsLedger";
@@ -45,40 +45,57 @@ export function AscensionRoute(): JSX.Element {
   const fameGain = fameOnAscend(inspiration, getAscendThresholdReduction({ purchasedNodes }));
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [phase, setPhase] = useState<CavernPhase>("idle");
 
   const onStepThroughClick = () => {
-    if (!canDo) return;
+    if (!canDo || phase !== "idle") return;
     setConfirmOpen(true);
   };
 
   const onConfirmAscend = () => {
     setConfirmOpen(false);
+    // Reduced-motion users would never see the opening video finish, so skip
+    // straight to the ascend rather than leaving them stuck on a paused frame.
+    if (
+      typeof window !== "undefined"
+      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    ) {
+      performAscend();
+      return;
+    }
+    setPhase("opening");
+  };
+
+  const onOpeningEnded = () => {
     performAscend();
+    setPhase("idle");
   };
 
   return (
     <div className={styles.layout}>
       <div className={styles.cavernArea}>
-        <Cavern>
-          <div className={styles.cta}>
-            <Hoverable
-              title="Ascend"
-              body={() => ascendHoverBody()}
-              footer="Ascending resets gold, inspi, tree, canvas, workshop. Fame and skill tree persist."
-            >
-              <button
-                type="button"
-                className={styles.stepThroughBtn}
-                disabled={!canDo}
-                onClick={onStepThroughClick}
-                data-testid="step-through-btn"
+        <Cavern phase={phase} onOpeningEnded={onOpeningEnded}>
+          {phase === "idle" && (
+            <div className={styles.cta}>
+              <Hoverable
+                title="Ascend"
+                body={() => ascendHoverBody()}
+                footer="Ascending resets gold, inspi, tree, canvas, workshop. Fame and skill tree persist."
               >
-                {canDo
-                  ? <>✦ Step Through · <CurrencyAmount kind="fame" value={formatShort(fameGain)} size={18} /> ✦</>
-                  : "✦ Step Through · need 10,000 inspiration ✦"}
-              </button>
-            </Hoverable>
-          </div>
+                <button
+                  type="button"
+                  className={styles.stepThroughBtn}
+                  disabled={!canDo}
+                  onClick={onStepThroughClick}
+                  data-testid="step-through-btn"
+                >
+                  {canDo
+                    ? <>✦ Step Through · <CurrencyAmount kind="fame" value={formatShort(fameGain)} size={18} /> ✦</>
+                    : "✦ Step Through · need 10,000 inspiration ✦"}
+                </button>
+              </Hoverable>
+            </div>
+          )}
         </Cavern>
       </div>
 
