@@ -40,7 +40,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 18;
+const SAVE_VERSION = 19;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -99,6 +99,9 @@ const SAVE_KEY = "artdle-save";
  * on every item in inventory and equipped.
  *
  * v15 → v16 (2026-05-14): Add protectedTiers. Existing saves get empty object.
+ *
+ * v18 → v19 (2026-05-20): Add lifetimeInspiration (Big, default 0) on
+ * paintMasterySlice for `lifetime.inspirationgain` achievement conditions.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -316,6 +319,17 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
         schoolResearchesCompleted: 0,
       },
       completedAchievements: {},
+    };
+  }
+
+  if (fromVersion < 19) {
+    // v18 → v19 (2026-05-20): Add lifetimeInspiration (Big) tracker on
+    // paintMasterySlice, mirroring lifetimeGold. Used by achievement
+    // conditions targeting `lifetime.inspirationgain`. No retroactive credit
+    // — existing saves start at 0, matching the v3→v4 lifetimeGold pattern.
+    state = {
+      ...state,
+      lifetimeInspiration: big(0),
     };
   }
 

@@ -130,3 +130,10 @@ export function useSchoolDesignerState(): SchoolDesignerState {
     },
   };
 }
+
+// HMR boundary — see comment in achievement-designer/useAchievementDesignerState.ts
+// for the rationale. Stops school-designer JSON saves from cascading into a
+// full page reload that would race the IDB save adapter and revert game state.
+if (import.meta.hot) {
+  import.meta.hot.accept();
+}

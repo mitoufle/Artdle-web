@@ -84,6 +84,7 @@ export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlic
       const inspiPerTick = POKE_TREE_BASE_INSPI * Math.pow(2, pokeLevel - 1);
       const inspiGain = big(inspiPerTick * grants);
       state.add("inspiration", inspiGain);
+      state.trackInspirationGain(inspiGain);
     }
     set({ pokeTreeTimer: next - grants * POKE_TREE_INTERVAL_S });
   },

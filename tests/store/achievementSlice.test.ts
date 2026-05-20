@@ -24,6 +24,24 @@ vi.mock("@/config/achievementConfig", () => ({
       condition: { stat: "lifetime.canvasesSold", op: ">=", value: 100 },
       effects: [{ kind: "canvas_gold_pct", value: 0.1 }],
     },
+    {
+      id: "piggy_bank_test",
+      name: "Piggy Bank Test",
+      description: "",
+      icon: "🐽",
+      category: "canvas",
+      condition: { stat: "lifetime.goldgain", op: ">=", value: 1000 },
+      effects: [{ kind: "canvas_gold_pct", value: 0.15 }],
+    },
+    {
+      id: "psychedelic_test",
+      name: "Psychedelic Test",
+      description: "",
+      icon: "🌿",
+      category: "canvas",
+      condition: { stat: "lifetime.inspirationgain", op: ">=", value: 1000 },
+      effects: [{ kind: "inspi_pct", value: 0.15 }],
+    },
   ],
 }));
 
@@ -37,6 +55,7 @@ type TestStore = AchievementSlice & {
   statsRun: { canvasesSold: number; critsLanded: number; currentCritStreak: number; maxCritStreak: number; maxComboChain: number; goldEarned: ReturnType<typeof big>; workshopItemsCrafted: number; schoolResearchesCompleted: number };
   paintMastery: ReturnType<typeof big>;
   lifetimeGold: ReturnType<typeof big>;
+  lifetimeInspiration: ReturnType<typeof big>;
   ascendCount: number;
   addPaintMastery: (amount: ReturnType<typeof big>) => void;
 };
@@ -47,6 +66,7 @@ function makeStore(overrides: Partial<TestStore> = {}) {
     statsRun: { canvasesSold: 0, critsLanded: 0, currentCritStreak: 0, maxCritStreak: 0, maxComboChain: 0, goldEarned: big(0), workshopItemsCrafted: 0, schoolResearchesCompleted: 0 },
     paintMastery: big(0),
     lifetimeGold: big(0),
+    lifetimeInspiration: big(0),
     ascendCount: 0,
     addPaintMastery: (amount) => set((s) => ({ paintMastery: s.paintMastery.add(amount) })),
     ...createAchievementSlice(set as never, get as never, store as never),
@@ -99,6 +119,30 @@ describe("evaluateAchievements", () => {
     store.getState().evaluateAchievements();
     vi.advanceTimersByTime(5000);
     expect(store.getState().activeNotification).toBeNull();
+  });
+
+  it("resolves lifetime.goldgain from state.lifetimeGold and fires when threshold crossed", () => {
+    const store = makeStore({ lifetimeGold: big(1000) } as Partial<TestStore>);
+    store.getState().evaluateAchievements();
+    expect(store.getState().completedAchievements["piggy_bank_test"]).toBe(true);
+  });
+
+  it("does not fire piggy_bank_test below threshold (lifetimeGold = 999)", () => {
+    const store = makeStore({ lifetimeGold: big(999) } as Partial<TestStore>);
+    store.getState().evaluateAchievements();
+    expect(store.getState().completedAchievements["piggy_bank_test"]).toBeUndefined();
+  });
+
+  it("resolves lifetime.inspirationgain from state.lifetimeInspiration and fires when threshold crossed", () => {
+    const store = makeStore({ lifetimeInspiration: big(1000) } as Partial<TestStore>);
+    store.getState().evaluateAchievements();
+    expect(store.getState().completedAchievements["psychedelic_test"]).toBe(true);
+  });
+
+  it("does not fire psychedelic_test below threshold (lifetimeInspiration = 999)", () => {
+    const store = makeStore({ lifetimeInspiration: big(999) } as Partial<TestStore>);
+    store.getState().evaluateAchievements();
+    expect(store.getState().completedAchievements["psychedelic_test"]).toBeUndefined();
   });
 
   it("FIFO: multiple unlocks drain queue in order", () => {

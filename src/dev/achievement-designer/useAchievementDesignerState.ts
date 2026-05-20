@@ -125,3 +125,16 @@ export function useAchievementDesignerState(): AchievementDesignerState {
     },
   };
 }
+
+// HMR boundary. `achievementsDesign.json` is the user→agent communication
+// channel: when the user saves in the designer, Vite invalidates this module
+// because it imports the JSON. Without a self-accept the invalidation walks
+// up through the designer route → App → main.tsx, hits a Fast-Refresh-
+// incompatible export, and Vite falls back to a full page reload. That
+// reload races the throttled IDB save adapter and silently reverts game
+// state. Self-accepting stops the cascade here — the running game is
+// completely untouched by JSON saves, matching the intent that the JSON is
+// a spec file the agent reads, not a live runtime input.
+if (import.meta.hot) {
+  import.meta.hot.accept();
+}

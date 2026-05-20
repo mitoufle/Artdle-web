@@ -34,6 +34,39 @@ describe("paintMasterySlice — initial state (v1.1 redesign)", () => {
     const h = createHarness();
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
   });
+
+  it("initial lifetimeInspiration is big(0)", () => {
+    const h = createHarness();
+    expect((h.state().lifetimeInspiration as ReturnType<typeof big>).toNumber()).toBe(0);
+  });
+});
+
+describe("paintMasterySlice — trackInspirationGain (lifetimeInspiration accumulator)", () => {
+  it("1000 inspi gain increments lifetimeInspiration by 1000", () => {
+    const h = createHarness();
+    h.slice.trackInspirationGain(big(1000));
+    expect((h.state().lifetimeInspiration as ReturnType<typeof big>).toNumber()).toBe(1000);
+  });
+
+  it("two 500 gains accumulate to 1000", () => {
+    const h = createHarness();
+    h.slice.trackInspirationGain(big(500));
+    h.slice.trackInspirationGain(big(500));
+    expect((h.state().lifetimeInspiration as ReturnType<typeof big>).toNumber()).toBe(1000);
+  });
+
+  it("0 gain is a no-op", () => {
+    const h = createHarness();
+    h.slice.trackInspirationGain(big(0));
+    expect((h.state().lifetimeInspiration as ReturnType<typeof big>).toNumber()).toBe(0);
+  });
+
+  it("does NOT touch lifetimeGold or paintMastery", () => {
+    const h = createHarness();
+    h.slice.trackInspirationGain(big(1234));
+    expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+  });
 });
 
 describe("paintMasterySlice — trackSaleGold (lifetimeGold only; PM not granted)", () => {
@@ -88,5 +121,11 @@ describe("paintMasterySlice — test helpers", () => {
     const h = createHarness();
     h.slice._setLifetimeGold(big(67890));
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(67890);
+  });
+
+  it("_setLifetimeInspiration overwrites lifetimeInspiration", () => {
+    const h = createHarness();
+    h.slice._setLifetimeInspiration(big(42));
+    expect((h.state().lifetimeInspiration as ReturnType<typeof big>).toNumber()).toBe(42);
   });
 });

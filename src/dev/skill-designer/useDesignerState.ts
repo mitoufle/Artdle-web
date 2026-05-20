@@ -135,3 +135,10 @@ export function useDesignerState(): DesignerState {
     actions: { addNode, updateNode, deleteNode, selectNode, resetAll, importDesign },
   };
 }
+
+// HMR boundary — see comment in achievement-designer/useAchievementDesignerState.ts
+// for the rationale. Stops skill-designer JSON saves from cascading into a
+// full page reload that would race the IDB save adapter and revert game state.
+if (import.meta.hot) {
+  import.meta.hot.accept();
+}

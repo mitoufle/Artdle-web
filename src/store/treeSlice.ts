@@ -132,6 +132,7 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
       if (rate.gt(0)) {
         const gain = rate.mul(deltaSeconds);
         state.add("inspiration", gain);
+        state.trackInspirationGain(gain);
       }
     }
     // Defensive auto-advance: catches loaded saves whose partLevels already
