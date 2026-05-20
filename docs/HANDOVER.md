@@ -1,5 +1,62 @@
 # Artdle Web — Handover
 
+## Tree art + tier achievements + balance buff + gate videos + stats polish (2026-05-20→21)
+
+### What landed (eight commits, all on `master`, all deployed)
+
+**Commit `71a92a5` — tree backdrops replace hand-drawn SVG**
+- `TreeScene` now renders one full-scene PNG per stage (`phase1.png`–`phase6.png` in `src/assets/images/Inspiration_Tree_phases/`) under the existing motes + fireflies SVG overlay. Stages 6+ clamp to `phase6.png`. The hand-drawn SVG landscape, 3-tier sprite variants, and the `data-tree-stage` test attribute are gone.
+- `phase7`–`phase40` live in the same folder but are not wired (left untracked locally) — pick up when stages 7+ ship.
+
+**Commit `440ea79` — Tier 2/3/4 tree achievements + designer `=` parser fix**
+- New synthetic stat `tree.tier` in `resolveStatValue` (`achievementSlice.ts`) = `state.currentStage + 1` (1-indexed UI tier).
+- `T2/T3/T4` achievements gated on `tree.tier >= N`, each grants `canvas_gold_pct: 1.0` (+100% canvas gold).
+- New `"inspiration"` category added to `AchievementCategory` union; `AchievementToast.CATEGORY_LABEL` and `AchievementsRoute.CATEGORIES` learned about it. `psychedelic_enjoyer` renamed to `Psychedelic_enjoyer` to match the design file casing.
+- Designer bug fix: `parseCondition` rejected `=` (single equals), so `tree.tier = N` silently fell back to the default `lifetime.canvasesSold >= 1`. Parser now accepts `=` as a synonym for `==` (normalizes to `==` on save).
+
+**Commit `d759c53` — color tree / rainbow / get_inspired / basic_technique buffs**
+Balance constants in `src/core/balance.ts`:
+- `GET_INSPIRED_PER_LEVEL`: 0.25 → 0.50
+- `BASIC_TECHNIQUE_PER_LEVEL`: 0.02 → 0.05
+- `RAINBOW_PER_LEVEL`: 0.50 → 5.00 (multiplicative)
+- `COLOR_PER_LEVEL`: 0.20→0.50 (black_white), 0.30→0.80 (×3 primaries), 0.40→1.30 (×3 secondaries), 0.50→2.00 (×3 tertiaries)
+
+Full color tree + rainbow combined moves ×7.2 → ×82.8. Descriptions in `skillTreeNodes.ts` stripped inline numbers — `numericEffect` is the single source of truth. 10 multiplier test assertions and 1 hover test retuned.
+
+**Commit `d644db5` — Rising Star (+20% speed at 1k canvas sales)**
+Wires straight through — `lifetime.canvasesSold` already resolves via the slice's `lifetime.*` fallback, `speed_pct` already aggregates in `getCanvasSpeedMultiplier`. Description fixed in both JSON and runtime ("gold gain" → "canvas speed") to match the effect kind.
+
+**Commit `8297f6d` — stats panel hides zero contributors and locked blocks**
+`StatsRoom` was spoiling unlockable mechanics. Now:
+- Contributor lines hide when value is 0 (extends the existing `School`/`Achievements` pattern to `Canvas upgrade`/`Skill tree`/`Items`/`Workers`).
+- Whole blocks hide when they have neither contributors nor multiplicatives. Crit and Combo stay hidden until the player buys their unlock skills or equips an affixed item; Sell Price and Speed always show (sellPriceLevel/speedLevel default to 1).
+- Size block hides until total size > 1; once raised, the `Base ×1.00` anchor stays and the other rows render only when meaningful.
+
+**Commit `d7832de` — cavern backdrop replaced with looping gate video**
+New `gate_animated.mp4` contains the whole ascension scene (cave + crystals + arch). `Cavern` renders it as a full-area `object-fit: cover` video; the SVG `Portal`, its CSS, and the cavern CSS gradient + 5 pulsing crystals are gone. Pauses on `prefers-reduced-motion`. `Portal.tsx` / `Portal.module.css` / `Portal.test.tsx` deleted; `AscensionRoute` dropped the `portalCenter` wrapper.
+
+**Commit `e1707bc` — gate-opening video plays on confirm, then ascend**
+Second video `gate_opening_animated.mp4`. `Cavern` now takes a `phase` prop (`"idle"` loops the closed-gate clip; `"opening"` plays the opening clip once with `loop={false}`). `AscensionRoute` swaps phase to `"opening"` on confirm-modal Ascend, hides the CTA during the animation, and calls `performAscend()` in the `onEnded` handler. Reduced-motion users skip the video and ascend immediately on confirm.
+
+**Commit `3fda921` — favicon refresh + cache-bust**
+`public/favicon.png` synced from `src/assets/Images-gen/favicon.png` (the runtime-served copy — Vite serves `public/` at the site root; the `src/assets/` copy is the working source and isn't read at runtime). `index.html` got `?v=2026-05-21` so cached browsers refetch.
+
+### Status
+
+- **872 tests green**, tsc clean (pre-existing errors in `achievementSlice.ts`, `officeSlice.ts`, `statsSlice.ts`, `bot-simulation.test.ts`, `SchoolDesignerRoute.test.tsx`, `SortableCard.tsx` remain — none introduced by this session).
+- All eight commits pushed to `master` (HEAD `3fda921`) and deployed via `npx vercel --prod`. Each deploy verified by curl-grepping the production bundle for a known new string.
+- Production live: https://artdle-web.vercel.app
+- Untracked, intentionally not committed: `.mcp.json`, `docs/superpowers/plans/2026-05-17-achievement-system.md`, `src/assets/images/Inspiration_Tree_phases/phase7.png`–`phase40.png` (future stages), `src/assets/images/ascend gate/gate.png` (unused, potential poster fallback), `src/assets/Images-gen/favicon_old.png` (backup).
+
+### Notes / save-state impact
+
+- **Skill-tree buff is retroactive**: anyone with `purchasedNodes` populated gets the bigger multipliers on next load. No migration needed — multipliers recompute from the (unchanged) `purchasedNodes` record against the new constants.
+- **psychedelic_enjoyer rename**: lowercase ID is no longer in the runtime. Any save with the old completion will see the toast again the next time `lifetime.inspirationgain >= 1000` re-evaluates.
+- **Achievement set expanded**: the 2026-05-19 entry's note that the runtime was "intentionally reduced to the single `Sound_Blasting` achievement" is superseded. Current runtime achievements: `Sound_Blasting`, `Piggy_bank`, `Millionaire`, `Nerbard_alnaurt`, `Psychedelic_enjoyer`, `T2/T3/T4`, `Rising_star` (9 total).
+- **Description-vs-effect drift watch**: now that `numericEffect` drives skill-tree display, a future tweak that bumps `balance.ts` but forgets `numericEffect` will silently show a wrong number to the player. The same class of bug bit Rising Star at design time (description said "gold gain" but effect was `speed_pct`) — caught at wiring.
+
+---
+
 ## Achievement craft→game pipeline + rainbow unlock toast (2026-05-19)
 
 ### What landed
