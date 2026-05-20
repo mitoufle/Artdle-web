@@ -65,10 +65,6 @@ function fmtMult(v: number, digits = 2): string {
 function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   const goldTotal = getCanvasGoldMultiplier(state);
   const speedTotal = getCanvasSpeedMultiplier(state);
-  const schoolGold = getSchoolGoldContribution(state);
-  const achievementGold = getAchievementGoldContribution(state);
-  const schoolSpeed = getSchoolSpeedContribution(state);
-  const achievementSpeed = getAchievementSpeedContribution(state);
   const critTotal = getCritChance(state);
   const comboTotal = getComboBaseChance(state);
   const size = getCanvasSize(state);
@@ -84,53 +80,57 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
 
   const effectiveGold = goldTotal * sizeGoldFactor * pmFactor;
 
+  // Hide contributors that grant 0 — keeps locked/unowned features out of view
+  // until they actually start contributing (no spoilers).
+  const nonZero = (lines: BreakdownLine[]): BreakdownLine[] => lines.filter((l) => l.value > 0);
+
   return [
     {
       name: "Sell Price (gold)",
       kind: "+sell_price%" as AffixKind,
       totalLabel: fmtMult(effectiveGold),
-      lines: [
+      lines: nonZero([
         { source: "Canvas upgrade", value: SELL_PRICE_PER_LEVEL * state.sellPriceLevel },
         { source: "Skill tree (color)", value: getColorTreeContribution(state) },
         { source: "Items", value: getEquippedContribution(state, "+sell_price%") },
         { source: "Workers", value: getOfficeContribution(state, "+sell_price%").toNumber() },
-        ...(schoolGold > 0 ? [{ source: "School", value: schoolGold }] : []),
-        ...(achievementGold > 0 ? [{ source: "Achievements", value: achievementGold }] : []),
-      ],
+        { source: "School", value: getSchoolGoldContribution(state) },
+        { source: "Achievements", value: getAchievementGoldContribution(state) },
+      ]),
       ...(sellMultiplicatives.length > 0 ? { multiplicatives: sellMultiplicatives } : {}),
     },
     {
       name: "Speed",
       kind: "+speed%" as AffixKind,
       totalLabel: fmtMult(speedTotal),
-      lines: [
+      lines: nonZero([
         { source: "Canvas upgrade", value: SPEED_PER_LEVEL * state.speedLevel },
         { source: "Skill tree", value: getSkillTreeSpeedContribution(state) },
         { source: "Items", value: getEquippedContribution(state, "+speed%") },
         { source: "Workers", value: getOfficeContribution(state, "+speed%").toNumber() },
-        ...(schoolSpeed > 0 ? [{ source: "School", value: schoolSpeed }] : []),
-        ...(achievementSpeed > 0 ? [{ source: "Achievements", value: achievementSpeed }] : []),
-      ],
+        { source: "School", value: getSchoolSpeedContribution(state) },
+        { source: "Achievements", value: getAchievementSpeedContribution(state) },
+      ]),
     },
     {
       name: "Crit chance",
       kind: "+crit_chance%" as AffixKind,
       totalLabel: fmtPct(critTotal),
-      lines: [
+      lines: nonZero([
         { source: "Canvas upgrade", value: CRIT_PER_LEVEL * state.critLevel },
         { source: "Items", value: getEquippedContribution(state, "+crit_chance%") },
         { source: "Workers", value: getOfficeContribution(state, "+crit_chance%").toNumber() },
-      ],
+      ]),
     },
     {
       name: "Combo chance",
       kind: "+combo_chance%" as AffixKind,
       totalLabel: fmtPct(comboTotal),
-      lines: [
+      lines: nonZero([
         { source: "Canvas upgrade", value: COMBO_PER_LEVEL * state.comboLevel },
         { source: "Items", value: getEquippedContribution(state, "+combo_chance%") },
         { source: "Workers", value: getOfficeContribution(state, "+combo_chance%").toNumber() },
-      ],
+      ]),
     },
   ];
 }
@@ -174,13 +174,23 @@ export function StatsRoom(): JSX.Element {
     return { blocks: statBlocks(helperState), size: sizeBlock(helperState) };
   }, [equipped, purchasedNodes, roster, paintMastery, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel, completedResearches, completedAchievements]);
 
+  // Hide entire blocks that have no contributors and no multiplicatives — keeps
+  // locked mechanics (Crit/Combo before their skill nodes are bought, Size at base)
+  // out of view. The Sell Price and Speed blocks always have a baseline Canvas-
+  // upgrade contribution (sellPriceLevel/speedLevel default to 1) so they never
+  // hide in practice.
+  const visibleBlocks = blocks.filter(
+    (b) => b.lines.length > 0 || (b.multiplicatives?.length ?? 0) > 0,
+  );
+  const showSize = size.size > 1;
+
   return (
     <section className={styles.room} aria-label="Stats">
       <header className={styles.header}>
         <h2 className={styles.title}>Stats</h2>
         <p className={styles.subtitle}>Aggregated bonuses by source.</p>
       </header>
-      {blocks.map((block) => (
+      {visibleBlocks.map((block) => (
         <article key={block.name} className={styles.block}>
           <header className={styles.blockHeader}>
             <span className={styles.blockName}>
@@ -204,40 +214,52 @@ export function StatsRoom(): JSX.Element {
           </ul>
         </article>
       ))}
-      <article className={styles.block}>
-        <header className={styles.blockHeader}>
-          <span className={styles.blockName}>
-            <span style={{ color: AFFIX_COLOR["+size%"], fontSize: `${13 * AFFIX_SYMBOL_SCALE["+size%"]}px` }}>{AFFIX_SYMBOL["+size%"]}</span>{" "}Size
-          </span>
-          <span className={styles.blockTotal}>{fmtMult(size.size)}</span>
-        </header>
-        <ul className={styles.lines}>
-          <li className={styles.line}>
-            <span className={styles.source}>Base</span>
-            <span className={styles.value}>×1.00</span>
-          </li>
-          <li className={styles.line}>
-            <span className={styles.source}>Canvas upgrade</span>
-            <span className={styles.value}>+{fmtPct(size.canvasContribution)}</span>
-          </li>
-          <li className={styles.line}>
-            <span className={styles.source}>Items</span>
-            <span className={styles.value}>+{fmtPct(size.itemContribution)}</span>
-          </li>
-          <li className={styles.line}>
-            <span className={styles.source}>Workers</span>
-            <span className={styles.value}>+{fmtPct(size.workerContribution)}</span>
-          </li>
-          <li className={styles.line}>
-            <span className={styles.source}>Gold factor (size²)</span>
-            <span className={styles.value}>{fmtMult(size.goldFactor)}</span>
-          </li>
-          <li className={styles.line}>
-            <span className={styles.source}>Time factor (size)</span>
-            <span className={styles.value}>{fmtMult(size.timeFactor)}</span>
-          </li>
-        </ul>
-      </article>
+      {showSize && (
+        <article className={styles.block}>
+          <header className={styles.blockHeader}>
+            <span className={styles.blockName}>
+              <span style={{ color: AFFIX_COLOR["+size%"], fontSize: `${13 * AFFIX_SYMBOL_SCALE["+size%"]}px` }}>{AFFIX_SYMBOL["+size%"]}</span>{" "}Size
+            </span>
+            <span className={styles.blockTotal}>{fmtMult(size.size)}</span>
+          </header>
+          <ul className={styles.lines}>
+            <li className={styles.line}>
+              <span className={styles.source}>Base</span>
+              <span className={styles.value}>×1.00</span>
+            </li>
+            {size.canvasContribution > 0 && (
+              <li className={styles.line}>
+                <span className={styles.source}>Canvas upgrade</span>
+                <span className={styles.value}>+{fmtPct(size.canvasContribution)}</span>
+              </li>
+            )}
+            {size.itemContribution > 0 && (
+              <li className={styles.line}>
+                <span className={styles.source}>Items</span>
+                <span className={styles.value}>+{fmtPct(size.itemContribution)}</span>
+              </li>
+            )}
+            {size.workerContribution > 0 && (
+              <li className={styles.line}>
+                <span className={styles.source}>Workers</span>
+                <span className={styles.value}>+{fmtPct(size.workerContribution)}</span>
+              </li>
+            )}
+            {size.goldFactor > 1 && (
+              <li className={styles.line}>
+                <span className={styles.source}>Gold factor (size²)</span>
+                <span className={styles.value}>{fmtMult(size.goldFactor)}</span>
+              </li>
+            )}
+            {size.timeFactor > 1 && (
+              <li className={styles.line}>
+                <span className={styles.source}>Time factor (size)</span>
+                <span className={styles.value}>{fmtMult(size.timeFactor)}</span>
+              </li>
+            )}
+          </ul>
+        </article>
+      )}
     </section>
   );
 }
