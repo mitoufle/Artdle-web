@@ -63,7 +63,7 @@ export function getOfficeContribution(state: Pick<GameStore, "roster">, kind: Af
  * Aggregate multiplier on inspiration accrual rate.
  *
  * Wiring:
- *   - get_inspired: +25% per level (additive). 5 levels = +125%.
+ *   - get_inspired: +50% per level (additive). 5 levels = +250%.
  *   - workshop items: do NOT contribute (painting-only by design).
  */
 export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedResearches" | "completedAchievements">): number => {
@@ -78,9 +78,9 @@ export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "co
  * Aggregate multiplier on gold credited per canvas sale.
  *
  * Wiring:
- *   - 10 color nodes: tier-scaled additive (20/30/40/50%). Full tree = +380%.
+ *   - 10 color nodes: tier-scaled additive (50/80/130/200%). Full tree = +1280%.
  *   - Equipped items: `+sell_price%` additive contribution.
- *   - Rainbow: multiplicative on the additive base (× (1 + 0.50 × level)).
+ *   - Rainbow: multiplicative on the additive base (× (1 + 5.00 × level)).
  */
 export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number => {
   let bonus = 0;
@@ -101,8 +101,8 @@ export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number =
  * Aggregate multiplier on canvas SPEED. Higher = faster.
  *
  * Wiring:
- *   - basic_technique (per level): +1% additive
- *   - muscle_memory (per level): +1% additive
+ *   - basic_technique (per level): +5% additive
+ *   - muscle_memory (per level): +5% additive
  *   - speedLevel (canvas-depth track): +5% per level additive
  *   - equipped +speed% affixes: additive (each magnitude is fractional via getEquippedContribution)
  */

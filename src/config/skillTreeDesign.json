@@ -1,13 +1,13 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-15T12:04:19.837Z",
+  "designedAt": "2026-05-20T18:12:46.941Z",
   "nodes": [
     {
       "id": "get_inspired",
       "name": "Get Inspired",
-      "description": "each level increase inspiration gain by 25%",
-      "numericEffect": "25%",
+      "description": "each level increase inspiration gain",
+      "numericEffect": "50%",
       "parentIds": [],
       "stacking": "additive",
       "kind": "minor",
@@ -25,8 +25,8 @@
     {
       "id": "black_white",
       "name": "Black & White",
-      "description": "canvas sell price increase by 20%",
-      "numericEffect": "20%",
+      "description": "increases canvas sell price",
+      "numericEffect": "50%",
       "parentIds": [
         "basic_technique"
       ],
@@ -42,8 +42,8 @@
     {
       "id": "magenta",
       "name": "Magenta",
-      "description": "canvas sell price increase by 30%",
-      "numericEffect": "30%",
+      "description": "increases canvas sell price",
+      "numericEffect": "80%",
       "parentIds": [
         "black_white"
       ],
@@ -59,8 +59,8 @@
     {
       "id": "cyan",
       "name": "Cyan",
-      "description": "canvas sell price increase by 30%",
-      "numericEffect": "30%",
+      "description": "increases canvas sell price",
+      "numericEffect": "80%",
       "parentIds": [
         "black_white"
       ],
@@ -76,8 +76,8 @@
     {
       "id": "yellow",
       "name": "Yellow",
-      "description": "canvas sell price increase by 30%",
-      "numericEffect": "30%",
+      "description": "increases canvas sell price",
+      "numericEffect": "80%",
       "parentIds": [
         "black_white"
       ],
@@ -93,8 +93,8 @@
     {
       "id": "red",
       "name": "Red",
-      "description": "canvas sell price increase by 40%",
-      "numericEffect": "40%",
+      "description": "increases canvas sell price",
+      "numericEffect": "130%",
       "parentIds": [
         "magenta",
         "yellow"
@@ -111,8 +111,8 @@
     {
       "id": "green",
       "name": "Green",
-      "description": "canvas sell price increase by 40%",
-      "numericEffect": "40%",
+      "description": "increases canvas sell price",
+      "numericEffect": "130%",
       "parentIds": [
         "yellow",
         "cyan"
@@ -129,8 +129,8 @@
     {
       "id": "blue",
       "name": "Blue",
-      "description": "canvas sell price increase by 40%",
-      "numericEffect": "40%",
+      "description": "increases canvas sell price",
+      "numericEffect": "130%",
       "parentIds": [
         "cyan",
         "magenta"
@@ -147,8 +147,8 @@
     {
       "id": "purple",
       "name": "Purple",
-      "description": "canvas sell price increase by 50%",
-      "numericEffect": "10%",
+      "description": "increases canvas sell price",
+      "numericEffect": "200%",
       "parentIds": [
         "blue",
         "red"
@@ -165,8 +165,8 @@
     {
       "id": "brown",
       "name": "Brown",
-      "description": "canvas sell price increase by 50%",
-      "numericEffect": "10%",
+      "description": "increases canvas sell price",
+      "numericEffect": "200%",
       "parentIds": [
         "green",
         "blue"
@@ -183,8 +183,8 @@
     {
       "id": "orange",
       "name": "Orange",
-      "description": "canvas sell price increase by 50%",
-      "numericEffect": "10%",
+      "description": "increases canvas sell price",
+      "numericEffect": "200%",
       "parentIds": [
         "red",
         "green"
@@ -201,8 +201,8 @@
     {
       "id": "rainbow",
       "name": "Rainbow",
-      "description": "Canvas sell price increase by 50%",
-      "numericEffect": "50%",
+      "description": "increases canvas sell price",
+      "numericEffect": "500%",
       "parentIds": [
         "orange",
         "brown",
@@ -241,8 +241,8 @@
     {
       "id": "basic_technique",
       "name": "Basic Technique",
-      "description": "canvas completion time is 2% faster.",
-      "numericEffect": "2%",
+      "description": "canvas completion time is faster.",
+      "numericEffect": "5%",
       "parentIds": [],
       "stacking": "additive",
       "kind": "minor",

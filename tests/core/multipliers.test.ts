@@ -54,26 +54,26 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getInspiMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getInspiMultiplier returns 1.25 with get_inspired level 1", () => {
+  it("getInspiMultiplier returns 1.50 with get_inspired level 1", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.25, 5);
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
   });
 
-  it("getInspiMultiplier returns 2.25 with get_inspired level 5 (5 × 0.25)", () => {
+  it("getInspiMultiplier returns 3.50 with get_inspired level 5 (5 × 0.50)", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 5 } });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.25, 5);
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(3.50, 5);
   });
 
   it("getCanvasGoldMultiplier returns 1.0 with no nodes and no items", () => {
     expect(getCanvasGoldMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getCanvasGoldMultiplier returns 1.20 with black_white level 1 (root tier 20%)", () => {
+  it("getCanvasGoldMultiplier returns 1.50 with black_white level 1 (root tier 50%)", () => {
     useGameStore.setState({ purchasedNodes: { black_white: 1 } });
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.20, 5);
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
   });
 
-  it("getCanvasGoldMultiplier returns 4.80 with all 10 color nodes (tiered: 20+3×30+3×40+3×50)", () => {
+  it("getCanvasGoldMultiplier returns 13.80 with all 10 color nodes (tiered: 50+3×80+3×130+3×200)", () => {
     useGameStore.setState({
       purchasedNodes: {
         black_white: 1, magenta: 1, cyan: 1, yellow: 1,
@@ -81,13 +81,13 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
         purple: 1, brown: 1, orange: 1,
       },
     });
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(4.80, 5);
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(13.80, 5);
   });
 
-  it("getCanvasGoldMultiplier applies rainbow multiplicatively (× 1.50 at level 1)", () => {
+  it("getCanvasGoldMultiplier applies rainbow multiplicatively (× 6.00 at level 1)", () => {
     useGameStore.setState({ purchasedNodes: { rainbow: 1 } });
-    // (1 + 0) * (1 + 0.50) = 1.50 — alone, indistinguishable from old additive form
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
+    // (1 + 0) * (1 + 5.00) = 6.00
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(6.00, 5);
   });
 
   it("getCanvasGoldMultiplier composes rainbow multiplicatively over color sum", () => {
@@ -99,8 +99,8 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
         rainbow: 1,
       },
     });
-    // (1 + 3.80) × (1 + 0.50) = 4.80 × 1.50 = 7.20
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(7.20, 5);
+    // (1 + 12.80) × (1 + 5.00) = 13.80 × 6.00 = 82.80
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(82.80, 5);
   });
 
   it("getAffixMagnitudeBonus: 0 with no Craftsmanship", async () => {
@@ -141,18 +141,18 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
         },
       },
     });
-    // 1 + 0.20 (black_white) + 0.05 (item) = 1.25
-    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.25, 5);
+    // 1 + 0.50 (black_white) + 0.05 (item) = 1.55
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.55, 5);
   });
 
   it("getCanvasSpeedMultiplier returns 1 with no nodes", () => {
     expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getCanvasSpeedMultiplier sums basic_technique 2%/lvl + muscle_memory 5%/lvl", () => {
+  it("getCanvasSpeedMultiplier sums basic_technique 5%/lvl + muscle_memory 5%/lvl", () => {
     useGameStore.setState({ purchasedNodes: { basic_technique: 5, muscle_memory: 5 } });
-    // 1 + 0.02*5 + 0.05*5 = 1 + 0.10 + 0.25 = 1.35
-    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBeCloseTo(1.35, 5);
+    // 1 + 0.05*5 + 0.05*5 = 1 + 0.25 + 0.25 = 1.50
+    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
   });
 
   it("getTreeUpgradeCostMultiplier returns 1 with no Bargain", () => {
@@ -443,8 +443,8 @@ describe("school bonuses on multipliers", () => {
       purchasedNodes: { get_inspired: 2 },
       completedResearches: { closer_to_nature: true },
     } as unknown as GameStore;
-    // 1 + 2*0.25 + 0.15 = 1.65
-    expect(getInspiMultiplier(state)).toBeCloseTo(1.65, 5);
+    // 1 + 2*0.50 + 0.15 = 2.15
+    expect(getInspiMultiplier(state)).toBeCloseTo(2.15, 5);
   });
 
   it("getSchoolAffixMagnitudeMultiplier: 1.0 with no completed research", async () => {
@@ -465,8 +465,8 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
   it("patron: inspi_mult_bonus adds +10% per level on top of get_inspired", async () => {
     const { getInspiMultiplier } = await import("@/core/multipliers");
     useGameStore.setState({ purchasedNodes: { get_inspired: 5, patron: 3 } });
-    // 5 × 0.25 (get_inspired) + 3 × 0.10 (patron) = 1.55 bonus → ×2.55
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.55, 4);
+    // 5 × 0.50 (get_inspired) + 3 × 0.10 (patron) = 2.80 bonus → ×3.80
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(3.80, 4);
   });
 
   it("expanding_horizon: canvas_size_bonus adds +5% size per level", async () => {

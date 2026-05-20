@@ -242,26 +242,26 @@ export const comboEffectiveChance = (
 // Skill-node effect constants (tuning numbers only — formulas stay in multipliers.ts)
 // ============================================================================
 
-/** Per-color additive gold bonus per level. Tier-scaled: root +20%, primaries +30%,
- *  secondaries +40%, tertiaries +50%. Full color tree = +380% (4.80× base before rainbow). */
+/** Per-color additive gold bonus per level. Tier-scaled: root +50%, primaries +80%,
+ *  secondaries +130%, tertiaries +200%. Full color tree = +1280% (13.80× base before rainbow). */
 export const COLOR_PER_LEVEL: Readonly<Record<string, number>> = {
-  black_white: 0.20,
-  magenta: 0.30,
-  cyan: 0.30,
-  yellow: 0.30,
-  red: 0.40,
-  green: 0.40,
-  blue: 0.40,
-  purple: 0.50,
-  brown: 0.50,
-  orange: 0.50,
+  black_white: 0.50,
+  magenta: 0.80,
+  cyan: 0.80,
+  yellow: 0.80,
+  red: 1.30,
+  green: 1.30,
+  blue: 1.30,
+  purple: 2.00,
+  brown: 2.00,
+  orange: 2.00,
 };
 /** Rainbow stacks multiplicatively: × (1 + RAINBOW_PER_LEVEL × level). */
-export const RAINBOW_PER_LEVEL = 0.50;
-/** get_inspired: +25% inspi rate per level (additive). */
-export const GET_INSPIRED_PER_LEVEL = 0.25;
-/** basic_technique: +2% canvas speed per level (additive). */
-export const BASIC_TECHNIQUE_PER_LEVEL = 0.02;
+export const RAINBOW_PER_LEVEL = 5.00;
+/** get_inspired: +50% inspi rate per level (additive). */
+export const GET_INSPIRED_PER_LEVEL = 0.50;
+/** basic_technique: +5% canvas speed per level (additive). */
+export const BASIC_TECHNIQUE_PER_LEVEL = 0.05;
 /** muscle_memory: +5% canvas speed per level (additive). */
 export const MUSCLE_MEMORY_PER_LEVEL = 0.05;
 /** Bargain: -5% tree upgrade cost per level (additive discount). */
