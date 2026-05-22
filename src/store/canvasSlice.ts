@@ -1,24 +1,12 @@
 import type { StateCreator } from "zustand";
 import {
-  canvasGold, canvasTime,
   sellPriceUpgradeCost, speedUpgradeCost,
   sizeUpgradeCost, critUpgradeCost, comboUpgradeCost,
-  CRIT_SPEED_FACTOR, COMBO_DECAY_PER_LINK, comboBonusFactor, comboEffectiveChance,
 } from "@/core/balance";
-import {
-  getCanvasGoldMultiplier,
-  getCanvasSpeedMultiplier,
-  getPmMultiplier,
-  getCritChance,
-  getComboBaseChance,
-  getCanvasSize,
-  getComboDecayReduction,
-  getCritGoldBonus,
-} from "@/core/multipliers";
 import type { GameStore } from "@/store";
-import { big, type Big } from "@/core/bigNumber";
+import { type Big } from "@/core/bigNumber";
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
-import { rng } from "@/core/rng";
+import { canvasTickPure } from "@/core/canvasTickPure";
 
 export interface CanvasState {
   /**
@@ -95,127 +83,27 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
 
   canvasTick: (deltaSeconds) => {
     if (deltaSeconds <= 0) return;
-    let state = get();
-
-    // Loop-local state — committed via set() at the end. Reading these from
-    // `state` mid-loop would be stale because we don't set() between sales.
-    let progress = state.canvasProgress;
-    let critFlag = state.isCritThisCanvas;
-    let chain = state.comboChain;
-    let lastSaleId = state.lastSale?.id ?? 0;
-    let lastSaleAmount: Big | null = null;
-
-    // Roll crit at the start of every new canvas (covers the very first tick).
-    if (progress === 0) {
-      critFlag = rng() < getCritChance(state);
-    }
-
-    let timeBudget = deltaSeconds;
-    // Multiple sales per tick when effectiveTime < deltaSeconds (e.g. crits at
-    // already-fast canvas times). Safety cap prevents runaway loops.
-    const MAX_SALES_PER_TICK = 1000;
-    let sales = 0;
-
-    // Stat accumulators — committed after the loop to avoid per-sale set() calls.
-    let localCritStreak = 0;
-    let localMaxCritStreak = 0;
-    let localMaxCombo = 0;
-    let critsThisTick = 0;
-    let salesThisTick = 0;
-    let tickGoldTotal = big(0);
-    // Capture current run streak so we carry it across tick boundaries.
-    const prevCritStreak = state.statsRun.currentCritStreak;
-    const prevMaxCritStreak = state.statsRun.maxCritStreak;
-    const prevMaxCombo = state.statsRun.maxComboChain;
-    localCritStreak = prevCritStreak;
-    localMaxCritStreak = prevMaxCritStreak;
-    localMaxCombo = prevMaxCombo;
-
-    while (timeBudget > 0 && sales < MAX_SALES_PER_TICK) {
-      const size = getCanvasSize(state);
-      const baseTime = canvasTime(size);
-      const speedMult = getCanvasSpeedMultiplier(state);
-      const critFactor = critFlag ? CRIT_SPEED_FACTOR : 1;
-      const effectiveTime = baseTime / (speedMult * critFactor);
-
-      const remainingForThisCanvas = effectiveTime - progress;
-
-      if (timeBudget < remainingForThisCanvas) {
-        // Not enough time to finish this canvas — just advance progress.
-        progress += timeBudget;
-        timeBudget = 0;
-        break;
-      }
-
-      // Finish this canvas — fire a sale.
-      timeBudget -= remainingForThisCanvas;
-      progress = 0;
-      sales += 1;
-
-      const critGoldMult = critFlag ? (1 + getCritGoldBonus(state)) : 1;
-      const goldMult = getCanvasGoldMultiplier(state) * getPmMultiplier(state) * critGoldMult;
-      const baseGold = canvasGold(size, goldMult);
-      // Apply combo bonus from PRIOR chain state — chain mutation happens AFTER pay-out.
-      const gain = baseGold.mul(comboBonusFactor(chain));
-
-      state.add("gold", gain);
-      state.trackSaleGold(gain);
-      state.awardOfficeXp(gain);
-
-      salesThisTick += 1;
-      tickGoldTotal = tickGoldTotal.add(gain);
-      if (critFlag) {
-        critsThisTick += 1;
-        localCritStreak += 1;
-        if (localCritStreak > localMaxCritStreak) localMaxCritStreak = localCritStreak;
-      } else {
-        localCritStreak = 0;
-      }
-      if (chain > localMaxCombo) localMaxCombo = chain;
-
-      // Roll combo for the chain decision (after sale paid out).
-      const baseChance = getComboBaseChance(state);
-      const decay = Math.max(0, COMBO_DECAY_PER_LINK - getComboDecayReduction(state));
-      const effChance = comboEffectiveChance(baseChance, chain, decay);
-      const comboHit = rng() < effChance;
-      chain = comboHit ? chain + 1 : 0;
-
-      // Roll crit for the NEXT canvas.
-      critFlag = rng() < getCritChance(state);
-      lastSaleId += 1;
-      lastSaleAmount = gain;
-
-      // Refresh state to capture gold / lifetimeGold / officeXp updates from the
-      // sale we just credited.
-      state = get();
-    }
-
-    if (salesThisTick > 0) {
-      const st = get();
-      st.incrementStat("lifetime", "canvasesSold", salesThisTick);
-      st.incrementStat("lifetime", "critsLanded", critsThisTick);
-      if (localMaxCombo > st.statsLifetime.maxComboChain) {
-        st.incrementStat("lifetime", "maxComboChain", localMaxCombo - st.statsLifetime.maxComboChain);
-      }
-      st.incrementStat("run", "canvasesSold", salesThisTick);
-      st.incrementStat("run", "critsLanded", critsThisTick);
-      get().patchRunStats({
-        currentCritStreak: localCritStreak,
-        maxCritStreak: localMaxCritStreak,
-        maxComboChain: localMaxCombo,
-        goldEarned: get().statsRun.goldEarned.add(tickGoldTotal),
-      });
-      get().evaluateAchievements();
-    }
-
-    set({
-      canvasProgress: progress,
-      isCritThisCanvas: critFlag,
-      comboChain: chain,
-      ...(lastSaleAmount !== null
-        ? { lastSale: { id: lastSaleId, amount: lastSaleAmount } }
-        : {}),
+    let fired = false;
+    set((state) => {
+      const before = state.statsRun.canvasesSold;
+      const draft = { ...state } as GameStore;
+      canvasTickPure(draft, deltaSeconds);
+      fired = draft.statsRun.canvasesSold !== before;
+      return {
+        canvasProgress: draft.canvasProgress,
+        isCritThisCanvas: draft.isCritThisCanvas,
+        comboChain: draft.comboChain,
+        lastSale: draft.lastSale,
+        gold: draft.gold,
+        lifetimeGold: draft.lifetimeGold,
+        roster: draft.roster,
+        officeXp: draft.officeXp,
+        officeLevel: draft.officeLevel,
+        statsLifetime: draft.statsLifetime,
+        statsRun: draft.statsRun,
+      };
     });
+    if (fired) get().evaluateAchievements();
   },
 
   upgradeSellPrice: () => {

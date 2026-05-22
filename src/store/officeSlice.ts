@@ -111,12 +111,12 @@ function applyLevelUps(
   return { level, xp };
 }
 
-function applyWorkerLevelUps(worker: Worker): Worker {
+export function applyWorkerLevelUps(worker: Worker): Worker {
   const { level, xp } = applyLevelUps(worker.level, worker.xp, workerXpToNext, `worker ${worker.id}`);
   return { ...worker, level, xp };
 }
 
-function applyOfficeLevelUps(currentLevel: number, currentXp: Big): { level: number; xp: Big } {
+export function applyOfficeLevelUps(currentLevel: number, currentXp: Big): { level: number; xp: Big } {
   return applyLevelUps(currentLevel, currentXp, officeXpToNext, "office");
 }
 
