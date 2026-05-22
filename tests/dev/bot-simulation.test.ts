@@ -9,10 +9,13 @@
  * The test always passes — its value is the console output.
  */
 
-import { describe, it, beforeEach } from "vitest";
-import { useGameStore } from "@/store";
-import { big } from "@/core/bigNumber";
+import { describe, it, beforeEach, expect } from "vitest";
+import { useGameStore, _resetHeartbeat } from "@/store";
+import { big, type Big } from "@/core/bigNumber";
 import { setSeed } from "@/core/rng";
+import { runCatchupSimulation } from "@/systems/catchup";
+import { cloneGameState } from "@/systems/catchupClone";
+import { ACHIEVEMENTS } from "@/config/achievementConfig";
 import {
   canvasGold,
   canvasTime,
@@ -386,4 +389,89 @@ describe("bot-simulation", () => {
     console.log(`  First ascend:  ${firstAscendAt >= 0 ? fmtTime(firstAscendAt) : "never"}`);
     console.log(`  Size unlocked: ${sizUnlocked} | Crit unlocked: ${critUnlocked} | Combo unlocked: ${comboUnlocked}`);
   }, 30_000);
+
+  // ─── Convergence test ─────────────────────────────────────────────────────
+  //
+  // Verify that `runCatchupSimulation(N)` produces approximately the same
+  // economic state as running the live tick loop for N seconds from the same
+  // baseline + RNG seed.
+  //
+  // Why 3599 and not 3600? `chooseDelta` returns 1 for elapsed < 3600 and 10
+  // for elapsed in [3600, 24h). At exactly 3600 the sim would use a 10s delta
+  // while the live loop uses 1s ticks, and the two RNG streams would diverge
+  // (canvasTickPure rolls an extra crit at progress=0 per tick, so the
+  // boundary roll rate is delta-dependent). At 3599 both paths use delta=1
+  // and consume RNG in lockstep, letting us assert a tight tolerance.
+
+  function snapshotEconomy(
+    state: ReturnType<typeof useGameStore.getState>,
+  ): { gold: Big; inspiration: Big; canvasesSold: number } {
+    return {
+      gold: state.gold,
+      inspiration: state.inspiration,
+      canvasesSold: state.statsRun.canvasesSold,
+    };
+  }
+
+  it("catch-up simulation converges with live tick over ~1h", async () => {
+    const ELAPSED = 3599; // delta = 1 on both paths (see comment above)
+
+    // Build a deterministic baseline on top of the beforeEach resets. A stage-0
+    // tree with cotyledon=5 produces 0.5 inspi/sec; sellPriceLevel + speedLevel
+    // default to 1 so the canvas tick fires sales from the first second.
+    //
+    // Pre-mark every achievement as completed so none can fire mid-run. The
+    // live tick calls `evaluateAchievements()` after every selling tick, while
+    // `runCatchupSimulation` calls it ONCE at the end; without this guard, any
+    // mid-run unlock (e.g. Rising Star at 1000 lifetime sales → +20% speed)
+    // would boost the live path's output but not the sim's, producing a
+    // ~50% gold divergence (verified empirically — see commit history).
+    const allCompleted: Record<string, true> = {};
+    for (const a of ACHIEVEMENTS) allCompleted[a.id] = true;
+    useGameStore.setState({
+      currentStage: 0,
+      partLevels: { cotyledon: 5 },
+      completedAchievements: allCompleted,
+    });
+
+    // Deep-clone the baseline so the second run can be restored from a
+    // pristine snapshot — Zustand setState merges shallowly, so nested records
+    // like partLevels and statsRun could otherwise alias mutated objects.
+    const baseline = cloneGameState(useGameStore.getState());
+
+    // ─── Run 1: live ticks ───
+    setSeed(SEED);
+    _resetHeartbeat();
+    for (let s = 0; s < ELAPSED; s++) {
+      useGameStore.getState().tickAll(1);
+    }
+    const liveResult = snapshotEconomy(useGameStore.getState());
+
+    // ─── Run 2: catch-up sim from the same baseline + same RNG seed ───
+    useGameStore.setState(cloneGameState(baseline));
+    setSeed(SEED);
+    _resetHeartbeat();
+    await runCatchupSimulation(ELAPSED, () => {});
+    const simResult = snapshotEconomy(useGameStore.getState());
+
+    console.log("\n=== Convergence (live vs catch-up, 3599s) ===");
+    console.log(`  Gold        live=${liveResult.gold.toString()} sim=${simResult.gold.toString()}`);
+    console.log(`  Inspi       live=${liveResult.inspiration.toString()} sim=${simResult.inspiration.toString()}`);
+    console.log(`  CanvasesSold live=${liveResult.canvasesSold} sim=${simResult.canvasesSold}`);
+
+    // With matched deltas and matched RNG seed, the two paths should match
+    // exactly (or be vanishingly close due to floating-point order in Big
+    // arithmetic). Allow 1% tolerance as a safety margin.
+    const goldRatio = simResult.gold.div(liveResult.gold).toNumber();
+    expect(goldRatio).toBeGreaterThan(0.99);
+    expect(goldRatio).toBeLessThan(1.01);
+
+    const inspiRatio = simResult.inspiration.div(liveResult.inspiration).toNumber();
+    expect(inspiRatio).toBeGreaterThan(0.99);
+    expect(inspiRatio).toBeLessThan(1.01);
+
+    // Canvases sold should match exactly (integer counter, deterministic deltas).
+    const canvasDelta = Math.abs(simResult.canvasesSold - liveResult.canvasesSold);
+    expect(canvasDelta).toBeLessThanOrEqual(1);
+  }, 60_000);
 });
