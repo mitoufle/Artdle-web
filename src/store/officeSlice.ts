@@ -1,15 +1,16 @@
 import type { StateCreator } from "zustand";
 import { big, type Big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
-import { rollCandidate, type Candidate } from "@/core/officeRoll";
+import { type Candidate } from "@/core/officeRoll";
 import type { ClassId } from "@/config/officeClasses";
 import type { WorkerTier } from "@/core/balance";
 import type { Affix } from "@/core/workshopRoll";
 import { hasCapability, countCapability } from "@/store/skillTreeSlice";
 import { OFFICE_CLASSES } from "@/config/officeClasses";
-import { OFFICE_TIER_UNLOCK_LEVEL, ALL_WORKER_TIERS, trickleSeconds, hireCost, workerXpToNext, officeXpToNext, XP_GOLD_FRACTION } from "@/core/balance";
+import { OFFICE_TIER_UNLOCK_LEVEL, ALL_WORKER_TIERS, hireCost, workerXpToNext, officeXpToNext, XP_GOLD_FRACTION } from "@/core/balance";
 import { getWorkerXpMultiplier, getHireCostMultiplier } from "@/core/multipliers";
 import { AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
+import { officeTickPure } from "@/core/officeTickPure";
 
 export interface Worker {
   readonly id: string;
@@ -123,26 +124,13 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
   ...initialOfficeState,
 
   tickOffice: (delta: number) => {
-    if (delta <= 0) return;
-    const state = get();
-    const queueCap = getQueueCap(state);
-    if (queueCap <= 0) return;
-    if (state.queue.length >= queueCap) return;
-
-    const period = trickleSeconds(state.officeLevel);
-    let timer = state.trickleTimer + delta;
-    const newCandidates: Candidate[] = [];
-    let queueSize = state.queue.length;
-
-    while (timer >= period && queueSize < queueCap) {
-      timer -= period;
-      newCandidates.push(rollCandidate(state.officeLevel, state));
-      queueSize += 1;
-    }
-
-    set({
-      queue: [...state.queue, ...newCandidates],
-      trickleTimer: timer,
+    set((state) => {
+      const draft = { ...state } as GameStore;
+      officeTickPure(draft, delta);
+      return {
+        queue: draft.queue,
+        trickleTimer: draft.trickleTimer,
+      };
     });
   },
   hireFromQueue: (candidateId: string): boolean => {
