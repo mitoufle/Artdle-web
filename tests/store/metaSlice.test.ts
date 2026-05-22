@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { create } from "zustand";
 import { createMetaSlice, type MetaSlice } from "@/store/metaSlice";
 import { isPlayerId } from "@/core/playerId";
-import { useGameStore } from "@/store";
+import { useGameStore, migrate } from "@/store";
 import { big } from "@/core/bigNumber";
 
 import type { StateCreator } from "zustand";
@@ -89,5 +89,51 @@ describe("metaSlice — performAscend wrapper", () => {
     const beforeCount = useGameStore.getState().ascendCount;
     expect(useGameStore.getState().performAscend()).toBe(true);
     expect(useGameStore.getState().ascendCount).toBe(beforeCount + 1);
+  });
+});
+
+describe("save migration v19 → v20 (lastSeen)", () => {
+  it("seeds lastSeen with Date.now() for pre-v20 saves", () => {
+    const fakeNow = 1_700_000_000_000;
+    const realNow = Date.now;
+    Date.now = () => fakeNow;
+    try {
+      const v19State = {
+        gold: { __big: "0" },
+        inspiration: { __big: "0" },
+        fame: { __big: "0" },
+        ascendCount: 0,
+        playerId: "test-id-v19",
+        lifetimeInspiration: { __big: "0" },
+      };
+      const migrated = migrate(v19State, 19) as unknown as Record<string, unknown>;
+      expect(migrated.lastSeen).toBe(fakeNow);
+    } finally {
+      Date.now = realNow;
+    }
+  });
+
+  it("preserves existing lastSeen when migrating from v20+ (no-op)", () => {
+    const v20State = {
+      playerId: "test-id-v20",
+      lastSeen: 1_234_567_890_000,
+    };
+    const migrated = migrate(v20State, 20) as unknown as Record<string, unknown>;
+    expect(migrated.lastSeen).toBe(1_234_567_890_000);
+  });
+
+  it("chains correctly from earlier versions (v18 → v20 seeds lastSeen)", () => {
+    const fakeNow = 1_800_000_000_000;
+    const realNow = Date.now;
+    Date.now = () => fakeNow;
+    try {
+      const v18State = { playerId: "v18-test", gold: { __big: "0" } };
+      const migrated = migrate(v18State, 18) as unknown as Record<string, unknown>;
+      // v18 → v19 adds lifetimeInspiration; v19 → v20 adds lastSeen.
+      expect((migrated.lifetimeInspiration as ReturnType<typeof big>).toNumber()).toBe(0);
+      expect(migrated.lastSeen).toBe(fakeNow);
+    } finally {
+      Date.now = realNow;
+    }
   });
 });

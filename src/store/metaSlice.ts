@@ -19,6 +19,12 @@ export interface MetaSlice {
    * UI-only consumer is the AscensionRoute's PastRunsLedger panel.
    */
   pastRuns: ReadonlyArray<PastRun>;
+  /**
+   * Epoch ms of the last save flush (visibilitychange / beforeunload / 10s
+   * heartbeat). Used on rehydration to compute `elapsed = Date.now() - lastSeen`
+   * for the offline-progress catch-up simulation.
+   */
+  lastSeen: number;
 
   /** Bumped on each successful ascend. */
   incrementAscendCount: () => void;
@@ -38,6 +44,7 @@ export const createMetaSlice: StateCreator<GameStore, [], [], MetaSlice> = (set,
   playerId: newPlayerId(),
   ascendCount: 0,
   pastRuns: [],
+  lastSeen: Date.now(),
 
   incrementAscendCount: () => set((s) => ({ ascendCount: s.ascendCount + 1 })),
   addPastRun: (run) =>

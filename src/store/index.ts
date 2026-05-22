@@ -40,7 +40,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 19;
+const SAVE_VERSION = 20;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -102,6 +102,10 @@ const SAVE_KEY = "artdle-save";
  *
  * v18 → v19 (2026-05-20): Add lifetimeInspiration (Big, default 0) on
  * paintMasterySlice for `lifetime.inspirationgain` achievement conditions.
+ *
+ * v19 → v20 (2026-05-22): offline progress — add `lastSeen` timestamp to
+ * metaSlice. Existing saves get Date.now() so the first load post-update
+ * has `elapsed = 0` (no false catch-up against the deploy timestamp).
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -330,6 +334,16 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     state = {
       ...state,
       lifetimeInspiration: big(0),
+    };
+  }
+
+  if (fromVersion < 20) {
+    // v19 → v20 (2026-05-22): offline progress — add lastSeen timestamp on
+    // metaSlice. Seed with Date.now() so the first load post-update sees
+    // `elapsed = 0` (no false catch-up against the deploy timestamp).
+    state = {
+      ...state,
+      lastSeen: Date.now(),
     };
   }
 
