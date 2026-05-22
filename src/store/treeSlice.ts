@@ -1,8 +1,9 @@
 import type { StateCreator } from "zustand";
 import { TREE_STAGES, type TreePartConfig } from "@/config/treeStages";
-import { treePartCost, inspiPerSec } from "@/core/balance";
+import { treePartCost } from "@/core/balance";
 import { big } from "@/core/bigNumber";
-import { getInspiMultiplier, getTreeUpgradeCostMultiplier } from "@/core/multipliers";
+import { getTreeUpgradeCostMultiplier } from "@/core/multipliers";
+import { treeTickPure } from "@/core/treeTickPure";
 import type { GameStore } from "@/store";
 
 /** Iteration cap for auto-advance loops in buyPartLevel and treeTick. */
@@ -124,22 +125,15 @@ export const createTreeSlice: StateCreator<GameStore, [], [], TreeSlice> = (set,
 
   treeTick: (deltaSeconds) => {
     if (deltaSeconds <= 0) return;
-    const state = get();
-    const producing = getProducingParts(state);
-    if (producing.length > 0) {
-      const multiplier = getInspiMultiplier(state);
-      const rate = inspiPerSec(producing, multiplier);
-      if (rate.gt(0)) {
-        const gain = rate.mul(deltaSeconds);
-        state.add("inspiration", gain);
-        state.trackInspirationGain(gain);
-      }
-    }
-    // Defensive auto-advance: catches loaded saves whose partLevels already
-    // qualify without a fresh buy event (post-migration, balance-curve shifts).
-    for (let i = 0; i < AUTO_GROW_MAX_ITER && canGrowSapling(get()); i++) {
-      get().growSapling();
-    }
+    set((state) => {
+      const draft = { ...state } as GameStore;
+      treeTickPure(draft, deltaSeconds);
+      return {
+        currentStage: draft.currentStage,
+        inspiration: draft.inspiration,
+        lifetimeInspiration: draft.lifetimeInspiration,
+      };
+    });
   },
 
   resetTree: () => set(initialTreeState),
