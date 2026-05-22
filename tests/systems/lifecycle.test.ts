@@ -3,6 +3,7 @@ import { installLifecycle, defaultLifecycleHooks } from "@/systems/lifecycle";
 import { setErrorReporter, resetErrorReporter } from "@/systems/telemetry";
 import { persistedAdapter } from "@/systems/persistence";
 import * as tickLoop from "@/core/tickLoop";
+import { useGameStore } from "@/store";
 
 describe("installLifecycle()", () => {
   let cleanup: () => void = () => {};
@@ -126,5 +127,48 @@ describe("defaultLifecycleHooks", () => {
     const [err, ctx] = errorSink.mock.calls[0]!;
     expect((err as Error).message).toBe("unload-flush-boom");
     expect(ctx).toBe("persist.flush.beforeunload");
+  });
+});
+
+describe("defaultLifecycleHooks — lastSeen writes", () => {
+  let pauseSpy: ReturnType<typeof vi.spyOn>;
+  let flushSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    pauseSpy = vi.spyOn(tickLoop, "pauseTickLoop").mockImplementation(() => {});
+    flushSpy = vi.spyOn(persistedAdapter, "flush").mockResolvedValue();
+    resetErrorReporter();
+  });
+
+  afterEach(() => {
+    pauseSpy.mockRestore();
+    flushSpy.mockRestore();
+    resetErrorReporter();
+  });
+
+  it("onHide writes lastSeen before flush", () => {
+    const fakeNow = 1_700_000_999_999;
+    const realNow = Date.now;
+    Date.now = () => fakeNow;
+    try {
+      useGameStore.setState({ lastSeen: 0 });
+      defaultLifecycleHooks.onHide();
+      expect(useGameStore.getState().lastSeen).toBe(fakeNow);
+    } finally {
+      Date.now = realNow;
+    }
+  });
+
+  it("onUnload writes lastSeen before flush", () => {
+    const fakeNow = 1_700_001_999_999;
+    const realNow = Date.now;
+    Date.now = () => fakeNow;
+    try {
+      useGameStore.setState({ lastSeen: 0 });
+      defaultLifecycleHooks.onUnload();
+      expect(useGameStore.getState().lastSeen).toBe(fakeNow);
+    } finally {
+      Date.now = realNow;
+    }
   });
 });

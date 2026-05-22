@@ -1,6 +1,7 @@
 import { persistedAdapter } from "./persistence";
 import { reportError } from "./telemetry";
 import { pauseTickLoop, resumeTickLoop } from "@/core/tickLoop";
+import { useGameStore } from "@/store";
 
 /**
  * Hooks injected into `installLifecycle`. The orchestrator stays agnostic;
@@ -40,6 +41,7 @@ export function installLifecycle(hooks: LifecycleHooks): () => void {
  */
 export const defaultLifecycleHooks: LifecycleHooks = {
   onHide: (): void => {
+    useGameStore.setState({ lastSeen: Date.now() });
     pauseTickLoop();
     void persistedAdapter.flush().catch((err: unknown) =>
       reportError(err as Error, "persist.flush.visibilitychange"),
@@ -49,6 +51,7 @@ export const defaultLifecycleHooks: LifecycleHooks = {
     resumeTickLoop();
   },
   onUnload: (): void => {
+    useGameStore.setState({ lastSeen: Date.now() });
     void persistedAdapter.flush().catch((err: unknown) =>
       reportError(err as Error, "persist.flush.beforeunload"),
     );
