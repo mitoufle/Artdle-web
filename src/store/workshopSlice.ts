@@ -4,24 +4,22 @@ import {
   type AffixKind,
   type SlotKind,
 } from "@/config/workshopAffixes";
-import { craftCost, xpToNext, MAX_WORKSHOP_LEVEL } from "@/core/balance";
+import { craftCost } from "@/core/balance";
 import type { Big } from "@/core/bigNumber";
-import { rng, rngPick } from "@/core/rng";
-import { rollTier, rollAffixes, TIER_XP } from "@/core/workshopRoll";
+import { rng } from "@/core/rng";
 import type { ItemTier, Affix } from "@/core/workshopRoll";
 import type { GameStore } from "@/store";
 import { getNodeLevel } from "@/store/skillTreeSlice";
-import { getAffixMagnitudeBonus, getSchoolAffixMagnitudeMultiplier } from "@/core/multipliers";
+import { performCraftPure, workshopTickPure } from "@/core/workshopTickPure";
 
 export type { AffixKind, SlotKind } from "@/config/workshopAffixes";
 export type { ItemTier, Affix } from "@/core/workshopRoll";
+export { TIER_XP } from "@/core/workshopRoll";
 
 const STORAGE_PER_CHEST = 2;
-const TAYLORISM_INTERVAL_S = 10;
-const THIRD_HAND_INTERVAL_REDUCTION = 0.10; // fraction reduced per level
 
 let _itemCounter = 0;
-function nextItemId(): string {
+export function nextItemId(): string {
   _itemCounter += 1;
   return `it-${Date.now().toString(36)}-${_itemCounter}`;
 }
@@ -162,55 +160,30 @@ export const getFuseCost = (equippedItem: Item, workshopLevel: number): Big =>
  *
  * Shredder note: when inventory is full AND shredder ≥ 1, we drop the OLDEST
  * (index 0) inventory item before pushing the new one (keeps inventory bounded).
+ *
+ * Wraps `performCraftPure` — single source of truth for the craft logic so the
+ * offline-progress sim and the live tick share semantics.
  */
 function performCraft(
-  state: GameStore,
   set: (fn: (s: GameStore) => Partial<GameStore>) => void,
   get: () => GameStore,
 ): boolean {
-  const cap = getMaxInventorySlots(state);
-  const hasShredder = getNodeLevel(state, "shredder") > 0;
-  if (state.inventory.length >= cap) {
-    if (!hasShredder) return false;
-    // Has shredder but all items are protected — nothing to kick out.
-    if (state.inventory.every((i) => state.protectedTiers[i.tier])) return false;
-  }
-
-  const cost = craftCost(state.workshopLevel);
-  if (!state.spend("gold", cost)) return false;
-
-  const unlocked = getUnlockedSlotKinds(state);
-  const slot = rngPick(unlocked);
-  const tier = rollTier(state.workshopLevel);
-  const affixes = rollAffixes(tier, state, getAffixMagnitudeBonus(state), getSchoolAffixMagnitudeMultiplier(state));
-  const item: Item = {
-    id: nextItemId(),
-    slot,
-    tier,
-    affixes,
-    fuseCount: 0,
-  };
-
+  let ok = false;
   set((s) => {
-    let newLevel = s.workshopLevel;
-    let newXp = s.workshopXp + TIER_XP[item.tier];
-    while (newLevel < MAX_WORKSHOP_LEVEL && newXp >= xpToNext(newLevel)) {
-      newXp -= xpToNext(newLevel);
-      newLevel += 1;
-    }
-    if (s.inventory.length >= cap) {
-      // Kick the oldest unprotected item to make room.
-      const kickIdx = s.inventory.findIndex((i) => !s.protectedTiers[i.tier]);
-      if (kickIdx === -1) return { workshopLevel: newLevel, workshopXp: newXp };
-      const trimmed = [...s.inventory.slice(0, kickIdx), ...s.inventory.slice(kickIdx + 1)];
-      return { inventory: [...trimmed, item], workshopLevel: newLevel, workshopXp: newXp };
-    }
-    return { inventory: [...s.inventory, item], workshopLevel: newLevel, workshopXp: newXp };
+    const draft = { ...s } as GameStore;
+    ok = performCraftPure(draft);
+    if (!ok) return {};
+    return {
+      gold: draft.gold,
+      inventory: draft.inventory,
+      workshopLevel: draft.workshopLevel,
+      workshopXp: draft.workshopXp,
+      statsLifetime: draft.statsLifetime,
+      statsRun: draft.statsRun,
+    };
   });
-  get().incrementStat("lifetime", "workshopItemsCrafted");
-  get().incrementStat("run", "workshopItemsCrafted");
-  get().evaluateAchievements();
-  return true;
+  if (ok) get().evaluateAchievements();
+  return ok;
 }
 
 // ============================================================================
@@ -220,7 +193,7 @@ function performCraft(
 export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice> = (set, get) => ({
   ...initialWorkshopState,
 
-  craft: () => performCraft(get(), set, get),
+  craft: () => performCraft(set, get),
 
   equipItem: (itemId) => {
     const state = get();
@@ -320,25 +293,23 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
 
   workshopTick: (deltaSeconds) => {
     if (deltaSeconds <= 0) return;
-    const state = get();
-    const taylorismLevel = getNodeLevel(state, "taylorsim");
-    if (taylorismLevel === 0) return;
-    if (!state.autoCraftEnabled) return;
-
-    const thirdHandLevel = getNodeLevel(state, "third_hand");
-    const interval = TAYLORISM_INTERVAL_S * (1 - THIRD_HAND_INTERVAL_REDUCTION * thirdHandLevel);
-
-    const next = state.autoCraftTimer + deltaSeconds;
-    const grants = Math.floor(next / interval);
-    if (grants > 0) {
-      // Attempt one craft per interval crossed. If a craft fails (no gold,
-      // full + no shredder, etc.), keep the timer accumulated for the next try.
-      for (let i = 0; i < grants; i++) {
-        const ok = performCraft(get(), set, get);
-        if (!ok) break;
-      }
-    }
-    set({ autoCraftTimer: next - grants * interval });
+    let crafted = false;
+    set((state) => {
+      const before = state.statsRun.workshopItemsCrafted;
+      const draft = { ...state } as GameStore;
+      workshopTickPure(draft, deltaSeconds);
+      crafted = draft.statsRun.workshopItemsCrafted !== before;
+      return {
+        autoCraftTimer: draft.autoCraftTimer,
+        gold: draft.gold,
+        inventory: draft.inventory,
+        workshopLevel: draft.workshopLevel,
+        workshopXp: draft.workshopXp,
+        statsLifetime: draft.statsLifetime,
+        statsRun: draft.statsRun,
+      };
+    });
+    if (crafted) get().evaluateAchievements();
   },
 
   resetWorkshop: () =>

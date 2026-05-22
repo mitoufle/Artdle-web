@@ -20,6 +20,10 @@ export const CRAFT_COST_BASE = 100;
 export const CRAFT_COST_EARLY_GROWTH = 1.05;  // L1..L5 — gentle ramp
 export const CRAFT_COST_LATE_GROWTH = 1.20;   // L5+   — exponential climb
 
+// Workshop Taylorism (auto-craft) — base interval & per-level reduction from third_hand.
+export const TAYLORISM_INTERVAL_S = 10;
+export const THIRD_HAND_INTERVAL_REDUCTION = 0.10; // fraction reduced per level
+
 // ============================================================================
 // Canvas depth — see docs/superpowers/specs/2026-05-10-canvas-depth-design.md
 // ============================================================================
