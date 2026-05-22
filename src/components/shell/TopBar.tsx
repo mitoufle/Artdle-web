@@ -5,14 +5,30 @@ import { useGameStore } from "@/store";
 import { persistedAdapter } from "@/systems/persistence";
 import { useMusic } from "@/ui/hooks/useMusic";
 import { MusicControls } from "./MusicControls";
+import treeIcon from "@/assets/bar_icons/tree.png";
+import paintingIcon from "@/assets/bar_icons/painting.png";
+import musicIcon from "@/assets/bar_icons/music.png";
+import sculptureIcon from "@/assets/bar_icons/sculpture.png";
+import ascensionIcon from "@/assets/bar_icons/ascension.png";
+import constellationIcon from "@/assets/bar_icons/constellation.png";
+import achievementsIcon from "@/assets/bar_icons/Achievements.png";
 import styles from "./TopBar.module.css";
 
-const NAV_ITEMS: ReadonlyArray<{ to: string; label: string }> = [
-  { to: "/tree",          label: "Tree" },
-  { to: "/painting",      label: "Painting" },
-  { to: "/ascension",     label: "Ascension" },
-  { to: "/constellation", label: "Constellation" },
-  { to: "/achievements",  label: "Achievements" },
+type NavItem = {
+  to: string;
+  label: string;
+  icon: string;
+  locked?: boolean;
+};
+
+const NAV_ITEMS: ReadonlyArray<NavItem> = [
+  { to: "/tree",          label: "Tree",          icon: treeIcon },
+  { to: "/painting",      label: "Painting",      icon: paintingIcon },
+  { to: "/music",         label: "Music",         icon: musicIcon,      locked: true },
+  { to: "/sculpture",     label: "Sculpture",     icon: sculptureIcon,  locked: true },
+  { to: "/ascension",     label: "Ascension",     icon: ascensionIcon },
+  { to: "/constellation", label: "Constellation", icon: constellationIcon },
+  { to: "/achievements",  label: "Achievements",  icon: achievementsIcon },
 ];
 
 async function wipeAndReload(): Promise<void> {
@@ -42,7 +58,38 @@ export function TopBar(): JSX.Element {
         <span>RTDLE</span>
       </div>
       <nav className={styles.nav} aria-label="Primary">
-        {NAV_ITEMS.map(({ to, label }) => {
+        {NAV_ITEMS.map(({ to, label, icon, locked }) => {
+          if (locked) {
+            return (
+              <span
+                key={to}
+                className={`${styles.navItem as string} ${styles.navItemLocked as string}`}
+                aria-disabled="true"
+                aria-label={`${label} (locked)`}
+                title={`${label} — coming soon`}
+              >
+                <img src={icon} alt="" className={styles.navIcon} />
+                <svg
+                  className={styles.lockBadge}
+                  viewBox="0 0 10 10"
+                  shapeRendering="crispEdges"
+                  aria-hidden="true"
+                >
+                  {/* shackle */}
+                  <rect x="3" y="1" width="4" height="1" fill="#2a2228" />
+                  <rect x="3" y="2" width="1" height="2" fill="#2a2228" />
+                  <rect x="6" y="2" width="1" height="2" fill="#2a2228" />
+                  {/* body */}
+                  <rect x="2" y="4" width="6" height="5" fill="#c98a2e" />
+                  <rect x="2" y="4" width="6" height="1" fill="#f0c66a" />
+                  <rect x="2" y="8" width="6" height="1" fill="#8a5a20" />
+                  {/* keyhole */}
+                  <rect x="4" y="5" width="2" height="2" fill="#2a2228" />
+                  <rect x="4" y="7" width="2" height="1" fill="#2a2228" />
+                </svg>
+              </span>
+            );
+          }
           const isActive = pathname === to;
           const className = isActive
             ? `${styles.navItem as string} ${styles.navItemActive as string}`
@@ -55,10 +102,10 @@ export function TopBar(): JSX.Element {
               className={className}
               data-active={isActive ? "true" : undefined}
               aria-current={isActive ? "page" : undefined}
+              aria-label={label}
+              title={label}
             >
-              {isActive && <span className={styles.flourish} aria-hidden="true">✦</span>}
-              <span>{label}</span>
-              {isActive && <span className={styles.flourish} aria-hidden="true">✦</span>}
+              <img src={icon} alt="" className={styles.navIcon} />
             </NavLink>
           );
         })}

@@ -30,35 +30,75 @@
 }
 
 .navItem {
-  font-family: var(--serif);
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--ink-2);
   text-decoration: none;
-  padding: var(--s-2) var(--s-3);
+  padding: 2px var(--s-2);
   border: 1px solid transparent;
   border-radius: var(--r-sm);
-  transition: color 140ms ease, border-color 140ms ease;
+  transition: border-color 140ms ease, transform 140ms ease;
   display: inline-flex;
   align-items: center;
-  gap: var(--s-2);
+  justify-content: center;
 }
 
-.navItem:hover {
-  color: var(--ink-0);
+.navIcon {
+  width: 36px;
+  height: 36px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  opacity: 0.55;
+  filter: grayscale(0.35);
+  transition: opacity 140ms ease, filter 140ms ease, transform 140ms ease;
+  user-select: none;
+  -webkit-user-drag: none;
+  display: block;
+}
+
+.navItem:hover .navIcon {
+  opacity: 0.9;
+  filter: grayscale(0);
+  transform: translateY(-1px);
 }
 
 .navItemActive {
-  color: var(--fame);
   border-color: var(--fame-d);
 }
 
-.flourish {
-  color: var(--fame);
-  text-shadow: var(--fame-glow);
-  font-size: 11px;
+.navItemActive .navIcon {
+  opacity: 1;
+  filter: grayscale(0) drop-shadow(0 0 4px var(--fame));
+}
+
+.navItemLocked {
+  cursor: not-allowed;
+  position: relative;
+}
+
+.navItemLocked .navIcon {
+  opacity: 0.22;
+  filter: grayscale(1);
+  transform: none;
+}
+
+.navItemLocked:hover .navIcon {
+  opacity: 0.32;
+  filter: grayscale(1);
+  transform: none;
+}
+
+.lockBadge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+  filter:
+    drop-shadow(0 0 0 #1a1418)
+    drop-shadow(1px 0 0 #1a1418)
+    drop-shadow(-1px 0 0 #1a1418)
+    drop-shadow(0 1px 0 #1a1418)
+    drop-shadow(0 -1px 0 #1a1418)
+    drop-shadow(0 0 3px rgba(0, 0, 0, 0.8));
 }
 
 .meta {
