@@ -1,5 +1,89 @@
 # Artdle Web — Handover
 
+## Offline-progress catch-up — full implementation (2026-05-22)
+
+### What landed (18 commits, all on `master`)
+
+Plan: [`docs/superpowers/plans/2026-05-22-offline-progress.md`](superpowers/plans/2026-05-22-offline-progress.md). Spec: [`docs/superpowers/specs/2026-05-22-offline-progress-design.md`](superpowers/specs/2026-05-22-offline-progress-design.md).
+
+Closes the long-standing v1 "no offline progress" gap. On reload, the rehydrated state is cloned and ticked forward by the elapsed wall-clock time inside an async chunked loop, then committed back to the store in a single `setState`. UX branches on elapsed time: ≤ 5s silent, ≤ 2h spring toast top-right, > 2h full-screen loading scene + recap modal.
+
+**Phase 1 — pure tick refactor (6 commits, `65454aa` → `e22a5d3`)**
+
+Every game tick now exists in two forms: a `*TickPure(draft, deltaSeconds)` mutator in `src/core/`, and a thin slice wrapper in `src/store/*Slice.ts` that builds a draft, calls the pure form, then returns a shallow-merge object to Zustand. Helpers (`addCurrency`, `spendCurrency`, `trackSaleGoldPure`, `trackInspirationGainPure`, `incrementStatPure`, `patchRunStatsPure`, `awardOfficeXpPure`) live in `src/core/pureMutations.ts`. New files:
+- `treeTickPure.ts` — inlines `getProducingParts` + `growSapling` loop (cap 100 iter).
+- `skillTreeTickPure.ts` — poke-tree timer.
+- `schoolTickPure.ts` — research countdown + completion stat bumps.
+- `officeTickPure.ts` — candidate trickle into queue.
+- `canvasTickPure.ts` — full multi-sale loop with crit/combo RNG, embeds `awardOfficeXpPure`. Skips `evaluateAchievements()` (deferred to end-of-sim).
+- `workshopTickPure.ts` — includes `performCraftPure` (also called by the live `craft` wrapper).
+
+The wrappers keep `evaluateAchievements()` on the live path (fires after the pure mutation returns), so live play behaves identically.
+
+**Phase 2 — `lastSeen` plumbing (3 commits, `30a70bf` → `b2b84c2`)**
+
+- `metaSlice.lastSeen: number` (epoch ms), seeded `Date.now()` at slice init. SAVE_VERSION **19 → 20**, migration backfills `lastSeen: Date.now()` for older saves (so a player on v19 sees zero elapsed on first load, which is correct).
+- `defaultLifecycleHooks.onHide` and `.onUnload` write `lastSeen` before flushing IDB.
+- `tickAll` accumulates a module-level `_heartbeatAccum`; every 10 simulated seconds it writes `lastSeen: Date.now()` so a hard crash (process kill, OS hang) loses at most 10 s of elapsed time.
+
+**Phase 3 — clone helper (1 commit, `5e0c58a`)**
+
+`src/systems/catchupClone.ts` exports `cloneGameState(state) → DraftState`. Spreads the top-level object, `{ ...obj }`-clones every mutable `Record`, `.map`-clones every mutable array (with nested `affixes` re-spread for `inventory`/`equipped`/`queue`), shares Big by reference (immutable). Pure tick functions can now scribble on the draft without leaking into the live store.
+
+**Phase 4 — simulation engine (2 commits, `ea00177`, `7f3b8db`)**
+
+`runCatchupSimulation(elapsed, onProgress) → CatchupResult` in `src/systems/catchup.ts`:
+- `chooseDelta` adapts step size: < 30 min → 0.1 s, < 1 h → 1 s, < 1 d → 10 s, ≥ 1 d → 60 s. Keeps the work bounded — a 1-year elapsed simulates in ~3-5 s.
+- Outer loop yields to the browser via `setTimeout(0)` every `BATCH_SIZE = 200` steps, so progress UI updates and the page stays responsive.
+- After the loop, applies the draft via `setState`, then calls `evaluateAchievements()` once — newly-unlocked achievement IDs are diffed against the baseline and returned in the result.
+- Bot convergence test (`tests/integration/bot-simulation.test.ts`) runs the same initial state through 3600 live ticks vs. one `runCatchupSimulation(3600)` and asserts gold / inspiration / canvases-sold land within 5%. Confirms the pure-tick refactor preserves economy semantics.
+
+**Phase 5 — UI (3 commits, `e412987` → `47943e5`)**
+
+- `CatchupToast` — fixed top-right, spring slide-in from the corner (matches `AchievementToast` palette), 6 s auto-dismiss, single line: `+gold · +inspi · N canvases`.
+- `CatchupLoadingScene` — full-screen overlay, animated gold progress bar, "Catching up on Xh Ymin away…" copy. ARIA progressbar with live `aria-valuenow`.
+- `CatchupRecapModal` — backdrop modal, dl-grid of stats (gold, inspi, canvases, items crafted, paint mastery), bullet list of newly-unlocked achievements (section omitted when empty), Continue button.
+- `src/core/formatElapsed.ts` shared by all three.
+
+**Phase 6 — Bootstrap branching (1 commit, `2cee95d`)**
+
+`src/main.tsx` rewritten around a `Phase` discriminated union (`rehydrating | silent_sim | loading_scene | recap | playing`). On hydration finish, `decideEntry()` reads `lastSeen`, picks a branch, and the component renders accordingly:
+- `elapsed ≤ 5s` → straight to `playing`, no UI.
+- `5s < elapsed < 2h` → `silent_sim` (LoadingScreen) → run sim → `playing` with `toast` set.
+- `elapsed ≥ 2h` → `loading_scene` with live progress → `recap` modal → click Continue → `playing`.
+- Sim throws → `reportError` + skip to `playing` without catch-up UI (fail-open).
+- Tick loop + lifecycle install only fire on entering `playing`. Achievement evaluation moved out of the standalone effect into the sim (and the no-catch-up branch fires it on first `playing` mount).
+
+**Phase 7 — dev playtest helper (1 commit, `2438f66`)**
+
+The naive playtest recipe (`useGameStore.setState({lastSeen: PAST}); location.reload()`) was racy: `onUnload` fires before unload and overwrites `lastSeen` back to `Date.now()`. Fix:
+- `window.testCatchup(hoursAgo)` (DEV-only, mounted on `window` in `main.tsx`) — sets `lastSeen` to `Date.now() - hoursAgo * 3600_000`, writes `sessionStorage.__skipNextLastSeenWrite = "1"`, flushes IDB, reloads.
+- `shouldWriteLastSeen()` in `lifecycle.ts` reads-and-consumes the flag on the next `onHide`/`onUnload` so the manually-set value survives the reload.
+- Production lifecycle untouched (the flag is never set outside the helper).
+
+### Status
+
+- **932 tests green** across 105 files (was 872 / pre-catchup baseline). +60 net tests from the work.
+- Browser playtest confirmed working at all three branches by user (2026-05-22).
+- All 18 commits on `master` (HEAD `2438f66`). Push + `npx vercel --prod` performed at end of session.
+- Pre-existing tsc errors in `achievementSlice.ts`, `officeSlice.ts`, `statsSlice.ts`, `bot-simulation.test.ts`, `SchoolDesignerRoute.test.tsx`, `SortableCard.tsx` carry over — not introduced here.
+
+### Notes / save-state impact
+
+- **SAVE_VERSION 20 migration is non-destructive**: older saves get `lastSeen = Date.now()` on first load, so the first reload after upgrade shows zero elapsed (correct — the player hadn't been "tracked" before).
+- **Achievement notifications queue normally**: end-of-sim eval pushes any newly-unlocked achievements through the existing `notificationQueue`, so the rainbow toast fires on top of the catch-up recap once the user dismisses it. FIFO queue semantics from earlier work handle this naturally.
+- **Failure mode is fail-open, not fail-stop**: any thrown error in the sim is reported (`reportError`) and the game mounts directly. Worst case the player loses the offline progress for that one session; the live tick loop and saves keep working.
+- **The 10s heartbeat is module-level state**: tests that call `tickAll` across cases need to reset `_heartbeatAccum` (or be tolerant of cross-test bleed). Live runtime is unaffected — the module is instantiated once per page load.
+- **`testCatchup` is a DEV-only window helper**: the lifecycle `shouldWriteLastSeen` gate has zero effect in production since the sessionStorage flag is never set. Safe to ship.
+
+### Open follow-ups
+
+- **Loading scene polish** — currently a flat gold progress bar on a dark gradient. Could swap in a themed animation (e.g. an animated brush stroke filling a canvas) when art lands. Not urgent.
+- **Toast copy when zero gain** — if a player was idle in a state with no producing tree and no autocraft, the toast still appears showing `+0 gold · +0 inspi · 0 canvases`. Consider suppressing the toast when all gains are zero.
+- **Recap "items crafted" count** is from `statsRun.workshopItemsCrafted` delta — this resets on ascension, so a catch-up that spans an in-sim ascension would under-report. Currently no system can auto-ascend during catch-up, so this is theoretical.
+
+---
+
 ## Tree art + tier achievements + balance buff + gate videos + stats polish (2026-05-20→21)
 
 ### What landed (eight commits, all on `master`, all deployed)
