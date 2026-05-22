@@ -2,6 +2,7 @@ import { StrictMode, useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { useGameStore } from "@/store";
 import { LoadingScreen } from "@/ui/widgets/LoadingScreen";
 import { App } from "@/App";
@@ -16,6 +17,19 @@ import { CatchupLoadingScene } from "@/components/catchup/CatchupLoadingScene";
 import { CatchupRecapModal } from "@/components/catchup/CatchupRecapModal";
 import "./styles/globals.css";
 import "./index.css";
+
+// Reload always lands on /tree. Every page load goes through a splash (logo +
+// optional progress bar); when it fades away the player should see the same
+// scene every time — the inspiration tree — regardless of which sub-route
+// they were on before. Dev designer routes are exempt so /dev/* reloads
+// preserve the working URL.
+if (
+  typeof window !== "undefined" &&
+  !window.location.pathname.startsWith("/dev/") &&
+  window.location.pathname !== "/tree"
+) {
+  window.history.replaceState({}, "", "/tree");
+}
 
 // Dev-only: expose store + helpers on window for DevTools console smoke tests.
 // Stripped from production builds via the import.meta.env.DEV check.
@@ -50,24 +64,27 @@ const TOAST_THRESHOLD_S = 2 * 3600;
  * can read. Exported for the matching integration test.
  */
 export const MIN_LOADING_SCENE_MS = 3000;
+/** Crossfade duration when the splash hands off to the live game. */
+const CROSSFADE_MS = 500;
 
 /**
- * Boot phases. The transitions are:
- *   rehydrating → silent_sim → playing(toast=null)            (elapsed ≤ 5s)
- *   rehydrating → silent_sim → playing(toast=result)          (5s < elapsed < 2h)
- *   rehydrating → silent_sim → loading_scene → recap → playing(toast=result)  (≥ 2h)
+ * Boot phases. The recap modal is now an overlay on top of the playing phase
+ * rather than its own black-backdrop screen, so the user sees the recap on
+ * top of the game (tree route) instead of a void. Transitions:
+ *   rehydrating → silent_sim → playing(recap=null, toast=null)             (elapsed ≤ 5s)
+ *   rehydrating → silent_sim → playing(recap=null, toast=result)           (5s < elapsed < 2h)
+ *   rehydrating → silent_sim → loading_scene → playing(recap=result, toast=null)  (≥ 2h)
  *
  * `silent_sim` is the post-hydration decision phase: we check `lastSeen` and
  * either route straight to `playing` or kick off a `runCatchupSimulation` call.
- * For sub-2h catch-ups the UI stays on `LoadingScreen` during the sim; only
+ * For sub-2h catch-ups the UI stays on the logo splash during the sim; only
  * the long path swaps in a dedicated progress scene.
  */
 type Phase =
   | { kind: "rehydrating" }
   | { kind: "silent_sim" }
   | { kind: "loading_scene"; elapsed: number; progress: number }
-  | { kind: "recap"; result: CatchupResult }
-  | { kind: "playing"; toast: CatchupResult | null };
+  | { kind: "playing"; recap: CatchupResult | null; toast: CatchupResult | null };
 
 export function Bootstrap(): JSX.Element {
   const [phase, setPhase] = useState<Phase>(() =>
@@ -89,7 +106,7 @@ export function Bootstrap(): JSX.Element {
   // its own phase transitions (silent_sim → loading_scene) that re-fire the
   // deciding effect; an effect-local `cancelled` would get set to true by the
   // cleanup of the very effect that's still mid-simulation, killing the
-  // subsequent `setPhase({ kind: "recap" })`.
+  // subsequent `setPhase({ kind: "playing", ... })`.
   const unmountedRef = useRef(false);
   useEffect(() => {
     unmountedRef.current = false;
@@ -100,7 +117,7 @@ export function Bootstrap(): JSX.Element {
 
   // Decide entry once we're in silent_sim (post-hydration). This effect runs
   // the catchup simulation if needed, then transitions to `playing` (short
-  // absences) or `loading_scene → recap` (long absences). The simAlreadyStarted
+  // absences) or via `loading_scene` (long absences). The simAlreadyStarted
   // flag guards against StrictMode's effect double-invoke in dev — we only
   // want to fire the sim once per silent_sim transition.
   const simAlreadyStarted = useRef(false);
@@ -112,9 +129,9 @@ export function Bootstrap(): JSX.Element {
       const lastSeen = useGameStore.getState().lastSeen;
       const elapsed = Math.max(0, (Date.now() - lastSeen) / 1000);
 
-      // ≤ 5s: tab refresh or near-instant reopen. No sim, no UI.
+      // ≤ 5s: tab refresh or near-instant reopen. No sim, no overlay.
       if (elapsed <= SILENT_THRESHOLD_S) {
-        if (!unmountedRef.current) setPhase({ kind: "playing", toast: null });
+        if (!unmountedRef.current) setPhase({ kind: "playing", recap: null, toast: null });
         return;
       }
 
@@ -122,15 +139,18 @@ export function Bootstrap(): JSX.Element {
       if (elapsed < TOAST_THRESHOLD_S) {
         try {
           const result = await runCatchupSimulation(elapsed, () => {});
-          if (!unmountedRef.current) setPhase({ kind: "playing", toast: result });
+          if (!unmountedRef.current)
+            setPhase({ kind: "playing", recap: null, toast: result });
         } catch (err) {
           reportError(err as Error, "catchup.simulation");
-          if (!unmountedRef.current) setPhase({ kind: "playing", toast: null });
+          if (!unmountedRef.current)
+            setPhase({ kind: "playing", recap: null, toast: null });
         }
         return;
       }
 
-      // ≥ 2h: dedicated loading scene with progress, then recap modal.
+      // ≥ 2h: dedicated loading scene with progress, then recap modal overlaid
+      // on the live game.
       if (!unmountedRef.current) {
         setPhase({ kind: "loading_scene", elapsed, progress: 0 });
       }
@@ -149,11 +169,13 @@ export function Bootstrap(): JSX.Element {
           );
         });
         await holdMinDuration();
-        if (!unmountedRef.current) setPhase({ kind: "recap", result });
+        if (!unmountedRef.current)
+          setPhase({ kind: "playing", recap: result, toast: null });
       } catch (err) {
         reportError(err as Error, "catchup.simulation");
         await holdMinDuration();
-        if (!unmountedRef.current) setPhase({ kind: "playing", toast: null });
+        if (!unmountedRef.current)
+          setPhase({ kind: "playing", recap: null, toast: null });
       }
     })();
   }, [phase.kind]);
@@ -175,44 +197,78 @@ export function Bootstrap(): JSX.Element {
     return installLifecycle(defaultLifecycleHooks);
   }, [phase.kind]);
 
-  // Retroactive achievement evaluation on the no-catchup path (≤ 5s elapsed).
-  // The catchup engine already calls `evaluateAchievements` at end-of-sim for
-  // the other branches, so we only need to fire here when `toast === null`
-  // means "we entered playing without running a sim". Deps intentionally
-  // exclude `phase.toast`: dismissing the toast later transitions
-  // playing(toast=result) → playing(toast=null), and we must not re-evaluate
-  // achievements at that point.
+  // Retroactive achievement evaluation on the no-catchup path (entering
+  // `playing` with neither a recap nor a toast). The catchup engine already
+  // calls `evaluateAchievements` at end-of-sim for the other branches.
+  // Deps intentionally exclude phase.recap/phase.toast: dismissing them later
+  // does NOT change phase.kind, so this effect won't re-fire.
   useEffect(() => {
-    if (phase.kind === "playing" && phase.toast === null) {
+    if (
+      phase.kind === "playing" &&
+      phase.recap === null &&
+      phase.toast === null
+    ) {
       useGameStore.getState().evaluateAchievements();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase.kind]);
 
-  if (phase.kind === "rehydrating") return <LoadingScreen />;
-  if (phase.kind === "silent_sim") return <LoadingScreen />;
-  if (phase.kind === "loading_scene") {
-    return <CatchupLoadingScene elapsedSeconds={phase.elapsed} progress={phase.progress} />;
-  }
-  if (phase.kind === "recap") {
-    return (
-      <CatchupRecapModal
-        result={phase.result}
-        onContinue={() => setPhase({ kind: "playing", toast: phase.result })}
-      />
-    );
-  }
-  // phase.kind === "playing"
+  const isSplash =
+    phase.kind === "rehydrating" ||
+    phase.kind === "silent_sim" ||
+    phase.kind === "loading_scene";
+
   return (
-    <BrowserRouter>
-      <App />
-      {phase.toast && (
-        <CatchupToast
-          result={phase.toast}
-          onDismiss={() => setPhase({ kind: "playing", toast: null })}
-        />
+    <>
+      {phase.kind === "playing" && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: CROSSFADE_MS / 1000 }}
+        >
+          <BrowserRouter>
+            <App />
+            {phase.toast && (
+              <CatchupToast
+                result={phase.toast}
+                onDismiss={() =>
+                  setPhase({ kind: "playing", recap: phase.recap, toast: null })
+                }
+              />
+            )}
+            {phase.recap && (
+              <CatchupRecapModal
+                result={phase.recap}
+                onContinue={() =>
+                  setPhase({ kind: "playing", recap: null, toast: phase.toast })
+                }
+              />
+            )}
+          </BrowserRouter>
+        </motion.div>
       )}
-    </BrowserRouter>
+      <AnimatePresence>
+        {isSplash && (
+          <motion.div
+            key="splash"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: CROSSFADE_MS / 1000 }}
+            style={{ position: "fixed", inset: 0, zIndex: 9999 }}
+          >
+            {phase.kind === "loading_scene" ? (
+              <CatchupLoadingScene
+                elapsedSeconds={phase.elapsed}
+                progress={phase.progress}
+              />
+            ) : (
+              <LoadingScreen />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 

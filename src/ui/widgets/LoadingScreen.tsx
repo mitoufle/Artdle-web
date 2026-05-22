@@ -1,9 +1,10 @@
 import type { JSX } from "react";
+import styles from "@/components/catchup/CatchupLoadingScene.module.css";
 
 export function LoadingScreen(): JSX.Element {
   return (
-    <div style={{ display: "flex", height: "100vh", width: "100vw", alignItems: "center", justifyContent: "center" }}>
-      <div>Loading…</div>
+    <div className={styles.scene}>
+      <img src="/artdle_logo.png" alt="Artdle" className={styles.logo} />
     </div>
   );
 }
