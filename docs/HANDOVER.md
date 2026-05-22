@@ -1,5 +1,64 @@
 # Artdle Web — Handover
 
+## Boot UX polish + nav icons (2026-05-22→23)
+
+Three commits on top of the offline-progress catch-up, all on `master`, all deployed (latest bundle `index-dROLcnuR.js`).
+
+### What landed
+
+**Commit `961bc24` — minimum 3s hold on the long-absence loading scene**
+
+Adaptive-delta sims finish in ~50ms for typical absences, so the loading scene was flashing by faster than readable. `MIN_LOADING_SCENE_MS = 3000` (exported from `main.tsx`) is now enforced before transitioning out of `loading_scene`. Applied to both the success path (→ recap) and the fail-open path (→ playing) so the failure case doesn't flash differently from the success case. The hold accumulator captures `Date.now()` after `setPhase({ kind: "loading_scene", ... })` and `await`s `MIN_LOADING_SCENE_MS - elapsed` if positive before the next transition. New integration test asserts the Continue button can't appear before the minimum hold elapses.
+
+**Commit `9c22fbc` — logo splash + crossfade to game + always-land-on-tree**
+
+Reshaped the boot sequence around a single splash identity. Previously the player saw three unrelated screens — bare "Loading…" text, then the catchup progress bar with no logo, then the logo image popping in mid-scene as the PNG finished loading, then a recap modal on a black backdrop. Now:
+
+- Logo PNG copied to `public/artdle_logo.png` (alongside the source in `src/assets/Images-gen/`) and `<link rel="preload" as="image" href="/artdle_logo.png">` in `index.html`. Both `LoadingScreen` and `CatchupLoadingScene` reference the same `/artdle_logo.png` URL, so the same cached image renders across the rehydrate → silent_sim → loading_scene transitions — no flash, no second load.
+- `LoadingScreen.tsx` rewritten to share `CatchupLoadingScene.module.css`: same dark vertical gradient, same `.logo` styling (`image-rendering: pixelated`, 480px max-width, 32px bottom margin). The "Loading…" text is gone. The CSS Module hash equality across the two importers means the class names match at runtime.
+- `recap` phase folded into `playing` as an overlay field. New phase shape: `{ kind: "playing"; recap: CatchupResult | null; toast: CatchupResult | null }`. When the long-absence sim finishes, the phase transitions directly to `playing(recap=result, toast=null)`. The App mounts (BrowserRouter + tree route), and `CatchupRecapModal` renders on top with its existing semi-transparent `rgba(0,0,0,0.7)` backdrop — the player sees the recap over the dimmed game scene instead of a void.
+- Motion `AnimatePresence` crossfade (500ms) between splash and game. The splash is wrapped in a `motion.div` with `position: fixed; inset: 0; zIndex: 9999`; on phase change, the `exit` animation fades its opacity to 0 while the game's `initial={{opacity:0}}/animate={{opacity:1}}` fades it in. Both render simultaneously during the transition, so the modal lands on a fully-rendered game.
+- Synchronous URL rewrite at module load: `window.history.replaceState({}, "", "/tree")` if the current path isn't `/tree` and doesn't start with `/dev/`. Runs before React mounts, so BrowserRouter reads the corrected URL on first render. Reload on any sub-route always reveals the inspiration tree after the fade; `/dev/*` designers preserve their working URL.
+- Achievement evaluation guard updated to fire only when entering `playing` with both `recap === null` AND `toast === null` (the no-sim path). Recap dismissal flips `recap → null` but doesn't change `phase.kind`, so the effect (deps `[phase.kind]`) doesn't re-fire — no double evaluation.
+
+**Commit `334eabd` — pixel-art icons for nav + locked Music/Sculpture teasers**
+
+Top bar nav swapped from text labels to 36×36 pixel-art icons stored in `src/assets/bar_icons/` (`tree.png`, `painting.png`, `ascension.png`, `constellation.png`, `Achievements.png`). Visual treatment:
+- Inactive: `opacity: 0.55` + `grayscale(0.35)`.
+- Hover: `opacity: 0.9`, full color, 1px translateY lift.
+- Active: full opacity + saturation + `drop-shadow(0 0 4px var(--fame))` golden glow + existing fame-coloured border.
+- All icons use `image-rendering: pixelated`/`crisp-edges` so the dithering stays crisp at 36px.
+- Labels preserved via `aria-label` and `title` attributes (tooltip + screen-reader).
+
+Locked teasers inserted between Painting and Ascension: **Music** (`music.png`) and **Sculpture** (`sculpture.png`). Rendered as `<span>` (not `<NavLink>`) so no router navigation possible; styled with `opacity: 0.22 + grayscale(1)`, `cursor: not-allowed`, no hover animation, title `"X — coming soon"`, `aria-label="X (locked)"`. A 22×22 inline-SVG padlock badge sits at `right: -4px; bottom: -4px` overlapping into the icon's bottom-right corner, with a 4-direction 1px `drop-shadow` outline + a 3px ambient shadow so the lock reads cleanly against any backdrop. The padlock is hand-coded as `<rect>` blocks in a 10×10 viewBox with `shape-rendering: crispEdges` for pixel-perfect rendering at any size.
+
+These teasers hint at the multi-art-form roadmap (per [`docs/PORT_PLAN.md`](PORT_PLAN.md) §13 and project memory) without committing routes; if the player tries to click them, nothing happens.
+
+### Status
+
+- **933 tests green** across 105 files. +1 from the minimum-hold test in `catchupBoot.test.tsx` (the +60 from offline-progress was already in the previous handover).
+- `MIN_LOADING_SCENE_MS` is exported from `src/main.tsx` for the test that asserts the hold.
+- All three commits on `master` (HEAD `334eabd`) and deployed via `npx vercel --prod`. Production bundle `index-dROLcnuR.js` includes the catchup strings, the preload link, and the lock SVG inline.
+- Untracked, intentionally not committed: 4 fresh experiment PNGs under `src/assets/Images-gen/` (alongside the now-committed `artdle_logo.png`), `phase7.png`–`phase40.png` future tree stages, `src/assets/images/ascend gate/gate.png` legacy fallback.
+
+### Notes / save-state impact
+
+- **No save-state changes this batch.** SAVE_VERSION stays at 20.
+- **`MIN_LOADING_SCENE_MS` is module-level, not slice state.** Live runtime instantiates the module once per page load; tests assert via the exported constant rather than mocking it. A future "skip catch-up animation" toggle (if requested) would gate this constant, not eliminate it.
+- **CSS Module sharing across `LoadingScreen` and `CatchupLoadingScene`**: both `import styles from "@/components/catchup/CatchupLoadingScene.module.css"`. Vite/CSS-Modules hashes class names per-file, so importing the same file from two TS files yields identical hashes — both components see the same `.scene`, `.logo`, `.title`, `.barOuter`, `.barInner` keys. If `CatchupLoadingScene.module.css` is renamed or its class names change, both consumers update together.
+- **Recap-on-game means the App mounts during the recap phase.** Tick loop and lifecycle install on entering `playing` regardless of `recap` state, so the game is logically "live" while the recap modal is visible — clicks behind the 70%-opaque backdrop wouldn't reach the App's pointer-events because the modal's backdrop is `position: fixed; inset: 0`, but if a future modal design has gaps, the App is interactable. The existing modal blocks all clicks via the backdrop, so this is currently safe.
+- **`/tree` URL rewrite is one-shot at module load.** Subsequent in-game navigation (e.g., to `/painting`) is unaffected. Only initial page loads on a non-tree route get rewritten. If we ever add deep-linking (share a URL to a specific route), this rewrite would need an opt-out (e.g., respect a `?keep` query param).
+- **Locked nav items have no route registered in `App.tsx`.** `/music` and `/sculpture` are not in the `<Routes>` block. Direct URL navigation to those paths would hit the `*` catch-all and redirect to `/tree`. The locked teasers in the top bar can't trigger navigation because they're `<span>`, not `<NavLink>`.
+
+### Open follow-ups
+
+- **Loading scene still uses a flat gold progress bar.** A themed animation (animated brush stroke, growing tree, slowly-filling ink well) would feel more on-brand. Not urgent.
+- **Recap modal copy on zero-gain catch-ups.** A player who was idle in a state with no producing tree and no autocraft sees a recap with "+0 gold · +0 inspi · 0 canvases". Consider suppressing the recap (and the toast) when all gains are zero — go straight to game.
+- **Locked teaser glow.** If we ever want to draw attention to upcoming art forms, a slow ambient pulse or a "soon" sparkle on Music/Sculpture would work without breaking the no-click constraint.
+- **TopBar still tests against labels.** The TopBar tests pass because `aria-label` preserves the discoverable name, but if we ever remove `aria-label` (e.g., decide the icons are self-describing), those tests need icon-based selectors.
+
+---
+
 ## Offline-progress catch-up — full implementation (2026-05-22)
 
 ### What landed (18 commits, all on `master`)
