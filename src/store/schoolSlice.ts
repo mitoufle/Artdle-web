@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 import { SCHOOL_TIERS } from "@/config/schoolResearches";
 import { big } from "@/core/bigNumber";
+import { schoolTickPure } from "@/core/schoolTickPure";
 import type { GameStore } from "@/store";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 
@@ -48,21 +49,21 @@ export const createSchoolSlice: StateCreator<GameStore, [], [], SchoolSlice> = (
   },
 
   schoolTick: (delta) => {
-    if (delta <= 0) return;
-    const state = get();
-    if (!state.activeResearch) return;
-    const next = state.activeResearch.remainingSeconds - delta;
-    if (next > 0) {
-      set({ activeResearch: { ...state.activeResearch, remainingSeconds: next } });
-      return;
-    }
-    set({
-      completedResearches: { ...state.completedResearches, [state.activeResearch.id]: true },
-      activeResearch: null,
+    const before = get().activeResearch?.id ?? null;
+    set((state) => {
+      const draft = { ...state } as GameStore;
+      schoolTickPure(draft, delta);
+      return {
+        activeResearch: draft.activeResearch,
+        completedResearches: draft.completedResearches,
+        statsLifetime: draft.statsLifetime,
+        statsRun: draft.statsRun,
+      };
     });
-    get().incrementStat("lifetime", "schoolResearchesCompleted");
-    get().incrementStat("run", "schoolResearchesCompleted");
-    get().evaluateAchievements();
+    // Fire achievement evaluation only if a research just completed.
+    if (before !== null && get().activeResearch === null) {
+      get().evaluateAchievements();
+    }
   },
 
   passExam: () => {
