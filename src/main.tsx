@@ -7,6 +7,7 @@ import { LoadingScreen } from "@/ui/widgets/LoadingScreen";
 import { App } from "@/App";
 import { startTickLoop, stopTickLoop } from "@/core/tickLoop";
 import { installLifecycle, defaultLifecycleHooks } from "@/systems/lifecycle";
+import { persistedAdapter } from "@/systems/persistence";
 import { big } from "@/core/bigNumber";
 import { runCatchupSimulation, type CatchupResult } from "@/systems/catchup";
 import { reportError } from "@/systems/telemetry";
@@ -22,6 +23,20 @@ if (import.meta.env.DEV) {
   (window as unknown as { useGameStore: typeof useGameStore; big: typeof big }).useGameStore =
     useGameStore;
   (window as unknown as { useGameStore: typeof useGameStore; big: typeof big }).big = big;
+
+  // DEV-only test helper for manual catch-up playtesting. Sets lastSeen to
+  // `hoursAgo` hours in the past, suppresses the next lifecycle lastSeen write
+  // (so beforeunload doesn't overwrite back to now), flushes IDB, then reloads.
+  // Without this helper, `setState({lastSeen: PAST}) + location.reload()` is
+  // racy because onUnload writes Date.now() before unload.
+  (window as unknown as { testCatchup: (hoursAgo: number) => Promise<void> }).testCatchup =
+    async (hoursAgo: number): Promise<void> => {
+      const past = Date.now() - hoursAgo * 3600 * 1000;
+      useGameStore.setState({ lastSeen: past });
+      sessionStorage.setItem("__skipNextLastSeenWrite", "1");
+      await persistedAdapter.flush();
+      location.reload();
+    };
 }
 
 /** Elapsed ≤ this many seconds → skip catch-up entirely. */

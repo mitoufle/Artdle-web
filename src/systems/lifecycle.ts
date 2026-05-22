@@ -3,6 +3,26 @@ import { reportError } from "./telemetry";
 import { pauseTickLoop, resumeTickLoop } from "@/core/tickLoop";
 import { useGameStore } from "@/store";
 
+const SKIP_LAST_SEEN_FLAG = "__skipNextLastSeenWrite";
+
+/**
+ * DEV-only escape hatch: read-and-consume the "skip next write" flag set by
+ * `window.testCatchup()` in main.tsx. Lets manual catch-up playtests preserve
+ * a manually-set `lastSeen` across `location.reload()` instead of having the
+ * default `onUnload` hook overwrite it.
+ *
+ * Returns true if the lifecycle hook should write `lastSeen` (normal case).
+ * Returns false when the flag is set (and clears it, single-shot).
+ */
+function shouldWriteLastSeen(): boolean {
+  if (typeof sessionStorage === "undefined") return true;
+  if (sessionStorage.getItem(SKIP_LAST_SEEN_FLAG) === "1") {
+    sessionStorage.removeItem(SKIP_LAST_SEEN_FLAG);
+    return false;
+  }
+  return true;
+}
+
 /**
  * Hooks injected into `installLifecycle`. The orchestrator stays agnostic;
  * production wiring lives in `defaultLifecycleHooks` below.
@@ -41,7 +61,9 @@ export function installLifecycle(hooks: LifecycleHooks): () => void {
  */
 export const defaultLifecycleHooks: LifecycleHooks = {
   onHide: (): void => {
-    useGameStore.setState({ lastSeen: Date.now() });
+    if (shouldWriteLastSeen()) {
+      useGameStore.setState({ lastSeen: Date.now() });
+    }
     pauseTickLoop();
     void persistedAdapter.flush().catch((err: unknown) =>
       reportError(err as Error, "persist.flush.visibilitychange"),
@@ -51,7 +73,9 @@ export const defaultLifecycleHooks: LifecycleHooks = {
     resumeTickLoop();
   },
   onUnload: (): void => {
-    useGameStore.setState({ lastSeen: Date.now() });
+    if (shouldWriteLastSeen()) {
+      useGameStore.setState({ lastSeen: Date.now() });
+    }
     void persistedAdapter.flush().catch((err: unknown) =>
       reportError(err as Error, "persist.flush.beforeunload"),
     );

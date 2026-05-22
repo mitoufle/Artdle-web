@@ -172,3 +172,38 @@ describe("defaultLifecycleHooks — lastSeen writes", () => {
     }
   });
 });
+
+describe("defaultLifecycleHooks — sessionStorage skip flag", () => {
+  let pauseSpy: ReturnType<typeof vi.spyOn>;
+  let flushSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    pauseSpy = vi.spyOn(tickLoop, "pauseTickLoop").mockImplementation(() => {});
+    flushSpy = vi.spyOn(persistedAdapter, "flush").mockResolvedValue();
+    resetErrorReporter();
+    sessionStorage.removeItem("__skipNextLastSeenWrite");
+  });
+
+  afterEach(() => {
+    pauseSpy.mockRestore();
+    flushSpy.mockRestore();
+    resetErrorReporter();
+    sessionStorage.removeItem("__skipNextLastSeenWrite");
+  });
+
+  it("onHide skips writing lastSeen and clears the flag when set", () => {
+    sessionStorage.setItem("__skipNextLastSeenWrite", "1");
+    useGameStore.setState({ lastSeen: 12345 });
+    defaultLifecycleHooks.onHide();
+    expect(useGameStore.getState().lastSeen).toBe(12345);
+    expect(sessionStorage.getItem("__skipNextLastSeenWrite")).toBeNull();
+  });
+
+  it("onUnload skips writing lastSeen and clears the flag when set", () => {
+    sessionStorage.setItem("__skipNextLastSeenWrite", "1");
+    useGameStore.setState({ lastSeen: 67890 });
+    defaultLifecycleHooks.onUnload();
+    expect(useGameStore.getState().lastSeen).toBe(67890);
+    expect(sessionStorage.getItem("__skipNextLastSeenWrite")).toBeNull();
+  });
+});
