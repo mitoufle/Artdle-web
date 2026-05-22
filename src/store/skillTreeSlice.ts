@@ -1,10 +1,8 @@
 import type { StateCreator } from "zustand";
 import { getSkillNodeConfig, type SkillNodeId } from "@/config/skillTreeNodes";
 import { big } from "@/core/bigNumber";
+import { skillTreeTickPure } from "@/core/skillTreeTickPure";
 import type { GameStore } from "@/store";
-
-const POKE_TREE_INTERVAL_S = 10;
-const POKE_TREE_BASE_INSPI = 100;
 
 export interface SkillTreeState {
   /**
@@ -73,20 +71,15 @@ export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlic
 
   skillTreeTick: (deltaSeconds) => {
     if (deltaSeconds <= 0) return;
-    const state = get();
-    const pokeLevel = state.purchasedNodes.poke_tree ?? 0;
-    if (pokeLevel === 0) return;
-
-    const next = state.pokeTreeTimer + deltaSeconds;
-    const grants = Math.floor(next / POKE_TREE_INTERVAL_S);
-    if (grants > 0) {
-      // Exponential doubling per level: L1=100, L2=200, L3=400, L4=800, L5=1600.
-      const inspiPerTick = POKE_TREE_BASE_INSPI * Math.pow(2, pokeLevel - 1);
-      const inspiGain = big(inspiPerTick * grants);
-      state.add("inspiration", inspiGain);
-      state.trackInspirationGain(inspiGain);
-    }
-    set({ pokeTreeTimer: next - grants * POKE_TREE_INTERVAL_S });
+    set((state) => {
+      const draft = { ...state } as GameStore;
+      skillTreeTickPure(draft, deltaSeconds);
+      return {
+        pokeTreeTimer: draft.pokeTreeTimer,
+        inspiration: draft.inspiration,
+        lifetimeInspiration: draft.lifetimeInspiration,
+      };
+    });
   },
 
   resetSkillTree: () => set(initialSkillTreeState),
