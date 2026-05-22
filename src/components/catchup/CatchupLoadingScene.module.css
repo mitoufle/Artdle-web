@@ -1,0 +1,32 @@
+.scene {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, var(--bg-stone-d) 0%, #0a0a0e 100%);
+  z-index: 10000;
+  font-family: var(--mono);
+  color: var(--ink-1);
+}
+.title {
+  font-size: 18px;
+  margin-bottom: 24px;
+}
+.barOuter {
+  width: 320px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ink-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.barInner {
+  height: 100%;
+  background: var(--gold);
+  transition: width 120ms linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .barInner { transition: none; }
+}
