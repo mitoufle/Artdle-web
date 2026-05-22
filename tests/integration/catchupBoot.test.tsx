@@ -30,7 +30,7 @@ vi.mock("@/systems/catchup", async () => {
   };
 });
 
-import { Bootstrap } from "@/main";
+import { Bootstrap, MIN_LOADING_SCENE_MS } from "@/main";
 import { useGameStore } from "@/store";
 import { ZERO, big } from "@/core/bigNumber";
 import type { CatchupResult } from "@/systems/catchup";
@@ -125,5 +125,31 @@ describe("Bootstrap catch-up branching", () => {
     // After continue, neither loading scene nor recap modal should be visible.
     await waitFor(() => expect(screen.queryByText(/Catching up/)).toBeNull());
     expect(screen.queryByRole("button", { name: /continue/i })).toBeNull();
+  });
+
+  it("holds the loading scene for at least MIN_LOADING_SCENE_MS even when sim resolves instantly", async () => {
+    const fakeResult: CatchupResult = {
+      elapsedSeconds: 3 * 3600,
+      goldGained: big(0),
+      inspiGained: big(0),
+      canvasesSold: 0,
+      itemsCrafted: 0,
+      paintMasteryGained: big(0),
+      achievementsUnlocked: [],
+    };
+    runCatchupSimulationMock.mockImplementation(async () => fakeResult);
+
+    seedStoreWithLastSeen(Date.now() - 3 * 3600_000);
+    const startTime = Date.now();
+    render(<Bootstrap />);
+
+    await screen.findByText(/Catching up/);
+    await waitFor(
+      () => expect(screen.getByRole("button", { name: /continue/i })).toBeInTheDocument(),
+      { timeout: MIN_LOADING_SCENE_MS + 2000 },
+    );
+    const elapsed = Date.now() - startTime;
+    // Allow 100ms slack for jsdom scheduling jitter.
+    expect(elapsed).toBeGreaterThanOrEqual(MIN_LOADING_SCENE_MS - 100);
   });
 });

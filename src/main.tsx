@@ -43,6 +43,13 @@ if (import.meta.env.DEV) {
 const SILENT_THRESHOLD_S = 5;
 /** Elapsed < this many seconds → run sim silently and show a toast. ≥ → loading scene + recap. */
 const TOAST_THRESHOLD_S = 2 * 3600;
+/**
+ * Minimum hold for the catch-up loading scene before transitioning out (to
+ * recap or fail-open). Adaptive-delta sims finish in ~50ms for typical
+ * absences; without this hold the scene would flash by faster than the user
+ * can read. Exported for the matching integration test.
+ */
+export const MIN_LOADING_SCENE_MS = 3000;
 
 /**
  * Boot phases. The transitions are:
@@ -127,6 +134,13 @@ export function Bootstrap(): JSX.Element {
       if (!unmountedRef.current) {
         setPhase({ kind: "loading_scene", elapsed, progress: 0 });
       }
+      const loadingStartedAt = Date.now();
+      const holdMinDuration = async (): Promise<void> => {
+        const remaining = MIN_LOADING_SCENE_MS - (Date.now() - loadingStartedAt);
+        if (remaining > 0) {
+          await new Promise((res) => setTimeout(res, remaining));
+        }
+      };
       try {
         const result = await runCatchupSimulation(elapsed, (p) => {
           if (unmountedRef.current) return;
@@ -134,9 +148,11 @@ export function Bootstrap(): JSX.Element {
             cur.kind === "loading_scene" ? { ...cur, progress: p } : cur,
           );
         });
+        await holdMinDuration();
         if (!unmountedRef.current) setPhase({ kind: "recap", result });
       } catch (err) {
         reportError(err as Error, "catchup.simulation");
+        await holdMinDuration();
         if (!unmountedRef.current) setPhase({ kind: "playing", toast: null });
       }
     })();
