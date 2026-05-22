@@ -379,6 +379,17 @@ const reviver = (_key: string, value: unknown): unknown => {
   return value;
 };
 
+// Module-level heartbeat accumulator. Updates `meta.lastSeen` every
+// HEARTBEAT_INTERVAL_S seconds of simulated game time. Reset between tests
+// via `_resetHeartbeat()`.
+let _heartbeatAccum = 0;
+const HEARTBEAT_INTERVAL_S = 10;
+
+/** Test helper: reset the module-level heartbeat accumulator. */
+export function _resetHeartbeat(): void {
+  _heartbeatAccum = 0;
+}
+
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get, store) => ({
@@ -402,6 +413,15 @@ export const useGameStore = create<GameStore>()(
         s.workshopTick(deltaSeconds);
         s.tickOffice(deltaSeconds);
         s.schoolTick(deltaSeconds);
+        // Heartbeat: bound lastSeen staleness to 10s of simulated play.
+        // Skip on idle frames (delta=0) to avoid spurious set() calls.
+        if (deltaSeconds > 0) {
+          _heartbeatAccum += deltaSeconds;
+          if (_heartbeatAccum >= HEARTBEAT_INTERVAL_S) {
+            _heartbeatAccum = 0;
+            set({ lastSeen: Date.now() });
+          }
+        }
       },
     }),
     {
