@@ -44,6 +44,7 @@ export function PaintingRoute(): JSX.Element {
   const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const roster = useGameStore((s) => s.roster);
+  const canvasTier = useGameStore((s) => s.canvasTier);
   const completedResearches = useGameStore((s) => s.completedResearches);
   const completedAchievements = useGameStore((s) => s.completedAchievements);
   const upgradeSellPrice = useGameStore((s) => s.upgradeSellPrice);
@@ -55,20 +56,20 @@ export function PaintingRoute(): JSX.Element {
   const clearLastSale = useGameStore((s) => s.clearLastSale);
 
   const helperState: CanvasMultiplierInputs = {
-    equipped, purchasedNodes, roster,
+    equipped, purchasedNodes, roster, canvasTier,
     sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
     completedResearches,
     completedAchievements,
   };
 
   const size = getCanvasSize(helperState);
-  const baseTime = canvasTime(size);
+  const baseTime = canvasTime(size, canvasTier);
   const speedMult = getCanvasSpeedMultiplier(helperState);
   const critFactor = isCritThisCanvas ? CRIT_SPEED_FACTOR : 1;
   const paintTimeSec = baseTime / (speedMult * critFactor);
   const progressPct = paintTimeSec > 0 ? canvasProgress / paintTimeSec : 0;
   const goldMult = getCanvasGoldMultiplier(helperState);
-  const baseGold = canvasGold(size, goldMult);
+  const baseGold = canvasGold(size, goldMult, canvasTier);
   const comboFactor = 1 + COMBO_PER_LINK * comboChain;
   const nextSaleGold = baseGold.mul(comboFactor);
 
@@ -76,11 +77,11 @@ export function PaintingRoute(): JSX.Element {
   const critLocked = !getCanvasTrackUnlocked(helperState, "crit");
   const comboLocked = !getCanvasTrackUnlocked(helperState, "combo");
 
-  const sellCost = sellPriceUpgradeCost(sellPriceLevel);
-  const speedCost = speedUpgradeCost(speedLevel);
-  const sizeCost = sizeUpgradeCost(sizeLevel);
-  const critCost = critUpgradeCost(critLevel);
-  const comboCost = comboUpgradeCost(comboLevel);
+  const sellCost = sellPriceUpgradeCost(sellPriceLevel, canvasTier);
+  const speedCost = speedUpgradeCost(speedLevel, canvasTier);
+  const sizeCost = sizeUpgradeCost(sizeLevel, canvasTier);
+  const critCost = critUpgradeCost(critLevel, canvasTier);
+  const comboCost = comboUpgradeCost(comboLevel, canvasTier);
 
   const fmtPct = (x: number, frac = 0): string => `${(x * 100).toFixed(frac)}%`;
 

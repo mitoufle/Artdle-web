@@ -20,7 +20,7 @@ function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const additiveTotal = goldMult / rainbowFactor - 1;
   const colorSum = additiveTotal - itemBonus - workerBonus - sellPriceContribution;
   const baseGold = 10 * size * size;
-  const total = canvasGold(size, goldMult).mul(1 + COMBO_PER_LINK * comboChain);
+  const total = canvasGold(size, goldMult, state.canvasTier).mul(1 + COMBO_PER_LINK * comboChain);
   return (
     <>
       <div>Base × size² = 10 × {size.toFixed(2)}² = {baseGold.toFixed(1)}</div>

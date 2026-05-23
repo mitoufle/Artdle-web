@@ -13,7 +13,7 @@ import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
-import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
+import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL, tierFactor } from "./balance";
 import { big, type Big } from "@/core/bigNumber";
 import type { AffixKind } from "@/config/workshopAffixes";
 
@@ -36,6 +36,7 @@ export type CanvasMultiplierInputs = Pick<GameStore,
   | "sizeLevel"
   | "critLevel"
   | "comboLevel"
+  | "canvasTier"
   | "completedResearches"
   | "completedAchievements"
 >;
@@ -82,13 +83,14 @@ export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "co
  *   - Rainbow: multiplicative on the additive base (× (1 + 5.00 × level)).
  */
 export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number => {
+  const tier = tierFactor(state.canvasTier);
   let bonus = 0;
   bonus += getEquippedContribution(state, "+sell_price%");
   bonus += getOfficeContribution(state, "+sell_price%").toNumber();
   for (const [id, perLevel] of Object.entries(COLOR_PER_LEVEL)) {
     bonus += getNodeLevel(state, id) * perLevel;
   }
-  bonus += SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
+  bonus += SELL_PRICE_PER_LEVEL * state.sellPriceLevel * tier;
   bonus += getSchoolBonus(state, "canvas_gold_pct");
   bonus += getAchievementBonus(state, "canvas_gold_pct");
   const additive = 1 + bonus;
@@ -106,10 +108,11 @@ export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number =
  *   - equipped +speed% affixes: additive (each magnitude is fractional via getEquippedContribution)
  */
 export const getCanvasSpeedMultiplier = (state: CanvasMultiplierInputs): number => {
+  const tier = tierFactor(state.canvasTier);
   let bonus = 0;
   bonus += getNodeLevel(state, "basic_technique") * BASIC_TECHNIQUE_PER_LEVEL;
   bonus += getNodeLevel(state, "muscle_memory") * MUSCLE_MEMORY_PER_LEVEL;
-  bonus += SPEED_PER_LEVEL * state.speedLevel;
+  bonus += SPEED_PER_LEVEL * state.speedLevel * tier;
   bonus += getEquippedContribution(state, "+speed%"); // already fractional
   bonus += getOfficeContribution(state, "+speed%").toNumber();
   bonus += getSchoolBonus(state, "speed_pct");
@@ -180,7 +183,8 @@ export const getAffixMagnitudeBonus = (state: Pick<GameStore, "purchasedNodes" |
  * where range = ceiling − threshold.
  */
 export const getCritChance = (state: CanvasMultiplierInputs): number => {
-  let raw = CRIT_PER_LEVEL * state.critLevel;
+  const tier = tierFactor(state.canvasTier);
+  let raw = CRIT_PER_LEVEL * state.critLevel * tier;
   raw += getEquippedContribution(state, "+crit_chance%");
   raw += getOfficeContribution(state, "+crit_chance%").toNumber();
   if (raw <= CRIT_SOFT_CAP_THRESHOLD) return raw;
@@ -194,7 +198,8 @@ export const getCritChance = (state: CanvasMultiplierInputs): number => {
  * Decay is applied at use sites (canvasTick) via comboEffectiveChance.
  */
 export const getComboBaseChance = (state: CanvasMultiplierInputs): number => {
-  let chance = COMBO_PER_LEVEL * state.comboLevel;
+  const tier = tierFactor(state.canvasTier);
+  let chance = COMBO_PER_LEVEL * state.comboLevel * tier;
   chance += getEquippedContribution(state, "+combo_chance%");
   chance += getOfficeContribution(state, "+combo_chance%").toNumber();
   return Math.min(1.0, chance);
@@ -211,8 +216,9 @@ export const getComboBaseChance = (state: CanvasMultiplierInputs): number => {
  * Gold-per-second scales linearly with size — doubling size doubles efficiency.
  */
 export const getCanvasSize = (state: CanvasMultiplierInputs): number => {
+  const tier = tierFactor(state.canvasTier);
   return 1
-    + SIZE_PER_LEVEL * state.sizeLevel
+    + SIZE_PER_LEVEL * state.sizeLevel * tier
     + getEquippedContribution(state, "+size%")
     + getOfficeContribution(state, "+size%").toNumber()
     + countCapability(state, "canvas_size_bonus") * 0.05;

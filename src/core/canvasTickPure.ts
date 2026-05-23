@@ -41,7 +41,7 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
 
   while (timeBudget > 0 && sales < MAX_SALES_PER_TICK) {
     const size = getCanvasSize(draft);
-    const baseTime = canvasTime(size);
+    const baseTime = canvasTime(size, draft.canvasTier);
     const speedMult = getCanvasSpeedMultiplier(draft);
     const critFactor = critFlag ? CRIT_SPEED_FACTOR : 1;
     const effectiveTime = baseTime / (speedMult * critFactor);
@@ -61,7 +61,7 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
 
     const critGoldMult = critFlag ? (1 + getCritGoldBonus(draft)) : 1;
     const goldMult = getCanvasGoldMultiplier(draft) * critGoldMult;
-    const baseGold = canvasGold(size, goldMult);
+    const baseGold = canvasGold(size, goldMult, draft.canvasTier);
     // Apply combo bonus from PRIOR chain state — chain mutation happens AFTER pay-out.
     const gain = baseGold.mul(comboBonusFactor(chain));
 

@@ -117,7 +117,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
   upgradeSellPrice: () => {
     const state = get();
     // Contract: formula(currentLevel) returns cost to advance from currentLevel to currentLevel+1.
-    const cost = sellPriceUpgradeCost(state.sellPriceLevel);
+    const cost = sellPriceUpgradeCost(state.sellPriceLevel, state.canvasTier);
     if (state.gold.lt(cost)) return;
     set({
       gold: state.gold.sub(cost),
@@ -127,7 +127,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
 
   upgradeSpeed: () => {
     const state = get();
-    const cost = speedUpgradeCost(state.speedLevel);
+    const cost = speedUpgradeCost(state.speedLevel, state.canvasTier);
     if (state.gold.lt(cost)) return;
     set({
       gold: state.gold.sub(cost),
@@ -138,7 +138,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
   upgradeSize: () => {
     const state = get();
     if (!getCanvasTrackUnlocked(state, "size")) return;
-    const cost = sizeUpgradeCost(state.sizeLevel);
+    const cost = sizeUpgradeCost(state.sizeLevel, state.canvasTier);
     if (state.gold.lt(cost)) return;
     set({ gold: state.gold.sub(cost), sizeLevel: state.sizeLevel + 1 });
   },
@@ -146,7 +146,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
   upgradeCrit: () => {
     const state = get();
     if (!getCanvasTrackUnlocked(state, "crit")) return;
-    const cost = critUpgradeCost(state.critLevel);
+    const cost = critUpgradeCost(state.critLevel, state.canvasTier);
     if (state.gold.lt(cost)) return;
     set({ gold: state.gold.sub(cost), critLevel: state.critLevel + 1 });
   },
@@ -154,7 +154,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
   upgradeCombo: () => {
     const state = get();
     if (!getCanvasTrackUnlocked(state, "combo")) return;
-    const cost = comboUpgradeCost(state.comboLevel);
+    const cost = comboUpgradeCost(state.comboLevel, state.canvasTier);
     if (state.gold.lt(cost)) return;
     set({ gold: state.gold.sub(cost), comboLevel: state.comboLevel + 1 });
   },
