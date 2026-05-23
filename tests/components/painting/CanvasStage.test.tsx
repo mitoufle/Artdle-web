@@ -7,6 +7,7 @@ describe("<CanvasStage />", () => {
     const { container } = render(
       <CanvasStage
         sizeLevel={1}
+        canvasTier={1}
         progressPct={0}
         timeElapsed="0.0"
         timeTotal="2.0"
@@ -17,22 +18,26 @@ describe("<CanvasStage />", () => {
   });
 
   it("displays the tier in the title row", () => {
-    render(
+    const { container } = render(
       <CanvasStage
         sizeLevel={5}
+        canvasTier={6}
         progressPct={0.6}
         timeElapsed="6.0"
         timeTotal="10.0"
         nextSaleGold="250"
       />,
     );
-    expect(screen.getByText(/Masterpiece/i)).toBeInTheDocument();
+    const titleEl = container.querySelector("div[class*='title']");
+    expect(titleEl?.textContent).toMatch(/Tier 6/);
+    expect(titleEl?.textContent).toMatch(/Masterpiece/);
   });
 
   it("displays painting time as 'elapsed / total' (counts up to total)", () => {
     render(
       <CanvasStage
         sizeLevel={5}
+        canvasTier={5}
         progressPct={0.6}
         timeElapsed="6.0"
         timeTotal="10.0"
@@ -46,6 +51,7 @@ describe("<CanvasStage />", () => {
     render(
       <CanvasStage
         sizeLevel={1}
+        canvasTier={1}
         progressPct={0}
         timeElapsed="0.0"
         timeTotal="2.0"
@@ -59,6 +65,7 @@ describe("<CanvasStage />", () => {
     const { container } = render(
       <CanvasStage
         sizeLevel={1}
+        canvasTier={1}
         progressPct={0.4}
         timeElapsed="0.8"
         timeTotal="2.0"
@@ -75,6 +82,7 @@ describe("<CanvasStage />", () => {
       render(
         <CanvasStage
           sizeLevel={3}
+          canvasTier={1}
           progressPct={0.5}
           timeElapsed="1.0"
           timeTotal="2.0"
@@ -93,6 +101,7 @@ describe("<CanvasStage />", () => {
       render(
         <CanvasStage
           sizeLevel={0}
+          canvasTier={1}
           progressPct={0}
           timeElapsed="0.0"
           timeTotal="2.0"
@@ -108,6 +117,7 @@ describe("<CanvasStage />", () => {
       render(
         <CanvasStage
           sizeLevel={0}
+          canvasTier={1}
           progressPct={0.1}
           timeElapsed="0.1"
           timeTotal="0.2"
@@ -123,6 +133,7 @@ describe("<CanvasStage />", () => {
       render(
         <CanvasStage
           sizeLevel={0}
+          canvasTier={1}
           progressPct={0.1}
           timeElapsed="0.1"
           timeTotal="2.0"

@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
-import { canvasGold, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK } from "@/core/balance";
+import { canvasGold, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK, tierFactor } from "@/core/balance";
 import { getCanvasGoldMultiplier, getCanvasSize, getOfficeContribution } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
@@ -16,7 +16,7 @@ function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const workerBonus = getOfficeContribution(state, "+sell_price%").toNumber();
   const rainbowLvl = getNodeLevel(state, "rainbow");
   const rainbowFactor = 1 + 0.50 * rainbowLvl;
-  const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
+  const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel * tierFactor(state.canvasTier);
   const additiveTotal = goldMult / rainbowFactor - 1;
   const colorSum = additiveTotal - itemBonus - workerBonus - sellPriceContribution;
   const baseGold = 10 * size * size;
@@ -39,6 +39,7 @@ function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
 
 interface Props {
   sizeLevel: number;
+  canvasTier: number;
   progressPct: number;       // 0..1, drives the paint-fill overlay height
   timeElapsed: string;       // formatted seconds elapsed, e.g., "1.5"
   timeTotal: string;         // formatted seconds, e.g., "6.0"
@@ -53,17 +54,17 @@ interface Props {
 }
 
 const STAGE_NAMES: Record<number, string> = {
-  0: "Sketch",
-  1: "Apprentice",
-  2: "Journeyman",
-  3: "Adept",
-  4: "Skilled",
-  5: "Masterpiece",
-  6: "Virtuoso",
-  7: "Master",
-  8: "Grandmaster",
-  9: "Legendary",
-  10: "Mythic",
+  1: "Sketch",
+  2: "Apprentice",
+  3: "Journeyman",
+  4: "Adept",
+  5: "Skilled",
+  6: "Masterpiece",
+  7: "Virtuoso",
+  8: "Master",
+  9: "Grandmaster",
+  10: "Legendary",
+  11: "Mythic",
 };
 
 /**
@@ -78,6 +79,7 @@ const STAGE_NAMES: Record<number, string> = {
  */
 export function CanvasStage({
   sizeLevel,
+  canvasTier,
   progressPct,
   timeElapsed,
   timeTotal,
@@ -86,7 +88,7 @@ export function CanvasStage({
   isCrit,
   canvasNumber = 0,
 }: Props): JSX.Element {
-  const stageName = STAGE_NAMES[sizeLevel] ?? `Tier ${sizeLevel}`;
+  const stageName = STAGE_NAMES[canvasTier] ?? `Tier ${canvasTier}`;
   const fillHeight = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
   const barWidth = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
 
@@ -103,7 +105,7 @@ export function CanvasStage({
       )}
 
       <div className={styles.title}>
-        — {stageName} —
+        — Tier {canvasTier} · {stageName} —
       </div>
       <div className={styles.frame}>
         {/* Pixel landscape inside the frame */}
@@ -112,7 +114,7 @@ export function CanvasStage({
           xmlns="http://www.w3.org/2000/svg"
           preserveAspectRatio="xMidYMid slice"
           className={styles.canvasArt}
-          aria-label={`Tier ${sizeLevel} pixel landscape`}
+          aria-label={`Size ${sizeLevel} pixel landscape`}
         >
           <defs>
             <linearGradient id="cs-sky" x1="0" y1="0" x2="0" y2="1">
@@ -164,7 +166,7 @@ export function CanvasStage({
         >
           <span className={styles.goldPreview} data-testid="canvas-sell-preview">+{nextSaleGold}g on next sale</span>
         </Hoverable>
-        <span className={styles.tierBadge}>Tier {sizeLevel}</span>
+        <span className={styles.tierBadge}>Tier {canvasTier}</span>
       </div>
     </section>
   );

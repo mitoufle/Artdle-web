@@ -90,6 +90,7 @@ export function PaintingRoute(): JSX.Element {
       <div className={styles.stageArea}>
         <CanvasStage
           sizeLevel={sizeLevel}
+          canvasTier={canvasTier}
           progressPct={progressPct}
           timeElapsed={canvasProgress.toFixed(1)}
           timeTotal={paintTimeSec.toFixed(1)}

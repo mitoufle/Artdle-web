@@ -16,7 +16,7 @@ describe("CanvasStage hover wiring (sell preview)", () => {
   it("hover on gold preview pushes title 'Sell Canvas' and a body with Total line", () => {
     useGameStore.setState({ sizeLevel: 3 });
     render(
-      <CanvasStage sizeLevel={3} progressPct={0.5} timeElapsed="3.0" timeTotal="6.0" nextSaleGold="90" />,
+      <CanvasStage sizeLevel={3} canvasTier={1} progressPct={0.5} timeElapsed="3.0" timeTotal="6.0" nextSaleGold="90" />,
     );
     fireEvent.mouseEnter(screen.getByTestId("canvas-sell-preview"));
     expect(useGameStore.getState().hoverTitle).toBe("Sell Canvas");
@@ -32,7 +32,7 @@ describe("CanvasStage hover wiring (sell preview)", () => {
   it("hover body reflects rainbow factor when rainbow is owned", () => {
     useGameStore.setState({ purchasedNodes: { rainbow: 1 } });
     render(
-      <CanvasStage sizeLevel={1} progressPct={0} timeElapsed="0.0" timeTotal="2.0" nextSaleGold="15" />,
+      <CanvasStage sizeLevel={1} canvasTier={1} progressPct={0} timeElapsed="0.0" timeTotal="2.0" nextSaleGold="15" />,
     );
     fireEvent.mouseEnter(screen.getByTestId("canvas-sell-preview"));
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
@@ -41,7 +41,7 @@ describe("CanvasStage hover wiring (sell preview)", () => {
 
   it("footer reads 'Auto-sells when paint progress reaches 100%.'", () => {
     render(
-      <CanvasStage sizeLevel={1} progressPct={0} timeElapsed="0.0" timeTotal="2.0" nextSaleGold="10" />,
+      <CanvasStage sizeLevel={1} canvasTier={1} progressPct={0} timeElapsed="0.0" timeTotal="2.0" nextSaleGold="10" />,
     );
     fireEvent.mouseEnter(screen.getByTestId("canvas-sell-preview"));
     expect(String(useGameStore.getState().hoverFooter)).toBe("Auto-sells when paint progress reaches 100%.");
