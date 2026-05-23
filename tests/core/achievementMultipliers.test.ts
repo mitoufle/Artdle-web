@@ -5,7 +5,7 @@ vi.mock("@/config/achievementConfig", () => ({
   ACHIEVEMENTS: [
     { id: "first_canvas", name: "", description: "", icon: "", category: "canvas",
       condition: { stat: "lifetime.canvasesSold", op: ">=", value: 1 },
-      effects: [{ kind: "paint_mastery_flat", value: 5 }] },
+      effects: [{ kind: "canvas_gold_pct", value: 0.10 }] },
     { id: "canvas_thousand", name: "", description: "", icon: "", category: "canvas",
       condition: { stat: "lifetime.canvasesSold", op: ">=", value: 1000 },
       effects: [{ kind: "canvas_gold_pct", value: 0.05 }] },
@@ -38,9 +38,4 @@ describe("getAchievementBonus", () => {
     expect(getAchievementBonus(state, "speed_pct")).toBe(0);
   });
 
-  it("does not include paint_mastery_flat in multiplier bonus (that is one-shot)", () => {
-    const state = { completedAchievements: { first_canvas: true as const } };
-    expect(getAchievementBonus(state, "paint_mastery_flat")).toBe(5); // still returned if queried
-    // The caller (multipliers.ts) simply never queries paint_mastery_flat via this fn.
-  });
 });

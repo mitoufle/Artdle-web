@@ -1,5 +1,4 @@
 import type { StateCreator } from "zustand";
-import { big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
 import { ACHIEVEMENTS, type AchievementEffect, type AchievementCategory } from "@/config/achievementConfig";
 
@@ -91,13 +90,6 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
       if (!checkCondition(actual, achievement.condition.op, achievement.condition.value)) continue;
 
       newly.push({ id: achievement.id, name: achievement.name, icon: achievement.icon, category: achievement.category, effects: achievement.effects });
-
-      // Apply paint_mastery_flat one-shot immediately.
-      for (const effect of achievement.effects) {
-        if (effect.kind === "paint_mastery_flat") {
-          get().addPaintMastery(big(effect.value));
-        }
-      }
     }
 
     if (newly.length === 0) return;
