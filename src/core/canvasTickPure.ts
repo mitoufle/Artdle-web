@@ -4,7 +4,7 @@ import {
   CRIT_SPEED_FACTOR, COMBO_DECAY_PER_LINK, comboBonusFactor, comboEffectiveChance,
 } from "@/core/balance";
 import {
-  getCanvasGoldMultiplier, getCanvasSpeedMultiplier, getPmMultiplier,
+  getCanvasGoldMultiplier, getCanvasSpeedMultiplier,
   getCritChance, getComboBaseChance, getCanvasSize, getComboDecayReduction,
   getCritGoldBonus,
 } from "@/core/multipliers";
@@ -60,7 +60,7 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
     sales += 1;
 
     const critGoldMult = critFlag ? (1 + getCritGoldBonus(draft)) : 1;
-    const goldMult = getCanvasGoldMultiplier(draft) * getPmMultiplier(draft) * critGoldMult;
+    const goldMult = getCanvasGoldMultiplier(draft) * critGoldMult;
     const baseGold = canvasGold(size, goldMult);
     // Apply combo bonus from PRIOR chain state — chain mutation happens AFTER pay-out.
     const gain = baseGold.mul(comboBonusFactor(chain));

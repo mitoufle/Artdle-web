@@ -157,18 +157,17 @@ export function StatsRoom(): JSX.Element {
   const critLevel = useGameStore((s) => s.critLevel);
   const comboLevel = useGameStore((s) => s.comboLevel);
 
-  const paintMastery = useGameStore((s) => s.paintMastery);
   const completedResearches = useGameStore((s) => s.completedResearches);
   const completedAchievements = useGameStore((s) => s.completedAchievements);
   const { blocks, size } = useMemo(() => {
     const helperState: CanvasMultiplierInputs = {
-      equipped, purchasedNodes, roster, paintMastery,
+      equipped, purchasedNodes, roster,
       sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
       completedResearches,
       completedAchievements,
     };
     return { blocks: statBlocks(helperState), size: sizeBlock(helperState) };
-  }, [equipped, purchasedNodes, roster, paintMastery, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel, completedResearches, completedAchievements]);
+  }, [equipped, purchasedNodes, roster, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel, completedResearches, completedAchievements]);
 
   // Hide entire blocks that have no contributors and no multiplicatives — keeps
   // locked mechanics (Crit/Combo before their skill nodes are bought, Size at base)

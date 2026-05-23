@@ -22,7 +22,6 @@ describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
     roster: [],
     sellPriceLevel: 1,
     speedLevel: 1,
-    paintMastery: big(0),
     completedResearches: {},
     ...over,
   } as GameStore);
@@ -44,7 +43,6 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     useGameStore.setState({
       purchasedNodes: {},
       equipped: {},
-      paintMastery: big(0),
       sellPriceLevel: 0,
       speedLevel: 0,
     });
@@ -366,7 +364,6 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
       equipped: { brush: item },
       sellPriceLevel: 5,
       speedLevel: 0, critLevel: 0, comboLevel: 0,
-      paintMastery: big(0),
       completedResearches: {},
       roster: [
         {
@@ -390,7 +387,6 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
       purchasedNodes: {},
       equipped: { brush: item },
       sellPriceLevel: 0, speedLevel: 4, critLevel: 0, comboLevel: 0,
-      paintMastery: big(0),
       completedResearches: {},
       roster: [
         {
@@ -414,7 +410,6 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
       purchasedNodes: {},
       equipped: { brush: item },
       sellPriceLevel: 0, speedLevel: 0, critLevel: 10, comboLevel: 0,
-      paintMastery: big(0),
       roster: [
         {
           id: "w1", class: "speedrunner", tier: "common", level: 1, xp: big(0),

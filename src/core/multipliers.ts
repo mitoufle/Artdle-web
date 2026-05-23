@@ -13,7 +13,7 @@ import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
-import { pmMult, SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
+import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
 import { big, type Big } from "@/core/bigNumber";
 import type { AffixKind } from "@/config/workshopAffixes";
 
@@ -31,7 +31,6 @@ export type CanvasMultiplierInputs = Pick<GameStore,
   | "equipped"
   | "roster"
   | "purchasedNodes"
-  | "paintMastery"
   | "sellPriceLevel"
   | "speedLevel"
   | "sizeLevel"
@@ -163,10 +162,6 @@ export const getTreeUpgradeCostMultiplier = (state: Pick<GameStore, "purchasedNo
   const reduction = getNodeLevel(state, "Bargain") * BARGAIN_PER_LEVEL;
   return Math.max(BARGAIN_DISCOUNT_FLOOR, 1 - reduction);
 };
-
-/** Paint Mastery multiplier on canvas gold output. */
-export const getPmMultiplier = (state: Pick<GameStore, "paintMastery">): number =>
-  pmMult(state.paintMastery);
 
 /**
  * Bonus added to BOTH affix min and max magnitude at roll time.
