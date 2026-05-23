@@ -1,5 +1,51 @@
 # Artdle Web — Handover
 
+## Reset regression fix + brand logo (2026-05-23)
+
+Two commits on top of the boot UX polish, both on `master`, both deployed.
+
+### What landed
+
+**Commit `2d4bbb2` — `fix(reset)`: prevent `beforeunload` from re-persisting wiped state**
+
+The TopBar dev reset stopped wiping progress after `928310b` (offline-progress lifecycle wiring). Symptom: clicking Reset → Yes only reset the music volume; gold/inspi/fame/skill-tree/etc. all came back identically after the reload.
+
+Trace:
+1. `wipeAndReload()` in `TopBar.tsx` correctly cleared IDB (`persist.clearStorage()`) + `localStorage.clear()` + `persistedAdapter.discard()`.
+2. `location.reload()` fired `beforeunload`.
+3. The new `defaultLifecycleHooks.onUnload` in `lifecycle.ts` ran `useGameStore.setState({ lastSeen: Date.now() })`. That setState went through the Zustand persist middleware, which enqueued a save of the **still-in-memory progress** into the throttled adapter.
+4. `persistedAdapter.flush()` (also inside `onUnload`) wrote that save straight back to IDB — undoing the wipe a few hundred ms before the page actually reloaded.
+5. After reload, IDB had the just-rewritten save → progress restored.
+
+The music wasn't affected because it lives in `localStorage`, and nothing in `onUnload` re-writes localStorage.
+
+Fix: set the existing `sessionStorage.__skipNextLastSeenWrite = "1"` flag (already used by the dev `testCatchup` helper) before `clearStorage`. `shouldWriteLastSeen()` in `lifecycle.ts` reads-and-consumes the flag, so `onUnload` skips its `setState`. No setState → persist doesn't enqueue → flush is a no-op → IDB stays empty across the reload.
+
+Reusing the existing flag mechanism rather than adding a new one keeps `lifecycle.ts` agnostic; the wipeAndReload flow just sets the same sessionStorage key that the catch-up dev helper sets.
+
+**Commit `b325134` — `feat(topbar)`: replace ARTDLE wordmark with logo PNG**
+
+Top bar's hand-typed `<span class="brandA">A</span><span>RTDLE</span>` swapped for an `<img src="/artdle_logo.png" alt="Artdle">` rendered at 42px tall. The PNG is already preloaded by `index.html` for the splash, so the topbar instance is a cache hit — zero extra network. Pixel-rendered (`image-rendering: pixelated`/`crisp-edges`). Drops the `.brandA` `--fame` glow trick from the old typographic mark; the pixel logo carries its own identity. Test `"renders the ARTDLE brand wordmark"` retitled and rewritten to assert `getByAltText("Artdle")` instead of the two `getByText("A")` / `getByText("RTDLE")` checks.
+
+### Status
+
+- **933 tests green** across 105 files (TopBar test count unchanged).
+- Both commits on `master` (HEAD `b325134`) and deployed via `npx vercel --prod`. Latest production bundle `index-B5RRGwCU.js` (reset fix); brand-logo bundle ships next deploy.
+- No save-state impact.
+
+### Notes / save-state impact
+
+- **The reset regression was latent in any flow that called `location.reload()` after `clearStorage()`.** The new mitigation is specific to the TopBar reset button. If another path needs the same guarantee (e.g., a "wipe player data on logout" feature), it should set the same `__skipNextLastSeenWrite` flag.
+- **`__skipNextLastSeenWrite` is now used by two callers**: the dev `testCatchup` window helper (sets the flag so a manually-set `lastSeen` survives the reload) and `wipeAndReload` (sets the flag so the lifecycle doesn't re-persist the wipe). Same mechanism, two semantically distinct callers — both want "skip the next lifecycle write". The flag is read-and-consumed by `shouldWriteLastSeen()`, so concurrent uses (impossible in practice, but in theory) would still be safe: only the first onHide/onUnload after the flag is set skips its setState.
+- **Brand logo carries the same `/artdle_logo.png` asset as the splash.** Replacing the logo file means updating one place (the source PNG); both surfaces pick up the change. `index.html` preload + cache means the topbar render is instant.
+
+### Open follow-ups
+
+- **Regression test for the reset bug.** `tests/components/shell/TopBar.test.tsx` covers the brand rendering and the reset confirm flow; it does not assert that the `beforeunload` lifecycle hook respects the skip flag during a reset. A jsdom test that dispatches `beforeunload` after `wipeAndReload` could lock this in. Worth adding before the next save-shape change.
+- **Lifecycle hook detach during reset.** Setting the skip flag is fine but it's a workaround for a missing primitive: "the page is intentionally tearing down, stop all lifecycle writes." If a future feature needs a stronger guarantee (e.g., the lifecycle starts writing more than `lastSeen`), a `disableLifecycle()` API in `lifecycle.ts` would be cleaner than per-write flags.
+
+---
+
 ## Boot UX polish + nav icons (2026-05-22→23)
 
 Three commits on top of the offline-progress catch-up, all on `master`, all deployed (latest bundle `index-dROLcnuR.js`).
