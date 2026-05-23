@@ -37,9 +37,9 @@ describe("workshopAffixes config", () => {
   });
 
   it("AFFIX_MAGNITUDE_RANGE: normal tier matches base ranges", () => {
-    expect(AFFIX_MAGNITUDE_RANGE.normal["+sell_price%"]).toEqual({ min: 5, max: 15 });
-    expect(AFFIX_MAGNITUDE_RANGE.normal["+speed%"]).toEqual({ min: 5, max: 15 });
-    expect(AFFIX_MAGNITUDE_RANGE.normal["+size%"]).toEqual({ min: 5, max: 15 });
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+sell_price%"]).toEqual({ min: 15, max: 25 });
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+speed%"]).toEqual({ min: 15, max: 25 });
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+size%"]).toEqual({ min: 15, max: 25 });
     expect(AFFIX_MAGNITUDE_RANGE.normal["+crit_chance%"]).toEqual({ min: 2, max: 8 });
     expect(AFFIX_MAGNITUDE_RANGE.normal["+combo_chance%"]).toEqual({ min: 5, max: 20 });
   });
@@ -56,8 +56,8 @@ describe("workshopAffixes config", () => {
     }
   });
 
-  it("AFFIX_MAGNITUDE_RANGE: legendary sell_price range matches spec (38–56)", () => {
-    expect(AFFIX_MAGNITUDE_RANGE.legendary["+sell_price%"]).toEqual({ min: 38, max: 56 });
+  it("AFFIX_MAGNITUDE_RANGE: legendary sell_price range matches spec (48–66)", () => {
+    expect(AFFIX_MAGNITUDE_RANGE.legendary["+sell_price%"]).toEqual({ min: 48, max: 66 });
   });
 
   it("all numeric constants are positive", () => {
