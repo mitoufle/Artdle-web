@@ -285,7 +285,7 @@ describe("save migration v2 → v3", () => {
     const migrated = migrate(v2State, 2) as unknown as Record<string, unknown>;
     // v9→v10 drops canvasTier.
     expect(migrated.canvasTier).toBeUndefined();
-    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect("paintMastery" in migrated).toBe(false);
     // playerId preserved.
     expect(migrated.playerId).toBe("test-player-id-v2");
     // gold preserved.
@@ -308,23 +308,11 @@ describe("save migration v2 → v3", () => {
     expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
     // v2→v3: defaults added. v9→v10: canvasTier dropped.
     expect(migrated.canvasTier).toBeUndefined();
-    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
-  });
-
-  it("v3 save with non-default paintMastery round-trips", async () => {
-    // Mutate the live store with non-defaults, flush, re-read.
-    useGameStore.getState()._setPaintMastery(big(54_321));
-    await persistedAdapter.flush();
-
-    const raw = await idbAdapter.getItem("artdle-save");
-    expect(raw).not.toBeNull();
-    const parsed = JSON.parse(raw!);
-    expect(parsed.state.paintMastery).toEqual({ __big: "54321" });
-    expect(parsed.version).toBe(20);
+    expect("paintMastery" in migrated).toBe(false);
   });
 });
 
-describe("save migration v3 → v4 (PM redesign)", () => {
+describe("save migration v3 → v4 (lifetime gold add)", () => {
   it("v3 save (no lifetimeGold) gets default big(0) on migrate", () => {
     const v3State = {
       gold: { __big: "5000" },
@@ -333,12 +321,11 @@ describe("save migration v3 → v4 (PM redesign)", () => {
       ascendCount: 1,
       playerId: "test-player-id-v3",
       canvasTier: 5,
-      paintMastery: { __big: "42" },
     };
     const migrated = migrate(v3State, 3) as unknown as Record<string, unknown>;
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
-    // Existing paintMastery preserved.
-    expect((migrated.paintMastery as { __big: string }).__big).toBe("42");
+    // v21 drops paintMastery.
+    expect("paintMastery" in migrated).toBe(false);
     // v9→v10 drops canvasTier.
     expect(migrated.canvasTier).toBeUndefined();
     expect(migrated.playerId).toBe("test-player-id-v3");
@@ -358,21 +345,19 @@ describe("save migration v3 → v4 (PM redesign)", () => {
     // v9 migration wipes inventory (workshop rework). v9→v10 drops canvasTier.
     expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
     expect(migrated.canvasTier).toBeUndefined();
-    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect("paintMastery" in migrated).toBe(false);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 
-  it("v4 save with non-default lifetimeGold round-trips", async () => {
-    useGameStore.getState()._setPaintMastery(big(100));
+  it("v4 lifetimeGold round-trips at the current SAVE_VERSION", async () => {
     useGameStore.getState()._setLifetimeGold(big(50_000));
     await persistedAdapter.flush();
 
     const raw = await idbAdapter.getItem("artdle-save");
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
-    expect(parsed.state.paintMastery).toEqual({ __big: "100" });
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(20);
+    expect(parsed.version).toBe(21);
   });
 });
 
@@ -408,7 +393,7 @@ describe("save migration v5 → v6 (drop currentView)", () => {
     // v9 migration wipes inventory (workshop rework). v9→v10 drops canvasTier.
     expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
     expect(migrated.canvasTier).toBeUndefined();
-    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect("paintMastery" in migrated).toBe(false);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
     expect("currentView" in migrated).toBe(false);
   });
@@ -442,7 +427,7 @@ describe("save migration v6 → v7 (add pastRuns)", () => {
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
     // v9→v10 drops canvasTier.
     expect(migrated.canvasTier).toBeUndefined();
-    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect("paintMastery" in migrated).toBe(false);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
     expect(migrated.pastRuns).toEqual([]);
   });
@@ -484,7 +469,7 @@ describe("save migration v7 → v8 (skill-tree rewrite)", () => {
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
     // v9→v10 drops canvasTier.
     expect(migrated.canvasTier).toBeUndefined();
-    expect((migrated.paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
+    expect("paintMastery" in migrated).toBe(false);
     expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
     expect(migrated.pastRuns).toEqual([]);
     expect(migrated.purchasedNodes).toEqual({});
@@ -704,5 +689,30 @@ describe("save migration v14 → v15 (fuseCount on items)", () => {
     // Other fields preserved
     expect(migrated.workshopLevel).toBe(3);
     expect((migrated.gold as { toString: () => string }).toString()).toBe("500");
+  });
+});
+
+describe("save migration v20 → v21 (Paint Mastery removed)", () => {
+  it("drops the persisted paintMastery field from a v20 save", () => {
+    const v20State = {
+      playerId: "deadbeef-1234-4abc-9def-1234567890ab",
+      paintMastery: { __big: "12345" },
+      lifetimeGold: { __big: "500" },
+      lifetimeInspiration: { __big: "100" },
+    } as Record<string, unknown>;
+    const migrated = migrate(v20State, 20) as unknown as Record<string, unknown>;
+    expect("paintMastery" in migrated).toBe(false);
+    // Other v20 fields are preserved.
+    expect((migrated.lifetimeGold as { __big: string }).__big).toBeTruthy();
+  });
+
+  it("the full chain from v3 produces no paintMastery", () => {
+    const v3State = {
+      playerId: "deadbeef-1234-4abc-9def-1234567890ab",
+      paintMastery: { __big: "42" },
+      canvasTier: 5,
+    } as Record<string, unknown>;
+    const migrated = migrate(v3State, 3) as unknown as Record<string, unknown>;
+    expect("paintMastery" in migrated).toBe(false);
   });
 });
