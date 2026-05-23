@@ -89,7 +89,7 @@ export const SKILL_NODES: ReadonlyArray<SkillNodeConfig> = [
   { id: "painters_boots", name: "Warm Feet", description: "unlocks the boot Item slot", numericEffect: "+1 boots slot", parentIds: ["monk_internship", "third_hand"], stacking: "additive", kind: "major", maxLevel: 1, costs: [1500], unlocks: [] },
   { id: "better_scaling", name: "Better Scaling", description: "for each workshop level, give +# to min and max item affix magnitude ", numericEffect: "1", parentIds: ["painters_boots"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [3500], unlocks: [] },
   { id: "socks", name: "Socks", description: "equiped boots get +#% efficency.", numericEffect: "50", parentIds: ["painters_boots"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [3500], unlocks: [] },
-  { id: "unlock_school", name: "Painting School", description: "Unlocks the Painting School — research permanent bonuses one at a time.", numericEffect: "", parentIds: ["gold_diggers"], stacking: "additive", kind: "major", maxLevel: 1, costs: [100], unlocks: ["school_access"] },
+  { id: "unlock_school", name: "Painting School", description: "Unlocks the Painting School — research permanent bonuses one at a time.", numericEffect: "", parentIds: ["gold_diggers"], stacking: "additive", kind: "major", maxLevel: 1, costs: [25000], unlocks: ["school_access"] },
 ];
 
 /** Lookup helper. Returns null if id unknown. */
