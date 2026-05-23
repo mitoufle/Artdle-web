@@ -487,13 +487,15 @@ describe("fusion — getFusionTarget", () => {
 });
 
 describe("fusion — getFuseCost", () => {
+  const noNodes = { purchasedNodes: {} };
+
   it("cost at fuseCount=0 equals craftCost(workshopLevel)", () => {
     const eq: Item = {
       id: "eq-1", slot: "brush", tier: "normal",
       affixes: [{ kind: "+sell_price%", magnitude: 10 }],
       fuseCount: 0,
     };
-    const cost = getFuseCost(eq, 1);
+    const cost = getFuseCost(eq, 1, noNodes);
     // craftCost(1) = CRAFT_COST_BASE * 1.05^0 = 100; 100 * 2^0 = 100
     expect(cost.toNumber()).toBeCloseTo(100, 1);
   });
@@ -505,9 +507,35 @@ describe("fusion — getFuseCost", () => {
       fuseCount: 0,
     };
     const fused3: Item = { ...base, fuseCount: 3 };
-    const costBase = getFuseCost(base, 1).toNumber();
-    const costFused3 = getFuseCost(fused3, 1).toNumber();
+    const costBase = getFuseCost(base, 1, noNodes).toNumber();
+    const costFused3 = getFuseCost(fused3, 1, noNodes).toNumber();
     expect(costFused3).toBeCloseTo(costBase * 8, 1); // 2^3 = 8
+  });
+
+  it("quantitative_easing halves the cost per level (multiplicative)", () => {
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "normal",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 0,
+    };
+    const baseCost = getFuseCost(eq, 1, noNodes).toNumber();
+    expect(getFuseCost(eq, 1, { purchasedNodes: { quantitative_easing: 1 } }).toNumber())
+      .toBeCloseTo(baseCost * 0.5, 5);
+    expect(getFuseCost(eq, 1, { purchasedNodes: { quantitative_easing: 3 } }).toNumber())
+      .toBeCloseTo(baseCost * 0.125, 5);
+    expect(getFuseCost(eq, 1, { purchasedNodes: { quantitative_easing: 5 } }).toNumber())
+      .toBeCloseTo(baseCost / 32, 5);
+  });
+
+  it("quantitative_easing composes with prior fuses", () => {
+    const fused2: Item = {
+      id: "eq-1", slot: "brush", tier: "normal",
+      affixes: [{ kind: "+sell_price%", magnitude: 10 }],
+      fuseCount: 2,
+    };
+    const baseCost = getFuseCost(fused2, 1, noNodes).toNumber();  // 100 * 4 = 400
+    expect(getFuseCost(fused2, 1, { purchasedNodes: { quantitative_easing: 2 } }).toNumber())
+      .toBeCloseTo(baseCost * 0.25, 5);  // 400 * 0.25 = 100
   });
 });
 

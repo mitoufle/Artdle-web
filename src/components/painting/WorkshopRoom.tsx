@@ -93,8 +93,13 @@ const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
   "+size%": (m) => `+${m}% size`,
 };
 
-function itemHoverBody(item: Item, workshopLevel: number, isFusion: boolean): JSX.Element {
-  const fuseCost = isFusion ? getFuseCost(item, workshopLevel) : null;
+function itemHoverBody(
+  item: Item,
+  workshopLevel: number,
+  isFusion: boolean,
+  purchasedNodes: Record<string, number | undefined>,
+): JSX.Element {
+  const fuseCost = isFusion ? getFuseCost(item, workshopLevel, { purchasedNodes }) : null;
   return (
     <>
       {item.affixes.map((a, i) => (
@@ -214,11 +219,11 @@ export function WorkshopRoom(): JSX.Element {
       if (!target || map.has(item.slot)) continue;
       map.set(item.slot, {
         candidate: item,
-        canFuse: gold.gte(getFuseCost(target, workshopLevel)),
+        canFuse: gold.gte(getFuseCost(target, workshopLevel, { purchasedNodes })),
       });
     }
     return map;
-  }, [inventory, fusionTargetMap, gold, workshopLevel]);
+  }, [inventory, fusionTargetMap, gold, workshopLevel, purchasedNodes]);
 
   return (
     <section className={styles.room} aria-label="Workshop room">
@@ -361,7 +366,7 @@ export function WorkshopRoom(): JSX.Element {
                 key={slot}
                 as="div"
                 title={hasFusion ? `${TIER_LABEL[item.tier]} ${slot} — FUSION READY` : `${TIER_LABEL[item.tier]} ${slot} — equipped`}
-                body={() => itemHoverBody(item, workshopLevel, hasFusion)}
+                body={() => itemHoverBody(item, workshopLevel, hasFusion, purchasedNodes)}
                 footer={
                   hasFusion
                     ? (canFuse ? "Click to fuse." : "Not enough gold — click to unequip.")
@@ -411,7 +416,7 @@ export function WorkshopRoom(): JSX.Element {
               >
                 <Hoverable
                   title={`${TIER_LABEL[item.tier]} ${item.slot}`}
-                  body={() => itemHoverBody(item, workshopLevel, false)}
+                  body={() => itemHoverBody(item, workshopLevel, false, purchasedNodes)}
                   footer="Left-click to equip · right-click to discard."
                 >
                   <button

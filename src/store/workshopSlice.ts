@@ -9,7 +9,7 @@ import type { Big } from "@/core/bigNumber";
 import { rng } from "@/core/rng";
 import type { ItemTier, Affix } from "@/core/workshopRoll";
 import type { GameStore } from "@/store";
-import { getNodeLevel } from "@/store/skillTreeSlice";
+import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
 import { performCraftPure, workshopTickPure } from "@/core/workshopTickPure";
 
 export type { AffixKind, SlotKind } from "@/config/workshopAffixes";
@@ -144,10 +144,20 @@ export function getFusionTarget(
 
 /**
  * Gold cost to fuse a drop into an equipped item.
- * craftCost(workshopLevel) × 2^equippedItem.fuseCount
+ * `craftCost(workshopLevel) × 2^equippedItem.fuseCount × 0.5^quantitative_easing_levels`
+ *
+ * Quantitative easing (skill-tree node, capability `fuse_cost_halving`) halves
+ * the fuse cost once per level — multiplicative, so L5 cuts cost to 1/32 of
+ * the pre-QE price.
  */
-export const getFuseCost = (equippedItem: Item, workshopLevel: number): Big =>
-  craftCost(workshopLevel).mul(Math.pow(2, equippedItem.fuseCount));
+export const getFuseCost = (
+  equippedItem: Item,
+  workshopLevel: number,
+  state: Pick<GameStore, "purchasedNodes">,
+): Big =>
+  craftCost(workshopLevel)
+    .mul(Math.pow(2, equippedItem.fuseCount))
+    .mul(Math.pow(0.5, countCapability(state, "fuse_cost_halving")));
 
 // ============================================================================
 // Helpers
@@ -246,7 +256,7 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     const target = getFusionTarget(drop, state.equipped);
     if (!target) return false;
 
-    const fuseCost = getFuseCost(target, state.workshopLevel);
+    const fuseCost = getFuseCost(target, state.workshopLevel, state);
     if (!state.spend("gold", fuseCost)) return false;
 
     const targetSlot = (
