@@ -25,6 +25,13 @@ export interface CanvasState {
   critLevel: number;
   /** New canvas-depth: combo track level. Gated. */
   comboLevel: number;
+  /**
+   * Canvas tier — within-run prestige level. Incremented by `tierUp()` when
+   * `sellPriceLevel >= 15 && speedLevel >= 15`. Drives `tierFactor(canvasTier)`
+   * scaling on base gold, upgrade costs, and per-track multiplier contributions.
+   * Default 1 (no scaling). Preserved across ascends but reset on full wipe.
+   */
+  canvasTier: number;
   /** New canvas-depth: current combo chain. Run-state. Resets on miss / ascend. */
   comboChain: number;
   /** New canvas-depth: rolled at canvas start; `true` for one canvas's lifetime then reset on sale. */
@@ -49,6 +56,7 @@ export const initialCanvasState: CanvasState = Object.freeze({
   sizeLevel: 0,
   critLevel: 0,
   comboLevel: 0,
+  canvasTier: 1,
   comboChain: 0,
   isCritThisCanvas: false,
   lastSale: null,

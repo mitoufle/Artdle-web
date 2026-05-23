@@ -40,7 +40,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 21;
+const SAVE_VERSION = 22;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -109,6 +109,9 @@ const SAVE_KEY = "artdle-save";
  *
  * v20 → v21 (2026-05-23): Paint Mastery removed entirely. Drop persisted
  * `paintMastery` field; the slice no longer holds it.
+ *
+ * v21 → v22 (2026-05-23): canvas tier system. Adds `canvasTier: 1` for
+ * existing saves. Per-track upgrade levels are preserved.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -357,6 +360,16 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     const { paintMastery: _pm, ...rest } = state;
     void _pm;
     state = rest;
+  }
+
+  if (fromVersion < 22) {
+    // v21 → v22 (2026-05-23): canvas tier system. Existing canvases default
+    // to T1. Pre-existing upgrade levels (sellPriceLevel etc.) preserved —
+    // they were not reset by this migration.
+    state = {
+      ...state,
+      canvasTier: 1,
+    };
   }
 
   return state as unknown as GameStore;
