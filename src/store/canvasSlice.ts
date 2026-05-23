@@ -121,6 +121,13 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       };
     });
     if (fired) get().evaluateAchievements();
+    // Auto tier-up: if the gate is met, fire immediately. Covers both the
+    // just-bought-the-15th-upgrade case (next tick after the upgrade action)
+    // and the save-already-met case (first tick after rehydration).
+    const post = get();
+    if (post.sellPriceLevel >= 15 && post.speedLevel >= 15) {
+      get().tierUp();
+    }
   },
 
   upgradeSellPrice: () => {

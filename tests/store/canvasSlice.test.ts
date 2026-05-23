@@ -508,3 +508,33 @@ describe("canvasTier — tierUp action", () => {
     expect(useGameStore.getState().canvasTier).toBe(3);
   });
 });
+
+describe("canvasTier — auto tier-up on canvasTick when gate met", () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      ...initialCanvasState,
+      gold: big(0),
+    });
+  });
+
+  it("canvasTick auto-fires tierUp when both gate levels >= 15", () => {
+    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15, canvasTier: 1 });
+    useGameStore.getState().canvasTick(0.1);
+    expect(useGameStore.getState().canvasTier).toBe(2);
+    expect(useGameStore.getState().sellPriceLevel).toBe(0);
+    expect(useGameStore.getState().speedLevel).toBe(0);
+  });
+
+  it("canvasTick does NOT auto-fire when gate not met", () => {
+    useGameStore.setState({ sellPriceLevel: 14, speedLevel: 15, canvasTier: 1 });
+    useGameStore.getState().canvasTick(0.1);
+    expect(useGameStore.getState().canvasTier).toBe(1);
+    expect(useGameStore.getState().sellPriceLevel).toBe(14);
+  });
+
+  it("idle tick (delta=0) does not auto-tier even if gate met", () => {
+    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15, canvasTier: 1 });
+    useGameStore.getState().canvasTick(0);
+    expect(useGameStore.getState().canvasTier).toBe(1);
+  });
+});

@@ -20,7 +20,6 @@ import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import { CanvasStage } from "@/components/painting/CanvasStage";
 import { TrackCard } from "@/components/painting/TrackCard";
-import { TierUpCard } from "@/components/painting/TierUpCard";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
 import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
 import { WorkshopRoom } from "@/components/painting/WorkshopRoom";
@@ -165,11 +164,6 @@ export function PaintingRoute(): JSX.Element {
             canAfford={gold.gte(comboCost)}
             locked={comboLocked}
             onUpgrade={upgradeCombo}
-          />
-          <TierUpCard
-            sellPriceLevel={sellPriceLevel}
-            speedLevel={speedLevel}
-            canvasTier={canvasTier}
           />
         </CanvasUpgradesStrip>
       </div>
