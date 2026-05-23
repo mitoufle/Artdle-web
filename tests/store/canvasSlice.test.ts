@@ -9,7 +9,6 @@ describe("canvasSlice — canvasTick", () => {
   beforeEach(() => {
     useGameStore.getState().resetRunCurrencies();
     useGameStore.getState().resetCanvas();
-    useGameStore.getState()._setPaintMastery(big(0));
   });
 
   it("initializes with canvasProgress 0", () => {
@@ -115,14 +114,13 @@ describe("canvasSlice — lastSale animation trigger", () => {
   beforeEach(() => {
     useGameStore.getState().resetRunCurrencies();
     useGameStore.getState().resetCanvas();
-    useGameStore.getState()._setPaintMastery(big(0));
   });
 
   it("initializes with lastSale = null", () => {
     expect(useGameStore.getState().lastSale).toBeNull();
   });
 
-  it("a sale sets lastSale to {id: 1, amount: CANVAS_GOLD_BASE × 1.1} (sizeLevel=0, sellPriceLevel=1, PM=0)", () => {
+  it("a sale sets lastSale to {id: 1, amount: CANVAS_GOLD_BASE × 1.1} (sizeLevel=0, sellPriceLevel=1)", () => {
     const effTime = 2 / 1.05;
     useGameStore.getState().canvasTick(effTime); // sizeLevel=0, effectiveTime ≈ 1.905s
     const ls = useGameStore.getState().lastSale;
@@ -179,7 +177,6 @@ describe("canvasSlice — size-aware tick (canvas-depth)", () => {
   beforeEach(() => {
     useGameStore.getState().resetCanvas();
     useGameStore.getState().resetRunCurrencies();
-    useGameStore.getState()._setPaintMastery(big(0));
     useGameStore.getState()._setLifetimeGold(big(0));
   });
 
@@ -201,19 +198,10 @@ describe("canvasSlice — size-aware tick (canvas-depth)", () => {
     expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(14.5475, 3);
   });
 
-  it("sale calls trackSaleGold — lifetimeGold increments, PM stays 0 (no PM drip)", () => {
+  it("sale calls trackSaleGold — lifetimeGold increments", () => {
     const effTime = 2 / 1.05;
     useGameStore.getState().canvasTick(effTime);
-    expect(useGameStore.getState().paintMastery.toNumber()).toBe(0);
     expect(useGameStore.getState().lifetimeGold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE * 1.1, 9);
-  });
-
-  it("PM mult applies to gold output (PM 100 → ~11× at size=1)", () => {
-    useGameStore.getState()._setPaintMastery(big(100));
-    const effTime = 2 / 1.05;
-    useGameStore.getState().canvasTick(effTime);
-    // gold = 10 × 1² × sellPrice(1.10) × pmMult(100) = 11 × pmMult(100) ≈ 121.2
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(121.2, 0);
   });
 });
 
@@ -369,7 +357,6 @@ describe("canvasSlice — upgradeCrit + upgradeCombo (gated)", () => {
 describe("canvasTick — crit + combo behaviour", () => {
   beforeEach(() => {
     useGameStore.setState({ ...initialCanvasState, gold: big(0) });
-    useGameStore.getState()._setPaintMastery(big(0));
     useGameStore.getState()._setLifetimeGold(big(0));
   });
 

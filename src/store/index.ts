@@ -6,7 +6,7 @@ import { createCurrencySlice, type CurrencySlice } from "./currencySlice";
 import { createHoverInfoSlice, type HoverInfoSlice } from "./hoverInfoSlice";
 import { createTreeSlice, type TreeSlice } from "./treeSlice";
 import { createCanvasSlice, type CanvasSlice } from "./canvasSlice";
-import { createPaintMasterySlice, type PaintMasterySlice } from "./paintMasterySlice";
+import { createLifetimeStatsSlice, type LifetimeStatsSlice } from "./lifetimeStatsSlice";
 import { createSkillTreeSlice, type SkillTreeSlice } from "./skillTreeSlice";
 import { createWorkshopSlice, type WorkshopSlice } from "./workshopSlice";
 import { createOfficeSlice, type OfficeSlice } from "./officeSlice";
@@ -32,7 +32,7 @@ export type GameStore =
   & TreeSlice
   & CanvasSlice
   & OfficeSlice
-  & PaintMasterySlice
+  & LifetimeStatsSlice
   & SkillTreeSlice
   & WorkshopSlice
   & SchoolSlice
@@ -40,7 +40,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 20;
+const SAVE_VERSION = 21;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -106,6 +106,9 @@ const SAVE_KEY = "artdle-save";
  * v19 → v20 (2026-05-22): offline progress — add `lastSeen` timestamp to
  * metaSlice. Existing saves get Date.now() so the first load post-update
  * has `elapsed = 0` (no false catch-up against the deploy timestamp).
+ *
+ * v20 → v21 (2026-05-23): Paint Mastery removed entirely. Drop persisted
+ * `paintMastery` field; the slice no longer holds it.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -347,6 +350,15 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     };
   }
 
+  if (fromVersion < 21) {
+    // v20 → v21 (2026-05-23): Paint Mastery removed entirely. Drop the
+    // persisted `paintMastery` field from save state; the slice no longer
+    // declares it, so leaving it in the persisted blob would be dead weight.
+    const { paintMastery: _pm, ...rest } = state;
+    void _pm;
+    state = rest;
+  }
+
   return state as unknown as GameStore;
 };
 
@@ -398,7 +410,7 @@ export const useGameStore = create<GameStore>()(
       ...createHoverInfoSlice(set, get, store),
       ...createTreeSlice(set, get, store),
       ...createCanvasSlice(set, get, store),
-      ...createPaintMasterySlice(set, get, store),
+      ...createLifetimeStatsSlice(set, get, store),
       ...createSkillTreeSlice(set, get, store),
       ...createWorkshopSlice(set, get, store),
       ...createOfficeSlice(set, get, store),

@@ -33,7 +33,6 @@ import {
   getCanvasSpeedMultiplier,
   getCritChance,
   getCanvasSize,
-  getPmMultiplier,
 } from "@/core/multipliers";
 import { canBuyNode, getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { canAscend } from "@/systems/ascend";
@@ -147,13 +146,12 @@ function gps(state: ReturnType<typeof useGameStore.getState>): number {
   const size = getCanvasSize(state);
   const gm   = getCanvasGoldMultiplier(state);
   const sm   = getCanvasSpeedMultiplier(state);
-  const pm   = getPmMultiplier(state);
   const crit = getCritChance(state);
   const baseTime  = canvasTime(size);
   const normTime  = baseTime / sm;
   // avg time: crit canvases complete CRIT_SPEED_FACTOR× faster
   const avgTime   = normTime * (1 - (1 - 1 / CRIT_SPEED_FACTOR) * crit);
-  const avgGold   = canvasGold(size, gm).mul(pm).toNumber();
+  const avgGold   = canvasGold(size, gm).toNumber();
   return avgGold / avgTime;
 }
 
@@ -294,7 +292,6 @@ describe("bot-simulation", () => {
       ascendCount: 0,
       pastRuns: [],
     });
-    useGameStore.getState()._setPaintMastery(big(0));
   });
 
   it("runs 3-hour simulation and logs pacing", () => {
@@ -385,7 +382,6 @@ describe("bot-simulation", () => {
     console.log(`  I/s:           ${fmtN(ips(final))}`);
     console.log(`  Canvas tracks: SP:${final.sellPriceLevel} Sp:${final.speedLevel} Si:${final.sizeLevel} Cr:${final.critLevel} Co:${final.comboLevel}`);
     console.log(`  Workshop:      L${final.workshopLevel} (${final.inventory.length} in inv, ${Object.keys(final.equipped).length} equipped)`);
-    console.log(`  Paint Mastery: ${fmtN(final.paintMastery.toNumber())}`);
     console.log(`  First ascend:  ${firstAscendAt >= 0 ? fmtTime(firstAscendAt) : "never"}`);
     console.log(`  Size unlocked: ${sizUnlocked} | Crit unlocked: ${critUnlocked} | Combo unlocked: ${comboUnlocked}`);
   }, 30_000);

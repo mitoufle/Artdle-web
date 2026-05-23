@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  createPaintMasterySlice,
-  initialPaintMasteryState,
-} from "@/store/paintMasterySlice";
+  createLifetimeStatsSlice,
+  initialLifetimeStatsState,
+} from "@/store/lifetimeStatsSlice";
 import { big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
 
@@ -12,36 +12,27 @@ import type { GameStore } from "@/store";
  * matching Zustand's signatures.
  */
 function createHarness() {
-  let state: Record<string, unknown> = { ...initialPaintMasteryState };
+  let state: Record<string, unknown> = { ...initialLifetimeStatsState };
   const get = (() => state as unknown as GameStore) as () => GameStore;
   const set = ((partial: unknown) => {
     const update =
       typeof partial === "function" ? (partial as (s: unknown) => unknown)(state) : partial;
     state = { ...state, ...(update as Record<string, unknown>) };
-  }) as Parameters<typeof createPaintMasterySlice>[0];
-  const slice = createPaintMasterySlice(set, get, {} as Parameters<typeof createPaintMasterySlice>[2]);
+  }) as Parameters<typeof createLifetimeStatsSlice>[0];
+  const slice = createLifetimeStatsSlice(set, get, {} as Parameters<typeof createLifetimeStatsSlice>[2]);
   state = { ...state, ...slice };
   return { state: () => state, slice };
 }
 
-describe("paintMasterySlice — initial state (v1.1 redesign)", () => {
-  it("initial paintMastery is big(0)", () => {
-    const h = createHarness();
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
-  });
-
-  it("initial lifetimeGold is big(0)", () => {
+describe("lifetimeStatsSlice — initial state", () => {
+  it("starts with zero lifetimeGold and lifetimeInspiration", () => {
     const h = createHarness();
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
-  });
-
-  it("initial lifetimeInspiration is big(0)", () => {
-    const h = createHarness();
     expect((h.state().lifetimeInspiration as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 });
 
-describe("paintMasterySlice — trackInspirationGain (lifetimeInspiration accumulator)", () => {
+describe("lifetimeStatsSlice — trackInspirationGain (lifetimeInspiration accumulator)", () => {
   it("1000 inspi gain increments lifetimeInspiration by 1000", () => {
     const h = createHarness();
     h.slice.trackInspirationGain(big(1000));
@@ -61,26 +52,23 @@ describe("paintMasterySlice — trackInspirationGain (lifetimeInspiration accumu
     expect((h.state().lifetimeInspiration as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 
-  it("does NOT touch lifetimeGold or paintMastery", () => {
+  it("does NOT touch lifetimeGold", () => {
     const h = createHarness();
     h.slice.trackInspirationGain(big(1234));
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 });
 
-describe("paintMasterySlice — trackSaleGold (lifetimeGold only; PM not granted)", () => {
-  it("1000g sale increments lifetimeGold by 1000 and does NOT grant PM", () => {
+describe("lifetimeStatsSlice — trackSaleGold (lifetimeGold accumulator)", () => {
+  it("1000g sale increments lifetimeGold by 1000", () => {
     const h = createHarness();
     h.slice.trackSaleGold(big(1000));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(1000);
   });
 
-  it("999g sale increments lifetimeGold by 999 and does NOT grant PM", () => {
+  it("999g sale increments lifetimeGold by 999", () => {
     const h = createHarness();
     h.slice.trackSaleGold(big(999));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(999);
   });
 
@@ -90,33 +78,23 @@ describe("paintMasterySlice — trackSaleGold (lifetimeGold only; PM not granted
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(500);
     h.slice.trackSaleGold(big(500));
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(1000);
-    // PM is never dripped by trackSaleGold
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 
-  it("0g sale is a no-op for both PM and lifetimeGold", () => {
+  it("0g sale is a no-op for lifetimeGold", () => {
     const h = createHarness();
     h.slice.trackSaleGold(big(0));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
   });
 
-  it("large sale increments lifetimeGold correctly without granting PM", () => {
+  it("large sale increments lifetimeGold correctly", () => {
     const h = createHarness();
     h.slice._setLifetimeGold(big(1_000_000));
     h.slice.trackSaleGold(big(1_000_000));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(0);
     expect((h.state().lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(2_000_000);
   });
 });
 
-describe("paintMasterySlice — test helpers", () => {
-  it("_setPaintMastery overwrites paintMastery", () => {
-    const h = createHarness();
-    h.slice._setPaintMastery(big(12345));
-    expect((h.state().paintMastery as ReturnType<typeof big>).toNumber()).toBe(12345);
-  });
-
+describe("lifetimeStatsSlice — test helpers", () => {
   it("_setLifetimeGold overwrites lifetimeGold", () => {
     const h = createHarness();
     h.slice._setLifetimeGold(big(67890));

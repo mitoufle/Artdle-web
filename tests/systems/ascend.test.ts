@@ -194,45 +194,23 @@ describe("systems/ascend", () => {
   });
 
   // ============================================================================
-  // v1.1 reset semantics: paintMastery
+  // v1.1 reset semantics: lifetime stats
   // ============================================================================
 
-  describe("performAscendOrchestrator — v1.1 reset semantics", () => {
+  describe("performAscendOrchestrator — lifetime stats", () => {
     beforeEach(() => {
       useGameStore.getState().resetCanvas();
       useGameStore.getState().resetRunCurrencies();
-      useGameStore.getState()._setPaintMastery(big(0));
       useGameStore.getState()._setLifetimeGold(big(0));
     });
 
-    it("ascend preserves paintMastery exactly (no reset)", () => {
+    it("ascend preserves lifetimeGold and lifetimeInspiration exactly (no reset)", () => {
       useGameStore.setState({ inspiration: big(12_000) });
-      useGameStore.getState()._setPaintMastery(big(12_345));
       useGameStore.getState()._setLifetimeGold(big(99_999));
+      useGameStore.getState()._setLifetimeInspiration(big(123));
       performAscendOrchestrator(useGameStore.getState);
-      expect(useGameStore.getState().paintMastery.toNumber()).toBe(12_345);
       expect(useGameStore.getState().lifetimeGold.toNumber()).toBe(99_999);
-    });
-
-    it("multi-ascend accumulates paintMastery additively across runs", () => {
-      // Run 1: set 100 PM directly, ascend.
-      useGameStore.setState({ inspiration: big(12_000) });
-      useGameStore.getState()._setPaintMastery(big(100));
-      performAscendOrchestrator(useGameStore.getState);
-      expect(useGameStore.getState().paintMastery.toNumber()).toBe(100);
-
-      // Run 2: bypass the tick formula — set PM and lifetimeGold directly to
-      // avoid coupling this test to the integer-PM formula details.
-      // Simulate that run 2 earned 5 PM (e.g. via 5000g of lifetime gold).
-      useGameStore.getState()._setPaintMastery(big(105));
-      useGameStore.getState()._setLifetimeGold(big(5_000));
-
-      // Ascend run 2 (count 1 → palier 2000).
-      useGameStore.setState({ inspiration: big(12_000) });
-      performAscendOrchestrator(useGameStore.getState);
-      // PM accumulates and survives across ascends (not reset).
-      expect(useGameStore.getState().paintMastery.toNumber()).toBe(105);
-      expect(useGameStore.getState().lifetimeGold.toNumber()).toBe(5_000);
+      expect(useGameStore.getState().lifetimeInspiration.toNumber()).toBe(123);
     });
   });
 });

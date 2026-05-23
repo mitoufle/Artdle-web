@@ -43,7 +43,7 @@ function resolveStatValue(state: GameStore, stat: string): number {
   if (stat === "lifetime.goldEarned") return state.lifetimeGold.toNumber();
   // Designer alias: the user types the condition stat as `lifetime.goldgain` /
   // `lifetime.inspirationgain` in the achievement designer. Resolve to the
-  // canonical Big trackers on the paintMastery slice.
+  // canonical Big trackers on the lifetimeStats slice.
   if (stat === "lifetime.goldgain") return state.lifetimeGold.toNumber();
   if (stat === "lifetime.inspirationgain") return state.lifetimeInspiration.toNumber();
   if (stat === "lifetime.ascensions") return state.ascendCount;

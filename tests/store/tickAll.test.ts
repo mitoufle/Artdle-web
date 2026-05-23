@@ -31,7 +31,6 @@ describe("tickAll orchestrator", () => {
     // effectiveTime = canvasTime(0) / speedMult = 2 / (1 + 0.05×1) = 2/1.05 ≈ 1.905s.
     // Start at 1.5s; delta=1 pushes to 2.5 ≥ 1.905 → sale fires, leftover = 2.5 - 2/1.05.
     useGameStore.getState().add("gold", big(10000));
-    useGameStore.getState()._setPaintMastery(big(0));
     for (let i = 0; i < 5; i++) {
       useGameStore.getState().buyPartLevel("cotyledon");
     }
@@ -44,7 +43,7 @@ describe("tickAll orchestrator", () => {
     // Tree credit: 5 * 0.1 * 1 = 0.5
     expect(useGameStore.getState().inspiration.toNumber() - inspBefore).toBeCloseTo(0.5, 6);
     // Canvas: one sale fires; gold = 10 × (1 + 0.30×0) × (1 + 0.10×1) = 11
-    // (sizeLevel=0, sellPriceLevel=1, PM=0, no items).
+    // (sizeLevel=0, sellPriceLevel=1, no items).
     expect(useGameStore.getState().gold.toNumber() - goldBefore).toBeCloseTo(11, 5);
     // Progress carries leftover = 2.5 - (2/1.05) ≈ 0.595s (< effectiveTime → no clamp).
     const expectedLeftover = 2.5 - 2 / 1.05;
