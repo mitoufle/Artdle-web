@@ -8,8 +8,14 @@ import { craftCost } from "@/core/balance";
 import type { Big } from "@/core/bigNumber";
 import { rng } from "@/core/rng";
 import type { ItemTier, Affix } from "@/core/workshopRoll";
+import { rollAffixes } from "@/core/workshopRoll";
 import type { GameStore } from "@/store";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
+import {
+  getAffixMagnitudeBonus,
+  getSchoolAffixMagnitudeMultiplier,
+  getSkillAffixMagnitudeMultiplier,
+} from "@/core/multipliers";
 import { performCraftPure, workshopTickPure } from "@/core/workshopTickPure";
 
 export type { AffixKind, SlotKind } from "@/config/workshopAffixes";
@@ -126,12 +132,19 @@ export const getEquippedContribution = (
 };
 
 /**
- * Returns the equipped item that can fuse with the inventory item:
- * same slot kind, same tier, AND same affix-kind multiset.
+ * Returns the equipped item that can fuse with the inventory item.
+ *
+ * Default rule: same slot kind, same tier, AND same affix-kind multiset.
+ *
+ * `cross_affix_fusion` capability (M&A specialist node) relaxes the affix-kind
+ * multiset check for epic and legendary tiers — same slot + same tier is
+ * sufficient. The caller (`fuseItem`) detects the mismatch and rerolls the
+ * target's affixes instead of bumping them.
  */
 export function getFusionTarget(
   invItem: Item,
   equipped: Partial<Record<SlotKind, Item>>,
+  state: Pick<GameStore, "purchasedNodes">,
 ): Item | null {
   const eq = equipped[invItem.slot];
   if (!eq) return null;
@@ -139,7 +152,21 @@ export function getFusionTarget(
   if (eq.affixes.length !== invItem.affixes.length) return null;
   const invKinds = invItem.affixes.map((a) => a.kind).sort().join(",");
   const eqKinds  = eq.affixes.map((a) => a.kind).sort().join(",");
-  return invKinds === eqKinds ? eq : null;
+  if (invKinds === eqKinds) return eq;
+  if (
+    (eq.tier === "epic" || eq.tier === "legendary") &&
+    countCapability(state, "cross_affix_fusion") > 0
+  ) {
+    return eq;
+  }
+  return null;
+}
+
+/** True iff the drop and equipped item differ on their affix-kind multiset. */
+export function isCrossAffixFusion(invItem: Item, equippedItem: Item): boolean {
+  const invKinds = invItem.affixes.map((a) => a.kind).sort().join(",");
+  const eqKinds  = equippedItem.affixes.map((a) => a.kind).sort().join(",");
+  return invKinds !== eqKinds;
 }
 
 /**
@@ -253,7 +280,7 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     const drop = state.inventory.find((i) => i.id === dropId);
     if (!drop) return false;
 
-    const target = getFusionTarget(drop, state.equipped);
+    const target = getFusionTarget(drop, state.equipped, state);
     if (!target) return false;
 
     const fuseCost = getFuseCost(target, state.workshopLevel, state);
@@ -264,14 +291,26 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
     ).find(([, eq]) => eq?.id === target.id)?.[0];
     if (!targetSlot) return false;
 
-    const dropKindMap = new Map(drop.affixes.map((a) => [a.kind, a.magnitude]));
-    const newAffixes: Array<{ kind: AffixKind; magnitude: number }> = target.affixes.map((a) => {
-      const dropMag = dropKindMap.get(a.kind) ?? 0;
-      const pct = 0.05 + rng() * 0.45; // [0.05, 0.50)
-      // Math.round: gain can be 0 for low magnitudes (e.g., mag=5, pct=0.05 → 0.25 → 0). Intentional.
-      const gain = Math.round(dropMag * pct);
-      return { kind: a.kind, magnitude: a.magnitude + gain };
-    });
+    let newAffixes: ReadonlyArray<{ kind: AffixKind; magnitude: number }>;
+    if (isCrossAffixFusion(drop, target)) {
+      // M&A specialist path: discard both old affix multisets and reroll
+      // fresh affixes for the equipped item at its current tier.
+      newAffixes = rollAffixes(
+        target.tier,
+        state,
+        getAffixMagnitudeBonus(state),
+        getSchoolAffixMagnitudeMultiplier(state) * getSkillAffixMagnitudeMultiplier(state),
+      );
+    } else {
+      const dropKindMap = new Map(drop.affixes.map((a) => [a.kind, a.magnitude]));
+      newAffixes = target.affixes.map((a) => {
+        const dropMag = dropKindMap.get(a.kind) ?? 0;
+        const pct = 0.05 + rng() * 0.45; // [0.05, 0.50)
+        // Math.round: gain can be 0 for low magnitudes (e.g., mag=5, pct=0.05 → 0.25 → 0). Intentional.
+        const gain = Math.round(dropMag * pct);
+        return { kind: a.kind, magnitude: a.magnitude + gain };
+      });
+    }
 
     const fusedItem: Item = {
       ...target,

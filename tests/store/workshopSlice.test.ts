@@ -420,13 +420,16 @@ describe("workshopSlice — resetWorkshop", () => {
 });
 
 describe("fusion — getFusionTarget", () => {
+  const noNodes = { purchasedNodes: {} };
+  const withMA = { purchasedNodes: { ma_specialist: 1 } };
+
   it("returns null when no equipped items", () => {
     const inv: Item = {
       id: "inv-1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+sell_price%", magnitude: 10 }, { kind: "+speed%", magnitude: 8 }],
       fuseCount: 0,
     };
-    expect(getFusionTarget(inv, {})).toBeNull();
+    expect(getFusionTarget(inv, {}, noNodes)).toBeNull();
   });
 
   it("returns null when kinds match but count differs", () => {
@@ -440,7 +443,7 @@ describe("fusion — getFusionTarget", () => {
       affixes: [{ kind: "+sell_price%", magnitude: 8 }, { kind: "+speed%", magnitude: 5 }],
       fuseCount: 0,
     };
-    expect(getFusionTarget(inv, { brush: eq })).toBeNull();
+    expect(getFusionTarget(inv, { brush: eq }, noNodes)).toBeNull();
   });
 
   it("returns equipped item when slot, tier, and affix kinds all match (order irrelevant)", () => {
@@ -454,7 +457,7 @@ describe("fusion — getFusionTarget", () => {
       affixes: [{ kind: "+sell_price%", magnitude: 12 }, { kind: "+speed%", magnitude: 7 }],
       fuseCount: 0,
     };
-    expect(getFusionTarget(inv, { brush: eq })).toBe(eq);
+    expect(getFusionTarget(inv, { brush: eq }, noNodes)).toBe(eq);
   });
 
   it("returns null when affix kinds match but tiers differ", () => {
@@ -468,7 +471,7 @@ describe("fusion — getFusionTarget", () => {
       affixes: [{ kind: "+sell_price%", magnitude: 8 }],
       fuseCount: 0,
     };
-    expect(getFusionTarget(inv, { brush: eq })).toBeNull();
+    expect(getFusionTarget(inv, { brush: eq }, noNodes)).toBeNull();
   });
 
   it("returns null when slot kinds differ even if tier and affix kinds match", () => {
@@ -482,7 +485,94 @@ describe("fusion — getFusionTarget", () => {
       affixes: [{ kind: "+sell_price%", magnitude: 12 }],
       fuseCount: 0,
     };
-    expect(getFusionTarget(inv, { brush: eq })).toBeNull();
+    expect(getFusionTarget(inv, { brush: eq }, noNodes)).toBeNull();
+  });
+
+  it("ma_specialist allows cross-affix fusion at epic tier", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "brush", tier: "epic",
+      affixes: [{ kind: "+sell_price%", magnitude: 25 }, { kind: "+speed%", magnitude: 25 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "epic",
+      affixes: [{ kind: "+crit_chance%", magnitude: 14 }, { kind: "+combo_chance%", magnitude: 24 }],
+      fuseCount: 0,
+    };
+    // Without ma_specialist: cross-affix is rejected.
+    expect(getFusionTarget(inv, { brush: eq }, noNodes)).toBeNull();
+    // With ma_specialist: cross-affix at epic is allowed.
+    expect(getFusionTarget(inv, { brush: eq }, withMA)).toBe(eq);
+  });
+
+  it("ma_specialist allows cross-affix fusion at legendary tier", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "brush", tier: "legendary",
+      affixes: [{ kind: "+sell_price%", magnitude: 40 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "legendary",
+      affixes: [{ kind: "+size%", magnitude: 40 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, { brush: eq }, withMA)).toBe(eq);
+  });
+
+  it("ma_specialist does NOT allow cross-affix fusion below epic", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "brush", tier: "rare",
+      affixes: [{ kind: "+sell_price%", magnitude: 20 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "rare",
+      affixes: [{ kind: "+speed%", magnitude: 20 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, { brush: eq }, withMA)).toBeNull();
+  });
+
+  it("ma_specialist still requires matching slot kind", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "hat", tier: "epic",
+      affixes: [{ kind: "+sell_price%", magnitude: 25 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "epic",
+      affixes: [{ kind: "+speed%", magnitude: 25 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, { brush: eq }, withMA)).toBeNull();
+  });
+
+  it("ma_specialist still requires matching tier", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "brush", tier: "epic",
+      affixes: [{ kind: "+sell_price%", magnitude: 25 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "legendary",
+      affixes: [{ kind: "+speed%", magnitude: 40 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, { brush: eq }, withMA)).toBeNull();
+  });
+
+  it("ma_specialist still requires matching affix count", () => {
+    const inv: Item = {
+      id: "inv-1", slot: "brush", tier: "epic",
+      affixes: [{ kind: "+sell_price%", magnitude: 25 }],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "epic",
+      affixes: [{ kind: "+speed%", magnitude: 25 }, { kind: "+size%", magnitude: 25 }],
+      fuseCount: 0,
+    };
+    expect(getFusionTarget(inv, { brush: eq }, withMA)).toBeNull();
   });
 });
 
@@ -625,6 +715,57 @@ describe("fusion — fuseItem action", () => {
     const firstFuseCost = 10_000 - goldAfterFirst;
     const secondFuseCost = goldAfterFirst - goldAfterSecond;
     expect(secondFuseCost).toBeCloseTo(firstFuseCost * 2, 0);
+  });
+
+  it("ma_specialist: cross-affix fusion at epic rerolls target affixes (does not bump)", () => {
+    // Epic items have 4 affixes (TIER_AFFIX_COUNT.epic). Drop has 4 sell_price; equipped
+    // has a mix of size/crit/combo. Same kinds AS A MULTISET would not match — without
+    // ma_specialist this fusion would be rejected.
+    const drop: Item = {
+      id: "drop-1", slot: "brush", tier: "epic",
+      affixes: [
+        { kind: "+sell_price%", magnitude: 25 },
+        { kind: "+sell_price%", magnitude: 30 },
+        { kind: "+speed%", magnitude: 28 },
+        { kind: "+speed%", magnitude: 32 },
+      ],
+      fuseCount: 0,
+    };
+    const eq: Item = {
+      id: "eq-1", slot: "brush", tier: "epic",
+      affixes: [
+        { kind: "+crit_chance%", magnitude: 14 },
+        { kind: "+combo_chance%", magnitude: 24 },
+        { kind: "+size%", magnitude: 25 },
+        { kind: "+sell_price%", magnitude: 25 },
+      ],
+      fuseCount: 0,
+    };
+    useGameStore.setState({
+      inventory: [drop],
+      equipped: { brush: eq },
+      gold: big(100_000),
+      workshopLevel: 1,
+      purchasedNodes: {
+        ma_specialist: 1,
+        size_matters: 1, genius_episode: 1, unrelentless: 1,
+      },
+    });
+    setSeed(0);
+    expect(useGameStore.getState().fuseItem("drop-1")).toBe(true);
+
+    const fused = useGameStore.getState().equipped.brush!;
+    expect(fused.tier).toBe("epic");
+    // Reroll produces TIER_AFFIX_COUNT[epic] = 4 affixes.
+    expect(fused.affixes.length).toBe(4);
+    expect(fused.fuseCount).toBe(1);
+    // Each affix is freshly rolled within its epic per-kind range — no carry-over
+    // from drop or eq magnitudes.
+    for (const a of fused.affixes) {
+      // Epic min across all kinds is 14 (crit). Epic max across all kinds is 42 (combo).
+      expect(a.magnitude).toBeGreaterThanOrEqual(14);
+      expect(a.magnitude).toBeLessThanOrEqual(42);
+    }
   });
 
   it("absorbed gain per affix stays in [5%, 50%] of drop magnitude across many rolls", () => {

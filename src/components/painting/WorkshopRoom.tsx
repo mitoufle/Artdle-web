@@ -206,10 +206,10 @@ export function WorkshopRoom(): JSX.Element {
   const fusionTargetMap = useMemo(() => {
     const map = new Map<string, Item | null>();
     for (const item of inventory) {
-      map.set(item.id, getFusionTarget(item, equipped));
+      map.set(item.id, getFusionTarget(item, equipped, { purchasedNodes }));
     }
     return map;
-  }, [inventory, equipped]);
+  }, [inventory, equipped, purchasedNodes]);
 
   // For each inventory item that has a fusion target, record the first candidate per slot.
   const slotFusionMap = useMemo(() => {
