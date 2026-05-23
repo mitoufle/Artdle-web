@@ -32,6 +32,17 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
 ];
 
 async function wipeAndReload(): Promise<void> {
+  // Tell the lifecycle hook to skip its lastSeen `setState` on the imminent
+  // beforeunload. Without this, that setState fires the Zustand persist
+  // middleware which enqueues a save of the (still-in-memory) progress, and
+  // the subsequent flush writes it straight back to IDB — undoing the wipe
+  // and only the music (which lives in localStorage) appears reset.
+  try {
+    sessionStorage.setItem("__skipNextLastSeenWrite", "1");
+  } catch {
+    // ignore — fallback path still wipes IDB; worst case the lifecycle
+    // re-persists state and the next reload after that picks up the wipe.
+  }
   try {
     await useGameStore.persist.clearStorage();
   } catch {
@@ -42,7 +53,7 @@ async function wipeAndReload(): Promise<void> {
   } catch {
     // ignore
   }
-  persistedAdapter.discard(); // cancel pending write so beforeunload flush cannot restore the save
+  persistedAdapter.discard(); // cancel any pending write
   window.location.reload();
 }
 
