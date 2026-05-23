@@ -47,6 +47,8 @@ import {
   PART_MILESTONES,
   getPartMilestoneMultiplier,
   getNextPartMilestone,
+  tierFactor,
+  timeFactor,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -512,5 +514,40 @@ describe("inspiPerSec — milestone multiplier applied per part", () => {
 
   it("existing sub-threshold tests unaffected (milestone mult = 1 for L<10)", () => {
     expect(inspiPerSec([{ level: 2, rate: 1 }, { level: 3, rate: 2 }], 1).toNumber()).toBe(8);
+  });
+});
+
+// ============================================================================
+// Canvas tier system helpers
+// ============================================================================
+describe("tierFactor (canvas tier scaling)", () => {
+  it("T1 returns 1 (no scaling)", () => {
+    expect(tierFactor(1)).toBe(1);
+  });
+
+  it("T2 returns 10", () => {
+    expect(tierFactor(2)).toBe(10);
+  });
+
+  it("T3 returns 100", () => {
+    expect(tierFactor(3)).toBe(100);
+  });
+
+  it("T5 returns 10000", () => {
+    expect(tierFactor(5)).toBe(10000);
+  });
+});
+
+describe("timeFactor (canvas tier base-time scaling)", () => {
+  it("T1 returns 1", () => {
+    expect(timeFactor(1)).toBe(1);
+  });
+
+  it("T2 returns 2", () => {
+    expect(timeFactor(2)).toBe(2);
+  });
+
+  it("T4 returns 8", () => {
+    expect(timeFactor(4)).toBe(8);
   });
 });

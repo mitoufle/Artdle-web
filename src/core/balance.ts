@@ -66,6 +66,28 @@ export const TRACK_COST_GROWTH = 1.5;
 /** Base paint time at sizeLevel = 0, before speed multipliers. Matches the v1.1 tier-1 baseline. */
 export const CANVAS_TIME_BASE = 2;
 
+/**
+ * Multiplier on base gold, per-level effects, and upgrade costs at canvas tier T.
+ * `tierFactor(1) = 1`, `tierFactor(2) = 10`, `tierFactor(3) = 100`, ...
+ *
+ * Used by:
+ *   - `canvasGold(size, mult, tier)` to scale base canvas gold
+ *   - The `*UpgradeCost(level, tier)` family to scale upgrade prices
+ *   - The canvas multipliers in `src/core/multipliers.ts` to scale each track's
+ *     additive contribution before composing with item/worker/school/achievement bonuses
+ *
+ * The ×10/tier ramp matches the spec's prestige design — see
+ * `docs/superpowers/specs/2026-05-23-canvas-tier-system-design.md`.
+ */
+export const tierFactor = (tier: number): number => Math.pow(10, tier - 1);
+
+/**
+ * Multiplier on base canvas paint time at tier T. `timeFactor(1) = 1`,
+ * `timeFactor(2) = 2`, `timeFactor(4) = 8`. Time grows linearly per tier while
+ * gold grows by ×10 — so gold/sec at base scales by ×5 per tier.
+ */
+export const timeFactor = (tier: number): number => Math.pow(2, tier - 1);
+
 // ============================================================================
 // Formulas
 // ============================================================================
