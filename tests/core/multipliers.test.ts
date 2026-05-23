@@ -542,75 +542,70 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
 
 });
 
-describe("multipliers — tier scaling (canvasTier)", () => {
-  it("getCanvasGoldMultiplier T2 multiplies sell-price track contribution by 10", () => {
-    // T1, sellPriceLevel=5: 1 + 0.10 × 5 = 1.50
-    // T2, sellPriceLevel=5: 1 + 0.10 × 5 × 10 = 6.0
-    expect(getCanvasGoldMultiplier({
-      purchasedNodes: {}, equipped: {}, roster: [],
-      sellPriceLevel: 5, speedLevel: 0, sizeLevel: 0, critLevel: 0, comboLevel: 0,
-      canvasTier: 1,
-      completedResearches: {}, completedAchievements: {},
-    } as never)).toBeCloseTo(1.50, 5);
+describe("multipliers — per-level effects do NOT scale with canvasTier", () => {
+  // Per-level effects stay flat across tiers. The tier-scaling reward comes from
+  // base canvas gold (×10/tier in canvasGold), base canvas time (×2/tier in
+  // canvasTime), and upgrade costs (×10/tier). Multiplying the per-level *effect*
+  // by tierFactor would compound destructively on speed (which divides time),
+  // making a single L1 speed upgrade at T6 collapse canvas time to near zero.
 
-    expect(getCanvasGoldMultiplier({
-      purchasedNodes: {}, equipped: {}, roster: [],
-      sellPriceLevel: 5, speedLevel: 0, sizeLevel: 0, critLevel: 0, comboLevel: 0,
-      canvasTier: 2,
-      completedResearches: {}, completedAchievements: {},
-    } as never)).toBeCloseTo(6.0, 5);
-  });
-
-  it("getCanvasSpeedMultiplier T3 multiplies speed track contribution by 100", () => {
-    // T1, speedLevel=2: 1 + 0.05 × 2 = 1.10
-    // T3, speedLevel=2: 1 + 0.05 × 2 × 100 = 11.0
+  it("getCanvasGoldMultiplier: same per-level effect at T1, T2, T6", () => {
     const baseState = {
       purchasedNodes: {}, equipped: {}, roster: [],
-      sellPriceLevel: 0, speedLevel: 2, sizeLevel: 0, critLevel: 0, comboLevel: 0,
+      sellPriceLevel: 5, speedLevel: 0, sizeLevel: 0, critLevel: 0, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
-    expect(getCanvasSpeedMultiplier({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(1.10, 5);
-    expect(getCanvasSpeedMultiplier({ ...baseState, canvasTier: 3 } as never)).toBeCloseTo(11.0, 5);
+    // 1 + 0.10 × 5 = 1.50, regardless of tier
+    expect(getCanvasGoldMultiplier({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(1.50, 5);
+    expect(getCanvasGoldMultiplier({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(1.50, 5);
+    expect(getCanvasGoldMultiplier({ ...baseState, canvasTier: 6 } as never)).toBeCloseTo(1.50, 5);
   });
 
-  it("getCanvasSize T2 multiplies size track contribution by 10", () => {
-    // T1, sizeLevel=3: 1 + 0.15 × 3 = 1.45
-    // T2, sizeLevel=3: 1 + 0.15 × 3 × 10 = 5.50
+  it("getCanvasSpeedMultiplier: same per-level effect at T1, T2, T6 (was the worst-case bug)", () => {
+    const baseState = {
+      purchasedNodes: {}, equipped: {}, roster: [],
+      sellPriceLevel: 0, speedLevel: 1, sizeLevel: 0, critLevel: 0, comboLevel: 0,
+      completedResearches: {}, completedAchievements: {},
+    };
+    // 1 + 0.05 × 1 = 1.05, regardless of tier
+    expect(getCanvasSpeedMultiplier({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(1.05, 5);
+    expect(getCanvasSpeedMultiplier({ ...baseState, canvasTier: 6 } as never)).toBeCloseTo(1.05, 5);
+  });
+
+  it("getCanvasSize: same per-level effect at T1 and T2", () => {
     const baseState = {
       purchasedNodes: {}, equipped: {}, roster: [],
       sellPriceLevel: 0, speedLevel: 0, sizeLevel: 3, critLevel: 0, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
+    // 1 + 0.15 × 3 = 1.45, regardless of tier
     expect(getCanvasSize({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(1.45, 5);
-    expect(getCanvasSize({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(5.50, 5);
+    expect(getCanvasSize({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(1.45, 5);
   });
 
-  it("getCritChance T2 multiplies crit track contribution by 10 (still clamped by soft cap)", () => {
-    // T1, critLevel=5: 0.01 × 5 = 0.05 (below soft cap threshold 0.30)
-    // T2, critLevel=5: 0.01 × 5 × 10 = 0.50, above threshold → goes through soft-cap formula
+  it("getCritChance: same per-level effect at T1 and T2", () => {
     const baseState = {
       purchasedNodes: {}, equipped: {}, roster: [],
       sellPriceLevel: 0, speedLevel: 0, sizeLevel: 0, critLevel: 5, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
+    // 0.01 × 5 = 0.05, regardless of tier (below soft-cap on both)
     expect(getCritChance({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(0.05, 5);
-    expect(getCritChance({ ...baseState, canvasTier: 2 } as never)).toBeGreaterThan(0.30);
+    expect(getCritChance({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(0.05, 5);
   });
 
-  it("getComboBaseChance T2 multiplies combo track contribution by 10 (capped at 1.0)", () => {
-    // T1, comboLevel=10: 0.02 × 10 = 0.20
-    // T2, comboLevel=10: 0.02 × 10 × 10 = 2.0 → capped at 1.0
+  it("getComboBaseChance: same per-level effect at T1 and T2", () => {
     const baseState = {
       purchasedNodes: {}, equipped: {}, roster: [],
       sellPriceLevel: 0, speedLevel: 0, sizeLevel: 0, critLevel: 0, comboLevel: 10,
       completedResearches: {}, completedAchievements: {},
     };
+    // 0.02 × 10 = 0.20, regardless of tier
     expect(getComboBaseChance({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(0.20, 5);
-    expect(getComboBaseChance({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(1.0, 5);
+    expect(getComboBaseChance({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(0.20, 5);
   });
 
-  it("item / worker / school / achievement contributions are NOT tier-scaled", () => {
-    // A sell-price multiplier with ONLY an item contribution should be tier-agnostic.
+  it("item / worker / school / achievement contributions are NOT tier-scaled either", () => {
     const itemOnly = {
       purchasedNodes: {}, equipped: {
         brush: {
@@ -622,8 +617,6 @@ describe("multipliers — tier scaling (canvasTier)", () => {
       sellPriceLevel: 0, speedLevel: 0, sizeLevel: 0, critLevel: 0, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
-    // T1 = 1 + 0.20 (item) = 1.20
-    // T3 = 1 + 0.20 (item, NOT scaled) + 0 × tier = 1.20
     expect(getCanvasGoldMultiplier({ ...itemOnly, canvasTier: 1 } as never)).toBeCloseTo(1.20, 5);
     expect(getCanvasGoldMultiplier({ ...itemOnly, canvasTier: 3 } as never)).toBeCloseTo(1.20, 5);
   });

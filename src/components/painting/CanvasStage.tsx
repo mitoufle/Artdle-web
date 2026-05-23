@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
-import { canvasGold, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK, tierFactor } from "@/core/balance";
+import { canvasGold, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK } from "@/core/balance";
 import { getCanvasGoldMultiplier, getCanvasSize, getOfficeContribution } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
@@ -16,7 +16,7 @@ function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const workerBonus = getOfficeContribution(state, "+sell_price%").toNumber();
   const rainbowLvl = getNodeLevel(state, "rainbow");
   const rainbowFactor = 1 + 0.50 * rainbowLvl;
-  const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel * tierFactor(state.canvasTier);
+  const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
   const additiveTotal = goldMult / rainbowFactor - 1;
   const colorSum = additiveTotal - itemBonus - workerBonus - sellPriceContribution;
   const baseGold = 10 * size * size;

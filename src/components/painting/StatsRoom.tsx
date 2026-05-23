@@ -168,10 +168,6 @@ function TierBlock({ tier }: { tier: number }): JSX.Element {
           <span className={styles.value}>×{timeFac}</span>
         </li>
         <li className={styles.line}>
-          <span className={styles.source}>Per-level effects</span>
-          <span className={styles.value}>×{factor}</span>
-        </li>
-        <li className={styles.line}>
           <span className={styles.source}>Upgrade costs</span>
           <span className={styles.value}>×{factor}</span>
         </li>
