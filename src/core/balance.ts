@@ -125,22 +125,26 @@ export const treePartCost = (level: number, baseCost: number): Big =>
 
 /**
  * Gold awarded when a canvas is sold, before sell-price / PM / combo modifiers.
- * `gold = CANVAS_GOLD_BASE × size² × multiplier`. Size² scaling is the design
- * relationship: doubling the canvas quadruples the gold.
+ * `gold = CANVAS_GOLD_BASE × size² × multiplier × tierFactor(tier)`. Size² scaling is
+ * the design relationship: doubling the canvas quadruples the gold. Tier scales the
+ * base reward by ×10 per tier step — `tierFactor(1) = 1` (no change at T1).
  */
-export const canvasGold = (size: number, multiplier: number): Big =>
-  big(CANVAS_GOLD_BASE).mul(size * size).mul(multiplier);
+export const canvasGold = (size: number, multiplier: number, tier = 1): Big =>
+  big(CANVAS_GOLD_BASE).mul(size * size).mul(multiplier).mul(tierFactor(tier));
 
 /**
  * Paint time per canvas in seconds, before speed/crit modifiers.
- * `time = CANVAS_TIME_BASE × size`. Linear scaling: doubling the canvas
- * doubles the time. Combined with size² gold, this means gold-per-second
+ * `time = CANVAS_TIME_BASE × size × timeFactor(tier)`. Linear scaling: doubling
+ * the canvas doubles the time. Combined with size² gold, this means gold-per-second
  * scales linearly with size — bigger canvas = strictly more efficient.
+ * Tier scales base time by ×2 per tier step — `timeFactor(1) = 1` (no change at T1),
+ * `timeFactor(2) = 2`, `timeFactor(4) = 8`. Gold grows ×10/tier while time grows
+ * ×2/tier, so net gold/sec scales ×5 per tier.
  *
- * size = 1 (no upgrades, no items, no workers) ⇒ time = CANVAS_TIME_BASE = 10s.
+ * size = 1, tier = 1 (no upgrades, no items, no workers) ⇒ time = CANVAS_TIME_BASE = 10s.
  */
-export const canvasTime = (size: number): number =>
-  CANVAS_TIME_BASE * size;
+export const canvasTime = (size: number, tier = 1): number =>
+  CANVAS_TIME_BASE * size * timeFactor(tier);
 
 /**
  * Inspiration produced per second from a list of tree parts and an aggregate multiplier.
@@ -201,29 +205,31 @@ export const xpToNext = (currentLevel: number): number => 4 * (currentLevel + 1)
 
 /**
  * Gold cost to upgrade a track from `currentLevel` to `currentLevel + 1`.
- * Shared shape: `BASE × TRACK_COST_GROWTH^currentLevel`. Per-track BASEs differ.
+ * Shared shape: `BASE × TRACK_COST_GROWTH^currentLevel × tierFactor(tier)`.
+ * Per-track BASEs differ; tier scales the entire curve by ×10 per tier step
+ * (`tierFactor(1) = 1` — no change at T1).
  *
  * Mirrors the contract of `craftCost(level)` — the parameter is the CURRENT level (the player's
  * stored value), and the function returns the cost of the NEXT step.
  *
- * For tracks starting at L0 (size/crit/combo), first buy uses formula(0) = base.
- * For tracks starting at L1 (sell-price/speed), first buy uses formula(1) = base × 1.5.
+ * For tracks starting at L0 (size/crit/combo), first buy uses formula(0) = base × tierFactor.
+ * For tracks starting at L1 (sell-price/speed), first buy uses formula(1) = base × 1.5 × tierFactor.
  * No level cap.
  */
-export const sellPriceUpgradeCost = (currentLevel: number): Big =>
-  big(SELL_PRICE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+export const sellPriceUpgradeCost = (currentLevel: number, tier = 1): Big =>
+  big(SELL_PRICE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(tierFactor(tier));
 
-export const speedUpgradeCost = (currentLevel: number): Big =>
-  big(SPEED_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+export const speedUpgradeCost = (currentLevel: number, tier = 1): Big =>
+  big(SPEED_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(tierFactor(tier));
 
-export const sizeUpgradeCost = (currentLevel: number): Big =>
-  big(SIZE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+export const sizeUpgradeCost = (currentLevel: number, tier = 1): Big =>
+  big(SIZE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(tierFactor(tier));
 
-export const critUpgradeCost = (currentLevel: number): Big =>
-  big(CRIT_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+export const critUpgradeCost = (currentLevel: number, tier = 1): Big =>
+  big(CRIT_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(tierFactor(tier));
 
-export const comboUpgradeCost = (currentLevel: number): Big =>
-  big(COMBO_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
+export const comboUpgradeCost = (currentLevel: number, tier = 1): Big =>
+  big(COMBO_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(tierFactor(tier));
 
 /**
  * Multiplier on canvas gold from the current combo chain.

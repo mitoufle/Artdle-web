@@ -551,3 +551,73 @@ describe("timeFactor (canvas tier base-time scaling)", () => {
     expect(timeFactor(4)).toBe(8);
   });
 });
+
+// ============================================================================
+// Tier-scaled formula variants (CT4)
+// ============================================================================
+describe("canvasGold (tier-scaled)", () => {
+  it("T1 unchanged: returns CANVAS_GOLD_BASE × size² × mult", () => {
+    expect(canvasGold(1, 1, 1).toNumber()).toBeCloseTo(10, 5);
+    expect(canvasGold(1, 1).toNumber()).toBeCloseTo(10, 5); // default tier=1
+  });
+
+  it("T2: ×10 base", () => {
+    expect(canvasGold(1, 1, 2).toNumber()).toBeCloseTo(100, 5);
+  });
+
+  it("T3: ×100 base", () => {
+    expect(canvasGold(1, 1, 3).toNumber()).toBeCloseTo(1000, 5);
+  });
+
+  it("tier composes with size² and multiplier", () => {
+    // T2, size=2, mult=3: 10 × 4 × 3 × 10 = 1200
+    expect(canvasGold(2, 3, 2).toNumber()).toBeCloseTo(1200, 5);
+  });
+});
+
+describe("canvasTime (tier-scaled)", () => {
+  it("T1 unchanged: returns CANVAS_TIME_BASE × size", () => {
+    expect(canvasTime(1, 1)).toBeCloseTo(10, 5);
+    expect(canvasTime(1)).toBeCloseTo(10, 5); // default tier=1
+  });
+
+  it("T2: ×2 base time", () => {
+    expect(canvasTime(1, 2)).toBeCloseTo(20, 5);
+  });
+
+  it("T4: ×8 base time", () => {
+    expect(canvasTime(1, 4)).toBeCloseTo(80, 5);
+  });
+});
+
+describe("*UpgradeCost (tier-scaled)", () => {
+  it("sellPriceUpgradeCost T1 L1 = 100 (unchanged)", () => {
+    expect(sellPriceUpgradeCost(0, 1).toNumber()).toBeCloseTo(100, 1);
+    expect(sellPriceUpgradeCost(0).toNumber()).toBeCloseTo(100, 1); // default tier=1
+  });
+
+  it("sellPriceUpgradeCost T2 L1 = 1000 (×10)", () => {
+    expect(sellPriceUpgradeCost(0, 2).toNumber()).toBeCloseTo(1000, 1);
+  });
+
+  it("speedUpgradeCost T3 L1 = 10000 (×100)", () => {
+    expect(speedUpgradeCost(0, 3).toNumber()).toBeCloseTo(10000, 1);
+  });
+
+  it("sizeUpgradeCost T2 L1 = 10000 (was 1000)", () => {
+    expect(sizeUpgradeCost(0, 2).toNumber()).toBeCloseTo(10000, 1);
+  });
+
+  it("critUpgradeCost T2 L1 = 50000 (was 5000)", () => {
+    expect(critUpgradeCost(0, 2).toNumber()).toBeCloseTo(50000, 1);
+  });
+
+  it("comboUpgradeCost T2 L1 = 50000 (was 5000)", () => {
+    expect(comboUpgradeCost(0, 2).toNumber()).toBeCloseTo(50000, 1);
+  });
+
+  it("tier-scaling composes with 1.5^level cost ladder", () => {
+    // T2, L5: SELL_PRICE_COST_BASE × tierFactor × 1.5^5 = 100 × 10 × 7.59375 ≈ 7593.75
+    expect(sellPriceUpgradeCost(5, 2).toNumber()).toBeCloseTo(7593.75, 0);
+  });
+});
