@@ -14,7 +14,6 @@ describe("CatchupRecapModal", () => {
           inspiGained: big(8100),
           canvasesSold: 287,
           itemsCrafted: 3,
-          paintMasteryGained: big(24),
           achievementsUnlocked: ["Millionaire", "T3"],
         }}
         onContinue={onContinue}
@@ -36,7 +35,6 @@ describe("CatchupRecapModal", () => {
           inspiGained: big(5),
           canvasesSold: 1,
           itemsCrafted: 0,
-          paintMasteryGained: big(0),
           achievementsUnlocked: [],
         }}
         onContinue={() => {}}

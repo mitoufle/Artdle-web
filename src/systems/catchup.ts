@@ -18,7 +18,6 @@ export interface CatchupResult {
   inspiGained: Big;
   canvasesSold: number;
   itemsCrafted: number;
-  paintMasteryGained: Big;
   achievementsUnlocked: string[];
 }
 
@@ -96,7 +95,6 @@ export async function runCatchupSimulation(
     canvasesSold: after.statsRun.canvasesSold - baseline.statsRun.canvasesSold,
     itemsCrafted:
       after.statsRun.workshopItemsCrafted - baseline.statsRun.workshopItemsCrafted,
-    paintMasteryGained: after.paintMastery.sub(baseline.paintMastery),
     achievementsUnlocked: newlyUnlocked,
   };
 }
@@ -108,7 +106,6 @@ function emptyResult(elapsed: number): CatchupResult {
     inspiGained: ZERO,
     canvasesSold: 0,
     itemsCrafted: 0,
-    paintMasteryGained: ZERO,
     achievementsUnlocked: [],
   };
 }

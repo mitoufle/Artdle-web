@@ -52,7 +52,6 @@ describe("Bootstrap catch-up branching", () => {
       inspiration: ZERO,
       gold: ZERO,
       canvasProgress: 0,
-      paintMastery: ZERO,
       completedAchievements: {},
     });
     // Reset call records; the default pass-through implementation set up in
@@ -94,7 +93,6 @@ describe("Bootstrap catch-up branching", () => {
       inspiGained: big(67890),
       canvasesSold: 7,
       itemsCrafted: 2,
-      paintMasteryGained: big(0),
       achievementsUnlocked: [],
     };
     runCatchupSimulationMock.mockImplementation(
@@ -134,7 +132,6 @@ describe("Bootstrap catch-up branching", () => {
       inspiGained: big(0),
       canvasesSold: 0,
       itemsCrafted: 0,
-      paintMasteryGained: big(0),
       achievementsUnlocked: [],
     };
     runCatchupSimulationMock.mockImplementation(async () => fakeResult);
@@ -164,7 +161,6 @@ describe("Bootstrap in-session tab-return catch-up", () => {
       inspiration: ZERO,
       gold: ZERO,
       canvasProgress: 0,
-      paintMastery: ZERO,
       completedAchievements: {},
     });
     runCatchupSimulationMock.mockClear();
@@ -190,7 +186,6 @@ describe("Bootstrap in-session tab-return catch-up", () => {
       inspiGained: big(45),
       canvasesSold: 1,
       itemsCrafted: 0,
-      paintMasteryGained: big(0),
       achievementsUnlocked: [],
     };
     runCatchupSimulationMock.mockImplementation(async () => fakeResult);

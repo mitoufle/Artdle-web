@@ -13,7 +13,6 @@ describe("CatchupToast", () => {
           inspiGained: big(450),
           canvasesSold: 14,
           itemsCrafted: 0,
-          paintMasteryGained: big(0),
           achievementsUnlocked: [],
         }}
         onDismiss={() => {}}
@@ -34,7 +33,6 @@ describe("CatchupToast", () => {
           inspiGained: big(5),
           canvasesSold: 1,
           itemsCrafted: 0,
-          paintMasteryGained: big(0),
           achievementsUnlocked: [],
         }}
         onDismiss={onDismiss}
