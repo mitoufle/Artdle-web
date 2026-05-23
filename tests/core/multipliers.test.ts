@@ -454,6 +454,26 @@ describe("school bonuses on multipliers", () => {
     // 1 + 0.1 = 1.10
     expect(getSchoolAffixMagnitudeMultiplier(state)).toBeCloseTo(1.10, 5);
   });
+
+  it("getSkillAffixMagnitudeMultiplier: 1.0 with no expert_manufacture node", async () => {
+    const { getSkillAffixMagnitudeMultiplier } = await import("@/core/multipliers");
+    const state = { purchasedNodes: {} } as unknown as GameStore;
+    expect(getSkillAffixMagnitudeMultiplier(state)).toBeCloseTo(1.0, 5);
+  });
+
+  it("getSkillAffixMagnitudeMultiplier: 1.75 at expert_manufacture L3 (+25% per level)", async () => {
+    const { getSkillAffixMagnitudeMultiplier } = await import("@/core/multipliers");
+    const state = { purchasedNodes: { expert_manufacture: 3 } } as unknown as GameStore;
+    // 1 + 3 × 0.25 = 1.75
+    expect(getSkillAffixMagnitudeMultiplier(state)).toBeCloseTo(1.75, 5);
+  });
+
+  it("getSkillAffixMagnitudeMultiplier: 2.25 at expert_manufacture L5 (max)", async () => {
+    const { getSkillAffixMagnitudeMultiplier } = await import("@/core/multipliers");
+    const state = { purchasedNodes: { expert_manufacture: 5 } } as unknown as GameStore;
+    // 1 + 5 × 0.25 = 2.25
+    expect(getSkillAffixMagnitudeMultiplier(state)).toBeCloseTo(2.25, 5);
+  });
 });
 
 describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {

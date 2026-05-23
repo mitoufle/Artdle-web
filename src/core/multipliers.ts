@@ -244,3 +244,12 @@ export const getAscendThresholdReduction = (state: Pick<GameStore, "purchasedNod
 export const getSchoolAffixMagnitudeMultiplier = (
   state: Pick<GameStore, "completedResearches">,
 ): number => 1 + getSchoolBonus(state, "Item min/max affix magnitude");
+
+/**
+ * Multiplicative boost on both affix min and max magnitude at roll time,
+ * granted by skill-tree nodes. +25% per level summed across nodes that
+ * carry the `affix_magnitude_pct` capability (Expert manufacture).
+ */
+export const getSkillAffixMagnitudeMultiplier = (
+  state: Pick<GameStore, "purchasedNodes">,
+): number => 1 + countCapability(state, "affix_magnitude_pct") * 0.25;

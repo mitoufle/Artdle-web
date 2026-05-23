@@ -10,6 +10,7 @@ import {
 import { rollTier, rollAffixes } from "@/core/workshopRoll";
 import {
   getAffixMagnitudeBonus, getSchoolAffixMagnitudeMultiplier,
+  getSkillAffixMagnitudeMultiplier,
 } from "@/core/multipliers";
 import { rngPick } from "@/core/rng";
 import {
@@ -40,7 +41,7 @@ export function performCraftPure(draft: DraftState): boolean {
     tier,
     draft,
     getAffixMagnitudeBonus(draft),
-    getSchoolAffixMagnitudeMultiplier(draft),
+    getSchoolAffixMagnitudeMultiplier(draft) * getSkillAffixMagnitudeMultiplier(draft),
   );
   const item: Item = { id: nextItemId(), slot, tier, affixes, fuseCount: 0 };
 

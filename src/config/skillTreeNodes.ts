@@ -90,6 +90,9 @@ export const SKILL_NODES: ReadonlyArray<SkillNodeConfig> = [
   { id: "better_scaling", name: "Better Scaling", description: "for each workshop level, give +# to min and max item affix magnitude ", numericEffect: "1", parentIds: ["painters_boots"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [3500], unlocks: [] },
   { id: "socks", name: "Socks", description: "equiped boots get +#% efficency.", numericEffect: "50", parentIds: ["painters_boots"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [3500], unlocks: [] },
   { id: "unlock_school", name: "Painting School", description: "Unlocks the Painting School — research permanent bonuses one at a time.", numericEffect: "", parentIds: ["gold_diggers"], stacking: "additive", kind: "major", maxLevel: 1, costs: [25000], unlocks: ["school_access"] },
+  { id: "ma_specialist", name: "M&A specialist", description: "You can now merge epic and legendary items with other items of the same tier even if they don't share the same affixes type. Affixes outcome will be randomized.", numericEffect: "", parentIds: ["better_scaling"], stacking: "additive", kind: "major", maxLevel: 1, costs: [10000], unlocks: ["cross_affix_fusion"] },
+  { id: "quantitative_easing", name: "Quantitative easing", description: "Each level halves the price of merging items.", numericEffect: "×0.5", parentIds: ["ma_specialist"], stacking: "multiplicative", kind: "minor", maxLevel: 5, costs: [15000, 20000, 25000, 30000, 35000], unlocks: ["fuse_cost_halving"] },
+  { id: "expert_manufacture", name: "Expert manufacture", description: "Each level increases the min and max item affix magnitude by 25%.", numericEffect: "25%", parentIds: ["ma_specialist"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [20000, 20000, 20000, 20000, 20000], unlocks: ["affix_magnitude_pct"] },
 ];
 
 /** Lookup helper. Returns null if id unknown. */
