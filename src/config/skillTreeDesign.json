@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-20T18:12:46.941Z",
+  "designedAt": "2026-05-23T11:10:26.491Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -1035,7 +1035,7 @@
       "kind": "major",
       "maxLevel": 1,
       "costs": [
-        100
+        25000
       ],
       "unlocks": [
         "school_access"
@@ -1043,6 +1043,74 @@
       "position": {
         "x": -65.07370023935039,
         "y": -239.85695648804403
+      }
+    },
+    {
+      "id": "ma_specialist",
+      "name": "M&A specialist",
+      "description": "You can now merge epic and legendary items with other items of the same tier even if they don't share the same affixes type. Affixes outcome will be randomized.",
+      "numericEffect": "",
+      "parentIds": [
+        "better_scaling"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        10000
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 560.5148095876749,
+        "y": -229.95585494933442
+      }
+    },
+    {
+      "id": "quantitative_easing",
+      "name": "Quantitative easing",
+      "description": "each levels halves the price of merging items.",
+      "numericEffect": "100",
+      "parentIds": [
+        "ma_specialist"
+      ],
+      "stacking": "multiplicative",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        15000,
+        20000,
+        25000,
+        30000,
+        35000
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 617.3857473778328,
+        "y": -285.7105343599278
+      }
+    },
+    {
+      "id": "expert_manufacture",
+      "name": "Expert manufacture",
+      "description": "each level increases the max item affix magnitude by 25%",
+      "numericEffect": "25",
+      "parentIds": [
+        "ma_specialist"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        20000,
+        20000,
+        20000,
+        20000,
+        20000
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 611.543266051045,
+        "y": -177.609146204162
       }
     }
   ]
