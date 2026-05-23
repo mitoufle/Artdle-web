@@ -3,7 +3,7 @@ import { useGameStore, migrate } from "@/store";
 import { idbAdapter, persistedAdapter } from "@/systems/persistence";
 import { TREE_STAGES } from "@/config/treeStages";
 import { big, isBig } from "@/core/bigNumber";
-import { PAINT_TIME_BASE_SECONDS } from "@/core/balance";
+
 import { defaultLifecycleHooks } from "@/systems/lifecycle";
 import { setErrorReporter, resetErrorReporter } from "@/systems/telemetry";
 
@@ -58,7 +58,7 @@ describe("persistence integration", () => {
 
   it("lastSale transient is partialized OUT of the save", async () => {
     // Trigger a sale to make lastSale non-null.
-    useGameStore.getState().canvasTick(PAINT_TIME_BASE_SECONDS);
+    useGameStore.getState().canvasTick(10);
     expect(useGameStore.getState().lastSale).not.toBeNull();
     await persistedAdapter.flush();
 

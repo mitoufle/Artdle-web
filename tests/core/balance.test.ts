@@ -162,12 +162,12 @@ describe("inspiPerSec", () => {
 
 describe("canvasTime (linear size scaling)", () => {
   it("returns CANVAS_TIME_BASE × size", () => {
-    // size 1 → 2s (baseline canvas)
-    expect(canvasTime(1)).toBeCloseTo(2, 5);
-    // size 2 → 4s (double canvas, double time)
-    expect(canvasTime(2)).toBeCloseTo(4, 5);
-    // size 1.5 → 3s
-    expect(canvasTime(1.5)).toBeCloseTo(3, 5);
+    // size 1 → 10s (baseline canvas)
+    expect(canvasTime(1)).toBeCloseTo(10, 5);
+    // size 2 → 20s (double canvas, double time)
+    expect(canvasTime(2)).toBeCloseTo(20, 5);
+    // size 1.5 → 15s
+    expect(canvasTime(1.5)).toBeCloseTo(15, 5);
   });
 
   it("doubles size doubles time (linear relationship)", () => {
@@ -259,7 +259,7 @@ describe("canvas-depth tuning constants", () => {
   });
 
   it("exposes new canvas time base", () => {
-    expect(CANVAS_TIME_BASE).toBe(2);
+    expect(CANVAS_TIME_BASE).toBe(10);
   });
 });
 

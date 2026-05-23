@@ -220,7 +220,7 @@ describe("getCanvasSpeedMultiplier — equipped +speed% contribution", () => {
       affixes: [{ kind: "+speed%", magnitude: 10 }, { kind: "+speed%", magnitude: 5 }],
       fuseCount: 0,
     };
-    const state = stub({ equipped: { brush: item } });
+    const state = stub({ equipped: { brush: item }, speedLevel: 1 });
     // bonus = SPEED_PER_LEVEL × speedLevel(1) + 0.10 + 0.05 = 0.05 + 0.15 = 0.20
     expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.20, 5);
   });

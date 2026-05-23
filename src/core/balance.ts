@@ -11,7 +11,6 @@ export const FAME_POWER = 5;
 export const FAME_SCALE = 3.2;
 export const TREE_PART_COST_GROWTH = 1.15;
 export const CANVAS_GOLD_BASE = 10;
-export const PAINT_TIME_BASE_SECONDS = 10;
 
 // Workshop leveling — see docs/superpowers/specs/2026-05-06-workshop-leveling-design.md
 export const MAX_WORKSHOP_LEVEL = 100;
@@ -64,7 +63,7 @@ export const COMBO_COST_BASE = 5000;
 export const TRACK_COST_GROWTH = 1.5;
 
 /** Base paint time at sizeLevel = 0, before speed multipliers. Matches the v1.1 tier-1 baseline. */
-export const CANVAS_TIME_BASE = 2;
+export const CANVAS_TIME_BASE = 10;
 
 /**
  * Multiplier on base gold, per-level effects, and upgrade costs at canvas tier T.
@@ -138,7 +137,7 @@ export const canvasGold = (size: number, multiplier: number): Big =>
  * doubles the time. Combined with size² gold, this means gold-per-second
  * scales linearly with size — bigger canvas = strictly more efficient.
  *
- * size = 1 (no upgrades, no items, no workers) ⇒ time = CANVAS_TIME_BASE = 2s.
+ * size = 1 (no upgrades, no items, no workers) ⇒ time = CANVAS_TIME_BASE = 10s.
  */
 export const canvasTime = (size: number): number =>
   CANVAS_TIME_BASE * size;

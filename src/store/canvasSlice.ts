@@ -51,8 +51,8 @@ export interface CanvasState {
 
 export const initialCanvasState: CanvasState = Object.freeze({
   canvasProgress: 0,
-  sellPriceLevel: 1,
-  speedLevel: 1,
+  sellPriceLevel: 0,
+  speedLevel: 0,
   sizeLevel: 0,
   critLevel: 0,
   comboLevel: 0,

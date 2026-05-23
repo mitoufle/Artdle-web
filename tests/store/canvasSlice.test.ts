@@ -15,70 +15,71 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().canvasProgress).toBe(0);
   });
 
-  it("canvasTick(1) advances progress to 1 (< tier-1 paint time of 2s); gold unchanged", () => {
+  it("canvasTick(1) advances progress to 1 (< tier-1 paint time of 10s); gold unchanged", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(1);
     expect(useGameStore.getState().canvasProgress).toBe(1);
     expect(useGameStore.getState().gold.toNumber()).toBe(goldBefore);
   });
 
-  it("two canvasTick(5) calls fire multiple sales each (effectiveTime ≈ 1.905s, multi-sale per tick)", () => {
+  it("two canvasTick(25) calls fire multiple sales each (effectiveTime = 10s, multi-sale per tick)", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(5);
-    useGameStore.getState().canvasTick(5);
-    // 5s / ~1.905s = 2.6 sales per tick → 2 sales per tick = 4 total over 2 ticks.
-    // Expect at least 4 × 11g = 44g earned.
-    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(goldBefore + CANVAS_GOLD_BASE * 1.1 * 4);
+    useGameStore.getState().canvasTick(25);
+    useGameStore.getState().canvasTick(25);
+    // 25s / 10s = 2.5 sales per tick → 2 sales per tick = 4 total over 2 ticks.
+    // Expect at least 4 × 10g = 40g earned (sellPriceLevel=0, no multiplier).
+    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(goldBefore + CANVAS_GOLD_BASE * 4);
     // lastSale.id reflects total sales across both ticks (>= 4).
     expect(useGameStore.getState().lastSale!.id).toBeGreaterThanOrEqual(4);
   });
 
-  it("canvasTick at exact effective threshold (sizeLevel=0, speedLevel=1 → ~1.905s): one sale, progress = 0", () => {
-    // effectiveTime = canvasTime(0) / getCanvasSpeedMultiplier = 2 / 1.05 ≈ 1.905s
-    const effTime = 2 / 1.05;
+  it("canvasTick at exact effective threshold (sizeLevel=0, speedLevel=0 → 10s): one sale, progress = 0", () => {
+    // effectiveTime = canvasTime(1) / getCanvasSpeedMultiplier = 10 / 1.0 = 10s
+    const effTime = 10;
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(effTime);
-    // sizeLevel=0, sellPriceLevel=1: gold = 10 × (1 + 0.10 × 1) = 11
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE * 1.1, 9);
+    // sizeLevel=0, sellPriceLevel=0: gold = 10 × 1.0 = 10
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE, 9);
     expect(useGameStore.getState().canvasProgress).toBe(0);
   });
 
   it("canvasTick(effectiveTime + 0.5) carries 0.5s leftover", () => {
-    // effectiveTime = 2 / 1.05 ≈ 1.905s
-    const effTime = 2 / 1.05;
+    // effectiveTime = 10 / 1.0 = 10s
+    const effTime = 10;
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(effTime + 0.5); // leftover = 0.5 < effectiveTime
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE * 1.1, 9);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE, 9);
     expect(useGameStore.getState().canvasProgress).toBeCloseTo(0.5, 9);
   });
 
   it("crit canvas (forced) paints ~10× faster than non-crit (regression: crit-throttle bug)", () => {
-    // Non-crit: canvasProgress=0.001 bypasses the initial RNG roll. effectiveTime ≈ 1.905s.
-    // 0.25s is far less than 1.905s — no sale should fire.
+    // Non-crit: canvasProgress=0.001 bypasses the initial RNG roll. effectiveTime = 10s.
+    // 0.5s is far less than 10s — no sale should fire.
     useGameStore.setState({ critLevel: 0, isCritThisCanvas: false, canvasProgress: 0.001 });
-    useGameStore.getState().canvasTick(0.25);
+    useGameStore.getState().canvasTick(0.5);
     expect(useGameStore.getState().gold.toNumber()).toBe(0);
 
     useGameStore.getState().resetCanvas();
     useGameStore.getState().resetRunCurrencies();
 
-    // Forced crit: same 0.25s tick >> crit time (≈ 0.190s), so canvas completes.
+    // Forced crit: crit time = 10 / (1.0 × 10) = 1s; remaining = 1 - 0.001 = 0.999s.
+    // A 1.5s tick completes the crit canvas — sale fires.
     useGameStore.setState({ critLevel: 0, isCritThisCanvas: true, canvasProgress: 0.001 });
-    useGameStore.getState().canvasTick(0.25);
+    useGameStore.getState().canvasTick(1.5);
     expect(useGameStore.getState().gold.toNumber()).toBeGreaterThan(0);
   });
 
   it("canvasTick(huge delta) — fires multiple sales until budget exhausted (multi-sale per tick)", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(100); // ~52 sales worth (100 / 1.905)
-    // Floor of 100 / 1.905 = 52 sales. Each sale ≈ 11g, so total ≈ 572g.
-    const expectedSales = Math.floor(100 / (2 / 1.05));
+    useGameStore.getState().canvasTick(100); // 100 / 10 = 10 sales
+    // Floor of 100 / 10 = 10 sales. Each sale = 10g (sellPriceLevel=0), so total = 100g.
+    const expectedSales = Math.floor(100 / 10);
     expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(
-      goldBefore + CANVAS_GOLD_BASE * 1.1 * expectedSales,
+      goldBefore + CANVAS_GOLD_BASE * expectedSales,
     );
     // Progress carries the small leftover from the last partial canvas.
     expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(0);
-    expect(useGameStore.getState().canvasProgress).toBeLessThan(2 / 1.05);
+    expect(useGameStore.getState().canvasProgress).toBeLessThan(10);
   });
 
   it("canvasTick(0) is a no-op: no sale, no progress change, no gold change", () => {
@@ -89,12 +90,12 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().gold.toNumber()).toBe(goldBefore);
   });
 
-  it("at default state (sizeLevel=0, sellPriceLevel=1), one sale credits CANVAS_GOLD_BASE × 1.1", () => {
-    // sizeLevel=0 → canvasGold base = 10; sellPriceLevel=1 adds +10% → total 11
-    const effTime = 2 / 1.05;
+  it("at default state (sizeLevel=0, sellPriceLevel=0), one sale credits CANVAS_GOLD_BASE", () => {
+    // sizeLevel=0 → canvasGold base = 10; sellPriceLevel=0 adds +0% → total 10
+    const effTime = 10;
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(effTime);
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE * 1.1, 9);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE, 9);
   });
 });
 
@@ -120,18 +121,18 @@ describe("canvasSlice — lastSale animation trigger", () => {
     expect(useGameStore.getState().lastSale).toBeNull();
   });
 
-  it("a sale sets lastSale to {id: 1, amount: CANVAS_GOLD_BASE × 1.1} (sizeLevel=0, sellPriceLevel=1)", () => {
-    const effTime = 2 / 1.05;
-    useGameStore.getState().canvasTick(effTime); // sizeLevel=0, effectiveTime ≈ 1.905s
+  it("a sale sets lastSale to {id: 1, amount: CANVAS_GOLD_BASE} (sizeLevel=0, sellPriceLevel=0)", () => {
+    const effTime = 10;
+    useGameStore.getState().canvasTick(effTime); // sizeLevel=0, effectiveTime = 10s
     const ls = useGameStore.getState().lastSale;
     expect(ls).not.toBeNull();
     expect(ls!.id).toBe(1);
-    // sizeLevel=0, sellPriceLevel=1: gold = 10 × 1.10 = 11
-    expect(ls!.amount.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE * 1.1, 9);
+    // sizeLevel=0, sellPriceLevel=0: gold = 10 × 1.0 = 10
+    expect(ls!.amount.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE, 9);
   });
 
   it("two sales increment lastSale.id from 1 to 2", () => {
-    const effTime = 2 / 1.05;
+    const effTime = 10;
     useGameStore.getState().canvasTick(effTime);
     expect(useGameStore.getState().lastSale!.id).toBe(1);
     useGameStore.getState().canvasTick(effTime);
@@ -139,7 +140,7 @@ describe("canvasSlice — lastSale animation trigger", () => {
   });
 
   it("clearLastSale() resets lastSale to null", () => {
-    const effTime = 2 / 1.05;
+    const effTime = 10;
     useGameStore.getState().canvasTick(effTime);
     expect(useGameStore.getState().lastSale).not.toBeNull();
     useGameStore.getState().clearLastSale();
@@ -147,7 +148,7 @@ describe("canvasSlice — lastSale animation trigger", () => {
   });
 
   it("clearLastSale() does not affect canvasProgress or gold", () => {
-    const effTime = 2 / 1.05;
+    const effTime = 10;
     useGameStore.getState().canvasTick(effTime + 0.5); // leftover = 0.5s
     const goldBefore = useGameStore.getState().gold.toNumber();
     const progressBefore = useGameStore.getState().canvasProgress;
@@ -157,14 +158,14 @@ describe("canvasSlice — lastSale animation trigger", () => {
   });
 
   it("a no-op tick (delta=0) does not advance lastSale", () => {
-    const effTime = 2 / 1.05;
+    const effTime = 10;
     useGameStore.getState().canvasTick(effTime); // first sale → id=1
     useGameStore.getState().canvasTick(0);
     expect(useGameStore.getState().lastSale!.id).toBe(1);
   });
 
   it("resetCanvas() clears lastSale alongside progress", () => {
-    const effTime = 2 / 1.05;
+    const effTime = 10;
     useGameStore.getState().canvasTick(effTime);
     expect(useGameStore.getState().lastSale).not.toBeNull();
     useGameStore.getState().resetCanvas();
@@ -180,28 +181,28 @@ describe("canvasSlice — size-aware tick (canvas-depth)", () => {
     useGameStore.getState()._setLifetimeGold(big(0));
   });
 
-  it("at sizeLevel=0, size=1, gold = 10 × 1² × 1.10 = 11", () => {
-    // canvasTime(size=1) = 2s; speedLevel=1 → speedMult = 1.05
-    const effTime = 2 / 1.05;
+  it("at sizeLevel=0, size=1, gold = 10 × 1² × 1.0 = 10", () => {
+    // canvasTime(size=1) = 10s; speedLevel=0 → speedMult = 1.0; effTime = 10s
+    const effTime = 10;
     useGameStore.getState().canvasTick(effTime);
     expect(useGameStore.getState().canvasProgress).toBe(0);
-    // size = 1, sellPriceLevel=1 → gold = 10 × 1 × 1.10 = 11
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE * 1.1, 9);
+    // size = 1, sellPriceLevel=0 → gold = 10 × 1 × 1.0 = 10
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE, 9);
   });
 
-  it("at sizeLevel=1, size = 1.15, gold = 10 × 1.15² × 1.10, time = 2 × 1.15", () => {
+  it("at sizeLevel=1, size = 1.15, gold = 10 × 1.15² × 1.0, time = 10 × 1.15", () => {
     useGameStore.setState({ sizeLevel: 1 });
-    const effTime = (2 * 1.15) / 1.05; // canvasTime(1.15) = 2.3 / speedMult
+    const effTime = 10 * 1.15; // canvasTime(1.15) = 11.5; speedMult = 1.0
     useGameStore.getState().canvasTick(effTime);
     expect(useGameStore.getState().canvasProgress).toBe(0);
-    // size = 1 + 0.15 × 1 = 1.15 ; gold = 10 × 1.15² × 1.10 = 10 × 1.3225 × 1.10 ≈ 14.5475
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(14.5475, 3);
+    // size = 1 + 0.15 × 1 = 1.15 ; gold = 10 × 1.15² × 1.0 = 10 × 1.3225 = 13.225
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(13.225, 3);
   });
 
   it("sale calls trackSaleGold — lifetimeGold increments", () => {
-    const effTime = 2 / 1.05;
+    const effTime = 10;
     useGameStore.getState().canvasTick(effTime);
-    expect(useGameStore.getState().lifetimeGold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE * 1.1, 9);
+    expect(useGameStore.getState().lifetimeGold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE, 9);
   });
 });
 
@@ -210,10 +211,10 @@ describe("canvasSlice — new track state fields", () => {
     useGameStore.setState({ ...useGameStore.getState() }); // resets canvas portion via implicit state
   });
 
-  it("starts with sellPriceLevel=1 and speedLevel=1 (unlocked tracks)", () => {
+  it("starts with sellPriceLevel=0 and speedLevel=0 (unlocked tracks)", () => {
     const s = useGameStore.getState();
-    expect(s.sellPriceLevel).toBe(1);
-    expect(s.speedLevel).toBe(1);
+    expect(s.sellPriceLevel).toBe(0);
+    expect(s.speedLevel).toBe(0);
   });
 
   it("starts with sizeLevel=0, critLevel=0, comboLevel=0 (gated tracks)", () => {
@@ -236,8 +237,8 @@ describe("canvasSlice — new track state fields", () => {
     } as Parameters<typeof useGameStore.setState>[0]);
     useGameStore.getState().resetCanvas();
     const s = useGameStore.getState();
-    expect(s.sellPriceLevel).toBe(1);
-    expect(s.speedLevel).toBe(1);
+    expect(s.sellPriceLevel).toBe(0);
+    expect(s.speedLevel).toBe(0);
     expect(s.sizeLevel).toBe(0);
     expect(s.critLevel).toBe(0);
     expect(s.comboLevel).toBe(0);
@@ -252,18 +253,18 @@ describe("canvasSlice — upgradeSellPrice", () => {
   });
 
   it("no-ops when gold < cost (validate guard)", () => {
-    useGameStore.setState({ gold: big(100) }); // < 150 cost (first buy from L1)
+    useGameStore.setState({ gold: big(50) }); // < 100 cost (first buy from L0)
     useGameStore.getState().upgradeSellPrice();
-    expect(useGameStore.getState().sellPriceLevel).toBe(1);
-    expect(useGameStore.getState().gold.toNumber()).toBe(100);
+    expect(useGameStore.getState().sellPriceLevel).toBe(0);
+    expect(useGameStore.getState().gold.toNumber()).toBe(50);
   });
 
   it("spends gold and increments level on success", () => {
     useGameStore.setState({ gold: big(200) });
     useGameStore.getState().upgradeSellPrice();
-    // First buy from L1: cost = sellPriceUpgradeCost(1) = 100 × 1.5 = 150
-    expect(useGameStore.getState().sellPriceLevel).toBe(2);
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(50, 5); // 200 - 150
+    // First buy from L0: cost = sellPriceUpgradeCost(0) = 100 × 1.5^0 = 100
+    expect(useGameStore.getState().sellPriceLevel).toBe(1);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(100, 5); // 200 - 100
   });
 
   it("uses sellPriceUpgradeCost(currentLevel)", () => {
@@ -281,17 +282,17 @@ describe("canvasSlice — upgradeSpeed", () => {
   });
 
   it("no-ops when gold < cost", () => {
-    useGameStore.setState({ gold: big(100) });
+    useGameStore.setState({ gold: big(50) });
     useGameStore.getState().upgradeSpeed();
-    expect(useGameStore.getState().speedLevel).toBe(1);
+    expect(useGameStore.getState().speedLevel).toBe(0);
   });
 
   it("spends gold and increments level", () => {
     useGameStore.setState({ gold: big(200) });
     useGameStore.getState().upgradeSpeed();
-    // First buy from L1: cost = speedUpgradeCost(1) = 100 × 1.5 = 150
-    expect(useGameStore.getState().speedLevel).toBe(2);
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(50, 5);
+    // First buy from L0: cost = speedUpgradeCost(0) = 100 × 1.5^0 = 100
+    expect(useGameStore.getState().speedLevel).toBe(1);
+    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(100, 5);
   });
 });
 
@@ -370,29 +371,27 @@ describe("canvasTick — crit + combo behaviour", () => {
 
   it("crit canvas paints in time / 10 (CRIT_SPEED_FACTOR)", () => {
     // canvasProgress=0.001 bypasses the initial RNG roll; isCritThisCanvas=true forces crit.
-    // sizeLevel 0: canvasTime(0) = 2; speedMult = 1.05 → crit time = 2/(1.05×10) ≈ 0.190s
-    // remaining = 0.190 - 0.001 = 0.189s
+    // sizeLevel 0: canvasTime(1) = 10; speedMult = 1.0 → crit time = 10/(1.0×10) = 1.0s
+    // remaining = 1.0 - 0.001 = 0.999s
     useGameStore.setState({ critLevel: 0, sizeLevel: 0, isCritThisCanvas: true, canvasProgress: 0.001 });
-    useGameStore.getState().canvasTick(0.18); // 0.18 < 0.189 → not yet done
+    useGameStore.getState().canvasTick(0.90); // 0.90 < 0.999 → not yet done
     expect(useGameStore.getState().gold.toNumber()).toBe(0);
-    useGameStore.getState().canvasTick(0.02); // 0.18 + 0.02 > 0.189 → sale fires
+    useGameStore.getState().canvasTick(0.15); // 0.90 + 0.15 > 0.999 → sale fires
     expect(useGameStore.getState().gold.gt(big(0))).toBe(true);
   });
 
   it("on sale, combo bonus from PRIOR comboChain applies to this canvas's gold", () => {
     setSeed(99);
     useGameStore.setState({ comboChain: 3, critLevel: 0, comboLevel: 0 });
-    // sizeLevel=0, speedLevel=1 (initial defaults)
-    // base gold = canvasGold(0, mult); mult = (1 + 0.10×1 sellPrice) × 1 (PM=0) = 1.10
-    // baseGold = 10 × 1.10 = 11
+    // sizeLevel=0, speedLevel=0 (initial defaults)
+    // base gold = canvasGold(1, mult); mult = (1 + 0.10×0 sellPrice) × 1 (PM=0) = 1.0
+    // baseGold = 10 × 1.0 = 10
     // combo factor = 1 + 0.10 × 3 = 1.30
-    // total = 11 × 1.30 = 14.30
-    const baseTime = 2; // canvasTime(0)
-    const speedMult = 1.05; // 1 + 0.05 * 1 (speedLevel=1 default)
-    const effTime = baseTime / speedMult;
+    // total = 10 × 1.30 = 13.0
+    const effTime = 10; // canvasTime(1) = 10; speedMult = 1.0
     useGameStore.getState().canvasTick(effTime + 0.1);
     const gold = useGameStore.getState().gold.toNumber();
-    expect(gold).toBeCloseTo(14.30, 1);
+    expect(gold).toBeCloseTo(13.0, 1);
   });
 
   it("after sale, on combo hit (chance 1.0), comboChain increments", () => {
@@ -400,7 +399,7 @@ describe("canvasTick — crit + combo behaviour", () => {
     // RNG sequence is now shifted by the crit re-roll in the sale path.
     setSeed(99);
     useGameStore.setState({ comboLevel: 100, comboChain: 0 }); // chance saturates at 1.0
-    const effTime = 2 / 1.05;
+    const effTime = 10;
     useGameStore.getState().canvasTick(effTime + 0.1);
     expect(useGameStore.getState().comboChain).toBe(1);
     // Next sale, chain becomes 2
@@ -411,7 +410,7 @@ describe("canvasTick — crit + combo behaviour", () => {
   it("after sale, on combo miss (chance 0.0), comboChain resets to 0", () => {
     setSeed(7);
     useGameStore.setState({ comboLevel: 0, comboChain: 5 });
-    const effTime = 2 / 1.05;
+    const effTime = 10;
     useGameStore.getState().canvasTick(effTime + 0.1);
     expect(useGameStore.getState().comboChain).toBe(0);
   });
@@ -421,7 +420,7 @@ describe("canvasTick — crit + combo behaviour", () => {
     // After the sale, the sale path re-rolls with critLevel=0 (0% chance) → guaranteed false.
     // If the re-roll were deferred, the flag would still be true from the initial setState.
     useGameStore.setState({ critLevel: 0, isCritThisCanvas: true, canvasProgress: 0.001 });
-    const effTime = (2 / 1.05) / 10; // crit time ≈ 0.190s
+    const effTime = 10 / 10; // crit time = 10 / (1.0 × 10) = 1.0s
     useGameStore.getState().canvasTick(effTime + 0.1);
     expect(useGameStore.getState().isCritThisCanvas).toBe(false);
   });
@@ -429,10 +428,11 @@ describe("canvasTick — crit + combo behaviour", () => {
   it("rolls crit on EACH new canvas, not just the first (regression: leftover>0 used to skip the roll)", () => {
     setSeed(1);
     // critLevel=100 → effective crit ~87.5% (soft-capped). Most canvases are crits
-    // (≈0.19s each), so many sales fire in 5s — proving rolls happen per canvas.
+    // (crit time = 10/(1×10) = 1s each), so many sales fire over 20 ticks of 1.5s each
+    // (≈30s total / 1s crit time ≈ 30 crits max) — proving rolls happen per canvas.
     useGameStore.setState({ critLevel: 100, canvasProgress: 0.001, isCritThisCanvas: true });
 
-    const dt = 0.25; // larger than crit canvas time, ensures leftover > 0 each sale
+    const dt = 1.5; // larger than crit canvas time (1s), ensures leftover > 0 each sale
 
     for (let i = 0; i < 20; i++) {
       useGameStore.getState().canvasTick(dt);
