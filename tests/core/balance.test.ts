@@ -5,8 +5,6 @@ import {
   canvasGold,
   canvasTime,
   inspiPerSec,
-  pmMult,
-  PM_LOG_FACTOR,
   craftCost,
   xpToNext,
   sellPriceUpgradeCost,
@@ -176,41 +174,6 @@ describe("canvasTime (linear size scaling)", () => {
     expect(b / a).toBeCloseTo(2, 5);
   });
 });
-
-
-describe("pmMult (v1.1)", () => {
-  it("PM = 0 returns exactly 1.0 (no mult)", () => {
-    expect(pmMult(big(0))).toBe(1);
-  });
-
-  it("PM = 100 returns ≈ 11.0", () => {
-    expect(pmMult(big(100))).toBeCloseTo(11.0, 1);
-  });
-
-  it("PM = 1,000 returns ≈ 16.0", () => {
-    expect(pmMult(big(1_000))).toBeCloseTo(16.0, 1);
-  });
-
-  it("PM = 1,000,000 returns ≈ 31.0", () => {
-    expect(pmMult(big(1_000_000))).toBeCloseTo(31.0, 1);
-  });
-
-  it("PM = 1e10 returns ≈ 51.0", () => {
-    expect(pmMult(big(1e10))).toBeCloseTo(51.0, 1);
-  });
-
-  it("PM_LOG_FACTOR is 5.0", () => {
-    expect(PM_LOG_FACTOR).toBe(5.0);
-  });
-});
-
-describe("pmMult — uncapped via Big.log10", () => {
-  it("returns expected mult at PM beyond Number.MAX_SAFE_INTEGER", () => {
-    expect(pmMult(big("1e20"))).toBeCloseTo(101, 0); // 1 + 5 × 20
-    expect(pmMult(big("1e50"))).toBeCloseTo(251, 0); // 1 + 5 × 50
-  });
-});
-
 
 // ============================================================================
 // Workshop leveling

@@ -12,7 +12,6 @@ export const FAME_SCALE = 3.2;
 export const TREE_PART_COST_GROWTH = 1.15;
 export const CANVAS_GOLD_BASE = 10;
 export const PAINT_TIME_BASE_SECONDS = 10;
-export const PM_LOG_FACTOR = 5.0;
 
 // Workshop leveling — see docs/superpowers/specs/2026-05-06-workshop-leveling-design.md
 export const MAX_WORKSHOP_LEVEL = 100;
@@ -121,24 +120,6 @@ export const canvasGold = (size: number, multiplier: number): Big =>
  */
 export const canvasTime = (size: number): number =>
   CANVAS_TIME_BASE * size;
-
-/**
- * Paint Mastery multiplier on canvas gold output.
- * `1 + PM_LOG_FACTOR × log10(pm + 1)`. Returns a plain number — composes with
- * existing `getCanvasGoldMultiplier` (additive `1 + Σ`) by simple multiplication
- * at the call site.
- *
- * At PM = 0: returns 1 exactly. At PM = 1e10: returns ~51. The log shape
- * preserves the rescope spec's "pas ×1000" intent even at factor 5.0.
- *
- * Uses Big.log10() natively — supports PM far beyond Number.MAX_SAFE_INTEGER
- * without saturation.
- */
-export const pmMult = (pm: Big): number => {
-  // Big.log10() handles values far beyond Number.MAX_SAFE_INTEGER natively.
-  // For pm = 0, log10(1) = 0 → returns 1 exactly.
-  return 1 + PM_LOG_FACTOR * pm.add(1).log10().toNumber();
-};
 
 /**
  * Inspiration produced per second from a list of tree parts and an aggregate multiplier.
