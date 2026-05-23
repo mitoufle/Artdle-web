@@ -53,6 +53,7 @@ export function PaintingRoute(): JSX.Element {
   const upgradeCrit = useGameStore((s) => s.upgradeCrit);
   const upgradeCombo = useGameStore((s) => s.upgradeCombo);
   const lastSale = useGameStore((s) => s.lastSale);
+  const canvasesSold = useGameStore((s) => s.statsRun.canvasesSold);
   const clearLastSale = useGameStore((s) => s.clearLastSale);
 
   const helperState: CanvasMultiplierInputs = {
@@ -97,7 +98,7 @@ export function PaintingRoute(): JSX.Element {
           nextSaleGold={formatBig(nextSaleGold)}
           comboChain={comboChain}
           isCrit={isCritThisCanvas}
-          canvasNumber={lastSale?.id ?? 0}
+          canvasNumber={canvasesSold}
         />
         {lastSale && (
           <FloatingGoldText
