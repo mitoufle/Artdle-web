@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { CanvasStage } from "@/components/painting/CanvasStage";
 
 describe("<CanvasStage />", () => {
-  it("renders the canvas SVG inside the frame", () => {
+  it("renders the workshop scene image inside the frame", () => {
     const { container } = render(
       <CanvasStage
         sizeLevel={1}
@@ -14,7 +14,9 @@ describe("<CanvasStage />", () => {
         nextSaleGold="10"
       />,
     );
-    expect(container.querySelector("svg")).toBeInTheDocument();
+    expect(container.querySelector("img")).toBeInTheDocument();
+    expect(container.querySelector("img")?.getAttribute("alt"))
+      .toMatch(/workshop/i);
   });
 
   it("displays the tier in the title row", () => {
@@ -59,22 +61,6 @@ describe("<CanvasStage />", () => {
       />,
     );
     expect(screen.getByText(/\+184g/i)).toBeInTheDocument();
-  });
-
-  it("paint-fill overlay reflects progressPct via inline height style", () => {
-    const { container } = render(
-      <CanvasStage
-        sizeLevel={1}
-        canvasTier={1}
-        progressPct={0.4}
-        timeElapsed="0.8"
-        timeTotal="2.0"
-        nextSaleGold="10"
-      />,
-    );
-    const fill = container.querySelector('[data-testid="canvas-fill"]') as HTMLElement;
-    expect(fill).toBeInTheDocument();
-    expect(fill?.style.height).toBe("40%");
   });
 
   describe("<CanvasStage> — combo + crit badges", () => {

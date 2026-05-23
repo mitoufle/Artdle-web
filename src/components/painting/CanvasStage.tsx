@@ -7,6 +7,7 @@ import { getCanvasGoldMultiplier, getCanvasSize, getOfficeContribution } from "@
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
+import paintingScreen from "@/assets/images/Painting_screen.png";
 
 function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const state = useGameStore.getState();
@@ -89,8 +90,12 @@ export function CanvasStage({
   canvasNumber = 0,
 }: Props): JSX.Element {
   const stageName = STAGE_NAMES[canvasTier] ?? `Tier ${canvasTier}`;
-  const fillHeight = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
   const barWidth = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
+  // sizeLevel is currently informational (used only for the image alt text).
+  // The transparent canvas-area bbox inside Painting_screen.png is
+  // left=39.17%, top=19.40%, width=21.58%, height=39.19% — preserved here
+  // for future overlays (e.g., rendering the in-progress painting in that spot).
+  void sizeLevel;
 
   return (
     <section className={styles.stage} aria-label="Canvas stage">
@@ -108,39 +113,11 @@ export function CanvasStage({
         — Tier {canvasTier} · {stageName} —
       </div>
       <div className={styles.frame}>
-        {/* Pixel landscape inside the frame */}
-        <svg
-          viewBox="0 0 200 140"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="xMidYMid slice"
+        <img
+          src={paintingScreen}
           className={styles.canvasArt}
-          aria-label={`Size ${sizeLevel} pixel landscape`}
-        >
-          <defs>
-            <linearGradient id="cs-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#5a4a82" />
-              <stop offset="1" stopColor="#a89cd6" />
-            </linearGradient>
-          </defs>
-          <rect width="200" height="100" fill="url(#cs-sky)" />
-          <polygon points="0,90 60,60 100,80 160,55 200,75 200,100 0,100" fill="#3a2e5a" />
-          <rect width="200" height="40" y="100" fill="#2e4a3a" />
-          <rect x="80" y="70" width="6" height="30" fill="#5a3a22" />
-          <ellipse cx="83" cy="68" rx="14" ry="10" fill="#3a6a3a" />
-          <ellipse cx="83" cy="65" rx="9" ry="6" fill="#5a8a4a" />
-        </svg>
-
-        {/* Paint-fill overlay — height controlled by progressPct */}
-        <div
-          key={`fill-${canvasNumber}`}
-          className={styles.fill}
-          data-testid="canvas-fill"
-          style={{ height: fillHeight }}
-          aria-hidden="true"
+          alt="Artist's workshop scene with central easel"
         />
-
-        {/* Easel cap peeking from below (decorative trapezoid) */}
-        <div className={styles.easel} aria-hidden="true" />
       </div>
 
       {/* Thin gold progress bar */}
