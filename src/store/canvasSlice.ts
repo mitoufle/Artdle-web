@@ -84,6 +84,15 @@ export interface CanvasSlice extends CanvasState {
   resetCanvas: () => void;
   /** Clear the lastSale animation trigger. Called from onAnimationComplete. */
   clearLastSale: () => void;
+  /**
+   * Canvas tier-up: within-run prestige.
+   * Gate: sellPriceLevel >= 15 && speedLevel >= 15.
+   * On success: increments canvasTier, resets all 5 upgrade tracks to 0,
+   * resets in-canvas state (canvasProgress, comboChain, isCritThisCanvas),
+   * and calls evaluateAchievements().
+   * Returns true on success, false if gate not met (state unchanged).
+   */
+  tierUp: () => boolean;
 }
 
 export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (set, get) => ({
@@ -161,4 +170,22 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
 
   resetCanvas: () => set(initialCanvasState),
   clearLastSale: () => set({ lastSale: null }),
+
+  tierUp: () => {
+    const state = get();
+    if (state.sellPriceLevel < 15 || state.speedLevel < 15) return false;
+    set({
+      canvasTier: state.canvasTier + 1,
+      sellPriceLevel: 0,
+      speedLevel: 0,
+      sizeLevel: 0,
+      critLevel: 0,
+      comboLevel: 0,
+      canvasProgress: 0,
+      comboChain: 0,
+      isCritThisCanvas: false,
+    });
+    get().evaluateAchievements();
+    return true;
+  },
 });

@@ -442,3 +442,69 @@ describe("canvasTick — crit + combo behaviour", () => {
     expect(useGameStore.getState().gold.toNumber()).toBeGreaterThan(50);
   });
 });
+
+describe("canvasTier — tierUp action", () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      ...initialCanvasState,
+      gold: big(0),
+    });
+  });
+
+  it("rejects tier-up when gate not met (sellPriceLevel < 15)", () => {
+    useGameStore.setState({ sellPriceLevel: 14, speedLevel: 15 });
+    const result = useGameStore.getState().tierUp();
+    expect(result).toBe(false);
+    expect(useGameStore.getState().canvasTier).toBe(1);
+    expect(useGameStore.getState().sellPriceLevel).toBe(14);
+  });
+
+  it("rejects tier-up when gate not met (speedLevel < 15)", () => {
+    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 14 });
+    const result = useGameStore.getState().tierUp();
+    expect(result).toBe(false);
+    expect(useGameStore.getState().canvasTier).toBe(1);
+  });
+
+  it("accepts tier-up when gate met (both >= 15)", () => {
+    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15 });
+    const result = useGameStore.getState().tierUp();
+    expect(result).toBe(true);
+    expect(useGameStore.getState().canvasTier).toBe(2);
+  });
+
+  it("on success, resets all five upgrade tracks to 0", () => {
+    useGameStore.setState({
+      sellPriceLevel: 20, speedLevel: 18, sizeLevel: 10, critLevel: 5, comboLevel: 3,
+    });
+    useGameStore.getState().tierUp();
+    const s = useGameStore.getState();
+    expect(s.sellPriceLevel).toBe(0);
+    expect(s.speedLevel).toBe(0);
+    expect(s.sizeLevel).toBe(0);
+    expect(s.critLevel).toBe(0);
+    expect(s.comboLevel).toBe(0);
+  });
+
+  it("on success, resets in-canvas state (canvasProgress, comboChain, isCritThisCanvas)", () => {
+    useGameStore.setState({
+      sellPriceLevel: 15, speedLevel: 15,
+      canvasProgress: 5.5, comboChain: 3, isCritThisCanvas: true,
+    });
+    useGameStore.getState().tierUp();
+    const s = useGameStore.getState();
+    expect(s.canvasProgress).toBe(0);
+    expect(s.comboChain).toBe(0);
+    expect(s.isCritThisCanvas).toBe(false);
+  });
+
+  it("multiple tier-ups bump canvasTier by 1 each time", () => {
+    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15 });
+    useGameStore.getState().tierUp();
+    expect(useGameStore.getState().canvasTier).toBe(2);
+    // Levels were reset; bump them back up to gate
+    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15 });
+    useGameStore.getState().tierUp();
+    expect(useGameStore.getState().canvasTier).toBe(3);
+  });
+});
