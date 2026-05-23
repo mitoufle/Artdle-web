@@ -1,5 +1,38 @@
 # Artdle Web — Handover
 
+## Paint Mastery removed (2026-05-23)
+
+Ten commits on `master`, plan in `docs/superpowers/plans/2026-05-23-remove-paint-mastery.md`. Not yet deployed.
+
+### What landed
+
+The Paint Mastery (PM) mechanic is gone from the game. PM was a Big-valued accumulator earned only from achievements (`paint_mastery_flat` effect kind), which multiplied canvas gold output via `pmMult = 1 + 5.0 × log10(pm + 1)`. Removed end-to-end across engine, store, UI, and tests.
+
+What changed at each layer:
+- **Engine:** `pmMult` and `PM_LOG_FACTOR` deleted from `src/core/balance.ts`. `getPmMultiplier` and the `"paintMastery"` member of `CanvasMultiplierInputs` deleted from `src/core/multipliers.ts`. `canvasTickPure` no longer multiplies gold by `getPmMultiplier(draft)` — this was the live gameplay site for PM's gold effect.
+- **Store:** `src/store/paintMasterySlice.ts` deleted, replaced by `src/store/lifetimeStatsSlice.ts` which keeps only `lifetimeGold` and `lifetimeInspiration` (independently fed achievement conditions, not PM). `addPaintMastery` / `_setPaintMastery` are gone.
+- **Achievements:** `paint_mastery_flat` handler dropped from `evaluateAchievements`. The effect kind is removed from `KNOWN_EFFECT_KINDS` in the achievement-designer types. No existing achievement defs in `achievementsDesign.json` or `achievementConfig.ts` granted PM, so no JSON edits were needed.
+- **UI:** PM chip gone from BottomBar (3 chips now: gold, inspi, fame). `CurrencyKind` no longer has `"pm"`. StatsRoom no longer shows the "Paint Mastery" multiplicative. CanvasStage sell-hover no longer shows the "Paint Mastery: ×N" line. AchievementsRoute no longer shows "+N PM" effect labels or the "{N} PM earned" header total. CatchupRecapModal no longer shows a "Paint mastery" row.
+- **Catch-up:** `paintMasteryGained: Big` dropped from `CatchupResult` in `src/systems/catchup.ts`.
+- **Save schema:** bumped to v21. Migration v20→v21 destructures and drops the persisted `paintMastery` field; old saves load cleanly with PM data silently discarded.
+- **CSS:** the teal `--pm` / `--pm-d` / `--pm-glow` tokens are kept — they're shared with Ascension card visuals. Only the comment header changed ("PM (Paint Mastery)" → "Teal accent (Ascension cards)").
+
+Tests: ~30 test files touched. `tests/store/paintMasterySlice.test.ts` renamed to `lifetimeStatsSlice.test.ts` and trimmed to lifetime-tracker coverage only. `tests/store/persistence-integration.test.ts` rewrote PM-presence assertions to absence assertions and added a new `describe("save migration v20 → v21 (Paint Mastery removed)")` block.
+
+### Status
+
+- **921 tests green** across 105 files. `npx tsc --noEmit` clean. Production build (`npm run build`) succeeds.
+- Commits on `master`. **Not yet deployed** — run `npx vercel --prod` to ship.
+- Save-state impact: live players' existing PM is silently dropped on next load (v21 migration). Their gold-per-canvas output drops back to the non-PM baseline immediately — this is the intended user-visible behavior change.
+
+### Notes
+
+- `canvasTickPure`'s removal of the PM factor is the critical behavioral change. The live `canvasSlice.canvasTick` delegates entirely to `canvasTickPure`, so the change applies to the running game, not just the catch-up sim.
+- The v3→v4 migration (which originally added `lifetimeGold` as part of the v1.1 "PM redesign") still runs on legacy saves. Its behavior is unchanged; the v21 migration cleans up `paintMastery` at the end of the chain regardless of what intermediate steps did with it.
+- Historical JSDoc/inline comments in `src/store/index.ts` migration block still reference "paintMasterySlice" in their descriptions of the v18→v19 migration. These are accurate for the moment they describe; leaving them preserves the migration log's historical truth.
+
+---
+
 ## Tab-return catch-up wiring (2026-05-23)
 
 One commit on top of the reset regression fix + brand logo, on `master`, deployed.
