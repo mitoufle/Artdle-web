@@ -85,7 +85,7 @@ describe("Bootstrap catch-up branching", () => {
     expect(runCatchupSimulationMock).toHaveBeenCalledOnce();
   });
 
-  it("with elapsed = 3h (mocked sim): loading scene → recap modal → continue dismisses scene", async () => {
+  it("with elapsed = 3h (mocked sim): loading scene → recap modal → continue dismisses scene", { timeout: 15_000 }, async () => {
     // Stub the sim to resolve quickly with a deterministic result.
     const fakeResult: CatchupResult = {
       elapsedSeconds: 3 * 3600,

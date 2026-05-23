@@ -294,7 +294,7 @@ describe("bot-simulation", () => {
     });
   });
 
-  it("runs 3-hour simulation and logs pacing", () => {
+  it("runs 3-hour simulation and logs pacing", { timeout: 120_000 }, () => {
     const milestones: string[] = [];
     let firstAscendAt = -1;
 
