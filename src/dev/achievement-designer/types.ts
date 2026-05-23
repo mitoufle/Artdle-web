@@ -64,7 +64,6 @@ export const EMPTY_DESIGN: DesignFile = [];
  * get a free-text input. Keep in sync with the runtime resolver.
  */
 export const KNOWN_EFFECT_KINDS = [
-  "paint_mastery_flat",
   "canvas_gold_pct",
   "speed_pct",
   "inspi_pct",
