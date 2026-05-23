@@ -16,10 +16,9 @@ function renderAt(path: string) {
 }
 
 describe("<TopBar />", () => {
-  it("renders the ARTDLE brand wordmark", () => {
+  it("renders the Artdle brand logo", () => {
     renderAt("/tree");
-    expect(screen.getByText("A")).toBeInTheDocument();
-    expect(screen.getByText("RTDLE")).toBeInTheDocument();
+    expect(screen.getByAltText("Artdle")).toBeInTheDocument();
   });
 
   it("renders all 5 nav items", () => {

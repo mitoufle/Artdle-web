@@ -64,10 +64,7 @@ export function TopBar(): JSX.Element {
 
   return (
     <header className={styles.bar}>
-      <div className={styles.brand}>
-        <span className={styles.brandA}>A</span>
-        <span>RTDLE</span>
-      </div>
+      <img src="/artdle_logo.png" alt="Artdle" className={styles.brand} />
       <nav className={styles.nav} aria-label="Primary">
         {NAV_ITEMS.map(({ to, label, icon, locked }) => {
           if (locked) {

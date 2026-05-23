@@ -10,17 +10,13 @@
 }
 
 .brand {
-  font-family: var(--serif);
-  font-weight: 700;
-  font-size: 22px;
-  letter-spacing: 0.04em;
-  color: var(--ink-0);
+  height: 42px;
+  width: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
   user-select: none;
-}
-
-.brandA {
-  color: var(--fame);
-  text-shadow: var(--fame-glow);
+  -webkit-user-drag: none;
+  display: block;
 }
 
 .nav {
