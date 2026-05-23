@@ -14,7 +14,7 @@ describe("<CurrencyChip />", () => {
     expect(screen.getByText("+3.2/s")).toBeInTheDocument();
   });
 
-  it("does not render rate when omitted (e.g., fame, PM)", () => {
+  it("does not render rate when omitted (e.g., fame)", () => {
     render(<CurrencyChip kind="fame" label="Fame" value="12" />);
     expect(screen.queryByText(/\/s$/)).not.toBeInTheDocument();
   });
@@ -29,8 +29,8 @@ describe("<CurrencyChip />", () => {
     expect(screen.getByTestId("currency-chip-gold")).not.toHaveAttribute("data-dimmed", "true");
   });
 
-  it("supports the four currencies (gold, inspi, fame, pm) without crashing", () => {
-    const kinds = ["gold", "inspi", "fame", "pm"] as const;
+  it("supports the three currencies (gold, inspi, fame) without crashing", () => {
+    const kinds = ["gold", "inspi", "fame"] as const;
     for (const kind of kinds) {
       const { unmount } = render(<CurrencyChip kind={kind} label="X" value="0" />);
       expect(screen.getByTestId(`currency-chip-${kind}`)).toBeInTheDocument();

@@ -8,7 +8,7 @@ import styles from "./BottomBar.module.css";
 /**
  * Per-route prominence map.
  * - /tree: gold + inspi (the gold→tree→inspi loop)
- * - /painting: gold + PM (the canvas earns gold and PM)
+ * - /painting: gold (the canvas earns gold)
  * - /ascension: inspi + fame (inspi converts to fame at the threshold)
  * - /constellation: fame (the only spend currency on this route)
  *
