@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -151,5 +151,99 @@ describe("Bootstrap catch-up branching", () => {
     const elapsed = Date.now() - startTime;
     // Allow 100ms slack for jsdom scheduling jitter.
     expect(elapsed).toBeGreaterThanOrEqual(MIN_LOADING_SCENE_MS - 100);
+  });
+});
+
+describe("Bootstrap in-session tab-return catch-up", () => {
+  let hiddenSpy: ReturnType<typeof vi.spyOn> | null = null;
+
+  beforeEach(() => {
+    useGameStore.setState({
+      currentStage: 0,
+      partLevels: { cotyledon: 5 },
+      inspiration: ZERO,
+      gold: ZERO,
+      canvasProgress: 0,
+      paintMastery: ZERO,
+      completedAchievements: {},
+    });
+    runCatchupSimulationMock.mockClear();
+  });
+
+  function setHidden(value: boolean): void {
+    hiddenSpy?.mockRestore();
+    hiddenSpy = vi.spyOn(document, "hidden", "get").mockReturnValue(value);
+  }
+
+  afterEach(() => {
+    if (hiddenSpy) {
+      hiddenSpy.mockRestore();
+      hiddenSpy = null;
+    }
+  });
+
+  it("returning to a tab hidden for 10min: silent sim → toast appears", async () => {
+    // Stub the sim so the test doesn't depend on the real engine timing.
+    const fakeResult: CatchupResult = {
+      elapsedSeconds: 600,
+      goldGained: big(123),
+      inspiGained: big(45),
+      canvasesSold: 1,
+      itemsCrafted: 0,
+      paintMasteryGained: big(0),
+      achievementsUnlocked: [],
+    };
+    runCatchupSimulationMock.mockImplementation(async () => fakeResult);
+
+    // Boot with elapsed ≤ 5s so Bootstrap mounts straight into `playing`
+    // and installs the lifecycle listener.
+    seedStoreWithLastSeen(Date.now() - 1000);
+    render(<Bootstrap />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    // No catch-up sim should have fired during boot.
+    expect(runCatchupSimulationMock).not.toHaveBeenCalled();
+
+    // Simulate "tab was hidden 10 minutes ago" by rewinding lastSeen, then
+    // dispatch a visibilitychange that returns the tab to visible.
+    useGameStore.setState({ lastSeen: Date.now() - 600_000 });
+    setHidden(false);
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+      await Promise.resolve();
+    });
+
+    // The in-session sim ran for the missed window…
+    await waitFor(() => expect(runCatchupSimulationMock).toHaveBeenCalledOnce());
+    const [elapsedArg] = runCatchupSimulationMock.mock.calls[0]!;
+    expect(elapsedArg).toBeGreaterThan(595);
+    expect(elapsedArg).toBeLessThan(605);
+
+    // …and the toast appeared over the live game.
+    await waitFor(() =>
+      expect(screen.getByText(/Welcome back/)).toBeInTheDocument(),
+    );
+  });
+
+  it("returning to a tab hidden for 3s: no sim, no toast", async () => {
+    seedStoreWithLastSeen(Date.now() - 1000);
+    render(<Bootstrap />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    runCatchupSimulationMock.mockClear();
+
+    useGameStore.setState({ lastSeen: Date.now() - 3000 });
+    setHidden(false);
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+      await Promise.resolve();
+    });
+
+    // Below the 5s silent threshold: no sim, no toast.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(runCatchupSimulationMock).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Welcome back/)).toBeNull();
   });
 });

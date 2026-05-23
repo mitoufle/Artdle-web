@@ -6,8 +6,12 @@ import { AnimatePresence, motion } from "motion/react";
 import { useGameStore } from "@/store";
 import { LoadingScreen } from "@/ui/widgets/LoadingScreen";
 import { App } from "@/App";
-import { startTickLoop, stopTickLoop } from "@/core/tickLoop";
-import { installLifecycle, defaultLifecycleHooks } from "@/systems/lifecycle";
+import { startTickLoop, stopTickLoop, resumeTickLoop } from "@/core/tickLoop";
+import {
+  installLifecycle,
+  defaultLifecycleHooks,
+  type LifecycleHooks,
+} from "@/systems/lifecycle";
 import { persistedAdapter } from "@/systems/persistence";
 import { big } from "@/core/bigNumber";
 import { runCatchupSimulation, type CatchupResult } from "@/systems/catchup";
@@ -188,13 +192,63 @@ export function Bootstrap(): JSX.Element {
     return () => stopTickLoop();
   }, [phase.kind]);
 
-  // Single lifecycle install: visibilitychange (pause+flush / resume) +
-  // beforeunload (flush). Installed only once we reach `playing` so the
-  // catchup flow itself isn't interrupted by tab events firing on
-  // rehydration. See `src/systems/lifecycle.ts`.
+  // Guards against overlapping in-session catch-up sims when the user
+  // rapidly toggles tab visibility. The default lifecycle's onShow resumes
+  // the tick loop immediately; our custom onShow defers the resume until
+  // after the sim commits so the live engine doesn't double-count the
+  // missed window.
+  const resumeSimInFlight = useRef(false);
+
+  // Single lifecycle install: visibilitychange (pause+flush on hide,
+  // catch-up + resume on show) + beforeunload (flush). Installed only once
+  // we reach `playing` so the boot catchup flow itself isn't interrupted by
+  // tab events firing on rehydration. See `src/systems/lifecycle.ts`.
   useEffect(() => {
     if (phase.kind !== "playing") return;
-    return installLifecycle(defaultLifecycleHooks);
+    const hooks: LifecycleHooks = {
+      onHide: defaultLifecycleHooks.onHide,
+      onUnload: defaultLifecycleHooks.onUnload,
+      onShow: (): void => {
+        const lastSeen = useGameStore.getState().lastSeen;
+        const elapsed = Math.max(0, (Date.now() - lastSeen) / 1000);
+
+        // Only the 5s–2h window gets in-session catch-up + toast. ≤5s is a
+        // near-instant return (no sim worth running); ≥2h is intentionally
+        // left as a plain resume so a long in-session absence doesn't yank
+        // the player into a loading scene mid-play.
+        if (
+          elapsed > SILENT_THRESHOLD_S &&
+          elapsed < TOAST_THRESHOLD_S &&
+          !resumeSimInFlight.current
+        ) {
+          resumeSimInFlight.current = true;
+          void (async (): Promise<void> => {
+            try {
+              const result = await runCatchupSimulation(elapsed, () => {});
+              // Defend the race where onHide fires mid-sim and writes
+              // lastSeen=now: the sim's setState(draft) commit reverts
+              // lastSeen to the pre-sim baseline. Overwriting here ensures
+              // the next visibility cycle starts from "now", not from the
+              // already-replayed window.
+              useGameStore.setState({ lastSeen: Date.now() });
+              if (!unmountedRef.current) {
+                setPhase((cur) =>
+                  cur.kind === "playing" ? { ...cur, toast: result } : cur,
+                );
+              }
+            } catch (err) {
+              reportError(err as Error, "catchup.simulation.resume");
+            } finally {
+              resumeSimInFlight.current = false;
+              resumeTickLoop();
+            }
+          })();
+        } else {
+          resumeTickLoop();
+        }
+      },
+    };
+    return installLifecycle(hooks);
   }, [phase.kind]);
 
   // Retroactive achievement evaluation on the no-catchup path (entering
