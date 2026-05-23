@@ -1,5 +1,52 @@
 # Artdle Web — Handover
 
+## Canvas Tier System (2026-05-23)
+
+Twelve commits on `master`, deployed (production bundle `index-BNEI9jiA.js`). Spec at `docs/superpowers/specs/2026-05-23-canvas-tier-system-design.md`, plan at `docs/superpowers/plans/2026-05-23-canvas-tier-system.md`.
+
+### What landed
+
+A within-run prestige loop on the canvas, sitting alongside the five existing upgrade tracks (sell_price, speed, size, crit, combo). A `canvasTier: number` field starts at 1. The moment `sellPriceLevel >= 15 && speedLevel >= 15` in the current tier, `canvasTick` auto-fires `tierUp()`: increments `canvasTier`, resets all 5 track levels to 0, resets in-canvas state (`canvasProgress`, `comboChain`, `isCritThisCanvas`), and calls `evaluateAchievements`. No button — the trigger is implicit on the next tick after the gate is met (also covers the save-already-met case after rehydration).
+
+What changed at each layer:
+
+- **Balance constants (`src/core/balance.ts`):** added `tierFactor(N) = 10^(N-1)` and `timeFactor(N) = 2^(N-1)` helpers. Changed `CANVAS_TIME_BASE` from 2 to 10. Removed the legacy `PAINT_TIME_BASE_SECONDS = 10` constant (it duplicated `CANVAS_TIME_BASE` after the change). All seven canvas balance functions (`canvasGold`, `canvasTime`, `sellPriceUpgradeCost`, `speedUpgradeCost`, `sizeUpgradeCost`, `critUpgradeCost`, `comboUpgradeCost`) now take an optional `tier` parameter (default 1) and multiply by the appropriate factor.
+- **Store (`src/store/canvasSlice.ts`):** added `canvasTier: number` to `CanvasState` (default 1). Changed default `sellPriceLevel` and `speedLevel` from 1 to 0 (consistent with the other 3 tracks; the L1 default was a long-standing oddity). Added `tierUp(): boolean` action with the gate check and reset semantics. `canvasTick` calls `tierUp()` at the end of each tick when the gate is met.
+- **Multipliers (`src/core/multipliers.ts`):** `CanvasMultiplierInputs` now includes `"canvasTier"`. Each of the five canvas multipliers (`getCanvasGoldMultiplier`, `getCanvasSpeedMultiplier`, `getCanvasSize`, `getCritChance`, `getComboBaseChance`) reads `state.canvasTier` — but per-level effects do **NOT** scale with `tierFactor` (see "The per-level scaling fix" below). Items / workers / school / achievements stay tier-agnostic.
+- **Tick (`src/core/canvasTickPure.ts`):** passes `draft.canvasTier` to `canvasGold` and `canvasTime`.
+- **UI (`src/components/painting/CanvasStage.tsx`):** `STAGE_NAMES` rekeyed from `sizeLevel` (0-10) to `canvasTier` (1-11) — same names (Sketch / Apprentice / Journeyman / … / Mythic), just shifted +1. Title row now reads `— Tier {canvasTier} · {stageName} —`. The bottom-right tier badge reads `Tier {canvasTier}`. The pixel-art SVG `aria-label` corrected to `Size {sizeLevel}` (semantically accurate). The sell-hover breakdown's "Sell Price" line correctly matches the engine (no tier multiplier on the per-level term).
+- **UI (`src/components/painting/StatsRoom.tsx`):** new `TierBlock` component rendered at the top of the stats panel, showing current tier and active multipliers (Base gold ×N, Base time ×N, Upgrade costs ×N).
+- **UI (`src/routes/PaintingRoute.tsx`):** the `helperState` constructed for the canvas math now includes `canvasTier`; all five upgrade cost previews pass tier; `canvasGold` and `canvasTime` calls pass tier.
+- **Save schema:** bumped to v22. Migration v21→v22 adds `canvasTier: 1` for existing saves. Pre-existing upgrade levels are preserved (so a returning player with sellPriceLevel=20 doesn't lose progress); the L0 default change applies only to fresh saves. **Players whose pre-tier-system levels already meet the gate (sellPriceLevel >= 15 && speedLevel >= 15) will auto-tier-up on their next canvas tick after load.**
+
+### The per-level scaling fix (a9fe908)
+
+The design spec originally said per-level effects scale by `tierFactor` (e.g., T2 sell_price = +100%/level, T6 = +10000%/level). When wired through, this compounded destructively for speed: at T6 with `speedLevel=1`, the multiplier became `1 + 0.05 × 100000 = 5001`, collapsing canvas time to `320 / 5001 ≈ 0.064s`. A single L1 speed upgrade obliterated the cost-benefit curve. **The fix:** per-level effects stay flat across tiers — sell_price is always +10%/level, speed is always +5%/level, etc. The tier-scaling reward comes entirely from base canvas gold (×10/tier), base canvas time (×2/tier), and upgrade costs (×10/tier). Net gold/sec ramp from base alone = ×5/tier (10 / 2). Each tier-up still feels meaningful because the player resets to L0 on a fresh cost ladder with a 10× larger base canvas gold — early upgrades give big relative gains, and re-reaching L15 in the new tier is still cheaper-relative-to-income than pushing past L15 in the old tier was.
+
+### Status
+
+- **971 tests green** across 105 files. `npx tsc --noEmit` clean. `npx vite build` succeeds.
+- Production bundle `index-BNEI9jiA.js` — verified live (`canvasTier`, `tierUp`, `timeFactor` present in the minified bundle; `tierFactor` inlined).
+- Save schema bumped 21 → 22.
+- Player-facing changes are noticeable: base canvas time is now 10s (was ~1.9s with the old L1 speed default), and tier-up at L15+L15 sell/speed wipes and ramps. Players who had built past L15 in the old system find themselves on T2+ immediately on load.
+
+### Notes
+
+- **Auto tier-up lives in `canvasTick`**, not in the upgrade actions. This means there's a (1 tick = ≤100ms) latency between buying the 15th upgrade and the tier-up firing, but it gracefully handles the "save already past the gate" case at load without needing a separate Bootstrap hook.
+- **`TierUpCard` was built then removed.** Earlier in the same session a manual `TierUpCard` button (locked/ready states) was shipped, then removed when the user opted for auto-trigger on the milestone. The component and its tests are in git history at `679b6bb` if you ever need them back.
+- **3h sim tests got timeout bumps** (commit `8387beb`) — `tests/dev/bot-simulation.test.ts` and `tests/integration/catchupBoot.test.tsx` needed longer timeouts after `CANVAS_TIME_BASE 2→10` lengthened the simulated paint cycles. Pre-existing tests, not new.
+- **The spec doc still describes per-level tier scaling** as part of the design. It's out of date — the implementation reverted it (per the speed-divisor problem). The spec should be updated if anyone reads it for design intent. The plan doc and HANDOVER (this entry) are correct.
+- **Workshop items, office workers, school bonuses, achievement bonuses, and skill-tree node contributions all stay tier-agnostic.** As tiers grow, these become baseline contributions overshadowed by the base-canvas-gold ramp — same pattern as in earlier-game balance.
+
+### Open follow-ups
+
+- **Crit and combo at high tiers.** Both have hard caps (95% crit, 100% combo). At T2 with the cap, you softcap crit in ~30 levels and cap combo in ~50 levels — same as T1. The user flagged that this needs rework (the user picked "we need to rework this later" during the design phase). Options: scale a crit-gold-multiplier past the cap, increase the cap per tier, or different past-cap behavior. No plan yet.
+- **Spec doc accuracy.** The per-level scaling fix in `a9fe908` diverges from the spec. Either update the spec doc to match implementation, or write a brief addendum at the top noting the deviation and pointing to this HANDOVER entry.
+- **Visual differentiation between tiers.** Today the canvas pixel art doesn't change between tiers. The stage name (Sketch → Apprentice → …) does, but the canvas itself looks identical at T1 and T11. Future work could tint or accent the frame per tier.
+- **No tier cap.** Open-ended per design. At very high tiers (T20+) the base gold becomes `10 × 10^19 = 10^20`, which `break_eternity.js` handles fine — but eventual exploration of late-game pacing past T10 should confirm UI / formatBig hold up at those magnitudes.
+
+---
+
 ## Paint Mastery removed (2026-05-23)
 
 Ten commits on `master`, plan in `docs/superpowers/plans/2026-05-23-remove-paint-mastery.md`. Not yet deployed.
