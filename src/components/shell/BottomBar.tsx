@@ -17,7 +17,7 @@ import styles from "./BottomBar.module.css";
  */
 const ROUTE_PROMINENCE: Record<string, ReadonlySet<CurrencyKind>> = {
   "/tree":          new Set(["gold", "inspi"]),
-  "/painting":      new Set(["gold", "pm"]),
+  "/painting":      new Set(["gold"]),
   "/ascension":     new Set(["inspi", "fame"]),
   "/constellation": new Set(["fame"]),
   "/achievements":  new Set([]),
@@ -34,7 +34,6 @@ export function BottomBar(): JSX.Element {
   const gold = useGameStore((s) => s.gold);
   const inspiration = useGameStore((s) => s.inspiration);
   const fame = useGameStore((s) => s.fame);
-  const paintMastery = useGameStore((s) => s.paintMastery);
   const { pathname } = useLocation();
 
   return (
@@ -57,12 +56,6 @@ export function BottomBar(): JSX.Element {
           label="Fame"
           value={formatBig(fame)}
           dimmed={!isProminent("fame", pathname)}
-        />
-        <CurrencyChip
-          kind="pm"
-          label="PM"
-          value={formatBig(paintMastery)}
-          dimmed={!isProminent("pm", pathname)}
         />
       </div>
     </footer>

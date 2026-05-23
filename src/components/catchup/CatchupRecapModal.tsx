@@ -20,7 +20,6 @@ export function CatchupRecapModal({
           <dt>Inspiration</dt><dd>+{formatBig(result.inspiGained)}</dd>
           <dt>Canvases sold</dt><dd>{result.canvasesSold}</dd>
           <dt>Items crafted</dt><dd>{result.itemsCrafted}</dd>
-          <dt>Paint mastery</dt><dd>+{formatBig(result.paintMasteryGained)}</dd>
         </dl>
         {result.achievementsUnlocked.length > 0 && (
           <div className={styles.achievements}>

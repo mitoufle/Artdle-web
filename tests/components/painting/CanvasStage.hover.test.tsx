@@ -10,7 +10,6 @@ describe("CanvasStage hover wiring (sell preview)", () => {
       hoverTitle: "", hoverBody: "", hoverFooter: "",
       purchasedNodes: {},
       equipped: {},
-      paintMastery: big(0),
     });
   });
 

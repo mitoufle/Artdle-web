@@ -15,7 +15,6 @@ const CATEGORIES: { id: AchievementCategory; label: string }[] = [
 ];
 
 function effectLabel(kind: string, value: number): string {
-  if (kind === "paint_mastery_flat") return `+${value} PM`;
   if (kind === "canvas_gold_pct") return `+${Math.round(value * 100)}% canvas gold`;
   if (kind === "speed_pct") return `+${Math.round(value * 100)}% speed`;
   if (kind === "inspi_pct") return `+${Math.round(value * 100)}% inspiration`;
@@ -45,21 +44,12 @@ export function AchievementsRoute(): JSX.Element {
   const visible =
     filter === "all" ? completed : completed.filter((a) => a.category === filter);
 
-  // Total PM earned from achievements
-  let totalPmFromAchievements = 0;
-  for (const a of completed) {
-    for (const e of a.effects) {
-      if (e.kind === "paint_mastery_flat") totalPmFromAchievements += e.value;
-    }
-  }
-
   return (
     <section className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>Achievements</h1>
         <p className={styles.subtitle}>
-          {completed.length} / {ACHIEVEMENTS.length} completed · {totalPmFromAchievements} PM
-          earned
+          {completed.length} / {ACHIEVEMENTS.length} completed
         </p>
       </header>
 

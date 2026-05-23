@@ -16,7 +16,6 @@ import {
   getAchievementGoldContribution,
   getSchoolSpeedContribution,
   getAchievementSpeedContribution,
-  getPmMultiplier,
   getCritChance,
   getComboBaseChance,
   getCanvasSize,
@@ -71,14 +70,11 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   const sizeGoldFactor = size * size;
   const rainbowFactor = getRainbowMultiplier(state);
 
-  const pmFactor = getPmMultiplier(state);
-
   const sellMultiplicatives: Array<{ source: string; factor: number }> = [];
-  if (pmFactor > 1) sellMultiplicatives.push({ source: "Paint Mastery", factor: pmFactor });
   if (rainbowFactor > 1) sellMultiplicatives.push({ source: "Rainbow", factor: rainbowFactor });
   if (sizeGoldFactor > 1) sellMultiplicatives.push({ source: "Size² factor", factor: sizeGoldFactor });
 
-  const effectiveGold = goldTotal * sizeGoldFactor * pmFactor;
+  const effectiveGold = goldTotal * sizeGoldFactor;
 
   // Hide contributors that grant 0 — keeps locked/unowned features out of view
   // until they actually start contributing (no spoilers).

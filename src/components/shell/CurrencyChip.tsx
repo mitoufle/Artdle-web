@@ -5,16 +5,15 @@ import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
 import { formatBig } from "@/core/formatter";
 import { inspiPerSec } from "@/core/balance";
-import { getInspiMultiplier, getPmMultiplier } from "@/core/multipliers";
+import { getInspiMultiplier } from "@/core/multipliers";
 import { TREE_STAGES } from "@/config/treeStages";
 
-export type CurrencyKind = "gold" | "inspi" | "fame" | "pm";
+export type CurrencyKind = "gold" | "inspi" | "fame";
 
 const ICON_SRC: Record<CurrencyKind, string> = {
   gold:  "/assets/artdle/Currency/coin.png",
   inspi: "/assets/artdle/Currency/Inspiration.png",
   fame:  "/assets/artdle/Currency/fame.png",
-  pm:    "/assets/artdle/Currency/Painting_mastery.png",
 };
 
 interface Props {
@@ -66,17 +65,6 @@ function fameBody(): JSX.Element {
   );
 }
 
-function pmBody(): JSX.Element {
-  const s = useGameStore.getState();
-  return (
-    <>
-      <div>Current: {formatBig(s.paintMastery)} PM</div>
-      <div>Multiplier: ×{getPmMultiplier(s).toFixed(2)}</div>
-      <div>Earned from: completing achievements</div>
-    </>
-  );
-}
-
 const HOVER_CONTENT: Record<
   CurrencyKind,
   { title: string; body: () => JSX.Element; footer: string }
@@ -95,11 +83,6 @@ const HOVER_CONTENT: Record<
     title: "Fame",
     body: fameBody,
     footer: "Permanent currency. Spent in the constellation.",
-  },
-  pm: {
-    title: "Paint Mastery",
-    body: pmBody,
-    footer: "Survives ascends. Boosts canvas gold output.",
   },
 };
 

@@ -51,4 +51,3 @@
 .chip[data-kind="gold"] .value { color: var(--gold); }
 .chip[data-kind="inspi"] .value { color: var(--inspi); }
 .chip[data-kind="fame"] .value { color: var(--pm); }
-.chip[data-kind="pm"] .value { color: var(--pm); }

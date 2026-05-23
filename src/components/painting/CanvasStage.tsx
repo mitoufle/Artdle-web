@@ -3,7 +3,7 @@ import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
 import { canvasGold, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK } from "@/core/balance";
-import { getCanvasGoldMultiplier, getPmMultiplier, getCanvasSize, getOfficeContribution } from "@/core/multipliers";
+import { getCanvasGoldMultiplier, getCanvasSize, getOfficeContribution } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
@@ -12,7 +12,6 @@ function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const state = useGameStore.getState();
   const size = getCanvasSize(state);
   const goldMult = getCanvasGoldMultiplier(state);
-  const pmMult = getPmMultiplier(state);
   const itemBonus = getEquippedContribution(state, "+sell_price%");
   const workerBonus = getOfficeContribution(state, "+sell_price%").toNumber();
   const rainbowLvl = getNodeLevel(state, "rainbow");
@@ -21,7 +20,7 @@ function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const additiveTotal = goldMult / rainbowFactor - 1;
   const colorSum = additiveTotal - itemBonus - workerBonus - sellPriceContribution;
   const baseGold = 10 * size * size;
-  const total = canvasGold(size, goldMult * pmMult).mul(1 + COMBO_PER_LINK * comboChain);
+  const total = canvasGold(size, goldMult).mul(1 + COMBO_PER_LINK * comboChain);
   return (
     <>
       <div>Base × size² = 10 × {size.toFixed(2)}² = {baseGold.toFixed(1)}</div>
@@ -31,7 +30,6 @@ function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
       <div>Workers:       ×{(1 + workerBonus).toFixed(2)}</div>
       <div>Colors:        ×{(1 + colorSum).toFixed(2)}</div>
       <div>Rainbow:       ×{rainbowFactor.toFixed(2)}</div>
-      <div>Paint Mastery: ×{pmMult.toFixed(2)}</div>
       {comboChain > 0 ? <div>Combo:        ×{(1 + COMBO_PER_LINK * comboChain).toFixed(2)}</div> : null}
       <div>───</div>
       <div>Total: {formatBig(total)} g per canvas</div>

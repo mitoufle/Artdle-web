@@ -13,7 +13,6 @@ describe("<PaintingRoute> — 5 track cards", () => {
       gold: big(1000),
       purchasedNodes: {},
       equipped: {},
-      paintMastery: big(0),
     });
   });
 
