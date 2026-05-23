@@ -1,5 +1,49 @@
 # Artdle Web — Handover
 
+## Tab-return catch-up wiring (2026-05-23)
+
+One commit on top of the reset regression fix + brand logo, on `master`, deployed.
+
+### What landed
+
+**Commit `cc590ae` — `fix(catchup)`: run catch-up sim on tab-return, not just page load**
+
+Symptom: switching tabs for 5s+ and returning credited nothing. The player saw the inspiration counter sit at the value it had when the tab went hidden, despite `928310b` and the surrounding offline-progress catch-up work shipping a week earlier.
+
+Trace:
+1. `defaultLifecycleHooks.onHide` correctly wrote `lastSeen = Date.now()` and paused the tick loop on visibility=hidden.
+2. `defaultLifecycleHooks.onShow` only called `resumeTickLoop()` on visibility=visible. It never read `lastSeen`, never called `runCatchupSimulation`.
+3. The catch-up engine itself was wired into `Bootstrap`'s `silent_sim` phase, which only fires once per page load (after rehydration). No path re-entered `silent_sim`, so tab-return missed time was just lost.
+
+Fix: replace `installLifecycle(defaultLifecycleHooks)` in `Bootstrap` with custom hooks that delegate `onHide`/`onUnload` to default but override `onShow`. When `(Date.now() - lastSeen) / 1000` falls in `(SILENT_THRESHOLD_S, TOAST_THRESHOLD_S)` (5s, 2h), the new `onShow` runs `runCatchupSimulation` silently and then `setPhase((cur) => ({ ...cur, toast: result }))` so the same `CatchupToast` component renders over the live game. `≤5s` and `≥2h` fall through to a plain `resumeTickLoop()`. The `≥2h` in-session path stays a plain resume by design: a mid-session loading scene + recap modal would be too jarring for a returning player (user explicitly scoped the fix this way during the work).
+
+Two race defenses in the new hook:
+- `resumeSimInFlight` ref blocks overlapping sims if the user thrashes tab visibility (rapid hide/show before the previous sim commits).
+- `useGameStore.setState({ lastSeen: Date.now() })` immediately after `runCatchupSimulation` resolves successfully. `cloneGameState` copies `lastSeen` as a primitive, so the sim's `setState(draft)` commit reverts `lastSeen` to the baseline; without this overwrite, the next visibility cycle would re-replay the same window.
+
+Tests: +2 in `tests/integration/catchupBoot.test.tsx` under a new `Bootstrap in-session tab-return catch-up` block. One asserts the 10min-hide → toast path (sim called with ~600s, "Welcome back" appears); the other asserts the 3s-hide → no-sim, no-toast path. Both use `vi.spyOn(document, "hidden", "get")` to drive `visibilitychange`, mirroring the existing `tests/systems/lifecycle.test.ts` pattern.
+
+### Status
+
+- **935 tests green** across 105 files (+2 from the in-session tests; nothing else moved).
+- Commit on `master` (HEAD `cc590ae`) and deployed via `npx vercel --prod`. Production bundle `index-DKLddeP-.js` confirmed live by grepping for `catchup.simulation.resume` (the new `reportError` context).
+- No save-state changes. SAVE_VERSION stays at 20.
+
+### Notes / save-state impact
+
+- **The fix doesn't touch `lifecycle.ts`.** That module stays agnostic — the catch-up logic lives in Bootstrap, where it has natural access to `setPhase` (for the toast) and `unmountedRef` (for cancellation). The same pattern (custom hooks composed from `defaultLifecycleHooks`) is the recommended escape hatch for anything that needs to extend onShow/onHide without coupling the lifecycle module to UI state.
+- **`lastSeen` post-sim write is essential.** Without it, the second visibility cycle in a session re-replays the first cycle's window because `cloneGameState` snapshots `lastSeen` and the draft commit reverts it. The first cycle works fine because `onHide` writes `lastSeen=Date.now()` before pausing; the bug only manifests on subsequent cycles. This is also a latent issue in Bootstrap's boot-time catch-up (also commits a stale `lastSeen` via the draft), but the boot path is followed by the 10s heartbeat which corrects it within one tick; the in-session path can be followed by another `onHide` *before* the heartbeat fires, which is why the explicit write is required here.
+- **`resumeSimInFlight` is a `useRef`, not slice state.** StrictMode's effect double-fire still installs/cleans the lifecycle hooks twice in dev, but the ref persists across the remount, so the guard isn't broken by the second install. If we ever move catch-up orchestration out of Bootstrap into a system module, the ref needs to follow it — leaving it behind would re-introduce the race.
+- **The displayed `inspi/sec` chip on the topbar shows only the tree's passive rate.** Poke the Tree grants are not in that number. Players returning from a tab-hidden window now see the toast with the correct total (tree + poke), which can read as "over-estimated" if they mentally extrapolate from the chip × elapsed seconds. Not a bug; if it causes confusion at scale, the chip can be extended to include Poke contribution (see `src/components/shell/CurrencyChip.tsx:46` + `src/core/skillTreeTickPure.ts`).
+
+### Open follow-ups
+
+- **Regression test for the in-session `lastSeen` post-sim write.** The two new tests cover the happy-path 10min and the silent ≤5s. Neither asserts that the second consecutive visibility cycle in a session uses the right baseline. A test that hides → shows (sim runs) → hides → shows (second sim runs with elapsed measured from the *first* show, not from a stale lastSeen) would lock the race defense in. Worth adding before the catch-up engine sees more state changes.
+- **Convergence-test coverage at production deltas.** `tests/dev/bot-simulation.test.ts` asserts live-vs-sim convergence at matched 1s delta over ~1h. Production catch-up uses `chooseDelta` (0.1s / 1s / 10s / 60s based on elapsed window). Empirical probe during this session showed exact match for vanilla tree-only state at any delta, and ~1 missed Poke the Tree grant per 600s at `delta=0.1s` due to FP accumulation in `pokeTreeTimer`. Under-counts only, but worth a precision test that pins the actual numbers per delta tier.
+- **The `≥2h` in-session path silently drops missed time.** Intentional per the design call this session, but if a player leaves the tab open for a working day with the game hidden, they'll come back to no catch-up at all on that return. If we revisit, options are: trigger the loading-scene path on tab-return (jarring), apply the sim silently with a recap-style modal (less jarring, no scene), or just show a "you missed 8h — reload to claim" hint. No action needed unless players complain.
+
+---
+
 ## Reset regression fix + brand logo (2026-05-23)
 
 Two commits on top of the boot UX polish, both on `master`, both deployed.
