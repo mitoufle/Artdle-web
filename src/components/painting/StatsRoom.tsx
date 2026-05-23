@@ -26,6 +26,8 @@ import {
   CRIT_PER_LEVEL,
   COMBO_PER_LEVEL,
   SIZE_PER_LEVEL,
+  tierFactor,
+  timeFactor,
 } from "@/core/balance";
 import { AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
 import styles from "./StatsRoom.module.css";
@@ -147,6 +149,37 @@ function sizeBlock(state: CanvasMultiplierInputs): SizeBlock {
   };
 }
 
+function TierBlock({ tier }: { tier: number }): JSX.Element {
+  const factor = tierFactor(tier);
+  const timeFac = timeFactor(tier);
+  return (
+    <article className={styles.block}>
+      <header className={styles.blockHeader}>
+        <span className={styles.blockName}>Canvas Tier</span>
+        <span className={styles.blockTotal}>T{tier}</span>
+      </header>
+      <ul className={styles.lines}>
+        <li className={styles.line}>
+          <span className={styles.source}>Base gold</span>
+          <span className={styles.value}>×{factor}</span>
+        </li>
+        <li className={styles.line}>
+          <span className={styles.source}>Base time</span>
+          <span className={styles.value}>×{timeFac}</span>
+        </li>
+        <li className={styles.line}>
+          <span className={styles.source}>Per-level effects</span>
+          <span className={styles.value}>×{factor}</span>
+        </li>
+        <li className={styles.line}>
+          <span className={styles.source}>Upgrade costs</span>
+          <span className={styles.value}>×{factor}</span>
+        </li>
+      </ul>
+    </article>
+  );
+}
+
 export function StatsRoom(): JSX.Element {
   const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
@@ -186,6 +219,7 @@ export function StatsRoom(): JSX.Element {
         <h2 className={styles.title}>Stats</h2>
         <p className={styles.subtitle}>Aggregated bonuses by source.</p>
       </header>
+      <TierBlock tier={canvasTier} />
       {visibleBlocks.map((block) => (
         <article key={block.name} className={styles.block}>
           <header className={styles.blockHeader}>
