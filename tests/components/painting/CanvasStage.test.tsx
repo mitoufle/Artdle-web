@@ -63,6 +63,77 @@ describe("<CanvasStage />", () => {
     expect(screen.getByText(/\+184g/i)).toBeInTheDocument();
   });
 
+  describe("<CanvasStage> — sketch overlay reveal", () => {
+    it("renders the sketch overlay with 25 cells at 5x5 grid", () => {
+      const { container } = render(
+        <CanvasStage
+          sizeLevel={1}
+          canvasTier={1}
+          progressPct={0}
+          timeElapsed="0.0"
+          timeTotal="10.0"
+          nextSaleGold="10"
+          canvasNumber={1}
+        />,
+      );
+      const overlay = container.querySelector('[data-testid="sketch-overlay"]');
+      expect(overlay).toBeInTheDocument();
+      expect(overlay?.children.length).toBe(25);
+    });
+
+    it("at progressPct=0, zero cells are visible (opacity 1)", () => {
+      const { container } = render(
+        <CanvasStage
+          sizeLevel={1}
+          canvasTier={1}
+          progressPct={0}
+          timeElapsed="0.0"
+          timeTotal="10.0"
+          nextSaleGold="10"
+          canvasNumber={1}
+        />,
+      );
+      const cells = container.querySelectorAll('[data-testid="sketch-overlay"] > div');
+      const visible = Array.from(cells).filter((c) => (c as HTMLElement).style.opacity === "1");
+      expect(visible.length).toBe(0);
+    });
+
+    it("at progressPct=0.5, ~half the cells are visible", () => {
+      const { container } = render(
+        <CanvasStage
+          sizeLevel={1}
+          canvasTier={1}
+          progressPct={0.5}
+          timeElapsed="5.0"
+          timeTotal="10.0"
+          nextSaleGold="10"
+          canvasNumber={1}
+        />,
+      );
+      const cells = container.querySelectorAll('[data-testid="sketch-overlay"] > div');
+      const visible = Array.from(cells).filter((c) => (c as HTMLElement).style.opacity === "1");
+      // floor(0.5 * 25) = 12
+      expect(visible.length).toBe(12);
+    });
+
+    it("at progressPct=1.0, all 25 cells are visible", () => {
+      const { container } = render(
+        <CanvasStage
+          sizeLevel={1}
+          canvasTier={1}
+          progressPct={1.0}
+          timeElapsed="10.0"
+          timeTotal="10.0"
+          nextSaleGold="10"
+          canvasNumber={1}
+        />,
+      );
+      const cells = container.querySelectorAll('[data-testid="sketch-overlay"] > div');
+      const visible = Array.from(cells).filter((c) => (c as HTMLElement).style.opacity === "1");
+      expect(visible.length).toBe(25);
+    });
+  });
+
   describe("<CanvasStage> — combo + crit badges", () => {
     it("renders combo chain badge when comboChain > 0", () => {
       render(

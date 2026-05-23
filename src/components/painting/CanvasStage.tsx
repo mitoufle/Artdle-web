@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useMemo, type JSX } from "react";
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
@@ -8,6 +8,11 @@ import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import paintingScreen from "@/assets/images/Painting_screen.png";
+import { getSketchUrl, getCellRevealOrder } from "./canvasArt";
+
+/** N×N grid for the chunk-by-chunk sketch reveal on the easel canvas. */
+const SKETCH_GRID_DIM = 5;
+const SKETCH_TOTAL_CELLS = SKETCH_GRID_DIM * SKETCH_GRID_DIM;
 
 function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const state = useGameStore.getState();
@@ -91,11 +96,21 @@ export function CanvasStage({
 }: Props): JSX.Element {
   const stageName = STAGE_NAMES[canvasTier] ?? `Tier ${canvasTier}`;
   const barWidth = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
-  // sizeLevel is currently informational (used only for the image alt text).
-  // The transparent canvas-area bbox inside Painting_screen.png is
-  // left=39.17%, top=19.40%, width=21.58%, height=39.19% — preserved here
-  // for future overlays (e.g., rendering the in-progress painting in that spot).
   void sizeLevel;
+
+  // Sketch + reveal-order are stable for a given canvasNumber so re-renders
+  // (every frame's progress update) don't reshuffle the chunks.
+  const sketchUrl = useMemo(
+    () => getSketchUrl(canvasTier, canvasNumber),
+    [canvasTier, canvasNumber],
+  );
+  const cellOrder = useMemo(
+    () => getCellRevealOrder(canvasNumber, SKETCH_TOTAL_CELLS),
+    [canvasNumber],
+  );
+  const cellsRevealed = Math.floor(
+    Math.max(0, Math.min(1, progressPct)) * SKETCH_TOTAL_CELLS,
+  );
 
   return (
     <section className={styles.stage} aria-label="Canvas stage">
@@ -113,11 +128,41 @@ export function CanvasStage({
         — Tier {canvasTier} · {stageName} —
       </div>
       <div className={styles.frame}>
-        <img
-          src={paintingScreen}
-          className={styles.canvasArt}
-          alt="Artist's workshop scene with central easel"
-        />
+        <div className={styles.imageContainer}>
+          <img
+            src={paintingScreen}
+            className={styles.canvasArt}
+            alt="Artist's workshop scene with central easel"
+          />
+          {sketchUrl && (
+            <div
+              key={`sketch-${canvasNumber}`}
+              className={styles.sketchOverlay}
+              data-testid="sketch-overlay"
+              aria-hidden="true"
+            >
+              {Array.from({ length: SKETCH_TOTAL_CELLS }, (_, i) => {
+                const col = i % SKETCH_GRID_DIM;
+                const row = Math.floor(i / SKETCH_GRID_DIM);
+                const revealRank = cellOrder.indexOf(i);
+                const visible = revealRank < cellsRevealed;
+                const denom = SKETCH_GRID_DIM - 1;
+                return (
+                  <div
+                    key={i}
+                    className={styles.sketchCell}
+                    style={{
+                      backgroundImage: `url(${sketchUrl})`,
+                      backgroundSize: `${SKETCH_GRID_DIM * 100}% ${SKETCH_GRID_DIM * 100}%`,
+                      backgroundPosition: `${(col / denom) * 100}% ${(row / denom) * 100}%`,
+                      opacity: visible ? 1 : 0,
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Thin gold progress bar */}

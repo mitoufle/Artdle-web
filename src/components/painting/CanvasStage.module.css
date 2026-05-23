@@ -3,22 +3,57 @@
   height: 100%;
   border-radius: var(--r-md);
   overflow: hidden;
+  background: #1a1410; /* workshop-interior tone; visible if the image letterboxes */
 }
 
-/* Background image fills the entire stage area edge-to-edge. UI elements
- * (title, progress bar, bottom row, crit/combo badges) overlay on top via
- * z-index. */
+/* Image-and-overlay layer fills the entire stage area edge-to-edge. UI
+ * elements (title, progress bar, bottom row, crit/combo badges) overlay on
+ * top via z-index. */
 .frame {
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Container locks the workshop image's aspect ratio so the sketch overlay
+ * positioned in percentages (left=39.17%, top=19.40%, width=21.58%,
+ * height=39.19%) always lines up with the transparent easel canvas area
+ * regardless of the stage's outer dimensions. */
+.imageContainer {
+  position: relative;
+  aspect-ratio: 1376 / 768;
+  width: 100%;
+  max-height: 100%;
 }
 
 .canvasArt {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   image-rendering: pixelated;
   display: block;
+}
+
+/* The easel-canvas region inside the workshop image. The N×N grid of cells
+ * inside reveals the in-progress sketch chunk by chunk as progressPct grows. */
+.sketchOverlay {
+  position: absolute;
+  left: 39.17%;
+  top: 19.40%;
+  width: 21.58%;
+  height: 39.19%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  pointer-events: none;
+}
+
+.sketchCell {
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  transition: opacity 180ms ease-out;
 }
 
 .title {
