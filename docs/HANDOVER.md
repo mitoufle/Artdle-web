@@ -1,5 +1,66 @@
 # Artdle Web — Handover
 
+## Canvas Art — workshop scene + per-tier sketches (2026-05-23)
+
+Three commits on `master`, deployed (production bundle `index-CfwiamNL.js`).
+
+### What landed
+
+The painting stage's old stylized SVG (sky/mountains/tree drawn in 200×140 viewport) is gone. The visual is now a layered composite:
+
+1. **Workshop background** — `src/assets/images/Painting_screen.png` (1376×768 RGBA), a pixel-art studio scene with shelves, candles, books, tables, paint jars, and a centered easel with a transparent canvas placeholder. Fills the entire stage area edge-to-edge.
+2. **Per-tier sketch overlay** — the painting currently in progress, rendered chunk-by-chunk over the easel's transparent area as `progressPct` advances 0 → 1.
+
+The transparent easel-canvas bbox inside the workshop image was extracted programmatically via a throwaway pngjs script (since deleted) and hardcoded as the overlay's CSS positioning: `left=39.17%, top=19.40%, width=21.58%, height=39.19%`. The workshop image is rendered with `object-fit: contain` inside an `aspect-ratio: 1376/768` container so the overlay always lines up with the easel regardless of the stage's outer dimensions.
+
+### Tier-specific art
+
+`src/assets/canvas/T{1..4}/*.png` ship art that visually escalates per tier:
+- **T1** (8 sketches): childlike pencil sketches on white — bike, car, dog, house, leaf, mountain, snail, stickman
+- **T2** (11): inked black-and-white pixel art with scenery
+- **T3** (11): limited-palette color pixel art (Game Boy / handheld era look)
+- **T4** (11): full-color detailed pixel art with rich environments
+
+Matches the cosmetic stage progression Sketch → Apprentice → Journeyman → … which the tier system rekeyed onto `canvasTier` earlier today. T5+ falls back to T4 art until more tiers are authored.
+
+### Mechanism
+
+`src/components/painting/canvasArt.ts` eagerly bundles every PNG under `src/assets/canvas/T*/` via `import.meta.glob`. Two exports drive the overlay:
+
+- `getSketchUrl(tier, canvasNumber)` — picks one sketch from the tier's pool using `hash(canvasNumber, 0xa11a17) % pool.length`. Deterministic per (tier, canvasNumber) pair; same canvas always shows the same sketch across re-renders / catch-up replays.
+- `getCellRevealOrder(canvasNumber, totalCells)` — returns a permutation of `[0, totalCells)` sorted by `hash(canvasNumber, i)`. Each canvas reveals its 25 chunks (5×5 grid) in a different scrambled order, but stable for that canvas.
+
+`CanvasStage` renders the overlay as 25 absolutely-positioned cells inside the easel bbox, each a `<div>` with the sketch URL as `background-image` and a unique `background-position` to show its 1/5 × 1/5 slice. Cell opacity flips 0 → 1 with a 180 ms ease-out transition when its `revealRank < cellsRevealed`. The overlay container is keyed by `canvasNumber` so it remounts cleanly on each sale — without the key, the old canvas's cells would animate their fade-out (over 180 ms) while displaying the new sketch's image, visibly bleeding the next canvas before the actual reveal started.
+
+### The `canvasNumber` source bug
+
+Initially `canvasNumber` was passed as `lastSale?.id ?? 0`. That was wrong: `lastSale` is transient state cleared by `clearLastSale` after the floating gold-text animation completes. So between sales, `canvasNumber` would revert to `0` — and since `hash(0, …) % 8 = 3` (= house in alphabetical order), every canvas appeared to paint the house, with a fleeting flicker of a different sketch right at the sale moment (when `lastSale.id` was briefly set before being cleared).
+
+Fix: pass `statsRun.canvasesSold` instead. It's a monotonically-increasing per-run counter, resets only on ascend, gives a stable seed for both the sketch pick and the cell-reveal shuffle.
+
+### Status
+
+- **983 tests green** across 106 files. `npx tsc --noEmit` clean. `npx vite build` succeeds.
+- Production bundle `index-CfwiamNL.js`; the workshop PNG and 41 per-tier sketches are bundled (each gets its own content-hashed `/assets/<name>-<hash>.png`).
+- No save schema changes — purely visual.
+
+### Notes
+
+- **CSS overlay alignment is precise** because the workshop image renders at its native aspect (16:9 ≈ 1376/768) inside an `aspect-ratio`-locked container. A small dark gutter (`#1a1410`, matching the workshop interior tone) shows on whichever axis the stage exceeds 16:9.
+- **The CanvasStage tests** assert the 5×5 grid (25 cells) and the reveal-count math at progressPct = 0 / 0.5 / 1. The `canvasArt.ts` helper has its own test (T1 pool returns at least 3 distinct sketches across 50 different canvas numbers; T5+ falls back to T4; cell reveal is a deterministic permutation).
+- **High-speed canvases reveal fewer chunks.** At 25 chunks per canvas, a 1-second canvas only shows ~5–10 chunks before completing. The grid density is `SKETCH_GRID_DIM = 5` in `CanvasStage.tsx`; bump it lower (e.g., 4×4 = 16) if late-game speed makes the reveal feel pointless, or higher (e.g., 6×6 = 36) for slower tiers.
+- **T2 has a `bike - Copy.png` leftover** in the asset folder. Harmless — it just adds one more entry to the pool. Worth removing if cleanup happens.
+
+### Open follow-ups
+
+- **Higher-tier art (T5+).** Today T5+ falls back to T4. When you author T5 sketches, drop them into `src/assets/canvas/T5/` and bump `HIGHEST_AUTHORED_TIER` in `canvasArt.ts`.
+- **Grid density per tier.** Could vary `SKETCH_GRID_DIM` by tier — coarse 3×3 at low tiers (so sketches appear fast), finer 8×8 at high tiers (so the slow long canvas has visible incremental progress).
+- **Reveal pattern.** Currently random. Could be center-out, top-down, or weighted by sketch-content density (more detail areas appear later) if you want a more "painting-like" cadence.
+- **Stage-area aspect mismatch gutter.** If the workshop scene's letterbox bars look distracting at unusual viewport ratios, switch CSS `object-fit: contain` → `cover` AND compute the easel bbox dynamically from the rendered image rect (more code, but no gutter).
+- **T2 `bike - Copy.png` cleanup.** Delete the leftover file when convenient.
+
+---
+
 ## Canvas Tier System (2026-05-23)
 
 Twelve commits on `master`, deployed (production bundle `index-BNEI9jiA.js`). Spec at `docs/superpowers/specs/2026-05-23-canvas-tier-system-design.md`, plan at `docs/superpowers/plans/2026-05-23-canvas-tier-system.md`.
