@@ -85,6 +85,27 @@ export const CANVAS_TIME_BASE = 10;
 export const tierFactor = (tier: number): number => Math.pow(10, tier - 1);
 
 /**
+ * Growth base for upgrade-cost tier scaling. Decoupled from `tierFactor` (which
+ * scales base canvas gold ×10/tier) so the cost-side curve can be tuned
+ * independently. Set to 20 to eliminate the T3→T4 mid-tier inversion observed
+ * in `tests/dev/bot-simulation.test.ts` — see
+ * `docs/superpowers/plans/2026-05-24-canvas-tier-cost-rebalance.md`.
+ */
+export const COST_GROWTH_BASE = 20;
+
+/**
+ * Multiplier on upgrade costs at canvas tier T. `costTierFactor(1) = 1`,
+ * `costTierFactor(2) = COST_GROWTH_BASE`, etc. Used by the five
+ * `*UpgradeCost(level, tier)` functions in this file.
+ *
+ * Distinct from `tierFactor` (which scales base canvas gold). Splitting them
+ * lets us make tier-ups progressively harder to clear without weakening the
+ * immediate gold boost players feel on tier-up.
+ */
+export const costTierFactor = (tier: number): number =>
+  Math.pow(COST_GROWTH_BASE, tier - 1);
+
+/**
  * Multiplier on base canvas paint time at tier T. `timeFactor(1) = 1`,
  * `timeFactor(2) = 2`, `timeFactor(4) = 8`. Time grows linearly per tier while
  * gold grows by ×10 — so gold/sec at base scales by ×5 per tier.

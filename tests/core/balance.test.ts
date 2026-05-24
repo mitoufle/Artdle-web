@@ -51,6 +51,8 @@ import {
   getNextPartMilestone,
   tierFactor,
   timeFactor,
+  costTierFactor,
+  COST_GROWTH_BASE,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -536,6 +538,28 @@ describe("tierFactor (canvas tier scaling)", () => {
 
   it("T5 returns 10000", () => {
     expect(tierFactor(5)).toBe(10000);
+  });
+});
+
+describe("costTierFactor (canvas upgrade-cost scaling)", () => {
+  it("returns 1 at tier 1 (no scaling)", () => {
+    expect(costTierFactor(1)).toBe(1);
+  });
+
+  it("returns COST_GROWTH_BASE at tier 2", () => {
+    expect(costTierFactor(2)).toBe(COST_GROWTH_BASE);
+  });
+
+  it("returns COST_GROWTH_BASE squared at tier 3", () => {
+    expect(costTierFactor(3)).toBe(COST_GROWTH_BASE * COST_GROWTH_BASE);
+  });
+
+  it("returns COST_GROWTH_BASE cubed at tier 4", () => {
+    expect(costTierFactor(4)).toBe(COST_GROWTH_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE);
+  });
+
+  it("differs from tierFactor at tier 2 (decoupling)", () => {
+    expect(costTierFactor(2)).not.toBe(tierFactor(2));
   });
 });
 
