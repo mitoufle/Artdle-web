@@ -1,5 +1,47 @@
 # Artdle Web — Handover
 
+## Ascend cinematic + post-gate routing (2026-05-24)
+
+One commit on `master` (`fa8a833`), deployed (production bundle `index-Cg113YSy.js`). Verified live: `ascend-cinematic-overlay`, `fame gained`, `click to continue` strings present in JS.
+
+### What landed
+
+Confirming an ascend now plays a self-contained cinematic instead of just swapping the gate video and dumping the player back into a fresh ascension idle. Flow:
+
+1. Player clicks `Step Through` → confirm modal → `Ascend`.
+2. **App-wide click-blocker** mounts (`AscendCinematicOverlay` in `"opening"` phase): transparent fixed-position div at `z-index: 1000`, full viewport, `pointer-events: auto`. Catches every click — including the BottomBar / TopBar nav — so the player cannot navigate away mid-animation. The gate-opening video keeps playing under it.
+3. On video `onEnded`: `performAscend()` runs and the overlay flips to `"blackout"` phase. Fades to black over 700ms; teal (`#5eead4`) `+N fame gained` line and a Spinoza quote (italic mystic-purple, 18px) fade in staggered behind it. `cavernPhase` is held at `"opening"` so the gate's last frame stays painted behind the fade — switching to the closed-gate loop video here would briefly show "gate closed again" during the fade-in, which read wrong.
+4. After 4s, a `— click to continue —` hint appears (mono, dimmed). The overlay is dismissible on click any time the blackout is showing; the 4s gate is just the hint.
+5. On dismiss: cinematic unmounts, `cavernPhase` returns to `"idle"`, and the player is **navigated to `/constellation`** (via `useNavigate`). The intent is to push them toward spending the fame they just earned.
+
+### Files
+
+- `src/config/ascendQuotes.ts` — 14 Spinoza-leaning quotes + `pickRandomAscendQuote(rng = Math.random)`.
+- `src/components/ascension/AscendCinematicOverlay.tsx` (+`.module.css`) — `createPortal` to `document.body`, two phases (`"opening"` invisible blocker, `"blackout"` visible). `useEffect` sets a 4000ms timeout per blackout entry to flip the `hintVisible` state. Respects `prefers-reduced-motion` (all keyframes disabled, opacity locked at 1).
+- `src/routes/AscensionRoute.tsx` — phase machine extended from `idle | opening` to two independent state lines: `cavernPhase: "idle" | "opening"` (drives the Cavern video) and `cinematicPhase: "opening" | "blackout" | null` (drives the overlay). `capturedFameGain` + `capturedQuote` are stashed at confirm time so the blackout can display them after `performAscend()` resets inspiration. Reduced-motion users skip the cinematic and ascend immediately (same shortcut as the pre-existing gate-video skip).
+
+### Status
+
+- All 20 `AscensionRoute` tests green (+7 over the previous suite). Full 1030-test suite green. No new typecheck/lint errors (pre-existing errors in unrelated files are untouched).
+- 6 new tests under `describe("AscensionRoute cinematic overlay")` cover: opening-phase overlay mount + no visible text; blackout headline format (`/^\+\d+(\.\d+)?[KMBTQ]?\s*fame gained$/`) and quote membership in `ASCEND_QUOTES`; 4s hint timing via `vi.useFakeTimers` + `vi.advanceTimersByTime`; click-to-dismiss; opening-phase clicks don't dismiss; CTA gated through both phases (not just opening). A 7th test asserts dismissal navigates to `/constellation` via a `MemoryRouter` with a route stub.
+
+### Notes
+
+- **Capture-then-mutate is load-bearing.** `setCapturedFameGain(fameGain)` runs BEFORE `setCavernPhase("opening")` (and well before `performAscend()` at video end). If you ever reorder these or move the capture into the `onOpeningEnded` callback, the blackout will show `0` because `inspiration` has been reset by then and the live `fameGain` is computed from current state.
+- **The portal target is `document.body`, not the layout root.** Necessary so the overlay's fixed positioning + `z-index: 1000` sits above the TopBar / BottomBar / InfoPanel (all rendered inside `<div className={styles.app}>`). Reverting to in-tree rendering would put the nav above the click-blocker because of CSS stacking contexts created by the app shell.
+- **`pickRandomAscendQuote` takes an optional `rng` parameter** (defaults to `Math.random`). Tests don't seed it today — they just check membership in `ASCEND_QUOTES`. If determinism becomes useful (e.g., recording demo gifs), thread `seededRng` from `@/core/rng` in.
+- **Teal `#5eead4` is hardcoded**, not a token. No teal exists in `src/styles/tokens.css` — the closest siblings are `--inspi` (purple) and the `--pm-*` tokens (teal-adjacent, but kept for Ascension card visuals per the 2026-05-23 entry). A token like `--ascend-glow` would be cleaner if more surfaces need this color.
+- **The Cavern's video element holds its last frame after `onended`.** This is browser-default behavior; the cinematic relies on it. If a future codec change or `<video>` attribute change (e.g., adding `controls`) causes a paused-poster-style behavior, the fade-in would show a black-or-poster background instead of the gate-open frame, and the transition would feel abrupt.
+
+### Open follow-ups
+
+- **Spec/handover doc for the cinematic.** Not written. Lightweight enough that this HANDOVER entry is probably sufficient, but a dedicated `docs/superpowers/specs/2026-05-24-ascend-cinematic-design.md` would be the right place if the feature gets reworked.
+- **Quote stylization.** All 14 quotes are Spinoza-leaning. If the author wants to broaden (other philosophers, in-game lore quotes, art-movement aphorisms), it's a one-file edit to `src/config/ascendQuotes.ts`.
+- **Reduced-motion path skips the quote entirely.** Reduced-motion users get the original instant-ascend behavior — no blackout, no quote, no `/constellation` navigation. Worth deciding whether they should at least get the navigation + a static (non-faded) blackout-style summary, or whether the instant ascend is the right outcome. No action today.
+- **Sound on cinematic.** v1 is silent everywhere; if/when audio lands, the gate-open + blackout fade is a natural place for a sting.
+
+---
+
 ## Crit per-chunk rework (2026-05-24)
 
 Sixteen commits on `master`, deployed (production bundle `index-Bz0pju0E.js`). Spec at `docs/superpowers/specs/2026-05-24-crit-per-chunk-rework-design.md`, plan at `docs/superpowers/plans/2026-05-24-crit-per-chunk-rework.md`.
