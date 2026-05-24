@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGameStore } from "@/store";
 import { canAscend } from "@/systems/ascend";
 import { fameOnAscend } from "@/core/balance";
@@ -9,6 +10,8 @@ import { Cavern, type CavernPhase } from "@/components/ascension/Cavern";
 import { ThresholdPanel } from "@/components/ascension/ThresholdPanel";
 import { FamePreviewCard } from "@/components/ascension/FamePreviewCard";
 import { PastRunsLedger } from "@/components/ascension/PastRunsLedger";
+import { AscendCinematicOverlay, type CinematicPhase } from "@/components/ascension/AscendCinematicOverlay";
+import { pickRandomAscendQuote } from "@/config/ascendQuotes";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 import styles from "./AscensionRoute.module.css";
@@ -40,22 +43,30 @@ export function AscensionRoute(): JSX.Element {
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const pastRuns = useGameStore((s) => s.pastRuns);
   const performAscend = useGameStore((s) => s.performAscend);
+  const navigate = useNavigate();
 
   const canDo = canAscend({ inspiration, purchasedNodes });
   const fameGain = fameOnAscend(inspiration, getAscendThresholdReduction({ purchasedNodes }));
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [phase, setPhase] = useState<CavernPhase>("idle");
+  const [cavernPhase, setCavernPhase] = useState<CavernPhase>("idle");
+  const [cinematicPhase, setCinematicPhase] = useState<CinematicPhase | null>(null);
+  const [capturedFameGain, setCapturedFameGain] = useState<number>(0);
+  const [capturedQuote, setCapturedQuote] = useState<string>("");
 
   const onStepThroughClick = () => {
-    if (!canDo || phase !== "idle") return;
+    if (!canDo || cavernPhase !== "idle" || cinematicPhase !== null) return;
     setConfirmOpen(true);
   };
 
   const onConfirmAscend = () => {
     setConfirmOpen(false);
+    // Capture the visual payload BEFORE state mutates so the blackout overlay
+    // can show the gain even after performAscend() resets inspiration.
+    setCapturedFameGain(fameGain);
+    setCapturedQuote(pickRandomAscendQuote());
     // Reduced-motion users would never see the opening video finish, so skip
-    // straight to the ascend rather than leaving them stuck on a paused frame.
+    // the whole cinematic and ascend immediately.
     if (
       typeof window !== "undefined"
       && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
@@ -63,19 +74,29 @@ export function AscensionRoute(): JSX.Element {
       performAscend();
       return;
     }
-    setPhase("opening");
+    setCavernPhase("opening");
+    setCinematicPhase("opening");
   };
 
   const onOpeningEnded = () => {
+    // Hold cavernPhase at "opening" so the gate-open video's last frame stays
+    // painted behind the fade-to-black overlay (resetting to "idle" here would
+    // briefly show the closed-gate loop video during the fade-in).
     performAscend();
-    setPhase("idle");
+    setCinematicPhase("blackout");
+  };
+
+  const onCinematicDismiss = () => {
+    setCinematicPhase(null);
+    setCavernPhase("idle");
+    navigate("/constellation");
   };
 
   return (
     <div className={styles.layout}>
       <div className={styles.cavernArea}>
-        <Cavern phase={phase} onOpeningEnded={onOpeningEnded}>
-          {phase === "idle" && (
+        <Cavern phase={cavernPhase} onOpeningEnded={onOpeningEnded}>
+          {cavernPhase === "idle" && (
             <div className={styles.cta}>
               <Hoverable
                 title="Ascend"
@@ -104,6 +125,13 @@ export function AscensionRoute(): JSX.Element {
         <FamePreviewCard fameGain={fameGain} />
         <PastRunsLedger runs={pastRuns} totalFame={pastRuns.reduce((acc, r) => acc + r.fame, 0)} />
       </aside>
+
+      <AscendCinematicOverlay
+        phase={cinematicPhase}
+        fameGain={capturedFameGain}
+        quote={capturedQuote}
+        onDismiss={onCinematicDismiss}
+      />
 
       {confirmOpen && (
         <div

@@ -1,0 +1,80 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-6);
+  pointer-events: auto;
+}
+
+/* "opening" phase: invisible click-blocker over the whole app while the gate plays. */
+.opening {
+  background: transparent;
+  cursor: default;
+}
+
+/* "blackout" phase: opaque black with fade-in, holding the gain line + quote. */
+.blackout {
+  background: #000;
+  cursor: pointer;
+  animation: fadeIn 700ms ease forwards;
+}
+
+@keyframes fadeIn {
+  from { background-color: rgba(0, 0, 0, 0); }
+  to   { background-color: rgba(0, 0, 0, 1); }
+}
+
+.gain {
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #5eead4;
+  text-shadow: 0 0 24px rgba(94, 234, 212, 0.45);
+  text-align: center;
+  margin: 0 0 var(--s-5) 0;
+  opacity: 0;
+  animation: textFadeIn 900ms ease 400ms forwards;
+}
+
+.quote {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.55;
+  color: #a89cd6;
+  text-align: center;
+  max-width: 640px;
+  margin: 0;
+  opacity: 0;
+  animation: textFadeIn 900ms ease 900ms forwards;
+}
+
+.hint {
+  position: absolute;
+  bottom: var(--s-6);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6b5b9a;
+  opacity: 0;
+  animation: textFadeIn 600ms ease forwards;
+}
+
+@keyframes textFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blackout { animation: none; background: #000; }
+  .gain, .quote, .hint { animation: none; opacity: 1; transform: none; }
+}

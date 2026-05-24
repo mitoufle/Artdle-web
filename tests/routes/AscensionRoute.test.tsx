@@ -1,9 +1,21 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { AscensionRoute } from "@/routes/AscensionRoute";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
+import { ASCEND_QUOTES } from "@/config/ascendQuotes";
+
+function renderAscensionRouteWithRouter() {
+  return render(
+    <MemoryRouter initialEntries={["/ascension"]}>
+      <Routes>
+        <Route path="/ascension" element={<AscensionRoute />} />
+        <Route path="/constellation" element={<div data-testid="constellation-stub">constellation</div>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
 
 function renderAscensionRoute() {
   return render(
@@ -97,5 +109,114 @@ describe("AscensionRoute (v2 visual)", () => {
     fireEvent.ended(video!);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByText(/No past ascends/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("AscensionRoute cinematic overlay", () => {
+  beforeEach(() => {
+    useGameStore.getState().resetTree();
+    useGameStore.getState().resetCanvas();
+    useGameStore.getState().resetWorkshop();
+    useGameStore.getState().resetRunCurrencies();
+    useGameStore.setState({
+      ascendCount: 0,
+      fame: big(0),
+      pastRuns: [],
+      purchasedNodes: {},
+    });
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("after confirming, the opening-phase overlay click-blocker is mounted", () => {
+    useGameStore.setState({ inspiration: big(12_000) });
+    renderAscensionRoute();
+    fireEvent.click(screen.getByRole("button", { name: /step through/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    const overlay = screen.getByTestId("ascend-cinematic-overlay");
+    expect(overlay.getAttribute("data-phase")).toBe("opening");
+    // The opening overlay has no visible text (it's the invisible click blocker).
+    expect(screen.queryByTestId("ascend-cinematic-gain")).not.toBeInTheDocument();
+  });
+
+  it("when the gate video ends, the blackout overlay shows '+N fame gained' and a quote", () => {
+    useGameStore.setState({ inspiration: big(12_000) });
+    const { container } = renderAscensionRoute();
+    fireEvent.click(screen.getByRole("button", { name: /step through/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
+    fireEvent.ended(video!);
+    const overlay = screen.getByTestId("ascend-cinematic-overlay");
+    expect(overlay.getAttribute("data-phase")).toBe("blackout");
+    const gain = screen.getByTestId("ascend-cinematic-gain");
+    expect(gain.textContent).toMatch(/^\+\d+(\.\d+)?[KMBTQ]?\s*fame gained$/);
+    const quote = screen.getByTestId("ascend-cinematic-quote");
+    expect(ASCEND_QUOTES).toContain(quote.textContent ?? "");
+  });
+
+  it("'click to continue' hint appears only after 4 seconds in the blackout phase", () => {
+    useGameStore.setState({ inspiration: big(12_000) });
+    const { container } = renderAscensionRoute();
+    fireEvent.click(screen.getByRole("button", { name: /step through/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
+    fireEvent.ended(video!);
+    expect(screen.queryByTestId("ascend-cinematic-hint")).not.toBeInTheDocument();
+    act(() => { vi.advanceTimersByTime(3999); });
+    expect(screen.queryByTestId("ascend-cinematic-hint")).not.toBeInTheDocument();
+    act(() => { vi.advanceTimersByTime(2); });
+    expect(screen.getByTestId("ascend-cinematic-hint")).toBeInTheDocument();
+  });
+
+  it("clicking the blackout overlay dismisses it", () => {
+    useGameStore.setState({ inspiration: big(12_000) });
+    const { container } = renderAscensionRoute();
+    fireEvent.click(screen.getByRole("button", { name: /step through/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
+    fireEvent.ended(video!);
+    const overlay = screen.getByTestId("ascend-cinematic-overlay");
+    fireEvent.click(overlay);
+    expect(screen.queryByTestId("ascend-cinematic-overlay")).not.toBeInTheDocument();
+  });
+
+  it("clicking the opening overlay does NOT dismiss it (gate must finish)", () => {
+    useGameStore.setState({ inspiration: big(12_000) });
+    renderAscensionRoute();
+    fireEvent.click(screen.getByRole("button", { name: /step through/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    const overlay = screen.getByTestId("ascend-cinematic-overlay");
+    fireEvent.click(overlay);
+    expect(screen.getByTestId("ascend-cinematic-overlay").getAttribute("data-phase")).toBe("opening");
+  });
+
+  it("dismissing the blackout navigates to /constellation", () => {
+    useGameStore.setState({ inspiration: big(12_000) });
+    const { container } = renderAscensionRouteWithRouter();
+    fireEvent.click(screen.getByRole("button", { name: /step through/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
+    fireEvent.ended(video!);
+    fireEvent.click(screen.getByTestId("ascend-cinematic-overlay"));
+    expect(screen.getByTestId("constellation-stub")).toBeInTheDocument();
+  });
+
+  it("step-through is gated through both opening and blackout phases", () => {
+    useGameStore.setState({ inspiration: big(12_000) });
+    const { container } = renderAscensionRoute();
+    fireEvent.click(screen.getByRole("button", { name: /step through/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    // Opening phase: CTA unmounted, gate-open video playing.
+    expect(screen.queryByTestId("step-through-btn")).not.toBeInTheDocument();
+    const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
+    fireEvent.ended(video!);
+    // Blackout phase: cavern still holds the opening video's last frame, so CTA remains unmounted.
+    expect(screen.queryByTestId("step-through-btn")).not.toBeInTheDocument();
+    // Dismiss the cinematic. Cavern returns to idle; CTA reappears (disabled — inspiration is 0).
+    fireEvent.click(screen.getByTestId("ascend-cinematic-overlay"));
+    expect(screen.getByTestId("step-through-btn")).toBeDisabled();
   });
 });
