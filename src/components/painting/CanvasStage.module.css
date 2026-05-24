@@ -31,7 +31,9 @@
 }
 
 .imageContainerClickable {
-  cursor: pointer;
+  /* Custom paintbrush cursor; hotspot near the bristle tip. Falls back to
+   * pointer if the image fails to load. */
+  cursor: url("../../assets/images/paint_cursor_32.png") 3 3, pointer;
 }
 
 .canvasArt {
