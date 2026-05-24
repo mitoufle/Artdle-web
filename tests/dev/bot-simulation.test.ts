@@ -411,6 +411,20 @@ describe("bot-simulation", () => {
         console.log(`  ratio T${tierIntervals[i - 1].to}→T${tierIntervals[i].to} vs prev: ×${ratio.toFixed(2)}`);
       }
     }
+
+    // Regression guard for the canvas tier cost rebalance (commits ea05a2a / b2ef9a8).
+    // The mid-tier inversion the user reported manifested as "T3→T4 takes LESS time
+    // than T2→T3" because non-reset multipliers compound across tiers. After the
+    // costTierFactor split (COST_GROWTH_BASE = 20) the inversion is gone; this
+    // assertion catches a future regression that re-opens it. The guard is loose
+    // (>= 0.9× allows mild noise) and skipped when the bot doesn't reach T4 in
+    // the 24h sim — failing here means the curve actually inverted, not that
+    // progression slowed.
+    const t23 = tierIntervals.find((r) => r.from === 2 && r.to === 3);
+    const t34 = tierIntervals.find((r) => r.from === 3 && r.to === 4);
+    if (t23 && t34 && t23.intervalS > 0) {
+      expect(t34.intervalS).toBeGreaterThanOrEqual(t23.intervalS * 0.9);
+    }
   });
 
   // ─── Convergence test ─────────────────────────────────────────────────────
