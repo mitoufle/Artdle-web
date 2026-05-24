@@ -88,11 +88,20 @@
   background-repeat: no-repeat;
   image-rendering: pixelated;
   transform-origin: center;
+  opacity: 0;
+  transform: scale(0.4);
   /* Chunks pop in from scale(0.4) to scale(1) with a back-ease overshoot —
-   * the painted chunk itself is the click feedback. */
+   * the painted chunk itself is the click feedback. CSS handles the reveal
+   * via [data-revealed] so React doesn't re-apply inline opacity/transform
+   * every frame at high tiers (T4 = 196 cells = expensive). */
   transition:
     opacity 180ms ease-out,
     transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: opacity, transform;
+}
+.sketchCell[data-revealed="true"] {
+  opacity: 1;
+  transform: scale(1);
 }
 
 /* Crit-painted chunks fire a one-shot rainbow caterpillar around the border,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type JSX } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
@@ -7,8 +7,7 @@ import { getCanvasGoldMultiplier, getCanvasSize, getOfficeContribution } from "@
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
-import paintingScreen from "@/assets/images/Painting_screen.png";
-import paintingScreenAnim from "@/assets/images/painting_screen_anim.mp4";
+import paintingScreen from "@/assets/images/Painting_screen_full.png";
 import { getSketchUrl, getCellRevealOrder, getSketchGridDim } from "./canvasArt";
 
 function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
@@ -115,6 +114,35 @@ export function CanvasStage({
     () => getCellRevealOrder(canvasNumber, totalCells),
     [canvasNumber, totalCells],
   );
+  // Invert the reveal order once: revealRankByIndex[cellIndex] = rank. The
+  // previous indexOf-in-the-render-loop was O(N²) per frame — at T4 (196
+  // cells) that's ~38k array scans every tick, dominating tick-time cost.
+  const revealRankByIndex = useMemo(() => {
+    const out = new Array<number>(totalCells);
+    for (let rank = 0; rank < cellOrder.length; rank++) {
+      out[cellOrder[rank]!] = rank;
+    }
+    return out;
+  }, [cellOrder, totalCells]);
+  // Static per-cell positioning (background slice for each cell) only depends
+  // on the sketch + grid dimensions, NOT on progress. Computing it once per
+  // canvas and reusing across frames eliminates 196 inline-style object
+  // rebuilds per render at T4.
+  const cellStaticStyles = useMemo(() => {
+    if (!sketchUrl) return null;
+    const denom = gridDim - 1;
+    const out = new Array<CSSProperties>(totalCells);
+    for (let i = 0; i < totalCells; i++) {
+      const col = i % gridDim;
+      const row = Math.floor(i / gridDim);
+      out[i] = {
+        backgroundImage: `url(${sketchUrl})`,
+        backgroundSize: `${gridDim * 100}% ${gridDim * 100}%`,
+        backgroundPosition: `${(col / denom) * 100}% ${(row / denom) * 100}%`,
+      };
+    }
+    return out;
+  }, [sketchUrl, gridDim, totalCells]);
   const cellsRevealed = Math.floor(
     Math.max(0, Math.min(1, progressPct)) * totalCells,
   );
@@ -157,17 +185,13 @@ export function CanvasStage({
           role={onChunkClick ? "button" : undefined}
           aria-label={onChunkClick ? "Paint a chunk" : undefined}
         >
-          <video
-            src={paintingScreenAnim}
-            poster={paintingScreen}
+          <img
+            src={paintingScreen}
             className={styles.canvasArt}
-            autoPlay
-            loop
-            muted
-            playsInline
-            aria-label="Artist's workshop scene with central easel"
+            alt="Artist's workshop scene with central easel"
+            draggable={false}
           />
-          {sketchUrl && (
+          {sketchUrl && cellStaticStyles && (
             <div
               key={`sketch-${canvasNumber}`}
               className={styles.sketchOverlay}
@@ -178,24 +202,15 @@ export function CanvasStage({
                 gridTemplateRows: `repeat(${gridDim}, 1fr)`,
               }}
             >
-              {Array.from({ length: totalCells }, (_, i) => {
-                const col = i % gridDim;
-                const row = Math.floor(i / gridDim);
-                const revealRank = cellOrder.indexOf(i);
-                const visible = revealRank < cellsRevealed;
+              {cellStaticStyles.map((staticStyle, i) => {
+                const visible = revealRankByIndex[i]! < cellsRevealed;
                 const isCritCell = critChunks[i] === true;
-                const denom = gridDim - 1;
                 return (
                   <div
                     key={i}
                     className={`${styles.sketchCell} ${isCritCell ? styles.sketchCellCrit : ""}`}
-                    style={{
-                      backgroundImage: `url(${sketchUrl})`,
-                      backgroundSize: `${gridDim * 100}% ${gridDim * 100}%`,
-                      backgroundPosition: `${(col / denom) * 100}% ${(row / denom) * 100}%`,
-                      opacity: visible ? 1 : 0,
-                      transform: visible ? "scale(1)" : "scale(0.4)",
-                    }}
+                    data-revealed={visible ? "true" : undefined}
+                    style={staticStyle}
                   />
                 );
               })}

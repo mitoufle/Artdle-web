@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { CanvasStage } from "@/components/painting/CanvasStage";
 
 describe("<CanvasStage />", () => {
-  it("renders the workshop scene video inside the frame", () => {
+  it("renders the workshop scene static image inside the frame", () => {
     const { container } = render(
       <CanvasStage
         sizeLevel={1}
@@ -14,13 +14,10 @@ describe("<CanvasStage />", () => {
         nextSaleGold="10"
       />,
     );
-    const video = container.querySelector("video") as HTMLVideoElement | null;
-    expect(video).toBeInTheDocument();
-    expect(video?.getAttribute("aria-label")).toMatch(/workshop/i);
-    expect(video?.autoplay).toBe(true);
-    expect(video?.loop).toBe(true);
-    expect(video?.muted).toBe(true);
-    expect(video?.getAttribute("poster")).toBeTruthy();
+    const img = container.querySelector("img") as HTMLImageElement | null;
+    expect(img).toBeInTheDocument();
+    expect(img?.getAttribute("alt")).toMatch(/workshop/i);
+    expect(img?.getAttribute("src")).toBeTruthy();
   });
 
   it("displays the tier in the title row", () => {
@@ -102,7 +99,7 @@ describe("<CanvasStage />", () => {
       expect(visible.length).toBe(0);
     });
 
-    it("at progressPct=0.5, ~half the cells are visible", () => {
+    it("at progressPct=0.5, ~half the cells are revealed", () => {
       const { container } = render(
         <CanvasStage
           sizeLevel={1}
@@ -115,12 +112,14 @@ describe("<CanvasStage />", () => {
         />,
       );
       const cells = container.querySelectorAll('[data-testid="sketch-overlay"] > div');
-      const visible = Array.from(cells).filter((c) => (c as HTMLElement).style.opacity === "1");
+      const visible = Array.from(cells).filter(
+        (c) => (c as HTMLElement).getAttribute("data-revealed") === "true",
+      );
       // floor(0.5 * 25) = 12
       expect(visible.length).toBe(12);
     });
 
-    it("at progressPct=1.0, all 25 cells are visible", () => {
+    it("at progressPct=1.0, all 25 cells are revealed", () => {
       const { container } = render(
         <CanvasStage
           sizeLevel={1}
@@ -133,7 +132,9 @@ describe("<CanvasStage />", () => {
         />,
       );
       const cells = container.querySelectorAll('[data-testid="sketch-overlay"] > div');
-      const visible = Array.from(cells).filter((c) => (c as HTMLElement).style.opacity === "1");
+      const visible = Array.from(cells).filter(
+        (c) => (c as HTMLElement).getAttribute("data-revealed") === "true",
+      );
       expect(visible.length).toBe(25);
     });
   });
