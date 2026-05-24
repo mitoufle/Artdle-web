@@ -15,7 +15,6 @@ import {
 import { persistedAdapter } from "@/systems/persistence";
 import { big } from "@/core/bigNumber";
 import { runCatchupSimulation, type CatchupResult } from "@/systems/catchup";
-import { preloadHeavyAssets } from "@/systems/preload";
 import { reportError } from "@/systems/telemetry";
 import { CatchupToast } from "@/components/catchup/CatchupToast";
 import { CatchupLoadingScene } from "@/components/catchup/CatchupLoadingScene";
@@ -70,17 +69,15 @@ const TOAST_THRESHOLD_S = 2 * 3600;
  */
 export const MIN_LOADING_SCENE_MS = 3000;
 /**
- * Minimum hold for the logo splash on the fast path (no catchup) so the
- * boot-time preloads kicked off by `preloadHeavyAssets()` get a window to
- * warm the browser cache before the first route mount. Preloads continue in
- * the background regardless — this hold just guarantees ≥1s of overlap.
+ * Splash min-hold reverted to 0 — the boot-time prefetch experiment was
+ * causing perceptible route-switch lag for users, so we removed both the
+ * preload calls and the artificial hold. Kept exported as a constant for
+ * test compatibility; the existing integration tests treat it as "wait
+ * at least this long" which still works at 0.
  */
-export const MIN_SPLASH_MS = 1000;
+export const MIN_SPLASH_MS = 0;
 /** Crossfade duration when the splash hands off to the live game. */
 const CROSSFADE_MS = 500;
-
-/** Sleep for `ms` milliseconds. */
-const sleep = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms));
 
 /**
  * Boot phases. The recap modal is now an overlay on top of the playing phase
@@ -106,22 +103,9 @@ export function Bootstrap(): JSX.Element {
     useGameStore.persist.hasHydrated() ? { kind: "silent_sim" } : { kind: "rehydrating" },
   );
 
-  // Wall-clock anchor for the splash min-hold. Captured once at mount; reused
-  // by `ensureMinSplash()` so refreshes with a warm hydration still see the
-  // splash for ≥ MIN_SPLASH_MS.
-  const bootStartRef = useRef(Date.now());
-  const ensureMinSplash = async (): Promise<void> => {
-    const remaining = MIN_SPLASH_MS - (Date.now() - bootStartRef.current);
-    if (remaining > 0) await sleep(remaining);
-  };
-
-  // Kick off heavy-asset preloads as early as possible (before hydration even
-  // finishes) so the splash window overlaps with the network fetches.
-  // canvasTier is read post-hydration via `useGameStore.getState()`; on a
-  // cold-cache first load it defaults to 1, which is the right pool anyway.
-  useEffect(() => {
-    preloadHeavyAssets(useGameStore.getState().canvasTier ?? 1);
-  }, []);
+  // Splash min-hold and boot-time prefetch were removed — they caused
+  // perceptible route-switch lag for users. See git history for the original
+  // implementation if reintroducing later.
 
   // Wait for hydration to finish, then enter the sim-decision phase.
   useEffect(() => {
@@ -163,7 +147,6 @@ export function Bootstrap(): JSX.Element {
 
       // ≤ 5s: tab refresh or near-instant reopen. No sim, no overlay.
       if (elapsed <= SILENT_THRESHOLD_S) {
-        await ensureMinSplash();
         if (!unmountedRef.current) setPhase({ kind: "playing", recap: null, toast: null });
         return;
       }
@@ -172,12 +155,10 @@ export function Bootstrap(): JSX.Element {
       if (elapsed < TOAST_THRESHOLD_S) {
         try {
           const result = await runCatchupSimulation(elapsed, () => {});
-          await ensureMinSplash();
           if (!unmountedRef.current)
             setPhase({ kind: "playing", recap: null, toast: result });
         } catch (err) {
           reportError(err as Error, "catchup.simulation");
-          await ensureMinSplash();
           if (!unmountedRef.current)
             setPhase({ kind: "playing", recap: null, toast: null });
         }
