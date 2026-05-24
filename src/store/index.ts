@@ -212,7 +212,6 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       critLevel: 0,
       comboLevel: 0,
       comboChain: 0,
-      isCritThisCanvas: false,
     };
   }
 

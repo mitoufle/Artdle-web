@@ -34,8 +34,6 @@ export interface CanvasState {
   canvasTier: number;
   /** New canvas-depth: current combo chain. Run-state. Resets on miss / ascend. */
   comboChain: number;
-  /** New canvas-depth: rolled at canvas start; `true` for one canvas's lifetime then reset on sale. */
-  isCritThisCanvas: boolean;
   /**
    * Set of chunk indices in the CURRENT canvas painted via a crit (trigger
    * chunk that rolled OR bonus chunks added by that crit). CanvasStage reads
@@ -65,7 +63,6 @@ export const initialCanvasState: CanvasState = Object.freeze({
   comboLevel: 0,
   canvasTier: 1,
   comboChain: 0,
-  isCritThisCanvas: false,
   critChunks: {},
   lastSale: null,
 }) as CanvasState;
@@ -97,8 +94,8 @@ export interface CanvasSlice extends CanvasState {
    * Gate: sellPriceLevel >= 15 && speedLevel >= 15.
    * On success: increments canvasTier, resets sellPriceLevel and speedLevel
    * to 0 (the gated tracks — size/crit/combo — are preserved across tier-up),
-   * clears in-canvas state (canvasProgress, comboChain, isCritThisCanvas,
-   * critChunks), and calls evaluateAchievements().
+   * clears in-canvas state (canvasProgress, comboChain, critChunks), and
+   * calls evaluateAchievements().
    * Returns true on success, false if gate not met (state unchanged).
    */
   tierUp: () => boolean;
@@ -117,7 +114,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       fired = draft.statsRun.canvasesSold !== before;
       return {
         canvasProgress: draft.canvasProgress,
-        isCritThisCanvas: draft.isCritThisCanvas,
+        critChunks: draft.critChunks,
         comboChain: draft.comboChain,
         lastSale: draft.lastSale,
         gold: draft.gold,
@@ -197,7 +194,6 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       // sizeLevel, critLevel, comboLevel preserved across tier-up
       canvasProgress: 0,
       comboChain: 0,
-      isCritThisCanvas: false,
       critChunks: {},
     });
     get().evaluateAchievements();

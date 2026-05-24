@@ -58,7 +58,8 @@ describe("persistence integration", () => {
 
   it("lastSale transient is partialized OUT of the save", async () => {
     // Trigger a sale to make lastSale non-null.
-    useGameStore.getState().canvasTick(10);
+    // Use 10.01 to clear the final chunk despite floating-point accumulation in the per-chunk model.
+    useGameStore.getState().canvasTick(10.01);
     expect(useGameStore.getState().lastSale).not.toBeNull();
     await persistedAdapter.flush();
 
@@ -516,7 +517,8 @@ describe("migrate v9 → v10 (canvas depth)", () => {
     expect(migrated.critLevel).toBe(0);
     expect(migrated.comboLevel).toBe(0);
     expect(migrated.comboChain).toBe(0);
-    expect(migrated.isCritThisCanvas).toBe(false);
+    // isCritThisCanvas removed in T7; field no longer exists in the state schema.
+    expect(migrated.isCritThisCanvas).toBeUndefined();
   });
 
   it("does not change saves at v10 (migrate is no-op when fromVersion >= 10)", () => {
