@@ -844,30 +844,6 @@
       }
     },
     {
-      "id": "prismatic_eye",
-      "name": "Prismatic Eye",
-      "description": "Each level adds +20% gold on crit canvases (in addition to the speed bonus).",
-      "numericEffect": "20%",
-      "parentIds": [
-        "consistency"
-      ],
-      "stacking": "additive",
-      "kind": "major",
-      "maxLevel": 3,
-      "costs": [
-        50,
-        100,
-        200
-      ],
-      "unlocks": [
-        "crit_gold_bonus"
-      ],
-      "position": {
-        "x": 521.4484679665738,
-        "y": 58.68814729574224
-      }
-    },
-    {
       "id": "expanding_horizon",
       "name": "Expanding Horizon",
       "description": "Each level adds +5% to canvas size.",

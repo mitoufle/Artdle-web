@@ -86,7 +86,7 @@ const NODE_PRIORITY: SkillNodeId[] = [
   "orange",            // +50% gold (20 fame; requires red+green)
   // Size/combo chain nodes
   "big_picture",       // +canvas_size_bonus/L (10 fame/L; requires size_matters)
-  "consistency",       // path to fast_learner + prismatic_eye (10 fame/L; requires genius_episode)
+  "consistency",       // path to fast_learner (10 fame/L; requires genius_episode)
   "fast_learner",      // path to unrelentless (20 fame/L; requires big_picture + consistency)
   "unrelentless",      // UNLOCK canvas_combo track (50 fame; requires fast_learner)
   // Workshop slot unlocks
@@ -104,7 +104,6 @@ const NODE_PRIORITY: SkillNodeId[] = [
   // Workshop craftsmanship
   "craftsmanship",     // better affix magnitude (100 fame/L; requires gear_up)
   // Late-game multipliers
-  "prismatic_eye",     // crit_gold_bonus (30 fame/L; requires consistency)
   "expanding_horizon", // canvas_size_bonus (25 fame/L; requires big_picture)
   "enlightenment",     // ascend threshold reduction (50 fame/L; requires Bargain)
   "patron",            // inspi_mult_bonus (40 fame/L; requires poke_tree)

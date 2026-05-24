@@ -120,6 +120,7 @@ describe("skillTreeSlice (multi-level + DAG)", () => {
 
 import { getCanvasTrackUnlocked, hasCapability, countCapability } from "@/store/skillTreeSlice";
 import { SKILL_NODES } from "@/config/skillTreeNodes";
+import type { GameStore } from "@/store";
 
 describe("getCanvasTrackUnlocked", () => {
   it("returns true for sell_price always", () => {
@@ -231,5 +232,22 @@ describe("countCapability — sums level across nodes with the tag", () => {
     useGameStore.setState({ purchasedNodes: { size_matters: 0 } });
     const state = useGameStore.getState();
     expect(countCapability(state, "canvas_size")).toBe(0);
+  });
+});
+
+describe("skill tree — crit per-chunk rework", () => {
+  it("prismatic_eye node is removed (crit canvas concept no longer exists)", () => {
+    expect(SKILL_NODES.find((n) => n.id === "prismatic_eye")).toBeUndefined();
+  });
+
+  it("no node still carries the removed crit_gold_bonus capability", () => {
+    for (const node of SKILL_NODES) {
+      expect(node.unlocks).not.toContain("crit_gold_bonus");
+    }
+  });
+
+  it("crit_chance capability tag is a valid input to countCapability (returns 0 today)", () => {
+    const state = { purchasedNodes: {} } as Pick<GameStore, "purchasedNodes">;
+    expect(countCapability(state, "crit_chance")).toBe(0);
   });
 });

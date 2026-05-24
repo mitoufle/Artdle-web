@@ -922,7 +922,7 @@ Seven commits covering one feature batch, one engine bug, and one architectural 
 
 - **11 new fame skill-tree nodes + 7 new capability tags** (`8bdf6b6`, `40da6f5`). Filled the underbuilt Office branch and added depth to canvas/inspiration paths. Nodes:
   - Office (5): `gold_diggers` (user renamed from `master_painter`) — `class_goldsmith`; `recruiter` — `queue_slot`; `hire_manager` — `roster_slot`; `accelerator` — `worker_xp_mult`; `bookkeeper` — `hire_cost_reduction`.
-  - Canvas-depth (3): `afterburner` — `combo_decay_reduction`; `prismatic_eye` — `crit_gold_bonus`; `expanding_horizon` — `canvas_size_bonus`.
+  - Canvas-depth (2): `afterburner` — `combo_decay_reduction`; `expanding_horizon` — `canvas_size_bonus`.
   - Inspiration (2): `enlightenment` — `ascend_threshold_reduction`; `patron` — `inspi_mult_bonus` (parent: `poke_tree`).
   - Workshop (1): `apprentice_pool` — hardcoded inventory slot like the existing chests.
   
