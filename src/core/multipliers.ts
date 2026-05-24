@@ -209,15 +209,13 @@ export const getCritChunks = (state: CanvasMultiplierInputs): number => {
     if (!item) continue;
     const slotMult = hasSocks && slot === "boots" ? 1.5 : 1.0;
     for (const affix of item.affixes) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((affix.kind as any) === "+crit_chunks") chunks += affix.magnitude * slotMult;
+      if (affix.kind === "+crit_chunks") chunks += affix.magnitude * slotMult;
     }
   }
   for (const worker of state.roster) {
     const scale = levelScale(worker.level).toNumber();
     for (const affix of worker.affixes) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((affix.kind as any) === "+crit_chunks") chunks += affix.magnitude * scale;
+      if (affix.kind === "+crit_chunks") chunks += affix.magnitude * scale;
     }
   }
   return Math.max(0, Math.floor(chunks));

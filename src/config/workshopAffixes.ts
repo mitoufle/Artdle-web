@@ -7,7 +7,7 @@ import type { ItemTier } from "@/core/workshopRoll";
  * canvas-derived multiplier:
  *   +sell_price%   → getCanvasGoldMultiplier
  *   +speed%        → getCanvasSpeedMultiplier
- *   +crit_chance%  → getCritChance         (gated by unlock_canvas_crit)
+ *   +crit_chunks   → getCritChunks         (gated by unlock_canvas_crit; raw integer magnitude, NOT percent)
  *   +combo_chance% → getComboBaseChance    (gated by unlock_canvas_combo)
  *   +size%         → getSizeMultiplier     (gated by unlock_canvas_size)
  *                    Scales effective sizeLevel — applies to BOTH gold and time formulas.
@@ -15,14 +15,14 @@ import type { ItemTier } from "@/core/workshopRoll";
 export type AffixKind =
   | "+sell_price%"
   | "+speed%"
-  | "+crit_chance%"
+  | "+crit_chunks"
   | "+combo_chance%"
   | "+size%";
 
 export const AFFIX_KINDS: ReadonlyArray<AffixKind> = [
   "+sell_price%",
   "+speed%",
-  "+crit_chance%",
+  "+crit_chunks",
   "+combo_chance%",
   "+size%",
 ];
@@ -31,7 +31,7 @@ export const AFFIX_KINDS: ReadonlyArray<AffixKind> = [
 export const AFFIX_SYMBOL: Record<AffixKind, string> = {
   "+sell_price%":   "$",
   "+speed%":        "»",
-  "+crit_chance%":  "✦",
+  "+crit_chunks":   "⚡",
   "+combo_chance%": "∞",
   "+size%":         "⊕",
 };
@@ -40,7 +40,7 @@ export const AFFIX_SYMBOL: Record<AffixKind, string> = {
 export const AFFIX_COLOR: Record<AffixKind, string> = {
   "+sell_price%":   "#f0b847",
   "+speed%":        "#4fc3e8",
-  "+crit_chance%":  "#e85c5c",
+  "+crit_chunks":   "#ffaf3a",
   "+combo_chance%": "#b06ee8",
   "+size%":         "#4cb87a",
 };
@@ -49,7 +49,7 @@ export const AFFIX_COLOR: Record<AffixKind, string> = {
 export const AFFIX_SYMBOL_SCALE: Record<AffixKind, number> = {
   "+sell_price%":   1.0,
   "+speed%":        1.0,
-  "+crit_chance%":  1.3,
+  "+crit_chunks":   1.0,
   "+combo_chance%": 1.2,
   "+size%":         1.15,
 };
@@ -61,7 +61,7 @@ export const AFFIX_SYMBOL_SCALE: Record<AffixKind, number> = {
  * so each gets its own range. Higher tiers always roll strictly higher bounds
  * than lower tiers, giving legendary items both more affixes AND stronger ones:
  *   - sell_price / speed / size: normal 15..25 → legendary 48..66
- *   - crit_chance: normal 2..8 → legendary 21..34 (smaller pp; compounds non-linearly)
+ *   - crit_chunks: normal 1..1 → legendary 3..5 (raw integer chunk counts, NOT percent)
  *   - combo_chance: normal 5..20 → legendary 36..56 (wider pp; weaker per chance %)
  *
  * Craftsmanship skill-tree node still shifts BOTH bounds equally
@@ -72,35 +72,35 @@ export const AFFIX_MAGNITUDE_RANGE: Record<ItemTier, Record<AffixKind, { min: nu
     "+sell_price%": { min: 15, max: 25 },
     "+speed%":      { min: 15, max: 25 },
     "+size%":       { min: 15, max: 25 },
-    "+crit_chance%":  { min: 2,  max: 8  },
+    "+crit_chunks":   { min: 1,  max: 1  },
     "+combo_chance%": { min: 5,  max: 20 },
   },
   magic: {
     "+sell_price%": { min: 20, max: 30 },
     "+speed%":      { min: 20, max: 30 },
     "+size%":       { min: 20, max: 30 },
-    "+crit_chance%":  { min: 5,  max: 12 },
+    "+crit_chunks":   { min: 1,  max: 2  },
     "+combo_chance%": { min: 10, max: 25 },
   },
   rare: {
     "+sell_price%": { min: 26, max: 38 },
     "+speed%":      { min: 26, max: 38 },
     "+size%":       { min: 26, max: 38 },
-    "+crit_chance%":  { min: 9,  max: 17 },
+    "+crit_chunks":   { min: 2,  max: 3  },
     "+combo_chance%": { min: 16, max: 32 },
   },
   epic: {
     "+sell_price%": { min: 35, max: 50 },
     "+speed%":      { min: 35, max: 50 },
     "+size%":       { min: 35, max: 50 },
-    "+crit_chance%":  { min: 14, max: 24 },
+    "+crit_chunks":   { min: 2,  max: 4  },
     "+combo_chance%": { min: 24, max: 42 },
   },
   legendary: {
     "+sell_price%": { min: 48, max: 66 },
     "+speed%":      { min: 48, max: 66 },
     "+size%":       { min: 48, max: 66 },
-    "+crit_chance%":  { min: 21, max: 34 },
+    "+crit_chunks":   { min: 3,  max: 5  },
     "+combo_chance%": { min: 36, max: 56 },
   },
 };
