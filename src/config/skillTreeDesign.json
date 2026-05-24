@@ -380,7 +380,7 @@
     {
       "id": "taylorsim",
       "name": "Taylorism",
-      "description": "Autocraft an Item every 10s. ",
+      "description": "Autocraft a free Item every 10s.",
       "numericEffect": "1",
       "parentIds": [
         "shredder"

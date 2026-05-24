@@ -48,4 +48,23 @@ describe("workshopTickPure", () => {
     workshopTickPure(draft, 60); // 6 intervals at TAYLORISM_INTERVAL_S=10s
     expect(draft.inventory.length).toBeGreaterThan(0);
   });
+
+  it("auto-craft is free: succeeds at gold=0 and does NOT decrement gold", () => {
+    const base = useGameStore.getState();
+    const draft = {
+      ...base,
+      purchasedNodes: { taylorsim: 1 },
+      autoCraftEnabled: true,
+      autoCraftTimer: 0,
+      gold: big(0),
+      inventory: [],
+      equipped: {},
+      protectedTiers: {},
+      workshopLevel: 1,
+      workshopXp: 0,
+    } as any;
+    workshopTickPure(draft, 60);
+    expect(draft.inventory.length).toBeGreaterThan(0);
+    expect(draft.gold.eq(big(0))).toBe(true);
+  });
 });

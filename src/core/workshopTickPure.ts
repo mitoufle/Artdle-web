@@ -20,10 +20,14 @@ import {
 /**
  * Pure port of `performCraft` (workshopSlice.ts:166). Mutates `draft`.
  * Returns false if the craft can't proceed (cap reached without shredder OR all
- * tiers protected OR insufficient gold). Does NOT call `evaluateAchievements()`
- * — the wrapper handles that.
+ * tiers protected OR — when `freeCost` is false — insufficient gold). Does NOT
+ * call `evaluateAchievements()` — the wrapper handles that.
+ *
+ * `freeCost`: when true, skip the gold spend entirely (Taylorism auto-craft
+ * path — see `workshopTickPure` below). Manual `craft()` calls pass false
+ * (default) and still pay `craftCost(workshopLevel)`.
  */
-export function performCraftPure(draft: DraftState): boolean {
+export function performCraftPure(draft: DraftState, freeCost = false): boolean {
   const cap = getMaxInventorySlots(draft);
   const hasShredder = getNodeLevel(draft, "shredder") > 0;
   if (draft.inventory.length >= cap) {
@@ -31,8 +35,10 @@ export function performCraftPure(draft: DraftState): boolean {
     // Has shredder but all items are protected — nothing to kick out.
     if (draft.inventory.every((i) => draft.protectedTiers[i.tier])) return false;
   }
-  const cost = craftCost(draft.workshopLevel);
-  if (!spendCurrency(draft, "gold", cost)) return false;
+  if (!freeCost) {
+    const cost = craftCost(draft.workshopLevel);
+    if (!spendCurrency(draft, "gold", cost)) return false;
+  }
 
   const unlocked = getUnlockedSlotKinds(draft);
   const slot = rngPick(unlocked);
@@ -92,7 +98,7 @@ export function workshopTickPure(draft: DraftState, deltaSeconds: number): void 
   const grants = Math.floor(next / interval);
   if (grants > 0) {
     for (let i = 0; i < grants; i++) {
-      if (!performCraftPure(draft)) break;
+      if (!performCraftPure(draft, true)) break;
     }
   }
   draft.autoCraftTimer = next - grants * interval;
