@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { CanvasStage } from "@/components/painting/CanvasStage";
 
 describe("<CanvasStage />", () => {
-  it("renders the workshop scene image inside the frame", () => {
+  it("renders the workshop scene video inside the frame", () => {
     const { container } = render(
       <CanvasStage
         sizeLevel={1}
@@ -14,9 +14,13 @@ describe("<CanvasStage />", () => {
         nextSaleGold="10"
       />,
     );
-    expect(container.querySelector("img")).toBeInTheDocument();
-    expect(container.querySelector("img")?.getAttribute("alt"))
-      .toMatch(/workshop/i);
+    const video = container.querySelector("video") as HTMLVideoElement | null;
+    expect(video).toBeInTheDocument();
+    expect(video?.getAttribute("aria-label")).toMatch(/workshop/i);
+    expect(video?.autoplay).toBe(true);
+    expect(video?.loop).toBe(true);
+    expect(video?.muted).toBe(true);
+    expect(video?.getAttribute("poster")).toBeTruthy();
   });
 
   it("displays the tier in the title row", () => {

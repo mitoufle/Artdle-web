@@ -8,6 +8,7 @@ import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import paintingScreen from "@/assets/images/Painting_screen.png";
+import paintingScreenAnim from "@/assets/images/painting_screen_anim.mp4";
 import { getSketchUrl, getCellRevealOrder, getSketchGridDim } from "./canvasArt";
 
 function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
@@ -139,10 +140,15 @@ export function CanvasStage({
           role={onChunkClick ? "button" : undefined}
           aria-label={onChunkClick ? "Paint a chunk" : undefined}
         >
-          <img
-            src={paintingScreen}
+          <video
+            src={paintingScreenAnim}
+            poster={paintingScreen}
             className={styles.canvasArt}
-            alt="Artist's workshop scene with central easel"
+            autoPlay
+            loop
+            muted
+            playsInline
+            aria-label="Artist's workshop scene with central easel"
           />
           {sketchUrl && (
             <div

@@ -8,24 +8,26 @@
 
 /* Image-and-overlay layer fills the entire stage area edge-to-edge. UI
  * elements (title, progress bar, bottom row, crit/combo badges) overlay on
- * top via z-index. */
+ * top via z-index. container-type lets the inner box query the frame's
+ * actual size so it can fit-without-letterbox. */
 .frame {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  container-type: size;
 }
 
-/* Container locks the workshop image's aspect ratio so the sketch overlay
- * positioned in percentages (left=39.17%, top=19.40%, width=21.58%,
- * height=39.19%) always lines up with the transparent easel canvas area
- * regardless of the stage's outer dimensions. */
+/* Container is sized to the largest 1376:768 box that fits inside the frame
+ * in BOTH dimensions, so the sketch overlay's percent positioning always
+ * lines up with the workshop image's easel area. Without the min(), wide
+ * stages produced a container wider than the image's aspect, and overlay
+ * chunks spilled past the easel. */
 .imageContainer {
   position: relative;
   aspect-ratio: 1376 / 768;
-  width: 100%;
-  max-height: 100%;
+  width: min(100cqw, calc(100cqh * 1376 / 768));
 }
 
 .imageContainerClickable {
