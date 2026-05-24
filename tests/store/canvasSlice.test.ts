@@ -225,7 +225,7 @@ describe("canvasSlice — new track state fields", () => {
     useGameStore.setState({
       sellPriceLevel: 7, speedLevel: 4, sizeLevel: 5,
       critLevel: 3, comboLevel: 2, comboChain: 4, critChunks: { 3: true },
-    } as Parameters<typeof useGameStore.setState>[0]);
+    } as unknown as Parameters<typeof useGameStore.setState>[0]);
     useGameStore.getState().resetCanvas();
     const s = useGameStore.getState();
     expect(s.sellPriceLevel).toBe(0);

@@ -20,7 +20,6 @@ import {
   canvasGold,
   canvasTime,
   craftCost,
-  CRIT_SPEED_FACTOR,
   fameOnAscend,
   sellPriceUpgradeCost,
   speedUpgradeCost,
@@ -31,7 +30,6 @@ import {
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
-  getCritChance,
   getCanvasSize,
 } from "@/core/multipliers";
 import { canBuyNode, getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
@@ -145,11 +143,9 @@ function gps(state: ReturnType<typeof useGameStore.getState>): number {
   const size = getCanvasSize(state);
   const gm   = getCanvasGoldMultiplier(state);
   const sm   = getCanvasSpeedMultiplier(state);
-  const crit = getCritChance(state);
   const baseTime  = canvasTime(size);
   const normTime  = baseTime / sm;
-  // avg time: crit canvases complete CRIT_SPEED_FACTOR× faster
-  const avgTime   = normTime * (1 - (1 - 1 / CRIT_SPEED_FACTOR) * crit);
+  const avgTime   = normTime;
   const avgGold   = canvasGold(size, gm).toNumber();
   return avgGold / avgTime;
 }
