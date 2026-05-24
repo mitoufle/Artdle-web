@@ -26,10 +26,16 @@ import {
   CRIT_PER_LEVEL,
   COMBO_PER_LEVEL,
   SIZE_PER_LEVEL,
+  BASE_CRIT_CHANCE,
+  BASE_CRIT_CHUNKS,
+  MAX_CRIT_LEVEL,
   tierFactor,
   timeFactor,
+  levelScale,
 } from "@/core/balance";
+import { countCapability, getNodeLevel } from "@/store/skillTreeSlice";
 import { AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
+import type { SlotKind } from "@/store/workshopSlice";
 import styles from "./StatsRoom.module.css";
 
 interface BreakdownLine {
@@ -43,6 +49,8 @@ interface StatBlock {
   iconOverride?: string;
   colorOverride?: string;
   totalLabel: string;
+  /** When true, lines render as raw integers (with no "+" prefix), not percent. */
+  intLines?: boolean;
   lines: BreakdownLine[];
   multiplicatives?: Array<{ source: string; factor: number }>;
 }
@@ -53,6 +61,7 @@ interface SizeBlock {
   canvasContribution: number;   // SIZE_PER_LEVEL × sizeLevel
   itemContribution: number;
   workerContribution: number;
+  skillTreeContribution: number;  // expanding_horizon → canvas_size_bonus capability
   goldFactor: number;       // size²
   timeFactor: number;       // size
 }
@@ -65,11 +74,45 @@ function fmtMult(v: number, digits = 2): string {
   return `×${v.toFixed(digits)}`;
 }
 
+/**
+ * Sum +crit_chunks raw integer magnitudes across equipped items, with the
+ * socks ×1.5 boost on the boots slot. Mirrors the items branch of
+ * `getCritChunks` in multipliers.ts so the panel doesn't drift from the engine.
+ */
+function critChunksFromItems(state: CanvasMultiplierInputs): number {
+  const hasSocks = getNodeLevel(state, "socks") > 0;
+  let total = 0;
+  for (const entry of Object.entries(state.equipped)) {
+    const [slot, item] = entry as [SlotKind, { affixes: { kind: string; magnitude: number }[] } | undefined];
+    if (!item) continue;
+    const slotMult = hasSocks && slot === "boots" ? 1.5 : 1.0;
+    for (const affix of item.affixes) {
+      if (affix.kind === "+crit_chunks") total += affix.magnitude * slotMult;
+    }
+  }
+  return total;
+}
+
+/** Same as above but for worker roster, scaled by `levelScale(worker.level)`. */
+function critChunksFromWorkers(state: CanvasMultiplierInputs): number {
+  let total = 0;
+  for (const worker of state.roster) {
+    const scale = levelScale(worker.level).toNumber();
+    for (const affix of worker.affixes) {
+      if (affix.kind === "+crit_chunks") total += affix.magnitude * scale;
+    }
+  }
+  return total;
+}
+
 function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   const goldTotal = getCanvasGoldMultiplier(state);
   const speedTotal = getCanvasSpeedMultiplier(state);
   const critTotal = getCritChance(state);
   const comboTotal = getComboBaseChance(state);
+  const chunksItems = critChunksFromItems(state);
+  const chunksWorkers = critChunksFromWorkers(state);
+  const chunksTotal = BASE_CRIT_CHUNKS + chunksItems + chunksWorkers;
   const size = getCanvasSize(state);
   const sizeGoldFactor = size * size;
   const rainbowFactor = getRainbowMultiplier(state);
@@ -118,7 +161,9 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
       colorOverride: "#e85c5c",
       totalLabel: fmtPct(critTotal),
       lines: nonZero([
-        { source: "Canvas upgrade", value: CRIT_PER_LEVEL * state.critLevel },
+        { source: "Base", value: BASE_CRIT_CHANCE },
+        { source: "Canvas upgrade", value: CRIT_PER_LEVEL * Math.min(state.critLevel, MAX_CRIT_LEVEL) },
+        { source: "Skill tree", value: countCapability(state, "crit_chance") * 0.01 },
         // Items + Workers no longer contribute to crit chance — that's now crit_chunks (separate stat).
       ]),
     },
@@ -132,6 +177,18 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
         { source: "Workers", value: getOfficeContribution(state, "+combo_chance%").toNumber() },
       ]),
     },
+    {
+      name: "Crit chunks (per crit)",
+      iconOverride: "⚡",
+      colorOverride: "#ffaf3a",
+      totalLabel: `+${chunksTotal.toFixed(chunksTotal % 1 === 0 ? 0 : 1)}`,
+      intLines: true,
+      lines: nonZero([
+        { source: "Base", value: BASE_CRIT_CHUNKS },
+        { source: "Items", value: chunksItems },
+        { source: "Workers", value: chunksWorkers },
+      ]),
+    },
   ];
 }
 
@@ -140,12 +197,16 @@ function sizeBlock(state: CanvasMultiplierInputs): SizeBlock {
   const canvasContribution = SIZE_PER_LEVEL * state.sizeLevel;
   const itemContribution = getEquippedContribution(state, "+size%");
   const workerContribution = getOfficeContribution(state, "+size%").toNumber();
+  // Mirrors the +canvas_size_bonus branch of getCanvasSize (expanding_horizon
+  // node, +5% per level).
+  const skillTreeContribution = countCapability(state, "canvas_size_bonus") * 0.05;
   return {
     name: "Size",
     size,
     canvasContribution,
     itemContribution,
     workerContribution,
+    skillTreeContribution,
     goldFactor: size * size,
     timeFactor: size,
   };
@@ -235,7 +296,11 @@ export function StatsRoom(): JSX.Element {
             {block.lines.map((line) => (
               <li key={line.source} className={styles.line}>
                 <span className={styles.source}>{line.source}</span>
-                <span className={styles.value}>+{fmtPct(line.value)}</span>
+                <span className={styles.value}>
+                  {block.intLines
+                    ? `+${line.value.toFixed(line.value % 1 === 0 ? 0 : 1)}`
+                    : `+${fmtPct(line.value)}`}
+                </span>
               </li>
             ))}
             {block.multiplicatives?.map((m) => (
@@ -264,6 +329,12 @@ export function StatsRoom(): JSX.Element {
               <li className={styles.line}>
                 <span className={styles.source}>Canvas upgrade</span>
                 <span className={styles.value}>+{fmtPct(size.canvasContribution)}</span>
+              </li>
+            )}
+            {size.skillTreeContribution > 0 && (
+              <li className={styles.line}>
+                <span className={styles.source}>Skill tree</span>
+                <span className={styles.value}>+{fmtPct(size.skillTreeContribution)}</span>
               </li>
             )}
             {size.itemContribution > 0 && (

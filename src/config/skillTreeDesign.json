@@ -645,7 +645,9 @@
         100,
         160
       ],
-      "unlocks": [],
+      "unlocks": [
+        "crit_chance"
+      ],
       "position": null
     },
     {
