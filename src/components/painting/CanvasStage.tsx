@@ -1,4 +1,4 @@
-import { useMemo, type JSX } from "react";
+import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
@@ -119,6 +119,26 @@ export function CanvasStage({
     Math.max(0, Math.min(1, progressPct)) * totalCells,
   );
 
+  // When a canvas sells (canvasNumber increments), briefly hold the previous
+  // sketch as a fading overlay so the player sees what they painted before
+  // the next canvas starts. Keyed by the just-completed canvasNumber so each
+  // flash gets a fresh DOM node and its CSS animation re-runs from start.
+  const prevCanvasNumberRef = useRef(canvasNumber);
+  const [flashEntry, setFlashEntry] = useState<{ key: number; url: string } | null>(null);
+  useEffect(() => {
+    const prev = prevCanvasNumberRef.current;
+    if (canvasNumber !== prev) {
+      const prevUrl = getSketchUrl(canvasTier, prev);
+      if (prevUrl) {
+        setFlashEntry({ key: prev, url: prevUrl });
+        const t = setTimeout(() => setFlashEntry(null), 600);
+        prevCanvasNumberRef.current = canvasNumber;
+        return () => clearTimeout(t);
+      }
+      prevCanvasNumberRef.current = canvasNumber;
+    }
+  }, [canvasNumber, canvasTier]);
+
   return (
     <section className={styles.stage} aria-label="Canvas stage">
       {comboChain !== undefined && comboChain > 0 && (
@@ -180,6 +200,14 @@ export function CanvasStage({
                 );
               })}
             </div>
+          )}
+          {flashEntry && (
+            <div
+              key={`flash-${flashEntry.key}`}
+              className={styles.completedFlash}
+              style={{ backgroundImage: `url(${flashEntry.url})` }}
+              aria-hidden="true"
+            />
           )}
         </div>
       </div>
