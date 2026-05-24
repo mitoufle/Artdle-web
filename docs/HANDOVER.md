@@ -1,5 +1,109 @@
 # Artdle Web — Handover
 
+## Crit per-chunk rework (2026-05-24)
+
+Sixteen commits on `master`, deployed (production bundle `index-Bz0pju0E.js`). Spec at `docs/superpowers/specs/2026-05-24-crit-per-chunk-rework-design.md`, plan at `docs/superpowers/plans/2026-05-24-crit-per-chunk-rework.md`.
+
+### What landed
+
+The legacy crit model was binary at the canvas level: on canvas start, one rng roll either gave the WHOLE canvas a 10× speed bonus (`CRIT_SPEED_FACTOR`) and +20%/level gold (via the `prismatic_eye` skill node and its `crit_gold_bonus` capability) or didn't. After this rework, **crit fires per chunk paint event** (auto-paint and clicks alike) and paints `1 + N` extra chunks instantly at no time cost. Chance comes only from progression (skill tree + `critLevel` track, capped at L50); the number of bonus chunks per crit comes only from gear and workers.
+
+Key behavioral table:
+
+| | Old | New |
+|---|---|---|
+| Crit roll cadence | Once per canvas, at canvas start | Once per paid chunk (auto + click) |
+| Crit effect | Canvas paints 10× faster + per-`prismatic_eye`-level gold bonus | Paints `1 + getCritChunks(draft)` extra chunks instantly (no gold bonus) |
+| Base crit chance | 0% (everything from sources) | **1%** always-on floor |
+| Base crit chunks | n/a (binary flag) | **1** bonus chunk on top of the trigger |
+| Chance sources | `critLevel` + `+crit_chance%` items + workers | Base 1% + `critLevel × CRIT_PER_LEVEL` (capped at `MAX_CRIT_LEVEL = 50`) + skill-tree `crit_chance` capability hook |
+| Chunks sources | n/a | Base 1 + `+crit_chunks` items + `+crit_chunks` workers (raw integer magnitudes, NOT percent; socks ×1.5 on boots) |
+| Soft-cap formula | Unchanged | Unchanged — same `CRIT_SOFT_CAP_THRESHOLD = 0.30`, ceiling 0.95 |
+| Bonus chunks re-roll | n/a | **No** — bonus chunks paint instantly without their own rng call (prevents infinite chains) |
+| Canvas-end overflow | n/a | **Carries to next canvas** — a crit's bonus that exceeds the current canvas's remaining chunks spills into chunk 0 of the next, firing a sale mid-bonus-loop |
+| Last-chunk crit | n/a | **Skipped** — the canvas's last paid chunk doesn't roll, so trigger + first bonus always render together in the same canvas (avoids the rare visual where a same-tick sale would wipe `critChunks` before the next frame) |
+
+### Architecture changes
+
+- **Balance (`src/core/balance.ts`):** added `BASE_CRIT_CHANCE = 0.01`, `BASE_CRIT_CHUNKS = 1`, `MAX_CRIT_LEVEL = 50`. Removed `CRIT_SPEED_FACTOR`.
+- **Multipliers (`src/core/multipliers.ts`):** `getCritChance` reads base + capped critLevel + `countCapability("crit_chance") × 0.01`; no longer reads items/workers. New `getCritChunks` walks `state.equipped` (with socks 1.5× on boots) and `state.roster` (scaled by `levelScale(level)`) summing raw integer magnitudes — does NOT go through `getEquippedContribution`/`getOfficeContribution` because those divide by 100 (percent semantics). `getCritGoldBonus` deleted.
+- **Tick (`src/core/canvasTickPure.ts`):** complete rewrite. The loop now steps in **integer chunk units** (`chunkProgress` integer + `subTime` residual seconds) instead of `Math.floor(progress / chunkTime)`, eliminating a floating-point drift bug (see below). Each paid chunk crossing rolls crit once; a successful roll instantly paints `1 + appliedBonus` chunks, marking them in a `critChunks: Record<number, true>` set that drives the per-cell gold-flash UI. Bonus chunks consume no `timeBudget`, so they make canvases finish faster. The bonus loop crosses canvas boundaries (calling `fireSale` mid-loop and continuing into the new canvas) so no crit benefit is wasted. `critsLanded` / `currentCritStreak` / `maxCritStreak` count **both trigger and bonus chunks**; a paid-chunk miss resets the streak; a sale does NOT.
+- **Canvas slice (`src/store/canvasSlice.ts`):** added `critChunks: Record<number, true>` field (cleared on sale + on tier-up). Removed `isCritThisCanvas`. **`tierUp()` now preserves `sizeLevel`/`critLevel`/`comboLevel` across tier-up** (gated tracks compound across tiers); only `sellPriceLevel` and `speedLevel` reset (they're what the gate is keyed on).
+- **Affixes (`src/config/workshopAffixes.ts`):** removed `"+crit_chance%"`; added `"+crit_chunks"` with symbol `⚡`, color `#ffaf3a` (warm gold-orange), weight 1.3, per-tier integer ranges `1..1 / 1..2 / 2..3 / 2..4 / 3..5`.
+- **Worker classes (`src/config/officeClasses.ts`):** same swap with smaller integer ranges (workers compound via `levelScale`).
+- **Skill tree (`src/config/skillTreeNodes.ts` + `skillTreeDesign.json`):** `prismatic_eye` node + `crit_gold_bonus` capability removed entirely. A new `"crit_chance"` capability tag is reserved as a forward-compatibility hook — no nodes carry it today, but `countCapability(state, "crit_chance")` works and feeds `getCritChance` (at +1% per level), ready for a future node.
+- **Persistence (`src/store/index.ts`):** SAVE_VERSION bumped 22 → 23 with a **full wipe** migration step (`if (fromVersion < 23) return {} as GameStore;`). Spec called this; existing players start fresh on first load.
+
+### UI
+
+- **TrackCard (`src/components/painting/TrackCard.tsx`):** generalized — `affixKind` is now optional; new `iconOverride` / `colorOverride` / `maxLevel` props. At `level >= maxLevel`, the button renders `MAX` and is disabled. The crit-chance card in `PaintingRoute.tsx` uses `iconOverride="✦"` + `colorOverride="#e85c5c"` + `maxLevel={MAX_CRIT_LEVEL}` to keep the red-star identity even though `+crit_chance%` is no longer an `AffixKind`.
+- **CanvasStage gold flash (`CanvasStage.tsx` + `CanvasStage.module.css`):** crit-painted chunks (trigger + bonus) carry a one-shot rainbow-border animation. The animation rotates the **colors** around a stationary border by animating a `@property --crit-angle` custom property fed into a `conic-gradient`'s `from` angle — earlier attempts that animated `transform: rotate()` on the pseudo-element spun the square shape instead of the colors, which read wrong. After 600ms the pseudo-element returns to its default opacity 0 — no persistent visual; the crit cell looks identical to non-crit cells once the animation ends.
+- **Completed-canvas flash:** when `canvasNumber` increments (= a sale fired), `CanvasStage` captures the just-completed sketch URL into local state and renders it as an overlay over the easel region with a 600ms `completedFlash` animation (brightness pulse + small scale-up + fade). Necessary because crits + speed buffs can finish a canvas in well under a second, otherwise the player never sees the final image. The new canvas's chunk-by-chunk reveal begins simultaneously underneath; the flash fades to expose it.
+- **CRIT badge removed** from CanvasStage (canvas-level crit no longer exists). The `data-testid="crit-indicator"` element and its associated `critPulse` keyframes were deleted.
+- **StatsRoom (`src/components/painting/StatsRoom.tsx`):** the "Crit chance" block now reads `Crit chance (chunk roll)` and uses `iconOverride: "✦"` + `colorOverride: "#e85c5c"` (the same StatBlock iconOverride pattern as TrackCard); the Items/Workers contribution lines are gone since items/workers no longer contribute to chance.
+- **Compact affix chips** (`WorkshopRoom.tsx` inventory + equipped lists): the hardcoded `%` suffix was branched out for `+crit_chunks` so a magnitude-3 item now renders as `⚡3` rather than `⚡3%`.
+
+### The drift-induced re-roll bug
+
+After the first cut of the tick rewrite, an in-browser play-test revealed crits firing about 5× more often than the configured rate (~17% effective vs 3% set). A diagnostic probe found the cause: after a crit, `progress += appliedBonus * chunkTime` produced a float value slightly less than the intended `(N + 1 + appliedBonus) × chunkTime` boundary. The next iteration's `Math.floor(progress / chunkTime)` pointed BACK at the bonus chunk we'd just painted; `timeToNextChunk = nextBoundary - progress` was tiny; the loop crossed an almost-zero-cost boundary and rolled crit AGAIN on the same chunk index. Each "real" paid chunk effectively triggered ~5.7 rolls.
+
+Fix in two parts:
+1. Track chunk progress as an integer (`chunkProgress`) plus a sub-chunk residual time (`subTime`). The floor-based derivation is gone; the integer can't drift.
+2. Epsilon-tolerant `timeBudget < timeToNext - 1e-9` comparison so a tick of exactly `N × chunkTime` reliably fires all N sales (the per-iteration subtraction accumulates ~1e-15 drift per crossing; over 250 crossings that can shift the last comparison enough to drop a sale).
+
+### Status
+
+- **1024 tests green** across 107 files. `npx tsc -b --noEmit` has 29 lines of output, all pre-existing on master (statsSlice cast quirks, school-designer test, catchup tests). Zero crit-related TS errors. `npx vite build` succeeds.
+- Production bundle `index-Bz0pju0E.js`, CSS `index-CVssnbO2.css`. Verified live: `crit_chunks` appears in JS, `--crit-angle` + `critCaterpillar` + `sketchCellCrit_<hash>` + `completedFlash_<hash>` appear in CSS.
+- **Save wipe shipped.** Any pre-rework save is reset to defaults on first load.
+
+### Notes
+
+- **Skip-roll-on-last-chunk costs ~4% of rolls** at T1 (1 of 25 chunks immune to crit), shrinking as tier grows (1/49 ≈ 2% at T2, 1/100 = 1% at T3, etc.). Not balance-critical.
+- **`getSketchGridDim` import.** `canvasTickPure.ts` imports it from `@/components/painting/canvasArt.ts` — a components→core reverse dependency. Pragmatic for the rework; consider hoisting the helper to `src/core/chunks.ts` (or similar) in a follow-up so core has no UI dependency.
+- **Existing `currentCritStreak`/`maxCritStreak` semantics changed** from consecutive crit-canvas counts to consecutive crit-chunk counts (trigger + bonus both count; canvas-end does not reset). The fields are unchanged on disk; only the meaning shifted. Stats panel labels were updated.
+- **`StatBlock.kind` is now optional** in `StatsRoom.tsx` so non-affix-backed rows (crit chance) can use the icon override path. Render-site checks for both `iconOverride` and a present `kind` before falling back to a default symbol.
+- **Test contamination risk in canvasSlice.test.ts.** The new 1% base crit chance can flake exact-progress assertions (a crit firing during the test shifts `canvasProgress` by `+0.4s`). The `canvasTick(1)` test now seeds rng (`setSeed(1)` in `beforeEach`) and uses a range assertion (`>= 1 && < 1.5`) to tolerate either path. If you add more tick-exact tests, follow the same pattern.
+
+### Open follow-ups
+
+- **`craftsmanship` × `+crit_chunks` interaction.** `getAffixMagnitudeBonus` adds +5 per Craftsmanship level to BOTH `min` and `max` at roll time. That was designed for percent magnitudes — for raw-integer `+crit_chunks` (range 1..5), one Craftsmanship level buffs it to 6..10, a big jump. Consider clamping or skipping `magnitudeBonus` for `+crit_chunks`. Spec didn't anticipate this; left in place for now.
+- **No skill-tree nodes for crit_chance yet.** The capability hook exists in `getCritChance` (`countCapability("crit_chance") × 0.01` per level) but no node carries the `crit_chance` tag. Authoring a node is straightforward — add an entry in `skillTreeNodes.ts` + `skillTreeDesign.json` with `unlocks: ["crit_chance"]`.
+- **Bonus-overflow visual.** When a crit's bonus carries across a canvas boundary, the trigger and any in-old-canvas bonus chunks are painted but not visually flashed (the sale wipes `critChunks` before the next render). Only the new-canvas bonus chunks show the rainbow. Could be addressed with per-canvas critChunks tracking + a brief "just-sold canvas trace" overlay, but the completed-canvas flash already provides closure.
+- **Stats panel doesn't show a "Crit chunks" breakdown.** Items + workers feed `getCritChunks` but the StatsRoom only surfaces the chance side. A second row (`Crit chunks (per crit)` with sources: Base / Items / Workers) would round out the panel — left for later.
+- **Achievement re-balancing.** The full save wipe means existing achievement progress resets anyway. Per-canvas-crit thresholds in achievement definitions may need re-tuning for the per-chunk model. Spec deliberately deferred this.
+
+---
+
+## Canvas Stage polish (2026-05-24, pre-crit-rework)
+
+Six commits on `master`, deployed in two waves before the crit work began. Sketches the easel area's current visual feel.
+
+### What landed
+
+1. **Click-to-paint a chunk** (`0d1665b`). Clicking the easel image dispatches `canvasTick(paintTimeSec / chunkCount)` to advance one chunk's worth of progress on demand. The `<CanvasStage>` accepts an optional `onChunkClick` prop; `PaintingRoute.tsx` wires it. Active play now meaningfully accelerates a canvas.
+2. **Chunks doubled per tier** (`7858532`). The N×N sketch grid scales with tier via a new `getSketchGridDim(tier)` helper: `round(5 × √2^(tier-1))` → 5, 7, 10, 14, 20, 28, 40, … (cell count ~doubles each tier). Each click still paints one chunk, so higher tiers feel finer-grained — the cell-pop visual stays alive across the whole tier range.
+3. **Workshop video + fit-without-letterbox** (`77cfaa6`). The static PNG was replaced with `painting_screen_anim.mp4` (autoplay/loop/muted/playsInline) for ambient life; the PNG stays as the `poster` so the scene appears instantly while the video loads. A separate bug-fix: `.imageContainer` was sized `width:100%; aspect-ratio:1376/768; max-height:100%`, which on wide windows produced a container WIDER than the image's aspect ratio — the image letterboxed via `object-fit:contain` but the sketch overlay (positioned in percent of the container) spilled past the easel. Replaced with `width: min(100cqw, 100cqh × 1376/768)` using container queries so the container always matches the actual rendered-image bounds; overlay is now always aligned.
+4. **Chunk pop-in click feedback** (`0fbc529`). Replaced the previous full-image `filter: brightness(1.08)` flash on `:active` with per-cell pop-in animation: each chunk transitions from `scale(0.4)` to `scale(1)` with a back-ease overshoot cubic-bezier (220ms). The painted chunk itself is the click feedback — localized, satisfying, no full-screen flash.
+5. **Paintbrush cursor** (`8711627`). Custom cursor on the clickable easel area. A 64×64 source PNG (`paint cursor.png`) is checked in alongside a 32×32 nearest-neighbor downscale (`paint_cursor_32.png`) generated via PowerShell + System.Drawing (browsers cap rendered cursor size around 32×32, and 64×64 sources looked oversized at native scale). Vite inlines the 32×32 as a base64 data URL in the CSS — zero extra request.
+
+### Status
+
+- All five live in the production bundle on 2026-05-24 (verified via bundle hash checks at each deploy).
+- Cumulative impact: clicking matters, the easel breathes, the canvas visual escalates per tier, and the cursor signals interactivity.
+
+### Notes
+
+- **Pixel-art cursor sizing.** OS/browser cursor scaling is inconsistent. The 32×32 version looks crisp on Windows/Chrome at default DPI; high-DPI displays may upscale with smoothing. If anyone reports a blurry cursor, downscale further (16×16) or supply a separate hi-DPI asset and pick via `image-set()` in the CSS.
+- **mp4 vs webm.** Only the mp4 ships. If a browser ever objects, encoding a `.webm` alongside and supplying both via `<source>` tags is the standard fix.
+
+### Open follow-ups
+
+- **Hoist `getSketchGridDim` out of `components/`.** It's now imported by `canvasTickPure.ts` (a core module). Move to `src/core/chunks.ts` (or similar) to clean the layering.
+- **Cursor on inventory/workshop hover targets.** Could extend the paintbrush motif to other clickable surfaces, OR introduce different cursors per area (brush on easel, gold-glow on currency, etc.).
+
+---
+
 ## Canvas Art — workshop scene + per-tier sketches (2026-05-23)
 
 Three commits on `master`, deployed (production bundle `index-CfwiamNL.js`).
