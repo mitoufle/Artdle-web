@@ -116,21 +116,26 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
     const isLastChunkOfCanvas = chunkProgress === chunkCount;
 
     // Roll crit on this paid chunk. Skipped on the canvas's last chunk so
-    // the trigger + bonus markers survive long enough to render (otherwise
-    // the imminent sale wipes critChunks before the UI sees them).
+    // the trigger + first bonus chunk stay together in the same canvas
+    // (otherwise the sale would wipe the trigger before the next render).
     if (!isLastChunkOfCanvas && rng() < getCritChance(draft)) {
       const bonus = getCritChunks(draft);
-      // Cap bonus at remaining chunks in this canvas; overshoot is wasted.
-      const remainingChunks = chunkCount - chunkProgress;
-      const appliedBonus = Math.min(bonus, remainingChunks);
-
       critChunks[triggerIndex] = true;
-      for (let i = 1; i <= appliedBonus; i++) {
-        critChunks[triggerIndex + i] = true;
-      }
-      chunkProgress += appliedBonus;
 
-      const totalCritChunks = 1 + appliedBonus;
+      // Carry bonus chunks across canvas boundaries so no crit benefit is
+      // wasted: paint as many in the current canvas as fit, then fire the
+      // sale and continue painting in the next canvas.
+      let bonusLeft = bonus;
+      while (bonusLeft > 0 && sales < MAX_SALES_PER_TICK) {
+        if (chunkProgress >= chunkCount) {
+          fireSale();
+        }
+        critChunks[chunkProgress] = true;
+        chunkProgress += 1;
+        bonusLeft -= 1;
+      }
+
+      const totalCritChunks = 1 + bonus;
       critChunksThisTick += totalCritChunks;
       localCritStreak += totalCritChunks;
       if (localCritStreak > localMaxCritStreak) localMaxCritStreak = localCritStreak;
