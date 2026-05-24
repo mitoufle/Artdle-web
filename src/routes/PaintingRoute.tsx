@@ -55,6 +55,7 @@ export function PaintingRoute(): JSX.Element {
   const lastSale = useGameStore((s) => s.lastSale);
   const canvasesSold = useGameStore((s) => s.statsRun.canvasesSold);
   const clearLastSale = useGameStore((s) => s.clearLastSale);
+  const canvasTick = useGameStore((s) => s.canvasTick);
 
   const helperState: CanvasMultiplierInputs = {
     equipped, purchasedNodes, roster, canvasTier,
@@ -99,6 +100,7 @@ export function PaintingRoute(): JSX.Element {
           comboChain={comboChain}
           isCrit={isCritThisCanvas}
           canvasNumber={canvasesSold}
+          onChunkClick={() => canvasTick(paintTimeSec / 25)}
         />
         {lastSale && (
           <FloatingGoldText

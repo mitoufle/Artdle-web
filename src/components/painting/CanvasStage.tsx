@@ -57,6 +57,10 @@ interface Props {
   /** Canvas number (= lastSale.id) — keys fill elements so React re-mounts on sale,
    *  resetting CSS transition baseline to avoid the rubberband-down effect. */
   canvasNumber?: number;
+  /** Click-to-paint: invoked when the player clicks the easel area. Advances
+   *  canvas progress by one chunk (1/25 of total paint time). Optional — when
+   *  omitted, the easel is not interactive. */
+  onChunkClick?: () => void;
 }
 
 const STAGE_NAMES: Record<number, string> = {
@@ -93,6 +97,7 @@ export function CanvasStage({
   comboChain,
   isCrit,
   canvasNumber = 0,
+  onChunkClick,
 }: Props): JSX.Element {
   const stageName = STAGE_NAMES[canvasTier] ?? `Tier ${canvasTier}`;
   const barWidth = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
@@ -128,7 +133,12 @@ export function CanvasStage({
         — Tier {canvasTier} · {stageName} —
       </div>
       <div className={styles.frame}>
-        <div className={styles.imageContainer}>
+        <div
+          className={`${styles.imageContainer}${onChunkClick ? ` ${styles.imageContainerClickable}` : ""}`}
+          onClick={onChunkClick}
+          role={onChunkClick ? "button" : undefined}
+          aria-label={onChunkClick ? "Paint a chunk" : undefined}
+        >
           <img
             src={paintingScreen}
             className={styles.canvasArt}

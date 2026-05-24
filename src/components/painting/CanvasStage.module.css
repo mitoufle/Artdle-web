@@ -28,6 +28,14 @@
   max-height: 100%;
 }
 
+.imageContainerClickable {
+  cursor: pointer;
+}
+
+.imageContainerClickable:active {
+  filter: brightness(1.08);
+}
+
 .canvasArt {
   width: 100%;
   height: 100%;
