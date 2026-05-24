@@ -152,7 +152,7 @@ export function PaintingRoute(): JSX.Element {
           <TrackCard
             trackId="crit"
             label="Crit"
-            affixKind="+crit_chance%"
+            affixKind="+crit_chunks"
             level={critLevel}
             effectLine={critLocked ? "—" : `+${fmtPct(CRIT_PER_LEVEL, 0)} crit chance/level (90% faster on hit)`}
             costLabel={critLocked ? "—" : `${formatBig(critCost)}`}

@@ -29,7 +29,7 @@ describe("rollWorkerWeights", () => {
     }
   });
 
-  it("goldsmith: sell + combo in [3, 7]; speed + crit in [0, 2]; size in [1, 3]", () => {
+  it("goldsmith: sell + combo in [3, 7]; speed in [0, 2]; crit_chunks in [0, 1]; size in [1, 3]", () => {
     setSeed(11);
     for (let i = 0; i < 100; i++) {
       const w = rollWorkerWeights("goldsmith");
@@ -38,7 +38,7 @@ describe("rollWorkerWeights", () => {
       expect(w["+combo_chance%"]).toBeGreaterThanOrEqual(3);
       expect(w["+combo_chance%"]).toBeLessThanOrEqual(7);
       expect(w["+speed%"]).toBeLessThanOrEqual(2);
-      expect(w["+crit_chance%"]).toBeLessThanOrEqual(2);
+      expect(w["+crit_chunks"]).toBeLessThanOrEqual(1);
       expect(w["+size%"]).toBeGreaterThanOrEqual(1);
       expect(w["+size%"]).toBeLessThanOrEqual(3);
     }
@@ -57,21 +57,21 @@ describe("rollWorkerWeights", () => {
 describe("rollWorkerAffixes", () => {
   it("rolls exactly tier-slot-count affixes for a legendary (5)", () => {
     setSeed(20);
-    const weights = { "+sell_price%": 1, "+speed%": 1, "+size%": 1, "+crit_chance%": 1, "+combo_chance%": 1 };
+    const weights = { "+sell_price%": 1, "+speed%": 1, "+size%": 1, "+crit_chunks": 1, "+combo_chance%": 1 };
     const affixes = rollWorkerAffixes(weights, "legendary", stub());
     expect(affixes.length).toBe(5);
   });
 
   it("rolls 1 affix for common", () => {
     setSeed(21);
-    const weights = { "+sell_price%": 2, "+speed%": 2, "+size%": 2, "+crit_chance%": 2, "+combo_chance%": 2 };
+    const weights = { "+sell_price%": 2, "+speed%": 2, "+size%": 2, "+crit_chunks": 2, "+combo_chance%": 2 };
     const affixes = rollWorkerAffixes(weights, "common", stub());
     expect(affixes.length).toBe(1);
   });
 
   it("respects per-worker weights (high-weight kinds dominate)", () => {
     setSeed(22);
-    const weights = { "+sell_price%": 100, "+speed%": 0, "+size%": 0, "+crit_chance%": 0, "+combo_chance%": 0 };
+    const weights = { "+sell_price%": 100, "+speed%": 0, "+size%": 0, "+crit_chunks": 0, "+combo_chance%": 0 };
     const affixes = rollWorkerAffixes(weights, "legendary", stub());
     for (const a of affixes) {
       expect(a.kind).toBe("+sell_price%");
@@ -80,7 +80,7 @@ describe("rollWorkerAffixes", () => {
 
   it("each affix magnitude is in the AFFIX_MAGNITUDE_RANGE for its kind", () => {
     setSeed(23);
-    const weights = { "+sell_price%": 1, "+speed%": 1, "+size%": 1, "+crit_chance%": 1, "+combo_chance%": 1 };
+    const weights = { "+sell_price%": 1, "+speed%": 1, "+size%": 1, "+crit_chunks": 1, "+combo_chance%": 1 };
     const affixes = rollWorkerAffixes(weights, "legendary", stub());
     for (const a of affixes) {
       const range = AFFIX_MAGNITUDE_RANGE["normal"][a.kind];

@@ -88,7 +88,7 @@ const SLOT_PLACEHOLDER: Record<SlotKind, JSX.Element> = {
 const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
   "+sell_price%": (m) => `+${m}% sell price`,
   "+speed%": (m) => `+${m}% speed`,
-  "+crit_chance%": (m) => `+${m}% crit chance`,
+  "+crit_chunks": (m) => `+${m} crit chunks`,
   "+combo_chance%": (m) => `+${m}% combo chance`,
   "+size%": (m) => `+${m}% size`,
 };

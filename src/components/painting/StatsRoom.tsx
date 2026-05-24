@@ -112,12 +112,12 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
     },
     {
       name: "Crit chance",
-      kind: "+crit_chance%" as AffixKind,
+      // TODO: T10 — replace placeholder kind with iconOverride
+      kind: "+sell_price%" as AffixKind,
       totalLabel: fmtPct(critTotal),
       lines: nonZero([
         { source: "Canvas upgrade", value: CRIT_PER_LEVEL * state.critLevel },
-        { source: "Items", value: getEquippedContribution(state, "+crit_chance%") },
-        { source: "Workers", value: getOfficeContribution(state, "+crit_chance%").toNumber() },
+        // Items + Workers no longer contribute to crit chance — that's now crit_chunks (separate stat).
       ]),
     },
     {

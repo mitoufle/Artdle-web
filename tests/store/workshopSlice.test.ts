@@ -195,9 +195,9 @@ describe("workshopSlice — craft", () => {
     useGameStore.getState().craft();
     const item = useGameStore.getState().inventory[0]!;
     for (const affix of item.affixes) {
-      // Sanity: smallest possible min across kinds is +crit_chance% [2,8] → shifted to [27,33].
-      // So every rolled magnitude must be >= 27 (the smallest shifted min).
-      expect(affix.magnitude).toBeGreaterThanOrEqual(27);
+      // Only sell_price% and speed% roll without crit/combo/size unlocks: normal [15,25] → [40,50].
+      // So every rolled magnitude must be >= 40 (the smallest shifted min for available kinds).
+      expect(affix.magnitude).toBeGreaterThanOrEqual(40);
     }
   });
 
@@ -496,7 +496,7 @@ describe("fusion — getFusionTarget", () => {
     };
     const eq: Item = {
       id: "eq-1", slot: "brush", tier: "epic",
-      affixes: [{ kind: "+crit_chance%", magnitude: 14 }, { kind: "+combo_chance%", magnitude: 24 }],
+      affixes: [{ kind: "+crit_chunks", magnitude: 14 }, { kind: "+combo_chance%", magnitude: 24 }],
       fuseCount: 0,
     };
     // Without ma_specialist: cross-affix is rejected.
@@ -734,7 +734,7 @@ describe("fusion — fuseItem action", () => {
     const eq: Item = {
       id: "eq-1", slot: "brush", tier: "epic",
       affixes: [
-        { kind: "+crit_chance%", magnitude: 14 },
+        { kind: "+crit_chunks", magnitude: 14 },
         { kind: "+combo_chance%", magnitude: 24 },
         { kind: "+size%", magnitude: 25 },
         { kind: "+sell_price%", magnitude: 25 },
@@ -762,9 +762,9 @@ describe("fusion — fuseItem action", () => {
     // Each affix is freshly rolled within its epic per-kind range — no carry-over
     // from drop or eq magnitudes.
     for (const a of fused.affixes) {
-      // Epic min across all kinds is 14 (crit). Epic max across all kinds is 42 (combo).
-      expect(a.magnitude).toBeGreaterThanOrEqual(14);
-      expect(a.magnitude).toBeLessThanOrEqual(42);
+      // Epic min across all kinds is 2 (crit_chunks [2,4]). Epic max is 50 (sell/speed/size [35,50]).
+      expect(a.magnitude).toBeGreaterThanOrEqual(2);
+      expect(a.magnitude).toBeLessThanOrEqual(50);
     }
   });
 

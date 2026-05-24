@@ -119,7 +119,7 @@ describe("workshopRoll — rollAffixes", () => {
   it("each affix has a kind from AFFIX_KINDS and magnitude within that tier's range", () => {
     const affixes = rollAffixes("legendary", baseStub());
     for (const a of affixes) {
-      expect(["+sell_price%", "+speed%", "+crit_chance%", "+combo_chance%", "+size%"]).toContain(a.kind);
+      expect(["+sell_price%", "+speed%", "+crit_chunks", "+combo_chance%", "+size%"]).toContain(a.kind);
       const range = AFFIX_MAGNITUDE_RANGE["legendary"][a.kind];
       expect(a.magnitude).toBeGreaterThanOrEqual(range.min);
       expect(a.magnitude).toBeLessThanOrEqual(range.max);
@@ -213,12 +213,12 @@ describe("rollAffixes — skill-tree gating", () => {
     }
     expect(seen.has("+sell_price%")).toBe(true);
     expect(seen.has("+speed%")).toBe(true);
-    expect(seen.has("+crit_chance%")).toBe(false);
+    expect(seen.has("+crit_chunks")).toBe(false);
     expect(seen.has("+combo_chance%")).toBe(false);
     expect(seen.has("+size%")).toBe(false);
   });
 
-  it("with genius_episode owned (unlocks canvas_crit), +crit_chance% can roll", () => {
+  it("with genius_episode owned (unlocks canvas_crit), +crit_chunks can roll", () => {
     setSeed(1);
     const state = baseStub({ purchasedNodes: { genius_episode: 1 } });
     const seen = new Set<string>();
@@ -226,7 +226,7 @@ describe("rollAffixes — skill-tree gating", () => {
       const affixes = rollAffixes("legendary", state);
       for (const a of affixes) seen.add(a.kind);
     }
-    expect(seen.has("+crit_chance%")).toBe(true);
+    expect(seen.has("+crit_chunks")).toBe(true);
     expect(seen.has("+combo_chance%")).toBe(false);
   });
 

@@ -69,7 +69,7 @@ export function rollWorkerWeights(classId: ClassId): WeightTuple {
 const KIND_TO_TRACK: Record<AffixKind, CanvasTrackId> = {
   "+sell_price%": "sell_price",
   "+speed%": "speed",
-  "+crit_chance%": "crit",
+  "+crit_chunks": "crit",
   "+combo_chance%": "combo",
   "+size%": "size",
 };

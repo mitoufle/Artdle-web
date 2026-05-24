@@ -254,11 +254,11 @@ describe("getCritChance — per-chunk rework", () => {
   it("ignores items and workers (sources moved to getCritChunks)", () => {
     const stateWithItem = {
       critLevel: 0,
-      equipped: { brush: { slot: "brush", tier: "normal", affixes: [{ kind: "+crit_chance%", magnitude: 50 }], fuseCount: 0 } },
+      equipped: { brush: { slot: "brush", tier: "normal", affixes: [{ kind: "+crit_chunks", magnitude: 50 }], fuseCount: 0 } },
       roster: [],
       purchasedNodes: {},
     } as unknown as GameStore;
-    // Even though the (legacy) +crit_chance% affix is present, getCritChance must not see it.
+    // Even though a +crit_chunks affix is present, getCritChance must not see it.
     expect(getCritChance(stateWithItem)).toBeCloseTo(0.01, 6);
   });
 });
@@ -461,7 +461,7 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
   it("getCritChance: only critLevel contributes (items + workers moved to getCritChunks)", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
-      affixes: [{ kind: "+crit_chance%", magnitude: 5 }],
+      affixes: [{ kind: "+crit_chunks", magnitude: 5 }],
       fuseCount: 0,
     };
     const state = {
@@ -472,7 +472,7 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
       roster: [
         {
           id: "w1", class: "speedrunner", tier: "common", level: 1, xp: big(0),
-          affixes: [{ kind: "+crit_chance%", magnitude: 5 }],
+          affixes: [{ kind: "+crit_chunks", magnitude: 5 }],
         },
       ],
     } as unknown as GameStore;
