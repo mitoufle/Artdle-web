@@ -93,6 +93,8 @@ describe("metaSlice — performAscend wrapper", () => {
 });
 
 describe("save migration v19 → v20 (lastSeen)", () => {
+  // v22→v23 full wipe applies to all saves below v23; all these return {}.
+
   it("seeds lastSeen with Date.now() for pre-v20 saves", () => {
     const fakeNow = 1_700_000_000_000;
     const realNow = Date.now;
@@ -107,7 +109,8 @@ describe("save migration v19 → v20 (lastSeen)", () => {
         lifetimeInspiration: { __big: "0" },
       };
       const migrated = migrate(v19State, 19) as unknown as Record<string, unknown>;
-      expect(migrated.lastSeen).toBe(fakeNow);
+      // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+      expect(Object.keys(migrated)).toEqual([]);
     } finally {
       Date.now = realNow;
     }
@@ -119,7 +122,8 @@ describe("save migration v19 → v20 (lastSeen)", () => {
       lastSeen: 1_234_567_890_000,
     };
     const migrated = migrate(v20State, 20) as unknown as Record<string, unknown>;
-    expect(migrated.lastSeen).toBe(1_234_567_890_000);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("chains correctly from earlier versions (v18 → v20 seeds lastSeen)", () => {
@@ -129,9 +133,8 @@ describe("save migration v19 → v20 (lastSeen)", () => {
     try {
       const v18State = { playerId: "v18-test", gold: { __big: "0" } };
       const migrated = migrate(v18State, 18) as unknown as Record<string, unknown>;
-      // v18 → v19 adds lifetimeInspiration; v19 → v20 adds lastSeen.
-      expect((migrated.lifetimeInspiration as ReturnType<typeof big>).toNumber()).toBe(0);
-      expect(migrated.lastSeen).toBe(fakeNow);
+      // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+      expect(Object.keys(migrated)).toEqual([]);
     } finally {
       Date.now = realNow;
     }

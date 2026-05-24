@@ -210,6 +210,9 @@ describe("persistence integration — flush error routing through telemetry", ()
 });
 
 describe("save schema migration", () => {
+  // Note: v22→v23 does a full wipe (returns {}). All saves below v23 are wiped;
+  // the assertions below confirm the empty-record return that triggers zustand default merge.
+
   it("migrate v1 → v2 filters out items with the removed +inspiration_rate% affix", () => {
     const v1State = {
       playerId: "deadbeef-uuid",
@@ -224,12 +227,8 @@ describe("save schema migration", () => {
       ],
     };
     const result = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v9 migration wipes inventory (workshop rework); the v1→v2 filtering
-    // still ran correctly, but the full chain ends with inventory=[].
-    expect(result.inventory).toEqual([]);
-    // equippedItems array is removed by v9 migration (replaced by equipped: {}).
-    expect("equippedItems" in result).toBe(false);
-    expect(result.equipped).toEqual({});
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(result)).toEqual([]);
   });
 
   it("migrate v1 → v2 preserves all other fields verbatim (only inventory + equippedItems are filtered)", () => {
@@ -242,12 +241,8 @@ describe("save schema migration", () => {
       currentStage: 1,
     };
     const result = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    expect(result.playerId).toBe("preserved-uuid");
-    expect(result.gold).toEqual({ __big: "1234" });
-    // v8 migration wipes purchasedNodes (skill-tree rewrite), so old IDs don't survive.
-    expect(result.purchasedNodes).toEqual({});
-    // v14 migration wipes currentStage (inspiration tree rewrite).
-    expect(result.currentStage).toBe(0);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(result)).toEqual([]);
   });
 
   it("migrate from version 2 (legacy): v9 wipes inventory and drops equippedItems", () => {
@@ -256,24 +251,21 @@ describe("save schema migration", () => {
       equippedItems: [{ kind: "-paint_time%", magnitude: 7 }],
     };
     const result = migrate(v2State, 2) as unknown as Record<string, unknown>;
-    // v9 migration wipes inventory (workshop rework).
-    expect(result.inventory).toEqual([]);
-    // equippedItems is removed by v9; equipped: {} is initialized instead.
-    expect("equippedItems" in result).toBe(false);
-    expect(result.equipped).toEqual({});
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(result)).toEqual([]);
   });
 
   it("migrate handles missing inventory/equippedItems gracefully (defaults to empty)", () => {
     const v1State = { playerId: "x" };
     const result = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v9 migration initializes inventory=[] and equipped={} (equippedItems array dropped).
-    expect(result.inventory).toEqual([]);
-    expect(result.equipped).toEqual({});
-    expect("equippedItems" in result).toBe(false);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(result)).toEqual([]);
   });
 });
 
 describe("save migration v2 → v3", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("v2 save (no canvasTier, no paintMastery) gets defaults on migrate", () => {
     const v2State = {
       gold: { __big: "5000" },
@@ -281,16 +273,10 @@ describe("save migration v2 → v3", () => {
       fame: { __big: "3" },
       ascendCount: 1,
       playerId: "test-player-id-v2",
-      // ...other v2 fields would be here, but migrate doesn't depend on them
     };
     const migrated = migrate(v2State, 2) as unknown as Record<string, unknown>;
-    // v9→v10 drops canvasTier; v21→v22 re-adds canvasTier: 1.
-    expect(migrated.canvasTier).toBe(1);
-    expect("paintMastery" in migrated).toBe(false);
-    // playerId preserved.
-    expect(migrated.playerId).toBe("test-player-id-v2");
-    // gold preserved.
-    expect((migrated.gold as { __big: string }).__big).toBe("5000");
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("v1 save chained through migrateV1toV2 then v2→v3 lands with all defaults", () => {
@@ -304,16 +290,14 @@ describe("save migration v2 → v3", () => {
       playerId: "test-player-id-v1",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v9 migration wipes inventory (workshop rework); v1→v2 filtering ran
-    // correctly mid-chain but the final state has inventory=[].
-    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
-    // v2→v3: defaults added. v9→v10: canvasTier dropped. v21→v22: re-added as 1.
-    expect(migrated.canvasTier).toBe(1);
-    expect("paintMastery" in migrated).toBe(false);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("save migration v3 → v4 (lifetime gold add)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("v3 save (no lifetimeGold) gets default big(0) on migrate", () => {
     const v3State = {
       gold: { __big: "5000" },
@@ -324,12 +308,8 @@ describe("save migration v3 → v4 (lifetime gold add)", () => {
       canvasTier: 5,
     };
     const migrated = migrate(v3State, 3) as unknown as Record<string, unknown>;
-    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
-    // v21 drops paintMastery.
-    expect("paintMastery" in migrated).toBe(false);
-    // v9→v10 drops canvasTier; v21→v22 re-adds canvasTier: 1.
-    expect(migrated.canvasTier).toBe(1);
-    expect(migrated.playerId).toBe("test-player-id-v3");
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("v1 save chained through v1→v2→v3→v4 lands with all defaults", () => {
@@ -343,11 +323,8 @@ describe("save migration v3 → v4 (lifetime gold add)", () => {
       playerId: "test-player-id-v1",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v9 migration wipes inventory (workshop rework). v9→v10 drops canvasTier; v21→v22 re-adds canvasTier: 1.
-    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
-    expect(migrated.canvasTier).toBe(1);
-    expect("paintMastery" in migrated).toBe(false);
-    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("v4 lifetimeGold round-trips at the current SAVE_VERSION", async () => {
@@ -358,11 +335,13 @@ describe("save migration v3 → v4 (lifetime gold add)", () => {
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(22);
+    expect(parsed.version).toBe(23);
   });
 });
 
 describe("save migration v5 → v6 (drop currentView)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("drops currentView field from v5 save", () => {
     const v5State = {
       gold: { __big: "0" },
@@ -376,7 +355,8 @@ describe("save migration v5 → v6 (drop currentView)", () => {
       currentView: "painting",
     };
     const migrated = migrate(v5State, 5) as unknown as Record<string, unknown>;
-    expect("currentView" in migrated).toBe(false);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("v1 → v6 chain preserves all earlier-migration data + drops currentView", () => {
@@ -391,16 +371,14 @@ describe("save migration v5 → v6 (drop currentView)", () => {
       currentView: "home",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v9 migration wipes inventory (workshop rework). v9→v10 drops canvasTier; v21→v22 re-adds canvasTier: 1.
-    expect((migrated.inventory as Array<{ kind: string }>).length).toBe(0);
-    expect(migrated.canvasTier).toBe(1);
-    expect("paintMastery" in migrated).toBe(false);
-    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
-    expect("currentView" in migrated).toBe(false);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("save migration v6 → v7 (add pastRuns)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("v6 save (no pastRuns) gets default empty array on migrate", () => {
     const v6State = {
       gold: { __big: "0" },
@@ -413,9 +391,8 @@ describe("save migration v6 → v7 (add pastRuns)", () => {
       lifetimeGold: { __big: "0" },
     };
     const migrated = migrate(v6State, 6) as unknown as Record<string, unknown>;
-    expect(Array.isArray(migrated.pastRuns)).toBe(true);
-    expect(migrated.pastRuns).toEqual([]);
-    expect(migrated.playerId).toBe("test-id-v6");
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("full chain v1 → v7 produces all defaults including pastRuns", () => {
@@ -426,15 +403,14 @@ describe("save migration v6 → v7 (add pastRuns)", () => {
       playerId: "v1-test",
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v9→v10 drops canvasTier; v21→v22 re-adds canvasTier: 1.
-    expect(migrated.canvasTier).toBe(1);
-    expect("paintMastery" in migrated).toBe(false);
-    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
-    expect(migrated.pastRuns).toEqual([]);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("save migration v7 → v8 (skill-tree rewrite)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("v7 save wipes purchasedNodes and resets pokeTreeTimer on migrate", () => {
     const v7State = {
       gold: { __big: "0" },
@@ -450,13 +426,8 @@ describe("save migration v7 → v8 (skill-tree rewrite)", () => {
       pokeTreeTimer: 99,
     };
     const migrated = migrate(v7State, 7) as unknown as Record<string, unknown>;
-    // purchasedNodes wiped — old IDs no longer valid.
-    expect(migrated.purchasedNodes).toEqual({});
-    // pokeTreeTimer reset.
-    expect(migrated.pokeTreeTimer).toBe(0);
-    // fame and playerId preserved.
-    expect((migrated.fame as { __big: string }).__big).toBe("10");
-    expect(migrated.playerId).toBe("test-id-v7");
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("full chain v1 → v8 produces all defaults including empty purchasedNodes", () => {
@@ -468,17 +439,14 @@ describe("save migration v7 → v8 (skill-tree rewrite)", () => {
       purchasedNodes: { goldsmith: true },
     };
     const migrated = migrate(v1State, 1) as unknown as Record<string, unknown>;
-    // v9→v10 drops canvasTier; v21→v22 re-adds canvasTier: 1.
-    expect(migrated.canvasTier).toBe(1);
-    expect("paintMastery" in migrated).toBe(false);
-    expect((migrated.lifetimeGold as ReturnType<typeof big>).toNumber()).toBe(0);
-    expect(migrated.pastRuns).toEqual([]);
-    expect(migrated.purchasedNodes).toEqual({});
-    expect(migrated.pokeTreeTimer).toBe(0);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("save migration v8 → v9 (workshop rework)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("v8 → v9 migration: wipes inventory and equipped, initializes workshopLevel/Xp", () => {
     const v8State = {
       fame: { __big: "10" },
@@ -492,16 +460,15 @@ describe("save migration v8 → v9 (workshop rework)", () => {
       paintMastery: { __big: "100" },
       lifetimeGold: { __big: "10000" },
     };
-    const result = migrate(v8State, 8);
-    expect(result.inventory).toEqual([]);
-    expect(result.equipped).toEqual({});
-    expect(result.workshopLevel).toBe(1);
-    expect(result.workshopXp).toBe(0);
-    expect(result.purchasedNodes).toEqual({ gear_up: 1 });
+    const result = migrate(v8State, 8) as unknown as Record<string, unknown>;
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(result)).toEqual([]);
   });
 });
 
 describe("migrate v9 → v10 (canvas depth)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("drops canvasTier (v9→v10) then re-adds canvasTier: 1 (v21→v22), and seeds new track fields with defaults", () => {
     const v9State: Record<string, unknown> = {
       canvasTier: 5,
@@ -509,16 +476,8 @@ describe("migrate v9 → v10 (canvas depth)", () => {
       gold: { __big: "100" },
     };
     const migrated = migrate(v9State, 9) as unknown as Record<string, unknown>;
-    // v9→v10 drops canvasTier; v21→v22 re-adds canvasTier: 1.
-    expect(migrated.canvasTier).toBe(1);
-    expect(migrated.sellPriceLevel).toBe(1);
-    expect(migrated.speedLevel).toBe(1);
-    expect(migrated.sizeLevel).toBe(0);
-    expect(migrated.critLevel).toBe(0);
-    expect(migrated.comboLevel).toBe(0);
-    expect(migrated.comboChain).toBe(0);
-    // isCritThisCanvas removed in T7; field no longer exists in the state schema.
-    expect(migrated.isCritThisCanvas).toBeUndefined();
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("does not change saves at v10 (migrate is no-op when fromVersion >= 10)", () => {
@@ -530,9 +489,8 @@ describe("migrate v9 → v10 (canvas depth)", () => {
       canvasProgress: 0,
     };
     const migrated = migrate(v10State, 10) as unknown as Record<string, unknown>;
-    expect(migrated.sellPriceLevel).toBe(7);
-    expect(migrated.speedLevel).toBe(4);
-    expect(migrated.sizeLevel).toBe(5);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("chains correctly from earlier versions (v8 → v10)", () => {
@@ -540,17 +498,14 @@ describe("migrate v9 → v10 (canvas depth)", () => {
       gold: { __big: "0" },
     };
     const migrated = migrate(v8State, 8) as unknown as Record<string, unknown>;
-    // v8 → v9 wipes inventory etc.
-    expect(migrated.workshopLevel).toBe(1);
-    // v9 → v10 strips canvasTier (none present in input — OK; migration safely deletes a missing key) and seeds new fields.
-    // v21 → v22 re-adds canvasTier: 1.
-    expect(migrated.canvasTier).toBe(1);
-    expect(migrated.sellPriceLevel).toBe(1);
-    expect(migrated.sizeLevel).toBe(0);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("migrate v10 → v11 (affix-pool rework)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("wipes inventory + equipped (game unreleased; magnitudes don't translate cleanly)", () => {
     const v10State: Record<string, unknown> = {
       inventory: [
@@ -561,11 +516,8 @@ describe("migrate v10 → v11 (affix-pool rework)", () => {
       workshopXp: 17,
     };
     const migrated = migrate(v10State, 10) as unknown as Record<string, unknown>;
-    expect(migrated.inventory).toEqual([]);
-    expect(migrated.equipped).toEqual({});
-    // Workshop level + XP preserved (long-tail meta).
-    expect(migrated.workshopLevel).toBe(8);
-    expect(migrated.workshopXp).toBe(17);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("v11 save is migrated to v12 (inventory + equipped wiped)", () => {
@@ -576,16 +528,14 @@ describe("migrate v10 → v11 (affix-pool rework)", () => {
       workshopXp: 5,
     };
     const migrated = migrate(v11State, 11) as unknown as Record<string, unknown>;
-    // v11 → v12 wipes inventory + equipped.
-    expect(migrated.inventory).toEqual([]);
-    expect(migrated.equipped).toEqual({});
-    // Workshop level + XP preserved.
-    expect(migrated.workshopLevel).toBe(3);
-    expect(migrated.workshopXp).toBe(5);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("migrate v11 → v12 (+size_gold_per_level% → +size%)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("wipes inventory + equipped (magnitudes from old kind don't translate cleanly)", () => {
     const v11State: Record<string, unknown> = {
       inventory: [
@@ -596,11 +546,8 @@ describe("migrate v11 → v12 (+size_gold_per_level% → +size%)", () => {
       workshopXp: 10,
     };
     const migrated = migrate(v11State, 11) as unknown as Record<string, unknown>;
-    expect(migrated.inventory).toEqual([]);
-    expect(migrated.equipped).toEqual({});
-    // Workshop level + XP preserved.
-    expect(migrated.workshopLevel).toBe(5);
-    expect(migrated.workshopXp).toBe(10);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("v12 save migrates through v13/v14/v15 (fuseCount added by v15)", () => {
@@ -611,25 +558,27 @@ describe("migrate v11 → v12 (+size_gold_per_level% → +size%)", () => {
       workshopXp: 40,
     };
     const migrated = migrate(v12State, 12) as unknown as Record<string, unknown>;
-    expect(migrated.inventory).toEqual([{ fuseCount: 0, id: "y", slot: "easel", tier: "rare", affixes: [{ kind: "+size%", magnitude: 9 }] }]);
-    expect(migrated.workshopLevel).toBe(10);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("save migration v12 → v13 (Painter's Office)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("adds default office state to a v12 save", () => {
     const v12Save = {
       gold: { __big: "100" },
     };
-    const migrated = migrate(v12Save, 12) as unknown as { officeLevel: number; officeXp: unknown; queue: unknown[]; roster: unknown[]; trickleTimer: number };
-    expect(migrated.officeLevel).toBe(0);
-    expect(migrated.queue).toEqual([]);
-    expect(migrated.roster).toEqual([]);
-    expect(migrated.trickleTimer).toBe(0);
+    const migrated = migrate(v12Save, 12) as unknown as Record<string, unknown>;
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("save migration v13 → v14 (inspiration tree rewrite)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("v13 → v14 migration: wipes tree state, preserves other slices", () => {
     const v13Save = {
       currentStage: 2,
@@ -654,23 +603,14 @@ describe("save migration v13 → v14 (inspiration tree rewrite)", () => {
       pokeTreeTimer: 0,
     };
     const migrated = migrate(v13Save, 13) as unknown as Record<string, unknown>;
-    // Tree wiped:
-    expect(migrated.currentStage).toBe(0);
-    const pl = migrated.partLevels as Record<string, number>;
-    expect(pl.spark).toBeUndefined();
-    expect(pl.cotyledon).toBe(0);
-    expect(pl.tendril).toBe(0);
-    expect(pl.stalk).toBe(0);
-    // Other slices preserved:
-    expect((migrated.gold as { toString: () => string }).toString()).toBe("12345");
-    expect((migrated.fame as { toString: () => string }).toString()).toBe("9");
-    expect(migrated.workshopLevel).toBe(4);
-    expect(migrated.purchasedNodes).toEqual({ someNode: 1 });
-    expect(migrated.playerId).toBe("test-uuid");
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("save migration v14 → v15 (fuseCount on items)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("v14 → v15: adds fuseCount: 0 to inventory items and equipped items", () => {
     const v14Save = {
       inventory: [
@@ -685,18 +625,14 @@ describe("save migration v14 → v15 (fuseCount on items)", () => {
       workshopXp: 5,
     };
     const migrated = migrate(v14Save, 14) as unknown as Record<string, unknown>;
-    const inv = migrated.inventory as Array<Record<string, unknown>>;
-    expect(inv[0]!.fuseCount).toBe(0);
-    expect(inv[1]!.fuseCount).toBe(0);
-    const eq = migrated.equipped as Record<string, Record<string, unknown>>;
-    expect(eq.brush!.fuseCount).toBe(0);
-    // Other fields preserved
-    expect(migrated.workshopLevel).toBe(3);
-    expect((migrated.gold as { toString: () => string }).toString()).toBe("500");
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("save migration v20 → v21 (Paint Mastery removed)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("drops the persisted paintMastery field from a v20 save", () => {
     const v20State = {
       playerId: "deadbeef-1234-4abc-9def-1234567890ab",
@@ -705,9 +641,8 @@ describe("save migration v20 → v21 (Paint Mastery removed)", () => {
       lifetimeInspiration: { __big: "100" },
     } as Record<string, unknown>;
     const migrated = migrate(v20State, 20) as unknown as Record<string, unknown>;
-    expect("paintMastery" in migrated).toBe(false);
-    // Other v20 fields are preserved.
-    expect((migrated.lifetimeGold as { __big: string }).__big).toBeTruthy();
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
   it("the full chain from v3 produces no paintMastery", () => {
@@ -717,11 +652,14 @@ describe("save migration v20 → v21 (Paint Mastery removed)", () => {
       canvasTier: 5,
     } as Record<string, unknown>;
     const migrated = migrate(v3State, 3) as unknown as Record<string, unknown>;
-    expect("paintMastery" in migrated).toBe(false);
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });
 
 describe("save migration v21 → v22 (canvas tier system)", () => {
+  // v22→v23 full wipe applies to all saves below v23.
+
   it("adds canvasTier: 1 to a v21 save", () => {
     const v21State = {
       playerId: "deadbeef-1234-4abc-9def-1234567890ab",
@@ -731,18 +669,33 @@ describe("save migration v21 → v22 (canvas tier system)", () => {
       critLevel: 0,
       comboLevel: 0,
     } as Record<string, unknown>;
-    const migrated = migrate(v21State, 21);
-    expect((migrated.canvasTier as number)).toBe(1);
-    // Pre-existing upgrade levels preserved (no destructive reset).
-    expect((migrated.sellPriceLevel as number)).toBe(5);
-    expect((migrated.speedLevel as number)).toBe(3);
+    const migrated = migrate(v21State, 21) as unknown as Record<string, unknown>;
+    // v22→v23 full wipe: all old saves return {} so zustand defaults apply.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 
-  it("SAVE_VERSION is 22", async () => {
+  it("SAVE_VERSION is 23", async () => {
     useGameStore.getState().add("gold", big(1));
     await persistedAdapter.flush();
     const raw = await idbAdapter.getItem("artdle-save");
     const parsed = JSON.parse(raw!);
-    expect(parsed.version).toBe(22);
+    expect(parsed.version).toBe(23);
+  });
+});
+
+describe("save migration v22 → v23 (crit per-chunk rework)", () => {
+  it("returns an empty record so the store falls back to default initial state", () => {
+    // migrate is imported at the top of this file from "@/store".
+    const v22Save = {
+      gold: { mantissa: 12345, exponent: 0 } as unknown,
+      sellPriceLevel: 7,
+      critLevel: 30,
+      equipped: { brush: { affixes: [{ kind: "+crit_chance%", magnitude: 42 }] } },
+      purchasedNodes: { prismatic_eye: 2 },
+    };
+    const migrated = migrate(v22Save, 22);
+    // Full wipe: migrate returns an empty (or near-empty) object so zustand's
+    // shallow merge fills the rest from defaults.
+    expect(Object.keys(migrated)).toEqual([]);
   });
 });

@@ -40,7 +40,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 22;
+const SAVE_VERSION = 23;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -112,6 +112,11 @@ const SAVE_KEY = "artdle-save";
  *
  * v21 → v22 (2026-05-23): canvas tier system. Adds `canvasTier: 1` for
  * existing saves. Per-track upgrade levels are preserved.
+ *
+ * v22 → v23 (2026-05-24): crit per-chunk rework. Removes `+crit_chance%`
+ * affix kind, removes `prismatic_eye` skill node, replaces canvas-level crit
+ * speed with per-chunk crit chunk bonus. Per spec, full wipe — return `{}`
+ * and let zustand merge fill from defaults.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -369,6 +374,11 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       ...state,
       canvasTier: 1,
     };
+  }
+
+  if (fromVersion < 23) {
+    // v22 → v23 (2026-05-24): crit per-chunk rework. Full wipe per spec.
+    return {} as unknown as GameStore;
   }
 
   return state as unknown as GameStore;
