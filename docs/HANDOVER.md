@@ -1,5 +1,93 @@
 # Artdle Web — Handover
 
+## Painting perf — CDN cache + O(N²) cell render + static background (2026-05-24)
+
+Three commits, all deployed. The headline symptom was "going to /painting takes a long time, especially at higher canvas tiers" — root cause turned out to be **three separate issues compounding**.
+
+### 1. Vercel was not honoring Vite's content-hashed assets (`decb1ae`)
+
+Every static asset (JS bundle, the 1.8 MB `Painting_screen.png`, the 3.9 MB gate videos, every canvas sketch) was served with `Cache-Control: public, max-age=0, must-revalidate` — meaning the browser had to issue a conditional GET (full HTTP roundtrip) on every page load and every route navigation. On any non-trivial latency that's hundreds of ms per asset, multiplied across dozens of assets.
+
+Fix: added a `headers` entry in `vercel.json` that sets `Cache-Control: public, max-age=31536000, immutable` for `/assets/*`. Vite content-hashes every filename (e.g. `Painting_screen-I-f4S8HZ.png`) so caching forever is safe — the URL changes whenever content changes. `index.html` is intentionally left on the default (no-cache) so users always pick up the latest bundle hashes.
+
+Verified live: `curl -I` on a JS bundle now returns `max-age=31536000, immutable`. After the user hard-refreshes once, every subsequent navigation serves all assets from local browser cache with zero network roundtrip.
+
+### 2. CanvasStage cell render was O(N²) per frame (`dec6b0f`)
+
+The sketch overlay renders one `<div>` per chunk. Chunk count scales quadratically per tier via `getSketchGridDim`: T1=25, T2=49, T3=100, **T4=196**, T5=400, … At T4 the canvas became unusable on slower machines.
+
+Three independent bugs were compounding inside the per-cell render:
+
+- **`cellOrder.indexOf(i)` inside the loop** was O(N) per cell, making the full pass O(N²) per frame — ~38k array scans every animation tick at T4. Replaced with a pre-inverted `revealRankByIndex` lookup map built once per canvas (`useMemo`); O(1) per cell, O(N) per frame.
+- **Inline-style objects rebuilt every frame.** The 5-property `style={{ backgroundImage, backgroundSize, backgroundPosition, opacity, transform }}` was reconstructed for all 196 cells on every tick. Split into a memoized `cellStaticStyles` array (built once per canvas) and a per-frame `data-revealed` attribute.
+- **React was re-applying inline styles every render** because the style object reference changed each call, even when the values didn't. Moved the reveal animation (opacity 0→1, transform scale 0.4→1) from inline `style` into the CSS rule with a `[data-revealed="true"]` selector. Now the `style` prop reference is stable across frames (React skips it entirely); only the `data-revealed` attribute flips per cell when it transitions.
+
+Combined, this drops per-frame CanvasStage cost at T4 from "noticeable lag" to negligible. The same fix scales cleanly to T5+ if those tiers ever ship (T5 = 400 cells, T7 = 1600 — all still cheap with the new path).
+
+### 3. Workshop background switched from `<video>` to static `<img>` (`dec6b0f`)
+
+Per user preference, `painting_screen_anim.mp4` is no longer used. `CanvasStage.tsx` imports `Painting_screen_full.png` (the new user-supplied asset) and renders an `<img>` element in place of the looped video. The animated workshop ambient was nice-to-have but added 450 KB of fetch + a `<video>` element decoding/compositing every frame.
+
+The `.mp4` is still on disk and in the bundle (Vite tree-shakes the import), but the URL is no longer referenced by any component.
+
+### Notes
+
+- **The `<link rel="preload" as="video">` double-fetch trap.** During this perf investigation, I first added boot-time `<link rel="preload">` tags for the heavy assets (`2ce568a`), then downgraded to `prefetch` when users reported it made things slower (`edfc55e`), then reverted entirely (`0d44b3f`) when that still didn't help. The actual culprit was the Vercel CDN cache headers, not the asset hints. **Lesson**: don't add asset hints for big videos — `<link rel="preload" as="video">` has a known browser bug where the `<video>` element often doesn't reuse the preloaded resource (range-request mismatch), causing a duplicate fetch of every multi-MB file. If asset hints are ever revisited, use `rel="prefetch"` only for images, not videos.
+- **`src/systems/preload.ts` left in the repo as an orphan.** Tree-shook out of the production bundle (no caller). Leave it alone unless reintroducing the experiment — it documents the intended API for a future, better-thought-out preloader.
+- **`getSketchGridDim` is still THE source of truth for chunk count**, used by `canvasTickPure.ts` (engine), `PaintingRoute.tsx` (click-to-paint), and `CanvasStage.tsx` (visual). The perf fix means we can keep the quadratic chunk scaling without rethinking gameplay balance.
+
+### Status
+
+- All 1036 tests green across 107 files. `npx vite build` clean. Production bundle `index-0o1DH9Z4.js` — verified live presence of `Painting_screen_full`, `data-revealed`, and `Cells per crit` strings.
+
+### Open follow-ups
+
+- **Higher-tier visuals (T5+ = 400+ cells)** are now affordable to render but still untested in browsers. If T5 ever ships and feels weird, the next bottleneck would likely be GPU compositing of 400+ semi-transparent overlay layers — could be addressed by drawing the sketch into a `<canvas>` element instead of DOM divs.
+- **Hoist `getSketchGridDim` out of `components/`.** Pre-existing follow-up from the 2026-05-24 crit rework entry, still valid. `canvasTickPure.ts` imports it from a UI module.
+
+---
+
+## Crit/stats wiring — Consistency + Cells per crit (2026-05-24)
+
+Two related fixes shipped together (`6645b90` + `ca53bbc`), deployed.
+
+### What was broken
+
+- **`consistency` skill node was silently doing nothing.** Description claimed "+1% crit chance per level", but the runtime node entry had `unlocks: []`. The engine reads `countCapability(state, "crit_chance") × 0.01` in `getCritChance` — and no node carried the `crit_chance` tag, so the capability count was always 0. Five Consistency levels (the maxLevel) granted exactly 0% crit chance. Bug had been present since the 2026-05-24 crit-rework entry called out that the capability hook existed but no node carried it.
+- **Stats panel undercounted Cells per crit.** The block summed only the bonus side (Base + Items + Workers). But when a crit fires, the engine paints `1 trigger + getCritChunks()` cells — so players observed the canvas advance N+1 cells per crit while the panel claimed N. Mismatch between displayed and observed value, reported as "crit seems to overshoot".
+- **Stats Size block was missing skill-tree contribution.** `getCanvasSize` reads `countCapability("canvas_size_bonus") × 0.05` (from the `expanding_horizon` node), but the panel didn't surface it — purchases looked like they did nothing.
+- **Stats Crit chance block didn't show the Base 1% floor** (`BASE_CRIT_CHANCE`). It also didn't show the Skill tree contribution. Players who bought Consistency wouldn't see why crit went up.
+
+### Fixes
+
+- **`consistency` node** in both `src/config/skillTreeNodes.ts` and `src/config/skillTreeDesign.json` gets `unlocks: ["crit_chance"]`. Each Consistency level now contributes +1% crit chance via the existing engine path.
+- **StatsRoom Crit chance block** adds a `Base` line (1% floor, `BASE_CRIT_CHANCE`) and a `Skill tree` line (`countCapability("crit_chance") × 0.01`) alongside the existing `Canvas upgrade` line. `Canvas upgrade` is also now clamped at `MAX_CRIT_LEVEL` to mirror the engine.
+- **StatsRoom Cells per crit block** (was "Crit chunks (per crit)"): renamed for clarity, added a `Trigger (+1)` row at the top, and the total `chunksTotal = TRIGGER_CHUNK + BASE_CRIT_CHUNKS + chunksItems + chunksWorkers` now matches what the canvas actually advances per crit firing.
+- **StatsRoom Size block** adds a `Skill tree` row reading the `canvas_size_bonus` capability contribution.
+
+### Notes
+
+- **The `crit_chance` capability hook is now actively in use.** Any future node that wants to grant crit chance just needs `unlocks: ["crit_chance"]` and a per-level numeric magnitude of 1 — the engine does the rest via `countCapability`. Don't author a separate capability tag.
+- **`critChunksFromItems` and `critChunksFromWorkers`** in `StatsRoom.tsx` mirror the items/workers branches of `getCritChunks` in `multipliers.ts`. If the engine logic for crit_chunks ever changes (e.g. socks multiplier extends to a new slot), update both. Marked with comments pointing back to the engine site.
+- **The displayed soft-cap behavior.** `getCritChance` applies a soft-cap above `CRIT_SOFT_CAP_THRESHOLD = 0.30`. The panel's `totalLabel` shows the soft-capped value, but the line breakdown shows raw contributions — they won't add up to the total when above the threshold. Currently no UI hint that a cap is being applied. Worth a future "(softcapped)" annotation when raw > 30%.
+
+---
+
+## Free autocrafted items (2026-05-24)
+
+One commit (`fa8a265`), deployed.
+
+`performCraftPure` (in `src/core/workshopTickPure.ts`) gains a `freeCost: boolean = false` parameter. When `true`, the function skips the `spendCurrency(draft, "gold", craftCost(workshopLevel))` call (and its insufficient-gold rejection). Manual `craft()` from the workshop button still passes `false` (default) and pays the cost; the Taylorism auto-craft loop in `workshopTickPure` passes `true`.
+
+Taylorism skill node description updated in both `src/config/skillTreeNodes.ts` and `src/config/skillTreeDesign.json` from "Autocraft an Item every 10s." to "Autocraft a free Item every 10s."
+
+### Notes
+
+- **Offline-progress sim now also gets free auto-crafts.** The catch-up sim shares `workshopTickPure` with the live tick, so simulated Taylorism crafts during offline time are also free. Matches in-session behavior and matches player intuition ("I came back to free items"). No code split was needed.
+- **Manual craft path unchanged.** The workshop's `craft()` action still calls `performCraftPure(draft)` (defaulting `freeCost = false`), preserving the gold cost for player-initiated crafts.
+
+---
+
 ## Ascend cinematic + post-gate routing (2026-05-24)
 
 One commit on `master` (`fa8a833`), deployed (production bundle `index-Cg113YSy.js`). Verified live: `ascend-cinematic-overlay`, `fame gained`, `click to continue` strings present in JS.
