@@ -8,11 +8,7 @@ import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import paintingScreen from "@/assets/images/Painting_screen.png";
-import { getSketchUrl, getCellRevealOrder } from "./canvasArt";
-
-/** N×N grid for the chunk-by-chunk sketch reveal on the easel canvas. */
-const SKETCH_GRID_DIM = 5;
-const SKETCH_TOTAL_CELLS = SKETCH_GRID_DIM * SKETCH_GRID_DIM;
+import { getSketchUrl, getCellRevealOrder, getSketchGridDim } from "./canvasArt";
 
 function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const state = useGameStore.getState();
@@ -103,6 +99,10 @@ export function CanvasStage({
   const barWidth = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
   void sizeLevel;
 
+  // Chunk count doubles (approx) per tier: 5x5, 7x7, 10x10, 14x14, 20x20, ...
+  const gridDim = getSketchGridDim(canvasTier);
+  const totalCells = gridDim * gridDim;
+
   // Sketch + reveal-order are stable for a given canvasNumber so re-renders
   // (every frame's progress update) don't reshuffle the chunks.
   const sketchUrl = useMemo(
@@ -110,11 +110,11 @@ export function CanvasStage({
     [canvasTier, canvasNumber],
   );
   const cellOrder = useMemo(
-    () => getCellRevealOrder(canvasNumber, SKETCH_TOTAL_CELLS),
-    [canvasNumber],
+    () => getCellRevealOrder(canvasNumber, totalCells),
+    [canvasNumber, totalCells],
   );
   const cellsRevealed = Math.floor(
-    Math.max(0, Math.min(1, progressPct)) * SKETCH_TOTAL_CELLS,
+    Math.max(0, Math.min(1, progressPct)) * totalCells,
   );
 
   return (
@@ -150,20 +150,24 @@ export function CanvasStage({
               className={styles.sketchOverlay}
               data-testid="sketch-overlay"
               aria-hidden="true"
+              style={{
+                gridTemplateColumns: `repeat(${gridDim}, 1fr)`,
+                gridTemplateRows: `repeat(${gridDim}, 1fr)`,
+              }}
             >
-              {Array.from({ length: SKETCH_TOTAL_CELLS }, (_, i) => {
-                const col = i % SKETCH_GRID_DIM;
-                const row = Math.floor(i / SKETCH_GRID_DIM);
+              {Array.from({ length: totalCells }, (_, i) => {
+                const col = i % gridDim;
+                const row = Math.floor(i / gridDim);
                 const revealRank = cellOrder.indexOf(i);
                 const visible = revealRank < cellsRevealed;
-                const denom = SKETCH_GRID_DIM - 1;
+                const denom = gridDim - 1;
                 return (
                   <div
                     key={i}
                     className={styles.sketchCell}
                     style={{
                       backgroundImage: `url(${sketchUrl})`,
-                      backgroundSize: `${SKETCH_GRID_DIM * 100}% ${SKETCH_GRID_DIM * 100}%`,
+                      backgroundSize: `${gridDim * 100}% ${gridDim * 100}%`,
                       backgroundPosition: `${(col / denom) * 100}% ${(row / denom) * 100}%`,
                       opacity: visible ? 1 : 0,
                     }}

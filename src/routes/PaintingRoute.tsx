@@ -19,6 +19,7 @@ import {
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import { CanvasStage } from "@/components/painting/CanvasStage";
+import { getSketchGridDim } from "@/components/painting/canvasArt";
 import { TrackCard } from "@/components/painting/TrackCard";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
 import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
@@ -79,6 +80,8 @@ export function PaintingRoute(): JSX.Element {
   const critLocked = !getCanvasTrackUnlocked(helperState, "crit");
   const comboLocked = !getCanvasTrackUnlocked(helperState, "combo");
 
+  const chunkCount = getSketchGridDim(canvasTier) ** 2;
+
   const sellCost = sellPriceUpgradeCost(sellPriceLevel, canvasTier);
   const speedCost = speedUpgradeCost(speedLevel, canvasTier);
   const sizeCost = sizeUpgradeCost(sizeLevel, canvasTier);
@@ -100,7 +103,7 @@ export function PaintingRoute(): JSX.Element {
           comboChain={comboChain}
           isCrit={isCritThisCanvas}
           canvasNumber={canvasesSold}
-          onChunkClick={() => canvasTick(paintTimeSec / 25)}
+          onChunkClick={() => canvasTick(paintTimeSec / chunkCount)}
         />
         {lastSale && (
           <FloatingGoldText

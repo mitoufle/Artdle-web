@@ -52,6 +52,20 @@ export function getSketchUrl(tier: number, canvasNumber: number): string | null 
 }
 
 /**
+ * Returns the side length of the NxN chunk grid used to reveal the easel
+ * sketch for a given canvas tier. T1 = 5 (25 chunks); each subsequent tier
+ * approximately doubles the cell count while keeping a square grid:
+ * round(5 * sqrt(2)^(tier-1)) -> 5, 7, 10, 14, 20, 28, 40, 57, 80, 113, 160.
+ *
+ * Square grids per tier mean the click-to-paint mechanic gets progressively
+ * finer-grained at higher tiers.
+ */
+export function getSketchGridDim(tier: number): number {
+  const clamped = Math.max(1, tier);
+  return Math.round(5 * Math.SQRT2 ** (clamped - 1));
+}
+
+/**
  * Returns a deterministic permutation of `[0, totalCells)` based on canvasNumber.
  * Each canvas reveals its chunks in a different shuffled order, but the
  * order is stable for that canvas across re-renders / catch-up runs.

@@ -44,8 +44,8 @@
   display: block;
 }
 
-/* The easel-canvas region inside the workshop image. The N×N grid of cells
- * inside reveals the in-progress sketch chunk by chunk as progressPct grows. */
+/* The easel-canvas region inside the workshop image. The N×N grid is set
+ * inline per-tier (dim ~doubles the cell count each tier). */
 .sketchOverlay {
   position: absolute;
   left: 39.17%;
@@ -53,8 +53,6 @@
   width: 21.58%;
   height: 39.19%;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(5, 1fr);
   pointer-events: none;
 }
 
