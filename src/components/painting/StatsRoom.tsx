@@ -31,6 +31,7 @@ import {
   MAX_CRIT_LEVEL,
   tierFactor,
   timeFactor,
+  costTierFactor,
   levelScale,
 } from "@/core/balance";
 import { countCapability, getNodeLevel } from "@/store/skillTreeSlice";
@@ -217,8 +218,9 @@ function sizeBlock(state: CanvasMultiplierInputs): SizeBlock {
 }
 
 function TierBlock({ tier }: { tier: number }): JSX.Element {
-  const factor = tierFactor(tier);
+  const goldFactor = tierFactor(tier);
   const timeFac = timeFactor(tier);
+  const costFactor = costTierFactor(tier);
   return (
     <article className={styles.block}>
       <header className={styles.blockHeader}>
@@ -228,7 +230,7 @@ function TierBlock({ tier }: { tier: number }): JSX.Element {
       <ul className={styles.lines}>
         <li className={styles.line}>
           <span className={styles.source}>Base gold</span>
-          <span className={styles.value}>×{factor}</span>
+          <span className={styles.value}>×{goldFactor}</span>
         </li>
         <li className={styles.line}>
           <span className={styles.source}>Base time</span>
@@ -236,7 +238,7 @@ function TierBlock({ tier }: { tier: number }): JSX.Element {
         </li>
         <li className={styles.line}>
           <span className={styles.source}>Upgrade costs</span>
-          <span className={styles.value}>×{factor}</span>
+          <span className={styles.value}>×{costFactor}</span>
         </li>
       </ul>
     </article>
