@@ -637,34 +637,91 @@ describe("canvasTime (tier-scaled)", () => {
   });
 });
 
-describe("*UpgradeCost (tier-scaled)", () => {
-  it("sellPriceUpgradeCost T1 L1 = 100 (unchanged)", () => {
+describe("sellPriceUpgradeCost (tier-scaled)", () => {
+  it("T1 L1 = 100 (unchanged)", () => {
     expect(sellPriceUpgradeCost(0, 1).toNumber()).toBeCloseTo(100, 1);
     expect(sellPriceUpgradeCost(0).toNumber()).toBeCloseTo(100, 1); // default tier=1
   });
 
-  it("sellPriceUpgradeCost T2 L1 = 1000 (×10)", () => {
-    expect(sellPriceUpgradeCost(0, 2).toNumber()).toBeCloseTo(1000, 1);
-  });
-
-  it("speedUpgradeCost T3 L1 = 10000 (×100)", () => {
-    expect(speedUpgradeCost(0, 3).toNumber()).toBeCloseTo(10000, 1);
-  });
-
-  it("sizeUpgradeCost T2 L1 = 10000 (was 1000)", () => {
-    expect(sizeUpgradeCost(0, 2).toNumber()).toBeCloseTo(10000, 1);
-  });
-
-  it("critUpgradeCost T2 L1 = 50000 (was 5000)", () => {
-    expect(critUpgradeCost(0, 2).toNumber()).toBeCloseTo(50000, 1);
-  });
-
-  it("comboUpgradeCost T2 L1 = 50000 (was 5000)", () => {
-    expect(comboUpgradeCost(0, 2).toNumber()).toBeCloseTo(50000, 1);
-  });
-
   it("tier-scaling composes with 1.5^level cost ladder", () => {
-    // T2, L5: SELL_PRICE_COST_BASE × tierFactor × 1.5^5 = 100 × 10 × 7.59375 ≈ 7593.75
-    expect(sellPriceUpgradeCost(5, 2).toNumber()).toBeCloseTo(7593.75, 0);
+    // T2, L5: SELL_PRICE_COST_BASE × costTierFactor(2) × 1.5^5 = 100 × 20 × 7.59375 = 15187.5
+    expect(sellPriceUpgradeCost(5, 2).toNumber()).toBeCloseTo(
+      SELL_PRICE_COST_BASE * COST_GROWTH_BASE * Math.pow(TRACK_COST_GROWTH, 5),
+      0,
+    );
+  });
+
+  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
+    expect(sellPriceUpgradeCost(0, 2).toNumber())
+      .toBeCloseTo(SELL_PRICE_COST_BASE * COST_GROWTH_BASE, 5);
+  });
+
+  it("scales with costTierFactor at tier 3", () => {
+    expect(sellPriceUpgradeCost(0, 3).toNumber())
+      .toBeCloseTo(SELL_PRICE_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
+  });
+});
+
+describe("speedUpgradeCost (tier-scaled)", () => {
+  it("T1 L1 = 100 (unchanged)", () => {
+    expect(speedUpgradeCost(0, 1).toNumber()).toBeCloseTo(100, 1);
+  });
+
+  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
+    expect(speedUpgradeCost(0, 2).toNumber())
+      .toBeCloseTo(SPEED_COST_BASE * COST_GROWTH_BASE, 5);
+  });
+
+  it("scales with costTierFactor at tier 3", () => {
+    expect(speedUpgradeCost(0, 3).toNumber())
+      .toBeCloseTo(SPEED_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
+  });
+});
+
+describe("sizeUpgradeCost (tier-scaled)", () => {
+  it("T1 L1 = 1000 (unchanged)", () => {
+    expect(sizeUpgradeCost(0, 1).toNumber()).toBeCloseTo(1000, 1);
+  });
+
+  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
+    expect(sizeUpgradeCost(0, 2).toNumber())
+      .toBeCloseTo(SIZE_COST_BASE * COST_GROWTH_BASE, 5);
+  });
+
+  it("scales with costTierFactor at tier 3", () => {
+    expect(sizeUpgradeCost(0, 3).toNumber())
+      .toBeCloseTo(SIZE_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
+  });
+});
+
+describe("critUpgradeCost (tier-scaled)", () => {
+  it("T1 L1 = 5000 (unchanged)", () => {
+    expect(critUpgradeCost(0, 1).toNumber()).toBeCloseTo(5000, 1);
+  });
+
+  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
+    expect(critUpgradeCost(0, 2).toNumber())
+      .toBeCloseTo(CRIT_COST_BASE * COST_GROWTH_BASE, 5);
+  });
+
+  it("scales with costTierFactor at tier 3", () => {
+    expect(critUpgradeCost(0, 3).toNumber())
+      .toBeCloseTo(CRIT_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
+  });
+});
+
+describe("comboUpgradeCost (tier-scaled)", () => {
+  it("T1 L1 = 5000 (unchanged)", () => {
+    expect(comboUpgradeCost(0, 1).toNumber()).toBeCloseTo(5000, 1);
+  });
+
+  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
+    expect(comboUpgradeCost(0, 2).toNumber())
+      .toBeCloseTo(COMBO_COST_BASE * COST_GROWTH_BASE, 5);
+  });
+
+  it("scales with costTierFactor at tier 3", () => {
+    expect(comboUpgradeCost(0, 3).toNumber())
+      .toBeCloseTo(COMBO_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
   });
 });
