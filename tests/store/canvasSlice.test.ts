@@ -473,7 +473,7 @@ describe("canvasTier — tierUp action", () => {
     expect(useGameStore.getState().canvasTier).toBe(2);
   });
 
-  it("on success, resets all five upgrade tracks to 0", () => {
+  it("on success, resets sellPriceLevel and speedLevel to 0; preserves sizeLevel, critLevel, comboLevel", () => {
     useGameStore.setState({
       sellPriceLevel: 20, speedLevel: 18, sizeLevel: 10, critLevel: 5, comboLevel: 3,
     });
@@ -481,9 +481,9 @@ describe("canvasTier — tierUp action", () => {
     const s = useGameStore.getState();
     expect(s.sellPriceLevel).toBe(0);
     expect(s.speedLevel).toBe(0);
-    expect(s.sizeLevel).toBe(0);
-    expect(s.critLevel).toBe(0);
-    expect(s.comboLevel).toBe(0);
+    expect(s.sizeLevel).toBe(10);
+    expect(s.critLevel).toBe(5);
+    expect(s.comboLevel).toBe(3);
   });
 
   it("on success, resets in-canvas state (canvasProgress, comboChain, isCritThisCanvas)", () => {
@@ -536,5 +536,51 @@ describe("canvasTier — auto tier-up on canvasTick when gate met", () => {
     useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15, canvasTier: 1 });
     useGameStore.getState().canvasTick(0);
     expect(useGameStore.getState().canvasTier).toBe(1);
+  });
+});
+
+describe("canvasSlice — critChunks run-state", () => {
+  it("initial state has empty critChunks record", () => {
+    const state = useGameStore.getState();
+    expect(state.critChunks).toEqual({});
+  });
+});
+
+describe("canvasSlice — tierUp preserves gated tracks", () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      canvasTier: 1,
+      sellPriceLevel: 15,
+      speedLevel: 15,
+      sizeLevel: 7,
+      critLevel: 12,
+      comboLevel: 5,
+      canvasProgress: 3.5,
+      comboChain: 2,
+    });
+  });
+
+  it("resets sellPriceLevel and speedLevel to 0", () => {
+    useGameStore.getState().tierUp();
+    const s = useGameStore.getState();
+    expect(s.sellPriceLevel).toBe(0);
+    expect(s.speedLevel).toBe(0);
+  });
+
+  it("preserves sizeLevel, critLevel, comboLevel across tier-up", () => {
+    useGameStore.getState().tierUp();
+    const s = useGameStore.getState();
+    expect(s.sizeLevel).toBe(7);
+    expect(s.critLevel).toBe(12);
+    expect(s.comboLevel).toBe(5);
+  });
+
+  it("clears canvasProgress, comboChain, critChunks on tier-up", () => {
+    useGameStore.setState({ critChunks: { 3: true, 7: true } });
+    useGameStore.getState().tierUp();
+    const s = useGameStore.getState();
+    expect(s.canvasProgress).toBe(0);
+    expect(s.comboChain).toBe(0);
+    expect(s.critChunks).toEqual({});
   });
 });

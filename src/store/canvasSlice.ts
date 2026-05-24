@@ -37,6 +37,13 @@ export interface CanvasState {
   /** New canvas-depth: rolled at canvas start; `true` for one canvas's lifetime then reset on sale. */
   isCritThisCanvas: boolean;
   /**
+   * Set of chunk indices in the CURRENT canvas painted via a crit (trigger
+   * chunk that rolled OR bonus chunks added by that crit). CanvasStage reads
+   * this to apply the gold-flash modifier per cell. Cleared on each sale,
+   * on tier-up, and on ascend.
+   */
+  critChunks: Record<number, true>;
+  /**
    * Most recent sale event for animation triggering. The `id` increments on
    * each sale; consumers (e.g. `<FloatingGoldText>`) use it as an
    * AnimatePresence/motion key so each sale starts a fresh animation.
@@ -59,6 +66,7 @@ export const initialCanvasState: CanvasState = Object.freeze({
   canvasTier: 1,
   comboChain: 0,
   isCritThisCanvas: false,
+  critChunks: {},
   lastSale: null,
 }) as CanvasState;
 
@@ -87,9 +95,10 @@ export interface CanvasSlice extends CanvasState {
   /**
    * Canvas tier-up: within-run prestige.
    * Gate: sellPriceLevel >= 15 && speedLevel >= 15.
-   * On success: increments canvasTier, resets all 5 upgrade tracks to 0,
-   * resets in-canvas state (canvasProgress, comboChain, isCritThisCanvas),
-   * and calls evaluateAchievements().
+   * On success: increments canvasTier, resets sellPriceLevel and speedLevel
+   * to 0 (the gated tracks — size/crit/combo — are preserved across tier-up),
+   * clears in-canvas state (canvasProgress, comboChain, isCritThisCanvas,
+   * critChunks), and calls evaluateAchievements().
    * Returns true on success, false if gate not met (state unchanged).
    */
   tierUp: () => boolean;
@@ -185,12 +194,11 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       canvasTier: state.canvasTier + 1,
       sellPriceLevel: 0,
       speedLevel: 0,
-      sizeLevel: 0,
-      critLevel: 0,
-      comboLevel: 0,
+      // sizeLevel, critLevel, comboLevel preserved across tier-up
       canvasProgress: 0,
       comboChain: 0,
       isCritThisCanvas: false,
+      critChunks: {},
     });
     get().evaluateAchievements();
     return true;
