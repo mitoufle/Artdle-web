@@ -17,6 +17,14 @@ const sampleBrush: Item = {
   fuseCount: 0,
 };
 
+const critChunksBrush: Item = {
+  id: "test-brush-crit",
+  slot: "brush",
+  tier: "magic",
+  affixes: [{ kind: "+crit_chunks", magnitude: 3 }],
+  fuseCount: 0,
+};
+
 beforeEach(() => {
   useGameStore.setState({
     gold: big(0),
@@ -112,5 +120,22 @@ describe("<WorkshopRoom />", () => {
     render(<WorkshopRoom />);
     fireEvent.contextMenu(screen.getByTestId(`inventory-equip-${sampleBrush.id}`));
     expect(useGameStore.getState().inventory).toEqual([]);
+  });
+
+  it("+crit_chunks equipped chip renders as ⚡3 (no % suffix)", () => {
+    useGameStore.setState({ equipped: { brush: critChunksBrush } });
+    render(<WorkshopRoom />);
+    const btn = screen.getByTestId("slot-unequip-brush");
+    // Must contain the symbol + magnitude with no % appended
+    expect(btn.textContent).toContain("⚡3");
+    expect(btn.textContent).not.toContain("⚡3%");
+  });
+
+  it("+crit_chunks inventory chip renders as ⚡3 (no % suffix)", () => {
+    useGameStore.setState({ inventory: [critChunksBrush] });
+    render(<WorkshopRoom />);
+    const btn = screen.getByTestId(`inventory-equip-${critChunksBrush.id}`);
+    expect(btn.textContent).toContain("⚡3");
+    expect(btn.textContent).not.toContain("⚡3%");
   });
 });

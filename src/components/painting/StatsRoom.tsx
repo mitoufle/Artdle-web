@@ -39,7 +39,9 @@ interface BreakdownLine {
 
 interface StatBlock {
   name: string;
-  kind: AffixKind;
+  kind?: AffixKind;
+  iconOverride?: string;
+  colorOverride?: string;
   totalLabel: string;
   lines: BreakdownLine[];
   multiplicatives?: Array<{ source: string; factor: number }>;
@@ -112,8 +114,8 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
     },
     {
       name: "Crit chance (chunk roll)",
-      // TODO: T10 — replace placeholder kind with iconOverride
-      kind: "+sell_price%" as AffixKind,
+      iconOverride: "✦",
+      colorOverride: "#e85c5c",
       totalLabel: fmtPct(critTotal),
       lines: nonZero([
         { source: "Canvas upgrade", value: CRIT_PER_LEVEL * state.critLevel },
@@ -220,7 +222,12 @@ export function StatsRoom(): JSX.Element {
         <article key={block.name} className={styles.block}>
           <header className={styles.blockHeader}>
             <span className={styles.blockName}>
-              <span style={{ color: AFFIX_COLOR[block.kind], fontSize: `${13 * AFFIX_SYMBOL_SCALE[block.kind]}px` }}>{AFFIX_SYMBOL[block.kind]}</span>{" "}{block.name}
+              <span style={{
+                color: block.colorOverride ?? (block.kind ? AFFIX_COLOR[block.kind] : "var(--ink-2)"),
+                fontSize: `${13 * (block.kind ? AFFIX_SYMBOL_SCALE[block.kind] : 1.0)}px`,
+              }}>
+                {block.iconOverride ?? (block.kind ? AFFIX_SYMBOL[block.kind] : "?")}
+              </span>{" "}{block.name}
             </span>
             <span className={styles.blockTotal}>{block.totalLabel}</span>
           </header>

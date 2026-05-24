@@ -21,4 +21,9 @@ describe("StatsRoom — crit labels reflect chunk semantics", () => {
     const text = container.textContent ?? "";
     expect(text.toLowerCase()).not.toMatch(/crit (canvas|canvases)/);
   });
+
+  it("crit row uses ✦ star icon instead of a sell-price symbol", () => {
+    const { container } = render(<StatsRoom />);
+    expect(container.textContent).toContain("✦");
+  });
 });

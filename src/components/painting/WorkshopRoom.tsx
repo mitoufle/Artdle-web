@@ -389,7 +389,7 @@ export function WorkshopRoom(): JSX.Element {
                     {item.affixes.map((a, i) => (
                       <span key={i} className={styles.affixChip}>
                         <span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
-                        {a.magnitude}%
+                        {a.magnitude}{a.kind === "+crit_chunks" ? "" : "%"}
                       </span>
                     ))}
                   </div>
@@ -436,7 +436,7 @@ export function WorkshopRoom(): JSX.Element {
                       {item.affixes.map((a, i) => (
                         <span key={i} className={styles.affixChip}>
                           <span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
-                          {a.magnitude}%
+                          {a.magnitude}{a.kind === "+crit_chunks" ? "" : "%"}
                         </span>
                       ))}
                     </div>
