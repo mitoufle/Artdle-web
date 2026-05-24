@@ -6,6 +6,15 @@ import { useGameStore } from "@/store";
 import { initialCanvasState } from "@/store/canvasSlice";
 import { big } from "@/core/bigNumber";
 
+describe("<PaintingRoute> — source shape (removed symbols)", () => {
+  it("paint time no longer applies a critFactor (CRIT_SPEED_FACTOR removed)", async () => {
+    const fs = await import("node:fs/promises");
+    const src = await fs.readFile("src/routes/PaintingRoute.tsx", "utf-8");
+    expect(src).not.toContain("CRIT_SPEED_FACTOR");
+    expect(src).not.toContain("isCritThisCanvas");
+  });
+});
+
 describe("<PaintingRoute> — 5 track cards", () => {
   beforeEach(() => {
     useGameStore.setState({

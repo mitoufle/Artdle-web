@@ -8,7 +8,6 @@ import {
   SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL,
   SIZE_PER_LEVEL,
   CRIT_PER_LEVEL, COMBO_PER_LEVEL, COMBO_PER_LINK,
-  CRIT_SPEED_FACTOR,
 } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
@@ -40,7 +39,7 @@ export function PaintingRoute(): JSX.Element {
   const critLevel = useGameStore((s) => s.critLevel);
   const comboLevel = useGameStore((s) => s.comboLevel);
   const comboChain = useGameStore((s) => s.comboChain);
-  const isCritThisCanvas = useGameStore((s) => s.isCritThisCanvas);
+  const critChunks = useGameStore((s) => s.critChunks);
   const gold = useGameStore((s) => s.gold);
   const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
@@ -68,8 +67,7 @@ export function PaintingRoute(): JSX.Element {
   const size = getCanvasSize(helperState);
   const baseTime = canvasTime(size, canvasTier);
   const speedMult = getCanvasSpeedMultiplier(helperState);
-  const critFactor = isCritThisCanvas ? CRIT_SPEED_FACTOR : 1;
-  const paintTimeSec = baseTime / (speedMult * critFactor);
+  const paintTimeSec = baseTime / speedMult;
   const progressPct = paintTimeSec > 0 ? canvasProgress / paintTimeSec : 0;
   const goldMult = getCanvasGoldMultiplier(helperState);
   const baseGold = canvasGold(size, goldMult, canvasTier);
@@ -101,7 +99,7 @@ export function PaintingRoute(): JSX.Element {
           timeTotal={paintTimeSec.toFixed(1)}
           nextSaleGold={formatBig(nextSaleGold)}
           comboChain={comboChain}
-          isCrit={isCritThisCanvas}
+          critChunks={critChunks}
           canvasNumber={canvasesSold}
           onChunkClick={() => canvasTick(paintTimeSec / chunkCount)}
         />

@@ -138,7 +138,7 @@ describe("<CanvasStage />", () => {
     });
   });
 
-  describe("<CanvasStage> — combo + crit badges", () => {
+  describe("<CanvasStage> — combo badge", () => {
     it("renders combo chain badge when comboChain > 0", () => {
       render(
         <CanvasStage
@@ -149,7 +149,6 @@ describe("<CanvasStage />", () => {
           timeTotal="2.0"
           nextSaleGold="100"
           comboChain={3}
-          isCrit={false}
         />,
       );
       expect(screen.getByTestId("combo-badge")).toBeInTheDocument();
@@ -168,42 +167,44 @@ describe("<CanvasStage />", () => {
           timeTotal="2.0"
           nextSaleGold="10"
           comboChain={0}
-          isCrit={false}
         />,
       );
       expect(screen.queryByTestId("combo-badge")).toBeNull();
     });
+  });
 
-    it("renders crit indicator when isCrit=true", () => {
-      render(
+  describe("<CanvasStage> — crit chunks (per-chunk gold flash)", () => {
+    it("does not render a CRIT badge (canvas-level crit removed)", () => {
+      const { container } = render(
         <CanvasStage
-          sizeLevel={0}
+          sizeLevel={1}
           canvasTier={1}
-          progressPct={0.1}
-          timeElapsed="0.1"
-          timeTotal="0.2"
-          nextSaleGold="10"
-          comboChain={0}
-          isCrit={true}
+          progressPct={0.5}
+          timeElapsed="3.0"
+          timeTotal="6.0"
+          nextSaleGold="100"
         />,
       );
-      expect(screen.getByTestId("crit-indicator")).toBeInTheDocument();
+      expect(container.querySelector("[data-testid='crit-indicator']")).toBeNull();
     });
 
-    it("does NOT render crit indicator when isCrit=false", () => {
-      render(
+    it("applies the sketchCellCrit modifier to cells listed in critChunks", () => {
+      const { container } = render(
         <CanvasStage
-          sizeLevel={0}
+          sizeLevel={1}
           canvasTier={1}
-          progressPct={0.1}
-          timeElapsed="0.1"
-          timeTotal="2.0"
-          nextSaleGold="10"
-          comboChain={0}
-          isCrit={false}
+          progressPct={1.0}  // all 25 cells revealed at T1
+          timeElapsed="6.0"
+          timeTotal="6.0"
+          nextSaleGold="100"
+          critChunks={{ 0: true, 1: true }}
         />,
       );
-      expect(screen.queryByTestId("crit-indicator")).toBeNull();
+      const overlay = container.querySelector("[data-testid='sketch-overlay']");
+      expect(overlay).not.toBeNull();
+      const cells = Array.from(overlay!.querySelectorAll<HTMLDivElement>("div"));
+      const critCells = cells.filter((c) => c.className.includes("sketchCellCrit"));
+      expect(critCells.length).toBe(2);
     });
   });
 });

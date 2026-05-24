@@ -49,8 +49,9 @@ interface Props {
   nextSaleGold: string;      // formatted gold preview, e.g., "184" or "1.2K"
   /** T14: combo chain depth for badge display. */
   comboChain?: number;
-  /** T14: whether the current canvas is a crit. */
-  isCrit?: boolean;
+  /** Set of chunk indices in the current canvas painted by a crit. Cells in
+   *  this set get the gold-flash modifier. */
+  critChunks?: Record<number, true>;
   /** Canvas number (= lastSale.id) — keys fill elements so React re-mounts on sale,
    *  resetting CSS transition baseline to avoid the rubberband-down effect. */
   canvasNumber?: number;
@@ -92,7 +93,7 @@ export function CanvasStage({
   timeTotal,
   nextSaleGold,
   comboChain,
-  isCrit,
+  critChunks = {},
   canvasNumber = 0,
   onChunkClick,
 }: Props): JSX.Element {
@@ -120,10 +121,6 @@ export function CanvasStage({
 
   return (
     <section className={styles.stage} aria-label="Canvas stage">
-      {isCrit && (
-        <div className={styles.critIndicator} data-testid="crit-indicator">CRIT</div>
-      )}
-
       {comboChain !== undefined && comboChain > 0 && (
         <div className={styles.comboBadge} data-testid="combo-badge">
           🔥 ×{comboChain}  +{(comboChain * 10)}%
@@ -166,11 +163,12 @@ export function CanvasStage({
                 const row = Math.floor(i / gridDim);
                 const revealRank = cellOrder.indexOf(i);
                 const visible = revealRank < cellsRevealed;
+                const isCritCell = critChunks[i] === true;
                 const denom = gridDim - 1;
                 return (
                   <div
                     key={i}
-                    className={styles.sketchCell}
+                    className={`${styles.sketchCell} ${isCritCell ? styles.sketchCellCrit : ""}`}
                     style={{
                       backgroundImage: `url(${sketchUrl})`,
                       backgroundSize: `${gridDim * 100}% ${gridDim * 100}%`,
