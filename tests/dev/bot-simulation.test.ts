@@ -44,7 +44,7 @@ import type { SkillNodeId } from "@/store/skillTreeSlice";
 const TICK_S = 1;
 const DECISION_EVERY_S = 5;
 const LOG_EVERY_S = 300;     // log a row every 5 minutes of simulated time
-const MAX_S = 3 * 60 * 60;   // 3 hours of simulated time
+const MAX_S = 24 * 60 * 60;  // 24 hours of simulated time
 const SEED = 42;
 const ASCEND_FAME_START = 5;       // first ascend at ~125K inspi
 const ASCEND_FAME_MULTIPLIER = 2;  // double the target after each ascend
@@ -289,7 +289,7 @@ describe("bot-simulation", () => {
     });
   });
 
-  it("runs 3-hour simulation and logs pacing", { timeout: 120_000 }, () => {
+  it("runs 24-hour simulation and logs pacing", { timeout: 180_000 }, () => {
     const milestones: string[] = [];
     let firstAscendAt = -1;
     let lastTier = useGameStore.getState().canvasTier;
@@ -326,8 +326,11 @@ describe("bot-simulation", () => {
       if (t % DECISION_EVERY_S === 0) {
         const state = useGameStore.getState();
 
-        // Ascend when payout meets the current progressive target
-        if (canAscend(state) && fameOnAscend(state.inspiration) >= ascendMinFame) {
+        // Ascend when payout meets the current progressive target.
+        // Guard on canvasTier === 1: once the bot tier-ups, it commits to the
+        // run instead of wiping back to T1, so we can measure T1→T2→T3→T4
+        // intervals inside a single run.
+        if (canAscend(state) && fameOnAscend(state.inspiration) >= ascendMinFame && state.canvasTier === 1) {
           const inspireBefore = state.inspiration.toNumber();
           const fameBefore = state.fame.toNumber();
           useGameStore.getState().performAscend();
@@ -383,7 +386,7 @@ describe("bot-simulation", () => {
     for (const m of milestones) console.log(m);
 
     const final = useGameStore.getState();
-    console.log("\n=== Final State (3h) ===");
+    console.log("\n=== Final State (24h) ===");
     console.log(`  Gold:          ${fmtN(final.gold.toNumber())}`);
     console.log(`  Fame:          ${fmtN(final.fame.toNumber())}`);
     console.log(`  Ascends:       ${final.ascendCount}`);
@@ -408,7 +411,7 @@ describe("bot-simulation", () => {
         console.log(`  ratio T${tierIntervals[i - 1].to}→T${tierIntervals[i].to} vs prev: ×${ratio.toFixed(2)}`);
       }
     }
-  }, 30_000);
+  });
 
   // ─── Convergence test ─────────────────────────────────────────────────────
   //
