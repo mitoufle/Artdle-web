@@ -292,6 +292,9 @@ describe("bot-simulation", () => {
   it("runs 3-hour simulation and logs pacing", { timeout: 120_000 }, () => {
     const milestones: string[] = [];
     let firstAscendAt = -1;
+    let lastTier = useGameStore.getState().canvasTier;
+    let lastTierUpAt = 0;
+    const tierIntervals: Array<{ from: number; to: number; intervalS: number; gpsAtUp: number }> = [];
 
     const addMilestone = (t: number, msg: string) => {
       milestones.push(`  [${fmtTime(t)}] *** ${msg} ***`);
@@ -308,6 +311,17 @@ describe("bot-simulation", () => {
 
     for (let t = 0; t < MAX_S; t += TICK_S) {
       useGameStore.getState().tickAll(TICK_S);
+
+      const curTier = useGameStore.getState().canvasTier;
+      if (curTier !== lastTier) {
+        const interval = t - lastTierUpAt;
+        const gpsAtUp = gps(useGameStore.getState());
+        tierIntervals.push({ from: lastTier, to: curTier, intervalS: interval, gpsAtUp });
+        addMilestone(t,
+          `TIER UP T${lastTier}→T${curTier} — interval ${fmtTime(interval)}, G/s now ${fmtN(gpsAtUp)}`);
+        lastTier = curTier;
+        lastTierUpAt = t;
+      }
 
       if (t % DECISION_EVERY_S === 0) {
         const state = useGameStore.getState();
@@ -379,6 +393,21 @@ describe("bot-simulation", () => {
     console.log(`  Workshop:      L${final.workshopLevel} (${final.inventory.length} in inv, ${Object.keys(final.equipped).length} equipped)`);
     console.log(`  First ascend:  ${firstAscendAt >= 0 ? fmtTime(firstAscendAt) : "never"}`);
     console.log(`  Size unlocked: ${sizUnlocked} | Crit unlocked: ${critUnlocked} | Combo unlocked: ${comboUnlocked}`);
+
+    console.log("\n=== Per-tier progression ===");
+    if (tierIntervals.length === 0) {
+      console.log("  (no tier-ups fired in this run)");
+    } else {
+      for (const r of tierIntervals) {
+        console.log(`  T${r.from}→T${r.to}: ${fmtTime(r.intervalS)} (G/s at up: ${fmtN(r.gpsAtUp)})`);
+      }
+      for (let i = 1; i < tierIntervals.length; i++) {
+        const prev = tierIntervals[i - 1].intervalS;
+        const cur = tierIntervals[i].intervalS;
+        const ratio = prev > 0 ? cur / prev : 0;
+        console.log(`  ratio T${tierIntervals[i - 1].to}→T${tierIntervals[i].to} vs prev: ×${ratio.toFixed(2)}`);
+      }
+    }
   }, 30_000);
 
   // ─── Convergence test ─────────────────────────────────────────────────────
