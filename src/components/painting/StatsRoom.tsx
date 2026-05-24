@@ -111,7 +111,7 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
       ]),
     },
     {
-      name: "Crit chance",
+      name: "Crit chance (chunk roll)",
       // TODO: T10 — replace placeholder kind with iconOverride
       kind: "+sell_price%" as AffixKind,
       totalLabel: fmtPct(critTotal),
