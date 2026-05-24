@@ -65,7 +65,7 @@ describe("StatsRoom — crit chance breakdown surfaces every source", () => {
   });
 });
 
-describe("StatsRoom — crit chunks block", () => {
+describe("StatsRoom — cells-per-crit block", () => {
   beforeEach(() => {
     useGameStore.setState({
       critLevel: 5,    // so the parent Crit chance block renders too
@@ -75,11 +75,14 @@ describe("StatsRoom — crit chunks block", () => {
     });
   });
 
-  it("renders 'Crit chunks (per crit)' with a Base +1 line and ⚡ icon", () => {
+  it("renders 'Cells per crit' with Trigger and Bonus rows + ⚡ icon", () => {
     const { container } = render(<StatsRoom />);
     const text = container.textContent ?? "";
-    expect(text).toMatch(/Crit chunks/);
+    expect(text).toMatch(/Cells per crit/);
     expect(text).toContain("⚡");
-    expect(text).toMatch(/Base/);
+    expect(text).toMatch(/Trigger/);
+    expect(text).toMatch(/Bonus/);
+    // No items, no workers, no consistency → 1 trigger + 1 base bonus = 2 cells.
+    expect(text).toMatch(/⚡ Cells per crit2/);
   });
 });

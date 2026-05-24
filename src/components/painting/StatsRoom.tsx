@@ -112,7 +112,10 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   const comboTotal = getComboBaseChance(state);
   const chunksItems = critChunksFromItems(state);
   const chunksWorkers = critChunksFromWorkers(state);
-  const chunksTotal = BASE_CRIT_CHUNKS + chunksItems + chunksWorkers;
+  // The chunk that triggers the crit is also painted by the crit, so it counts
+  // toward what the player sees advance per crit (Trigger + Base + Items + Workers).
+  const TRIGGER_CHUNK = 1;
+  const chunksTotal = TRIGGER_CHUNK + BASE_CRIT_CHUNKS + chunksItems + chunksWorkers;
   const size = getCanvasSize(state);
   const sizeGoldFactor = size * size;
   const rainbowFactor = getRainbowMultiplier(state);
@@ -178,13 +181,14 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
       ]),
     },
     {
-      name: "Crit chunks (per crit)",
+      name: "Cells per crit",
       iconOverride: "⚡",
       colorOverride: "#ffaf3a",
-      totalLabel: `+${chunksTotal.toFixed(chunksTotal % 1 === 0 ? 0 : 1)}`,
+      totalLabel: `${chunksTotal.toFixed(chunksTotal % 1 === 0 ? 0 : 1)}`,
       intLines: true,
       lines: nonZero([
-        { source: "Base", value: BASE_CRIT_CHUNKS },
+        { source: "Trigger", value: TRIGGER_CHUNK },
+        { source: "Bonus (base)", value: BASE_CRIT_CHUNKS },
         { source: "Items", value: chunksItems },
         { source: "Workers", value: chunksWorkers },
       ]),
