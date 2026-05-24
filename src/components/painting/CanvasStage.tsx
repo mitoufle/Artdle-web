@@ -176,6 +176,7 @@ export function CanvasStage({
                       backgroundSize: `${gridDim * 100}% ${gridDim * 100}%`,
                       backgroundPosition: `${(col / denom) * 100}% ${(row / denom) * 100}%`,
                       opacity: visible ? 1 : 0,
+                      transform: visible ? "scale(1)" : "scale(0.4)",
                     }}
                   />
                 );
