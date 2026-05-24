@@ -9,8 +9,13 @@ import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 interface Props {
   trackId: CanvasTrackId;
   label: string;
-  affixKind: AffixKind;
+  /** If iconOverride is set, affixKind is ignored for icon/color lookup. */
+  affixKind?: AffixKind;
+  iconOverride?: string;
+  colorOverride?: string;
   level: number;
+  /** If set, the button shows "MAX" and is disabled when level >= maxLevel. */
+  maxLevel?: number;
   effectLine: string;
   costLabel: string;
   canAfford: boolean;
@@ -19,9 +24,14 @@ interface Props {
 }
 
 export function TrackCard({
-  trackId, label, affixKind, level, effectLine, costLabel, canAfford, locked, onUpgrade,
+  trackId, label, affixKind, iconOverride, colorOverride,
+  level, maxLevel, effectLine, costLabel, canAfford, locked, onUpgrade,
 }: Props): JSX.Element {
-  const disabled = locked || !canAfford;
+  const isMaxed = typeof maxLevel === "number" && level >= maxLevel;
+  const disabled = locked || !canAfford || isMaxed;
+  const symbol = iconOverride ?? (affixKind ? AFFIX_SYMBOL[affixKind] : "?");
+  const color = colorOverride ?? (affixKind ? AFFIX_COLOR[affixKind] : "var(--ink-2)");
+  const scale = affixKind ? AFFIX_SYMBOL_SCALE[affixKind] : 1.0;
   const coinIcon = <CurrencyAmount kind="gold" value={costLabel} />;
   return (
     <div
@@ -29,17 +39,19 @@ export function TrackCard({
       data-track-id={trackId}
     >
       <div className={styles.label}>
-        <span className={styles.symbol} style={{ color: AFFIX_COLOR[affixKind], fontSize: `${20 * AFFIX_SYMBOL_SCALE[affixKind]}px` }}>{AFFIX_SYMBOL[affixKind]}</span>
+        <span className={styles.symbol} style={{ color, fontSize: `${20 * scale}px` }}>{symbol}</span>
         {label}
       </div>
       <div className={styles.level}>Level {level}</div>
       <div className={styles.effect}>{effectLine}</div>
       <Hoverable
         as="div"
-        title={() => locked ? `${label} — Locked` : `${label} — Level ${level}`}
+        title={() => locked ? `${label} — Locked` : isMaxed ? `${label} — MAX` : `${label} — Level ${level}`}
         body={() => (
           locked ? (
             <div>Unlocks via the canvas skill-tree node.</div>
+          ) : isMaxed ? (
+            <div>This track is at the level cap ({maxLevel}).</div>
           ) : (
             <>
               <div>Current effect:  {effectLine}</div>
@@ -56,7 +68,7 @@ export function TrackCard({
           onClick={!disabled ? onUpgrade : undefined}
           data-testid={`track-card-upgrade-${trackId}`}
         >
-          {locked ? "Locked" : coinIcon}
+          {locked ? "Locked" : isMaxed ? "MAX" : coinIcon}
         </button>
       </Hoverable>
     </div>

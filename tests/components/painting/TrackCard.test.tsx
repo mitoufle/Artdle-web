@@ -82,6 +82,88 @@ describe("<TrackCard>", () => {
   });
 });
 
+describe("TrackCard — MAX label at maxLevel", () => {
+  it("renders 'MAX' and disables the button when level >= maxLevel", () => {
+    const onUpgrade = vi.fn();
+    render(
+      <TrackCard
+        trackId="crit"
+        label="Crit"
+        iconOverride="✦"
+        colorOverride="#e85c5c"
+        level={50}
+        maxLevel={50}
+        effectLine="+1% crit chance/level"
+        costLabel="—"
+        canAfford={true}
+        locked={false}
+        onUpgrade={onUpgrade}
+      />,
+    );
+    const button = screen.getByTestId("track-card-upgrade-crit");
+    expect(button).toBeDisabled();
+    expect(button.textContent).toMatch(/MAX/i);
+  });
+
+  it("renders the cost label when level < maxLevel", () => {
+    render(
+      <TrackCard
+        trackId="crit"
+        label="Crit"
+        iconOverride="✦"
+        colorOverride="#e85c5c"
+        level={10}
+        maxLevel={50}
+        effectLine="+1% crit chance/level"
+        costLabel="500"
+        canAfford={true}
+        locked={false}
+        onUpgrade={() => {}}
+      />,
+    );
+    const button = screen.getByTestId("track-card-upgrade-crit");
+    expect(button).not.toBeDisabled();
+    expect(button.textContent).not.toMatch(/MAX/i);
+  });
+});
+
+describe("TrackCard — iconOverride (for crit-chance card without an AffixKind)", () => {
+  it("uses iconOverride and colorOverride when provided (no affixKind)", () => {
+    const { container } = render(
+      <TrackCard
+        trackId="crit"
+        label="Crit Chance"
+        iconOverride="✦"
+        colorOverride="#e85c5c"
+        level={5}
+        effectLine="+1% chance/level"
+        costLabel="500"
+        canAfford={true}
+        locked={false}
+        onUpgrade={() => {}}
+      />,
+    );
+    expect(container.textContent).toContain("✦");
+  });
+
+  it("falls back to AFFIX_SYMBOL lookup when affixKind is provided", () => {
+    const { container } = render(
+      <TrackCard
+        trackId="sell_price"
+        label="Sell Price"
+        affixKind="+sell_price%"
+        level={3}
+        effectLine="+10% gold/level"
+        costLabel="100"
+        canAfford={true}
+        locked={false}
+        onUpgrade={() => {}}
+      />,
+    );
+    expect(container.textContent).toContain("$");  // AFFIX_SYMBOL["+sell_price%"]
+  });
+});
+
 describe("<TrackCard> — hover info", () => {
   beforeEach(() => {
     useGameStore.setState({ hoverTitle: "", hoverBody: "", hoverFooter: "" });

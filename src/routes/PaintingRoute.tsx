@@ -8,6 +8,7 @@ import {
   SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL,
   SIZE_PER_LEVEL,
   CRIT_PER_LEVEL, COMBO_PER_LEVEL, COMBO_PER_LINK,
+  MAX_CRIT_LEVEL,
 } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
@@ -149,10 +150,12 @@ export function PaintingRoute(): JSX.Element {
           />
           <TrackCard
             trackId="crit"
-            label="Crit"
-            affixKind="+crit_chunks"
+            label="Crit Chance"
+            iconOverride="✦"
+            colorOverride="#e85c5c"
             level={critLevel}
-            effectLine={critLocked ? "—" : `+${fmtPct(CRIT_PER_LEVEL, 0)} crit chance/level (90% faster on hit)`}
+            maxLevel={MAX_CRIT_LEVEL}
+            effectLine={critLocked ? "—" : `+${fmtPct(CRIT_PER_LEVEL, 0)} crit chance/level (max L${MAX_CRIT_LEVEL})`}
             costLabel={critLocked ? "—" : `${formatBig(critCost)}`}
             canAfford={gold.gte(critCost)}
             locked={critLocked}
