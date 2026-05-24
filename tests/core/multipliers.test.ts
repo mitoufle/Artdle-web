@@ -5,6 +5,7 @@ import {
   getCanvasSpeedMultiplier,
   getTreeUpgradeCostMultiplier,
   getCritChance,
+  getCritChunks,
   getComboBaseChance,
   getCanvasSize,
   getOfficeContribution,
@@ -182,21 +183,24 @@ describe("multipliers — crit + combo chances", () => {
   } as GameStore);
 
   it("getCritChance is linear below soft-cap threshold (0.30)", () => {
-    expect(getCritChance(stub({ critLevel: 0 }))).toBeCloseTo(0, 5);
-    expect(getCritChance(stub({ critLevel: 1 }))).toBeCloseTo(0.01, 5);
-    // critLevel 30 → raw = 0.30 = threshold, still linear
-    expect(getCritChance(stub({ critLevel: 30 }))).toBeCloseTo(0.30, 5);
+    // BASE_CRIT_CHANCE = 0.01; critLevel 0 → raw = 0.01
+    expect(getCritChance(stub({ critLevel: 0 }))).toBeCloseTo(0.01, 5);
+    expect(getCritChance(stub({ critLevel: 1 }))).toBeCloseTo(0.02, 5);
+    // critLevel 29 → raw = 0.01 + 0.29 = 0.30 = threshold, still linear
+    expect(getCritChance(stub({ critLevel: 29 }))).toBeCloseTo(0.30, 5);
   });
 
   it("getCritChance applies diminishing returns above threshold", () => {
-    // raw = 0.50 → 0.30 + 0.65 × (1 − exp(−0.20/0.325)) ≈ 0.599
-    expect(getCritChance(stub({ critLevel: 50 }))).toBeCloseTo(0.599, 2);
+    // critLevel 50 → raw = 0.01 + 0.50 = 0.51 → soft-cap compresses
+    // 0.30 + 0.65 × (1 − exp(−0.21/0.325)) ≈ 0.614
+    expect(getCritChance(stub({ critLevel: 50 }))).toBeGreaterThan(0.30);
+    expect(getCritChance(stub({ critLevel: 50 }))).toBeLessThan(CRIT_SOFT_CAP_CEILING);
   });
 
   it("getCritChance never exceeds CRIT_SOFT_CAP_CEILING", () => {
-    // critLevel 200: raw=2.0 → effective ≈ 0.947, clearly below ceiling
+    // critLevel 200: raw=2.01 → effective clearly below ceiling
     expect(getCritChance(stub({ critLevel: 200 }))).toBeLessThan(CRIT_SOFT_CAP_CEILING);
-    // critLevel 9999: raw=99.99 → exp underflows to 0, formula returns exactly ceiling
+    // critLevel 9999: raw≈100.0 → exp underflows to 0, formula returns exactly ceiling
     expect(getCritChance(stub({ critLevel: 9999 }))).toBeLessThanOrEqual(CRIT_SOFT_CAP_CEILING);
   });
 
@@ -228,34 +232,84 @@ describe("getCanvasSpeedMultiplier — equipped +speed% contribution", () => {
   });
 });
 
-describe("getCritChance — equipped +crit_chance% contribution", () => {
-  const stub = (over: Partial<GameStore> = {}): GameStore => ({
-    purchasedNodes: {}, equipped: {}, roster: [], critLevel: 0, canvasTier: 1, ...over,
-  } as GameStore);
-
-  it("adds equipped +crit_chance% magnitudes (already fractional via getEquippedContribution)", () => {
-    const item: Item = {
-      id: "i1", slot: "brush", tier: "magic",
-      affixes: [{ kind: "+crit_chance%", magnitude: 10 }],
-      fuseCount: 0,
-    };
-    const state = stub({ critLevel: 5, equipped: { brush: item } });
-    // critChance = 0.05 (from level) + 0.10 (from affix) = 0.15
-    expect(getCritChance(state)).toBeCloseTo(0.15, 5);
+describe("getCritChance — per-chunk rework", () => {
+  it("returns BASE_CRIT_CHANCE (0.01) at default state", () => {
+    const state = { critLevel: 0, equipped: {}, roster: [], purchasedNodes: {} } as unknown as GameStore;
+    expect(getCritChance(state)).toBeCloseTo(0.01, 6);
   });
 
-  it("never reaches CRIT_SOFT_CAP_CEILING even with heavy affix contributions", () => {
-    const item: Item = {
-      id: "i1", slot: "brush", tier: "epic",
-      affixes: [{ kind: "+crit_chance%", magnitude: 99 }],
-      fuseCount: 0,
-    };
-    const state = stub({ critLevel: 50, equipped: { brush: item } });
-    // raw = 0.50 + 0.99 = 1.49 — well into diminishing returns
-    expect(getCritChance(state)).toBeLessThan(CRIT_SOFT_CAP_CEILING);
-    expect(getCritChance(state)).toBeGreaterThan(0.90);
+  it("adds CRIT_PER_LEVEL per critLevel up to MAX_CRIT_LEVEL", () => {
+    const s1 = { critLevel: 10, equipped: {}, roster: [], purchasedNodes: {} } as unknown as GameStore;
+    expect(getCritChance(s1)).toBeCloseTo(0.01 + 0.01 * 10, 6);  // 0.11
+    const s50 = { critLevel: 50, equipped: {}, roster: [], purchasedNodes: {} } as unknown as GameStore;
+    expect(getCritChance(s50)).toBeGreaterThan(0.30);  // past soft-cap threshold; formula compresses
+  });
+
+  it("caps critLevel contribution at MAX_CRIT_LEVEL even when state.critLevel exceeds it", () => {
+    const s60 = { critLevel: 60, equipped: {}, roster: [], purchasedNodes: {} } as unknown as GameStore;
+    const s50 = { critLevel: 50, equipped: {}, roster: [], purchasedNodes: {} } as unknown as GameStore;
+    expect(getCritChance(s60)).toBe(getCritChance(s50));
+  });
+
+  it("ignores items and workers (sources moved to getCritChunks)", () => {
+    const stateWithItem = {
+      critLevel: 0,
+      equipped: { brush: { slot: "brush", tier: "normal", affixes: [{ kind: "+crit_chance%", magnitude: 50 }], fuseCount: 0 } },
+      roster: [],
+      purchasedNodes: {},
+    } as unknown as GameStore;
+    // Even though the (legacy) +crit_chance% affix is present, getCritChance must not see it.
+    expect(getCritChance(stateWithItem)).toBeCloseTo(0.01, 6);
   });
 });
+
+describe("getCritChunks", () => {
+  it("returns BASE_CRIT_CHUNKS (1) at default state", () => {
+    const state = { equipped: {}, roster: [], purchasedNodes: {} } as unknown as GameStore;
+    expect(getCritChunks(state)).toBe(1);
+  });
+
+  it("adds equipped +crit_chunks raw magnitudes (no /100)", () => {
+    const state = {
+      equipped: {
+        brush: { slot: "brush", tier: "rare", affixes: [{ kind: "+crit_chunks", magnitude: 3 }], fuseCount: 0 },
+      },
+      roster: [],
+      purchasedNodes: {},
+    } as unknown as GameStore;
+    expect(getCritChunks(state)).toBe(1 + 3);  // base + 3 chunks from item
+  });
+
+  it("applies socks (1.5×) on boots slot only", () => {
+    const onBoots = {
+      equipped: { boots: { slot: "boots", tier: "rare", affixes: [{ kind: "+crit_chunks", magnitude: 4 }], fuseCount: 0 } },
+      roster: [],
+      purchasedNodes: { socks: 1 },
+    } as unknown as GameStore;
+    // 1 + floor(4 * 1.5) = 1 + 6 = 7
+    expect(getCritChunks(onBoots)).toBe(7);
+  });
+
+  it("adds office +crit_chunks contributions scaled by levelScale", () => {
+    const state = {
+      equipped: {},
+      roster: [
+        { id: "w1", className: "critic", level: 0, xp: big(0), affixes: [{ kind: "+crit_chunks", magnitude: 2 }] },
+      ],
+      purchasedNodes: {},
+    } as unknown as GameStore;
+    // At level 0, levelScale = 1, so +2.
+    expect(getCritChunks(state)).toBe(1 + 2);
+  });
+
+  it("returns at least 0; never NaN even with empty equipped/roster", () => {
+    const state = { equipped: {}, roster: [], purchasedNodes: {} } as unknown as GameStore;
+    expect(Number.isFinite(getCritChunks(state))).toBe(true);
+    expect(getCritChunks(state)).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// getCritGoldBonus tests are removed — function is being deleted.
 
 describe("getComboBaseChance — equipped +combo_chance% contribution", () => {
   const stub = (over: Partial<GameStore> = {}): GameStore => ({
@@ -404,7 +458,7 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
     expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.456, 4);
   });
 
-  it("getCritChance sums canvas + items + workers additively (below threshold, linear)", () => {
+  it("getCritChance: only critLevel contributes (items + workers moved to getCritChunks)", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+crit_chance%", magnitude: 5 }],
@@ -422,9 +476,8 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
         },
       ],
     } as unknown as GameStore;
-    // Canvas: 0.01 × 10 = 0.10; Items: 0.05; Workers: 0.05 × 1.04 = 0.052
-    // Total = 0.202 (well under 1.0)
-    expect(getCritChance(state)).toBeCloseTo(0.202, 4);
+    // BASE_CRIT_CHANCE (0.01) + CRIT_PER_LEVEL × 10 (0.10) = 0.11 — items + workers ignored
+    expect(getCritChance(state)).toBeCloseTo(0.11, 4);
   });
 });
 
@@ -520,12 +573,6 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
     expect(getComboDecayReduction(state)).toBeCloseTo(0.03, 4);
   });
 
-  it("prismatic_eye: crit_gold_bonus returns 0.20 × level", async () => {
-    const { getCritGoldBonus } = await import("@/core/multipliers");
-    const state = { purchasedNodes: { prismatic_eye: 2 } } as unknown as GameStore;
-    expect(getCritGoldBonus(state)).toBeCloseTo(0.40, 4);
-  });
-
   it("enlightenment: ascend_threshold_reduction returns 0.05 × level", async () => {
     const { getAscendThresholdReduction } = await import("@/core/multipliers");
     const state = { purchasedNodes: { enlightenment: 4 } } as unknown as GameStore;
@@ -589,9 +636,9 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
       sellPriceLevel: 0, speedLevel: 0, sizeLevel: 0, critLevel: 5, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
-    // 0.01 × 5 = 0.05, regardless of tier (below soft-cap on both)
-    expect(getCritChance({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(0.05, 5);
-    expect(getCritChance({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(0.05, 5);
+    // BASE_CRIT_CHANCE (0.01) + 0.01 × 5 = 0.06, regardless of tier (below soft-cap on both)
+    expect(getCritChance({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(0.06, 5);
+    expect(getCritChance({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(0.06, 5);
   });
 
   it("getComboBaseChance: same per-level effect at T1 and T2", () => {

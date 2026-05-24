@@ -10,12 +10,13 @@
 
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
+import type { Item } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
-import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
+import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
 import { big, type Big } from "@/core/bigNumber";
-import type { AffixKind } from "@/config/workshopAffixes";
+import type { AffixKind, SlotKind } from "@/config/workshopAffixes";
 
 /**
  * Set of GameStore fields read by canvas multipliers, their helpers, and the
@@ -173,20 +174,53 @@ export const getAffixMagnitudeBonus = (state: Pick<GameStore, "purchasedNodes" |
   + getNodeLevel(state, "better_scaling") * state.workshopLevel * BETTER_SCALING_PER_WORKSHOP_LEVEL;
 
 /**
- * Crit chance (0..CRIT_SOFT_CAP_CEILING). Sources sum linearly up to
- * CRIT_SOFT_CAP_THRESHOLD; above that, exponential diminishing returns compress
- * further investment so 100% is unreachable. Formula:
- *   raw <= threshold  →  effective = raw
- *   raw  > threshold  →  effective = threshold + range × (1 − exp(−excess / (range × 0.5)))
- * where range = ceiling − threshold.
+ * Crit chance (0..CRIT_SOFT_CAP_CEILING). Sources:
+ *   - BASE_CRIT_CHANCE (1% floor)
+ *   - CRIT_PER_LEVEL × min(critLevel, MAX_CRIT_LEVEL)
+ *   - countCapability(state, "crit_chance") × 0.01  (skill-tree hook; 0 today)
+ * Items + workers contribute to crit_chunks instead (separate stat).
+ * Soft-cap formula unchanged: raw above CRIT_SOFT_CAP_THRESHOLD compresses
+ * toward CRIT_SOFT_CAP_CEILING.
  */
 export const getCritChance = (state: CanvasMultiplierInputs): number => {
-  let raw = CRIT_PER_LEVEL * state.critLevel;
-  raw += getEquippedContribution(state, "+crit_chance%");
-  raw += getOfficeContribution(state, "+crit_chance%").toNumber();
+  let raw = BASE_CRIT_CHANCE;
+  raw += CRIT_PER_LEVEL * Math.min(state.critLevel, MAX_CRIT_LEVEL);
+  raw += countCapability(state, "crit_chance") * 0.01;
   if (raw <= CRIT_SOFT_CAP_THRESHOLD) return raw;
   const range = CRIT_SOFT_CAP_CEILING - CRIT_SOFT_CAP_THRESHOLD;
   return CRIT_SOFT_CAP_THRESHOLD + range * (1 - Math.exp(-(raw - CRIT_SOFT_CAP_THRESHOLD) / (range * 0.5)));
+};
+
+/**
+ * Bonus chunks added per crit. Returns an integer >= 0.
+ * Sources:
+ *   - BASE_CRIT_CHUNKS (1)
+ *   - Equipped items with +crit_chunks affix (raw integer magnitudes; socks ×1.5 on boots)
+ *   - Worker affixes with +crit_chunks (scaled by levelScale(worker.level))
+ *
+ * Does NOT use getEquippedContribution/getOfficeContribution because those
+ * divide by 100 (percent semantics). crit_chunks is raw integer counts.
+ */
+export const getCritChunks = (state: CanvasMultiplierInputs): number => {
+  let chunks = BASE_CRIT_CHUNKS;
+  const hasSocks = getNodeLevel(state, "socks") > 0;
+  for (const entry of Object.entries(state.equipped)) {
+    const [slot, item] = entry as [SlotKind, Item | undefined];
+    if (!item) continue;
+    const slotMult = hasSocks && slot === "boots" ? 1.5 : 1.0;
+    for (const affix of item.affixes) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((affix.kind as any) === "+crit_chunks") chunks += affix.magnitude * slotMult;
+    }
+  }
+  for (const worker of state.roster) {
+    const scale = levelScale(worker.level).toNumber();
+    for (const affix of worker.affixes) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((affix.kind as any) === "+crit_chunks") chunks += affix.magnitude * scale;
+    }
+  }
+  return Math.max(0, Math.floor(chunks));
 };
 
 /**
@@ -232,10 +266,6 @@ export const getHireCostMultiplier = (state: Pick<GameStore, "purchasedNodes">):
 /** Combo decay reduction per chain link (subtracted from COMBO_DECAY_PER_LINK). */
 export const getComboDecayReduction = (state: Pick<GameStore, "purchasedNodes">): number =>
   countCapability(state, "combo_decay_reduction") * 0.01;
-
-/** Bonus % applied to canvas gold when the canvas is a crit. 0 if no nodes purchased. */
-export const getCritGoldBonus = (state: Pick<GameStore, "purchasedNodes">): number =>
-  countCapability(state, "crit_gold_bonus") * 0.20;
 
 /** Ascend threshold reduction in log10-space (used by canAscend + fameOnAscend). */
 export const getAscendThresholdReduction = (state: Pick<GameStore, "purchasedNodes">): number =>
