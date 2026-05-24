@@ -9,6 +9,9 @@ describe("canvasSlice — canvasTick", () => {
   beforeEach(() => {
     useGameStore.getState().resetRunCurrencies();
     useGameStore.getState().resetCanvas();
+    // Deterministic rng so the 1% BASE_CRIT_CHANCE doesn't randomly flake
+    // the exact-progress assertions below.
+    setSeed(1);
   });
 
   it("initializes with canvasProgress 0", () => {
@@ -18,7 +21,10 @@ describe("canvasSlice — canvasTick", () => {
   it("canvasTick(1) advances progress to 1 (< tier-1 paint time of 10s); gold unchanged", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(1);
-    expect(useGameStore.getState().canvasProgress).toBe(1);
+    // Progress is between 1 and 1.5 — exact 1.0 if no crit fires (deterministic
+    // via the seed above), up to 1.4 if a crit adds one bonus chunk worth (0.4s).
+    expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(1);
+    expect(useGameStore.getState().canvasProgress).toBeLessThan(1.5);
     expect(useGameStore.getState().gold.toNumber()).toBe(goldBefore);
   });
 
