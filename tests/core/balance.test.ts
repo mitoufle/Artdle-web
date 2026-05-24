@@ -18,7 +18,9 @@ import {
   SPEED_PER_LEVEL,
   SIZE_PER_LEVEL,
   CRIT_PER_LEVEL,
-  CRIT_SPEED_FACTOR,
+  BASE_CRIT_CHANCE,
+  BASE_CRIT_CHUNKS,
+  MAX_CRIT_LEVEL,
   COMBO_PER_LEVEL,
   COMBO_PER_LINK,
   COMBO_DECAY_PER_LINK,
@@ -243,7 +245,6 @@ describe("canvas-depth tuning constants", () => {
     expect(SPEED_PER_LEVEL).toBeCloseTo(0.05, 5);
     expect(SIZE_PER_LEVEL).toBeCloseTo(0.15, 5);
     expect(CRIT_PER_LEVEL).toBeCloseTo(0.01, 5);
-    expect(CRIT_SPEED_FACTOR).toBe(10);
     expect(COMBO_PER_LEVEL).toBeCloseTo(0.02, 5);
     expect(COMBO_PER_LINK).toBeCloseTo(0.10, 5);
     expect(COMBO_DECAY_PER_LINK).toBeCloseTo(0.05, 5);
@@ -549,6 +550,28 @@ describe("timeFactor (canvas tier base-time scaling)", () => {
 
   it("T4 returns 8", () => {
     expect(timeFactor(4)).toBe(8);
+  });
+});
+
+// ============================================================================
+// Crit per-chunk constants (Task 1 of T12)
+// ============================================================================
+describe("crit per-chunk constants", () => {
+  it("BASE_CRIT_CHANCE is 0.01 (1% always-on floor)", () => {
+    expect(BASE_CRIT_CHANCE).toBe(0.01);
+  });
+
+  it("BASE_CRIT_CHUNKS is 1 (one bonus chunk per crit at base)", () => {
+    expect(BASE_CRIT_CHUNKS).toBe(1);
+  });
+
+  it("MAX_CRIT_LEVEL is 50 (hard cap on the critLevel upgrade track)", () => {
+    expect(MAX_CRIT_LEVEL).toBe(50);
+  });
+
+  it("CRIT_SPEED_FACTOR is no longer exported (canvas-level crit speed bonus removed)", async () => {
+    const mod = await import("@/core/balance");
+    expect((mod as Record<string, unknown>).CRIT_SPEED_FACTOR).toBeUndefined();
   });
 });
 

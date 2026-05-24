@@ -37,8 +37,12 @@ export const SPEED_PER_LEVEL = 0.05;
 export const SIZE_PER_LEVEL = 0.15;
 /** +1% crit chance per crit level. */
 export const CRIT_PER_LEVEL = 0.01;
-/** Crit canvases paint in `time / CRIT_SPEED_FACTOR`. Fixed at 10× (= 90% faster). */
-export const CRIT_SPEED_FACTOR = 10;
+/** Always-on crit chance floor. Skill-tree + critLevel sum on top, then soft-cap formula. */
+export const BASE_CRIT_CHANCE = 0.01;
+/** Bonus chunks added by a crit at base (no items/workers). 1 = "trigger + 1 extra chunk". */
+export const BASE_CRIT_CHUNKS = 1;
+/** Hard cap on the critLevel upgrade track. Past this, levels can't be purchased. */
+export const MAX_CRIT_LEVEL = 50;
 /**
  * Below this raw crit value the formula is linear (no compression).
  * Above it, diminishing returns kick in — the curve asymptotes at CRIT_SOFT_CAP_CEILING.
