@@ -36,6 +36,17 @@ function hash(a: number, b: number): number {
 }
 
 /**
+ * Returns every sketch URL in the given tier's pool. Used by the boot
+ * preloader to warm the browser cache so the first canvas paint at that tier
+ * doesn't show a flash-of-unstyled cells. Tier > HIGHEST_AUTHORED_TIER falls
+ * back to the highest authored tier (matching `getSketchUrl`'s fallback).
+ */
+export function getTierSketchPool(tier: number): ReadonlyArray<string> {
+  const resolvedTier = Math.min(Math.max(1, tier), HIGHEST_AUTHORED_TIER);
+  return SKETCHES_BY_TIER[resolvedTier] ?? [];
+}
+
+/**
  * Returns the sketch URL for the given canvas. Picks deterministically from
  * the tier's sketch pool using `canvasNumber` as the seed. Falls back to the
  * highest authored tier (T4 today) for tiers > HIGHEST_AUTHORED_TIER.

@@ -30,7 +30,7 @@ vi.mock("@/systems/catchup", async () => {
   };
 });
 
-import { Bootstrap, MIN_LOADING_SCENE_MS } from "@/main";
+import { Bootstrap, MIN_LOADING_SCENE_MS, MIN_SPLASH_MS } from "@/main";
 import { useGameStore } from "@/store";
 import { ZERO, big } from "@/core/bigNumber";
 import type { CatchupResult } from "@/systems/catchup";
@@ -191,11 +191,12 @@ describe("Bootstrap in-session tab-return catch-up", () => {
     runCatchupSimulationMock.mockImplementation(async () => fakeResult);
 
     // Boot with elapsed ≤ 5s so Bootstrap mounts straight into `playing`
-    // and installs the lifecycle listener.
+    // and installs the lifecycle listener. Wait past the splash min-hold so
+    // the lifecycle install effect has fired before we dispatch visibility.
     seedStoreWithLastSeen(Date.now() - 1000);
     render(<Bootstrap />);
     await act(async () => {
-      await Promise.resolve();
+      await new Promise((r) => setTimeout(r, MIN_SPLASH_MS + 50));
     });
     // No catch-up sim should have fired during boot.
     expect(runCatchupSimulationMock).not.toHaveBeenCalled();
@@ -225,7 +226,7 @@ describe("Bootstrap in-session tab-return catch-up", () => {
     seedStoreWithLastSeen(Date.now() - 1000);
     render(<Bootstrap />);
     await act(async () => {
-      await Promise.resolve();
+      await new Promise((r) => setTimeout(r, MIN_SPLASH_MS + 50));
     });
     runCatchupSimulationMock.mockClear();
 
