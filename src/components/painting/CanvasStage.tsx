@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type JSX,
+} from "react";
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
@@ -9,6 +16,59 @@ import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import paintingScreen from "@/assets/images/Painting_screen_full.png";
 import { getSketchUrl, getCellRevealOrder, getSketchGridDim } from "./canvasArt";
+import { useRevealQueue } from "./useRevealQueue";
+
+/**
+ * Module-level cache: each unique sketch URL is decoded at most once across
+ * the lifetime of the page. Lets the per-cell draw effect call drawImage
+ * synchronously after the first cell of a canvas lands.
+ */
+const sketchImageCache = new Map<string, HTMLImageElement>();
+
+function getCachedSketchImage(url: string): HTMLImageElement {
+  let img = sketchImageCache.get(url);
+  if (!img) {
+    img = new Image();
+    img.src = url;
+    sketchImageCache.set(url, img);
+  }
+  return img;
+}
+
+/**
+ * Composes one cell of the sketch into the settled canvas via drawImage.
+ * Defers itself to the image's load event if the source isn't decoded yet —
+ * the next call after decode will draw immediately from the cache.
+ */
+function drawCellIntoCanvas(
+  ctx: CanvasRenderingContext2D,
+  cellIndex: number,
+  gridDim: number,
+  sketchUrl: string,
+  canvasW: number,
+  canvasH: number,
+): void {
+  const img = getCachedSketchImage(sketchUrl);
+  if (!img.complete || img.naturalWidth === 0) {
+    const onLoad = (): void => {
+      img.removeEventListener("load", onLoad);
+      drawCellIntoCanvas(ctx, cellIndex, gridDim, sketchUrl, canvasW, canvasH);
+    };
+    img.addEventListener("load", onLoad);
+    return;
+  }
+  const col = cellIndex % gridDim;
+  const row = Math.floor(cellIndex / gridDim);
+  const sx = (img.width / gridDim) * col;
+  const sy = (img.height / gridDim) * row;
+  const sw = img.width / gridDim;
+  const sh = img.height / gridDim;
+  const dx = (canvasW / gridDim) * col;
+  const dy = (canvasH / gridDim) * row;
+  const dw = canvasW / gridDim;
+  const dh = canvasH / gridDim;
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+}
 
 function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const state = useGameStore.getState();
@@ -114,38 +174,56 @@ export function CanvasStage({
     () => getCellRevealOrder(canvasNumber, totalCells),
     [canvasNumber, totalCells],
   );
-  // Invert the reveal order once: revealRankByIndex[cellIndex] = rank. The
-  // previous indexOf-in-the-render-loop was O(N²) per frame — at T4 (196
-  // cells) that's ~38k array scans every tick, dominating tick-time cost.
-  const revealRankByIndex = useMemo(() => {
-    const out = new Array<number>(totalCells);
-    for (let rank = 0; rank < cellOrder.length; rank++) {
-      out[cellOrder[rank]!] = rank;
-    }
-    return out;
-  }, [cellOrder, totalCells]);
-  // Static per-cell positioning (background slice for each cell) only depends
-  // on the sketch + grid dimensions, NOT on progress. Computing it once per
-  // canvas and reusing across frames eliminates 196 inline-style object
-  // rebuilds per render at T4.
-  const cellStaticStyles = useMemo(() => {
-    if (!sketchUrl) return null;
-    const denom = gridDim - 1;
-    const out = new Array<CSSProperties>(totalCells);
-    for (let i = 0; i < totalCells; i++) {
-      const col = i % gridDim;
-      const row = Math.floor(i / gridDim);
-      out[i] = {
-        backgroundImage: `url(${sketchUrl})`,
-        backgroundSize: `${gridDim * 100}% ${gridDim * 100}%`,
-        backgroundPosition: `${(col / denom) * 100}% ${(row / denom) * 100}%`,
-      };
-    }
-    return out;
-  }, [sketchUrl, gridDim, totalCells]);
   const cellsRevealed = Math.floor(
     Math.max(0, Math.min(1, progressPct)) * totalCells,
   );
+
+  // Two-canvas hybrid: a long-lived <canvas> holds all settled pixels, and a
+  // small grid overlay holds only the ~8 cells currently popping in. The
+  // queue decouples the engine's reveal signal from the per-frame DOM cost.
+  const settledCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const committedRef = useRef<Set<number>>(new Set());
+  const { inFlight, settled } = useRevealQueue({
+    targetRevealed: cellsRevealed,
+    cellOrder,
+    canvasNumber,
+    critCells: critChunks,
+  });
+
+  // Commit newly-settled cells into the long-lived canvas. useLayoutEffect
+  // fires before browser paint so the canvas pixel lands in the same frame
+  // the in-flight DOM cell is removed — no one-frame flash of nothing.
+  // Each cell is drawn at most once; committedRef guards against re-draws
+  // if `settled` re-references an already-drawn index after subsequent ticks.
+  useLayoutEffect(() => {
+    const canvas = settledCanvasRef.current;
+    if (!canvas || !sketchUrl) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    for (const cellIndex of settled) {
+      if (committedRef.current.has(cellIndex)) continue;
+      drawCellIntoCanvas(
+        ctx,
+        cellIndex,
+        gridDim,
+        sketchUrl,
+        canvas.width,
+        canvas.height,
+      );
+      committedRef.current.add(cellIndex);
+    }
+  }, [settled, sketchUrl, gridDim]);
+
+  // Reset the settled canvas + committed-cells set whenever the canvas
+  // identity changes (sale completes, new canvas starts).
+  useLayoutEffect(() => {
+    const canvas = settledCanvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    committedRef.current = new Set();
+  }, [canvasNumber]);
 
   // When a canvas sells (canvasNumber increments), briefly hold the previous
   // sketch as a fading overlay so the player sees what they painted before
@@ -191,30 +269,49 @@ export function CanvasStage({
             alt="Artist's workshop scene with central easel"
             draggable={false}
           />
-          {sketchUrl && cellStaticStyles && (
-            <div
-              key={`sketch-${canvasNumber}`}
-              className={styles.sketchOverlay}
-              data-testid="sketch-overlay"
-              aria-hidden="true"
-              style={{
-                gridTemplateColumns: `repeat(${gridDim}, 1fr)`,
-                gridTemplateRows: `repeat(${gridDim}, 1fr)`,
-              }}
-            >
-              {cellStaticStyles.map((staticStyle, i) => {
-                const visible = revealRankByIndex[i]! < cellsRevealed;
-                const isCritCell = critChunks[i] === true;
-                return (
-                  <div
-                    key={i}
-                    className={`${styles.sketchCell} ${isCritCell ? styles.sketchCellCrit : ""}`}
-                    data-revealed={visible ? "true" : undefined}
-                    style={staticStyle}
-                  />
-                );
-              })}
-            </div>
+          {sketchUrl && (
+            <>
+              <canvas
+                ref={settledCanvasRef}
+                key={`settled-${canvasNumber}`}
+                className={styles.sketchOverlaySettled}
+                width={400}
+                height={400}
+                data-testid="sketch-overlay"
+                aria-hidden="true"
+              />
+              <div
+                key={`in-flight-${canvasNumber}`}
+                className={styles.sketchOverlayInFlight}
+                data-testid="sketch-overlay-in-flight"
+                aria-hidden="true"
+                style={{
+                  gridTemplateColumns: `repeat(${gridDim}, 1fr)`,
+                  gridTemplateRows: `repeat(${gridDim}, 1fr)`,
+                }}
+              >
+                {inFlight.map(({ cellIndex, isCrit, startedAt }) => {
+                  const col = cellIndex % gridDim;
+                  const row = Math.floor(cellIndex / gridDim);
+                  const denom = Math.max(1, gridDim - 1);
+                  return (
+                    <div
+                      key={`${cellIndex}-${startedAt}`}
+                      className={`${styles.sketchCellInFlight} ${isCrit ? styles.sketchCellCrit : ""}`}
+                      data-revealed="true"
+                      data-cell-index={cellIndex}
+                      style={{
+                        gridColumn: col + 1,
+                        gridRow: row + 1,
+                        backgroundImage: `url(${sketchUrl})`,
+                        backgroundSize: `${gridDim * 100}% ${gridDim * 100}%`,
+                        backgroundPosition: `${(col / denom) * 100}% ${(row / denom) * 100}%`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </>
           )}
           {flashEntry && (
             <div

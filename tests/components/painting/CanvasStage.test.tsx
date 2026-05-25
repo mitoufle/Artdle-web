@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
 import { CanvasStage } from "@/components/painting/CanvasStage";
 
 describe("<CanvasStage />", () => {
@@ -65,7 +65,7 @@ describe("<CanvasStage />", () => {
   });
 
   describe("<CanvasStage> — sketch overlay reveal", () => {
-    it("renders the sketch overlay with 25 cells at 5x5 grid", () => {
+    it("renders the settled sketch overlay (canvas element) and an in-flight grid sized 5x5 at T1", () => {
       const { container } = render(
         <CanvasStage
           sizeLevel={1}
@@ -79,10 +79,20 @@ describe("<CanvasStage />", () => {
       );
       const overlay = container.querySelector('[data-testid="sketch-overlay"]');
       expect(overlay).toBeInTheDocument();
-      expect(overlay?.children.length).toBe(25);
+      // Settled overlay is a 400×400 canvas; CSS scales it to the easel bbox.
+      expect(overlay?.tagName.toLowerCase()).toBe("canvas");
+      expect((overlay as HTMLCanvasElement).width).toBe(400);
+      expect((overlay as HTMLCanvasElement).height).toBe(400);
+      // The in-flight overlay is a sibling grid with N×N template.
+      const inFlight = container.querySelector(
+        '[data-testid="sketch-overlay-in-flight"]',
+      ) as HTMLElement | null;
+      expect(inFlight).toBeInTheDocument();
+      expect(inFlight?.style.gridTemplateColumns).toBe("repeat(5, 1fr)");
+      expect(inFlight?.style.gridTemplateRows).toBe("repeat(5, 1fr)");
     });
 
-    it("at progressPct=0, zero cells are visible (opacity 1)", () => {
+    it("at progressPct=0, the in-flight overlay is empty (no cells queued or animating)", () => {
       const { container } = render(
         <CanvasStage
           sizeLevel={1}
@@ -94,48 +104,73 @@ describe("<CanvasStage />", () => {
           canvasNumber={1}
         />,
       );
-      const cells = container.querySelectorAll('[data-testid="sketch-overlay"] > div');
-      const visible = Array.from(cells).filter((c) => (c as HTMLElement).style.opacity === "1");
-      expect(visible.length).toBe(0);
+      const inFlight = container.querySelector(
+        '[data-testid="sketch-overlay-in-flight"]',
+      );
+      expect(inFlight?.children.length).toBe(0);
     });
 
-    it("at progressPct=0.5, ~half the cells are revealed", () => {
-      const { container } = render(
-        <CanvasStage
-          sizeLevel={1}
-          canvasTier={1}
-          progressPct={0.5}
-          timeElapsed="5.0"
-          timeTotal="10.0"
-          nextSaleGold="10"
-          canvasNumber={1}
-        />,
-      );
-      const cells = container.querySelectorAll('[data-testid="sketch-overlay"] > div');
-      const visible = Array.from(cells).filter(
-        (c) => (c as HTMLElement).getAttribute("data-revealed") === "true",
-      );
-      // floor(0.5 * 25) = 12
-      expect(visible.length).toBe(12);
+    it("at progressPct=0.5, the queue surfaces cells into the in-flight overlay as time advances (max 8 simultaneously)", () => {
+      vi.useFakeTimers();
+      try {
+        const { container } = render(
+          <CanvasStage
+            sizeLevel={1}
+            canvasTier={1}
+            progressPct={0.5}
+            timeElapsed="5.0"
+            timeTotal="10.0"
+            nextSaleGold="10"
+            canvasNumber={1}
+          />,
+        );
+        // Drive a few drip-ticks so the queue promotes pending into in-flight.
+        act(() => {
+          vi.advanceTimersByTime(400);
+        });
+        const inFlight = container.querySelector(
+          '[data-testid="sketch-overlay-in-flight"]',
+        );
+        // Engine reports floor(0.5 * 25) = 12 cells revealed; queue caps at 8.
+        // After 400ms the pool is saturated.
+        expect(inFlight?.children.length ?? 0).toBeGreaterThan(0);
+        expect(inFlight?.children.length ?? 0).toBeLessThanOrEqual(8);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
-    it("at progressPct=1.0, all 25 cells are revealed", () => {
-      const { container } = render(
-        <CanvasStage
-          sizeLevel={1}
-          canvasTier={1}
-          progressPct={1.0}
-          timeElapsed="10.0"
-          timeTotal="10.0"
-          nextSaleGold="10"
-          canvasNumber={1}
-        />,
-      );
-      const cells = container.querySelectorAll('[data-testid="sketch-overlay"] > div');
-      const visible = Array.from(cells).filter(
-        (c) => (c as HTMLElement).getAttribute("data-revealed") === "true",
-      );
-      expect(visible.length).toBe(25);
+    it("at progressPct=1.0, the engine target is reached and the queue eventually drains all reveals (max 8 concurrent)", () => {
+      vi.useFakeTimers();
+      try {
+        const { container } = render(
+          <CanvasStage
+            sizeLevel={1}
+            canvasTier={1}
+            progressPct={1.0}
+            timeElapsed="10.0"
+            timeTotal="10.0"
+            nextSaleGold="10"
+            canvasNumber={1}
+          />,
+        );
+        // Saturate the queue with several drip-ticks.
+        act(() => {
+          vi.advanceTimersByTime(400);
+        });
+        const inFlight = container.querySelector(
+          '[data-testid="sketch-overlay-in-flight"]',
+        );
+        // At T1 we have 25 cells total; in-flight stays capped at 8.
+        expect(inFlight?.children.length ?? 0).toBeLessThanOrEqual(8);
+        // Drain the queue: 25 cells * ~50ms drip + 220ms animation tail.
+        act(() => {
+          vi.advanceTimersByTime(2000);
+        });
+        expect(inFlight?.children.length ?? 0).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
@@ -189,23 +224,52 @@ describe("<CanvasStage />", () => {
       expect(container.querySelector("[data-testid='crit-indicator']")).toBeNull();
     });
 
-    it("applies the sketchCellCrit modifier to cells listed in critChunks", () => {
-      const { container } = render(
-        <CanvasStage
-          sizeLevel={1}
-          canvasTier={1}
-          progressPct={1.0}  // all 25 cells revealed at T1
-          timeElapsed="6.0"
-          timeTotal="6.0"
-          nextSaleGold="100"
-          critChunks={{ 0: true, 1: true }}
-        />,
-      );
-      const overlay = container.querySelector("[data-testid='sketch-overlay']");
-      expect(overlay).not.toBeNull();
-      const cells = Array.from(overlay!.querySelectorAll<HTMLDivElement>("div"));
-      const critCells = cells.filter((c) => c.className.includes("sketchCellCrit"));
-      expect(critCells.length).toBe(2);
+    it("applies the sketchCellCrit modifier to in-flight cells listed in critChunks", () => {
+      vi.useFakeTimers();
+      try {
+        const { container } = render(
+          <CanvasStage
+            sizeLevel={1}
+            canvasTier={1}
+            progressPct={1.0}  // all 25 cells revealed at T1
+            timeElapsed="6.0"
+            timeTotal="6.0"
+            nextSaleGold="100"
+            critChunks={{ 0: true, 1: true }}
+          />,
+        );
+        // Drip the queue enough for the first cells (which include the
+        // critChunks indices since they sit early in the engine reveal order)
+        // to be in-flight. The crit cells stay in-flight for 600ms.
+        act(() => {
+          vi.advanceTimersByTime(150);
+        });
+        const inFlight = container.querySelector(
+          "[data-testid='sketch-overlay-in-flight']",
+        );
+        expect(inFlight).not.toBeNull();
+        const cells = Array.from(
+          inFlight!.querySelectorAll<HTMLDivElement>("div"),
+        );
+        // The two crit cells (indices 0 and 1) are early in cellOrder for
+        // canvasNumber=0 (default), so they appear in the first in-flight
+        // batch. We assert the modifier is applied somewhere on the screen
+        // during the in-flight window.
+        const critCells = cells.filter((c) =>
+          c.className.includes("sketchCellCrit"),
+        );
+        const critIndices = critCells.map((c) =>
+          Number(c.getAttribute("data-cell-index")),
+        );
+        // Both crit-marked indices that appear in-flight should be flagged.
+        for (const idx of critIndices) {
+          expect([0, 1]).toContain(idx);
+        }
+        // At least one of the two crit cells should be in-flight by now.
+        expect(critCells.length).toBeGreaterThanOrEqual(1);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

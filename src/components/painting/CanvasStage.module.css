@@ -44,9 +44,22 @@
   display: block;
 }
 
-/* The easel-canvas region inside the workshop image. The N×N grid is set
- * inline per-tier (dim ~doubles the cell count each tier). */
-.sketchOverlay {
+/* The easel-canvas region inside the workshop image. The settled <canvas>
+ * holds all cells whose pop-in is finished as pixels (1 DOM node total).
+ * The in-flight overlay is a sibling CSS grid that holds only the small
+ * set of cells currently animating (max ~8 at a time). Both layers share
+ * the same easel-bbox positioning so they overlay exactly. */
+.sketchOverlaySettled {
+  position: absolute;
+  left: 39.17%;
+  top: 19.40%;
+  width: 21.58%;
+  height: 39.19%;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+.sketchOverlayInFlight {
   position: absolute;
   left: 39.17%;
   top: 19.40%;
@@ -59,7 +72,7 @@
 /* Completed-canvas flash. Briefly holds the just-sold sketch at full opacity
  * (with a small scale-up "ta-da" beat) then fades, so the player sees what
  * they painted before the next canvas starts its chunk-by-chunk reveal.
- * Positioned identically to .sketchOverlay to overlay the same easel region. */
+ * Positioned identically to .sketchOverlaySettled to overlay the same easel region. */
 .completedFlash {
   position: absolute;
   left: 39.17%;
@@ -83,23 +96,23 @@
   100% { opacity: 0; transform: scale(1); filter: brightness(1); }
 }
 
-.sketchCell {
+.sketchCellInFlight {
   position: relative;            /* anchor for ::after rainbow border on crit cells */
   background-repeat: no-repeat;
   image-rendering: pixelated;
   transform-origin: center;
   opacity: 0;
   transform: scale(0.4);
-  /* Chunks pop in from scale(0.4) to scale(1) with a back-ease overshoot —
-   * the painted chunk itself is the click feedback. CSS handles the reveal
-   * via [data-revealed] so React doesn't re-apply inline opacity/transform
-   * every frame at high tiers (T4 = 196 cells = expensive). */
+  /* In-flight chunks pop in from scale(0.4) to scale(1) with a back-ease
+   * overshoot. CSS handles the reveal via [data-revealed] so the inline
+   * style stays static across the cell's short lifetime. Settled cells are
+   * already pixels in the canvas — no DOM cost. */
   transition:
     opacity 180ms ease-out,
     transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
   will-change: opacity, transform;
 }
-.sketchCell[data-revealed="true"] {
+.sketchCellInFlight[data-revealed="true"] {
   opacity: 1;
   transform: scale(1);
 }
