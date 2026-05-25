@@ -101,20 +101,18 @@
   background-repeat: no-repeat;
   image-rendering: pixelated;
   transform-origin: center;
-  opacity: 0;
-  transform: scale(0.4);
-  /* In-flight chunks pop in from scale(0.4) to scale(1) with a back-ease
-   * overshoot. CSS handles the reveal via [data-revealed] so the inline
-   * style stays static across the cell's short lifetime. Settled cells are
-   * already pixels in the canvas — no DOM cost. */
-  transition:
-    opacity 180ms ease-out,
-    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* In-flight cells are freshly-mounted DOM nodes (keyed per cellIndex +
+   * startedAt), so a CSS transition wouldn't fire — there's no initial→
+   * revealed state change. A keyframe animation does play on mount, which
+   * is what we want: scale(0.4)→scale(1) with a back-ease overshoot and
+   * opacity 0→1. */
+  animation: cellPopIn 220ms cubic-bezier(0.34, 1.56, 0.64, 1) 1 forwards;
   will-change: opacity, transform;
 }
-.sketchCellInFlight[data-revealed="true"] {
-  opacity: 1;
-  transform: scale(1);
+
+@keyframes cellPopIn {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 /* Crit-painted chunks fire a one-shot rainbow caterpillar around the border,
