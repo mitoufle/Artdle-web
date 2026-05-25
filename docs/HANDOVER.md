@@ -1,5 +1,68 @@
 # Artdle Web — Handover
 
+## Tab navigation fix — pause tick loop + isolate canvas subscriptions (2026-05-25)
+
+One commit (`81cb2a1`), deployed (production bundle `index-D0XX0g7n.js`).
+
+### What the user reported
+
+"When I'm on the canvas screen and I click on the constellation tab it takes ages to load. but not for the other tabs." Later clarified: "It looks that the system is waiting for a canvas to be completed to allow changing tab."
+
+### What was actually happening
+
+Dev-only perf tracing on the navigation showed **5028ms click→paint on `/painting → /constellation`** (vs ~50ms for `/tree → /constellation`). During those 5 seconds:
+
+- `App` was being invoked **548 times** (re-rendered, mostly aborted)
+- `TopBar` was invoked **548 times** as a non-memoized child of App
+- `ConstellationRoute` was invoked **186-260 times** before its first useLayoutEffect fired — React's concurrent renderer kept starting the render, getting interrupted, and restarting from scratch
+
+The mechanism: **Zustand's high-frequency tick updates (canvasProgress every rAF, plus the other slice ticks) fired store changes that invalidated any in-progress concurrent render via React's useSyncExternalStore consistency checks**. ConstellationRoute is the heaviest route to render (~150 SVG elements + 7 continuously-animating twinkles), so it loses the race the longest — but the same starvation happens on every outgoing `/painting → *` transition; constellation just makes it visible.
+
+The "waiting for canvas completion" feeling was a coincidence: a sale-flash typically draws the eye at the moment the constellation page finally commits, because both events happen seconds apart.
+
+### The two-part fix
+
+1. **`BoundCanvasStage`** (new component, `src/components/painting/BoundCanvasStage.tsx`) owns the five tick-frequency subscriptions previously at the top of `PaintingRoute`: `canvasProgress`, `comboChain`, `critChunks`, `lastSale`, `statsRun.canvasesSold`, plus the related action references (`clearLastSale`, `canvasTick`). PaintingRoute passes its already-computed low-freq props (`paintTimeSec`, `baseGold`, `chunkCount`, `sizeLevel`, `canvasTier`) down. Result: PaintingRoute's body (upgrades strip, 5 TrackCards, the active Room component, the RoomRail) no longer re-renders on every tick — typical render count during a 3-second nav dropped from ~730 to 6.
+
+2. **Pause the tick loop during navigation.** `TopBar.tsx` NavLinks call `pauseTickLoop()` in `onClick` (before react-router fires its navigate). `App.tsx` resumes via `useEffect` on `location.pathname` change, which fires after the new route commits. Pause window is the duration of React's concurrent render of the new route — typically 50-200ms. During the pause, no tick-loop store writes happen, so no useSyncExternalStore invalidations can preempt the render.
+
+After the fix: **61ms click→paint on `/painting → /constellation`, 2 renders per component** (the 2 is React StrictMode's dev-mode double-invocation; production runs would be 1).
+
+| | Before | After |
+|---|---|---|
+| `/painting → /constellation` time-to-paint | 5028ms | 61ms (×82) |
+| App invocations during nav | 548 | 2 |
+| ConstellationRoute restart attempts | 186-260 | 2 |
+| PaintingRoute renders during nav | 730 | 6 |
+
+### Files
+
+- `src/components/painting/BoundCanvasStage.tsx` (new, 84 lines). Owns the high-freq subscriptions; renders `CanvasStage` + `FloatingGoldText`.
+- `src/routes/PaintingRoute.tsx`. Drops the five high-freq subscriptions + the derived `progressPct` / `comboFactor` / `nextSaleGold` (now computed inside BoundCanvasStage). Removed unused imports: `CanvasStage`, `FloatingGoldText`, `COMBO_PER_LINK`.
+- `src/components/shell/TopBar.tsx`. Imports `pauseTickLoop` from `@/core/tickLoop`. NavLink `onClick` calls it before navigation if pathname is changing.
+- `src/App.tsx`. Imports `resumeTickLoop`. `useEffect` on `location.pathname` resumes the loop after the new route commits. The dependency array means same-path clicks don't re-fire resume.
+
+### Notes
+
+- **Trade-off:** game state advances pause for the navigation window (50-200ms). At 60Hz, that's 3-12 missed frames of inspiration/gold accumulation. Imperceptible to the player; massively better than a 5-second tab switch.
+- **The `tickLoop` already had `pauseTickLoop` / `resumeTickLoop` from the visibilitychange hook in `src/systems/lifecycle.ts`.** Those still work — both call sites (lifecycle + nav) are idempotent and don't conflict. If a user navigates while the tab is hidden, the lifecycle's pause is in effect; nav's pause is a no-op; on tab-show, both resume paths converge.
+- **The asymmetry with `/tree → /constellation` is now explained.** TreeRoute doesn't subscribe to any per-tick-changing state (no canvasProgress, no inspiration directly — it derives inspiration display from `partLevels` which only changes on purchase). So leaving `/tree` doesn't have the invalidation source. After this fix, the asymmetry is gone — all transitions are fast.
+- **Diagnostic instrumentation was deleted (`src/dev/navPerf.ts`).** It served its purpose during this diagnosis. If a similar performance bug recurs, restore it from git history at commit `342be6e..81cb2a1` range.
+- **`tests/components/painting/BoundCanvasStage.test.tsx` was planned in `docs/superpowers/plans/2026-05-25-painting-route-tick-subscription-isolation.md` but not added here.** The runtime fix shipped without the regression test. A test asserting "PaintingRoute body re-renders ≤ 1 time when only canvasProgress changes" is still worth adding to prevent future drift.
+
+### Status
+
+- **1061 tests green** across 109 files. `npx tsc -b --noEmit` no new errors. `npx vite build` clean (5.85s).
+- Production bundle `index-D0XX0g7n.js`. Live.
+
+### Open follow-ups
+
+- **Regression test for BoundCanvasStage.** See the plan doc referenced above for the Profiler-based test design.
+- **Architectural cleanup of high-freq state.** The root cause was that high-freq tick state (canvasProgress) lives in the same Zustand store as low-freq game state. A future cleanup could split into two stores (or use refs / imperative DOM updates for `canvasProgress`-style data). The pause-on-nav stopgap is enough for now, but if other UI work (modals, heavy interactions) hits similar starvation, the architectural split becomes worth it.
+- **Same fix for designer routes?** `/dev/*` paths bypass TopBar's NavLink (they're a separate Routes block in App). If the user navigates between dev routes during heavy tick activity, they'd see the same starvation. Low priority — dev routes are author-only.
+
+---
+
 ## Canvas chunk rendering rework — cap at 400 + two-canvas hybrid + reveal queue (2026-05-25)
 
 Five commits, deployed (production bundle `index-DMiA0i1P.js`). Plan at `docs/superpowers/plans/2026-05-25-canvas-chunk-rendering-rework.md`.
