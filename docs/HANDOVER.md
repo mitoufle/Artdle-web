@@ -1,5 +1,60 @@
 # Artdle Web — Handover
 
+## Canvas chunk rendering rework — cap at 400 + two-canvas hybrid + reveal queue (2026-05-25)
+
+Five commits, deployed (production bundle `index-DMiA0i1P.js`). Plan at `docs/superpowers/plans/2026-05-25-canvas-chunk-rendering-rework.md`.
+
+### What landed
+
+User flagged a future-state perf concern: at T10 the uncapped `getSketchGridDim` formula `round(5 × sqrt(2)^(T-1))` would yield ~113×113 = 12,769 cells per canvas. The recent `dec6b0f` per-cell perf fix made each div cheap but the DOM-element count was still O(N). Beyond steady-state, the bigger risk was **crit storms**: a single crit can paint hundreds of chunks in one tick (engine fires `1 + N` per crit + canvas-end overflow), so the visual layer could be asked to start hundreds of CSS animations simultaneously.
+
+Two changes that compose:
+
+**1. Cap chunks at 400** (`getSketchGridDim` clamps at 20×20). T1–T4 unchanged (5/7/10/14 dims = 25/49/100/196 cells). T5+ all share the 20×20 = 400-cell grid. The cap affects BOTH engine chunk count (crit roll cadence, click-to-paint resolution) AND visual cells — the user opted to share the cap rather than decouple chunks-from-cells, which would have been a much larger refactor. Click-to-paint at T10 was 1/12,769 per click; now 1/400 — clicks become meaningfully impactful at high tiers, a UX improvement.
+
+**2. Two-canvas hybrid + reveal queue** in `CanvasStage`:
+- A single `<canvas>` element holds all "settled" cells as rasterized pixels. Whenever a cell finishes its 220ms pop-in animation, the renderer commits it via `drawImage` and forgets it — the cell no longer exists as a DOM element.
+- A small overlay container holds ONLY the cells currently animating, max 8 at any frame. These keep the existing CSS pop-in animation (220ms `cellPopIn` keyframes with scale-back-ease) and the rainbow-border `sketchCellCrit` class (now for 600ms instead of the old 220ms, matching the existing crit-border animation duration).
+- A new hook `useRevealQueue` mediates between the engine signal (`cellsRevealed` count) and the visual. When the engine reveals N cells in one tick, the hook pushes them into a FIFO and drip-feeds one into the in-flight pool every 50ms, capping in-flight at 8. Crit cells stay in-flight for 600ms (so their rainbow border completes); non-crit cells for 220ms.
+
+Per-frame render cost is now O(in-flight) = O(1). T10 = T5 perf-wise. A 400-cell crit storm (the absolute worst case) takes ~20s to fully cascade, with max 8 simultaneous animations at any frame — a satisfying rainbow tsunami instead of a stutter spike.
+
+### Files
+
+- `src/components/painting/canvasArt.ts:74-81` — `getSketchGridDim` clamps via `Math.min(20, raw)`. Updated JSDoc to document the cap.
+- `src/components/painting/useRevealQueue.ts` (new) — `useReducer`-based queue with three states (pending FIFO, in-flight pool max 8, settled list). `setInterval(50ms)` drives the drip + settle ticks. `performance.now()` for timing. Bucket-credit quirk: `startedAt = now - DRIP_INTERVAL_MS` so the in-flight duration check aligns with the next tick boundary (otherwise a cell promoted at t=50 and checked at t=270 would still show age 220ms < 220ms threshold and not graduate — see commit `25031dc` for the reasoning).
+- `src/components/painting/CanvasStage.tsx` — sketch overlay block (was ~lines 194-218) replaced with a settled `<canvas ref={settledCanvasRef}>` + a small in-flight grid `<div data-testid="sketch-overlay-in-flight">`. Two `useLayoutEffect`s: one commits settled cells to the canvas via `drawImage`; the other clears the canvas + `committedRef` on `canvasNumber` change. Module-level `sketchImageCache` avoids re-decoding the same sketch PNG when committing multiple cells from it. The old `cellStaticStyles` and `revealRankByIndex` useMemos are gone.
+- `src/components/painting/CanvasStage.module.css` — `.sketchOverlay` → `.sketchOverlaySettled` (no `display: grid`, just `position: absolute`). New `.sketchOverlayInFlight` for the grid container holding the in-flight cells. `.sketchCell` → `.sketchCellInFlight` AND switched from CSS transition (which doesn't fire on initial mount of a fresh DOM node — caught by an advisor review of Task 3's first cut) to a `@keyframes cellPopIn` animation with `fill-mode: forwards`. `.sketchCellCrit` unchanged.
+- `tests/components/painting/canvasArt.test.ts` — three new tests for the cap + updated two pre-existing tests that hard-coded uncapped values at T6/T7.
+- `tests/components/painting/useRevealQueue.test.ts` (new) — 6 hook tests covering empty start, queue advance, in-flight cap, settle-after-220ms, crit-cells-settle-after-600ms, canvas-change reset.
+- `tests/components/painting/CanvasStage.test.tsx` — five existing tests in the "sketch overlay reveal" + "crit chunks" blocks updated to assert against the new structure (settled canvas presence, in-flight grid template, max-8 cap, eventual drain, crit class on in-flight cells).
+- `tests/components/painting/CanvasStage.stress.test.tsx` (new) — two regression-guard tests for the queue cap under a worst-case 400-cell crit storm.
+
+### Status
+
+- **1061 tests green** across 109 files. `npx tsc -b --noEmit` no new errors. `npx vite build` clean (1s).
+- Production bundle `index-DMiA0i1P.js`. Verified live: `sketch-overlay`, `sketchOverlayInFlight`, `sketchOverlaySettled` all present in the JS.
+- Save schema unchanged. No migration needed — only render-layer + chunk-count formula changes.
+- Bot-sim still passes the `T3→T4 / T2→T3 >= 0.9` non-inversion assertion (ratio 1.17 unchanged from the prior tier-cost rebalance).
+
+### Notes
+
+- **The implementer's-own advisor caught the pop-in animation bug during Task 3.** Initial cut used a `transition: opacity 220ms` on `.sketchCellInFlight` with `[data-revealed="true"]` toggling — but transitions don't fire on initial mount of a fresh DOM node (the property change must happen *after* mount). With cells mounting already revealed, no animation played. The fix was to use `@keyframes cellPopIn` with `animation-fill-mode: forwards` instead, which DOES run on mount. The unit tests passed both before and after the fix — visual regression coverage doesn't exist. If this pattern recurs (CSS transition on fresh mount), consider a browser-driven visual test.
+- **jsdom doesn't implement `HTMLCanvasElement.getContext()`** — the canvas-commit effect runs but `ctx` is null in tests, so `drawImage` no-ops gracefully. Stress + CanvasStage tests log "Not implemented" warnings; ignore them.
+- **The `useRevealQueue` `setInterval(50ms)` runs continuously**, even when nothing is queued. It's a small cost (one no-op dispatch per 50ms) but worth noting if the cells/canvas/anything ever scales to many concurrent instances. A future optimization could `clearInterval` when both `pending` and `inFlight` are empty.
+- **`getCachedSketchImage` is module-level and never evicts.** Memory cost is small (~41 sketches × few MB each = tens of MB) but in principle grows without bound. Acceptable for a single-page game.
+- **The stress test's 25s timeout for full-drain has ~4s slack** over the theoretical 20.6s minimum (400 cells × 50ms drip + 600ms crit tail). If anyone bumps `DRIP_INTERVAL_MS` or `CRIT_DURATION_MS`, also bump the stress test's `advanceTimersByTime(25_000)`.
+- **The crit test in `CanvasStage.test.tsx` depends on `getCellRevealOrder(0, 25)` placing cell `0` early in the order.** If `canvasArt.ts`'s hash function changes, this test could become flaky.
+
+### Open follow-ups
+
+- **Manual visual verification.** Unit tests pass but the production deploy hasn't been visually verified yet. Confirm: (a) the sketch reveals cell-by-cell as before, (b) a crit triggers the rainbow border on freshly-painted cells, (c) the completed-canvas flash still plays, (d) no flicker on canvas transitions.
+- **Speed-redesign integration.** User mentioned the next gameplay change is "speed determines time-between-chunks instead of time-per-canvas." That change lands naturally on top of this rework: the queue is already chunk-event-driven, so swapping the engine's per-canvas paint-time formula for per-chunk-interval is independent of the visual layer. No render code changes needed.
+- **`setInterval` → `requestAnimationFrame`.** Real-time smoothness is fine at 50ms, but rAF would integrate better with the browser's rendering pipeline if we ever notice tearing. Tests would need to switch from fake timers to mocking `requestAnimationFrame`.
+- **Cell rendering at T1 visually changed slightly.** With the queue stagger, a click at T1 (which advances by 1 chunk = 1 cell at the 1:1 mapping) now drip-feeds at 50ms even for a single cell. That's a 50ms latency that didn't exist before. Probably imperceptible but worth noting if click responsiveness ever feels mushy.
+
+---
+
 ## Canvas tier cost rebalance — costTierFactor decoupled from tierFactor (2026-05-25)
 
 Five commits, deployed (production bundle `index-CxhhTKYt.js`). Plan at `docs/superpowers/plans/2026-05-24-canvas-tier-cost-rebalance.md`.
