@@ -5,6 +5,7 @@ import { useGameStore } from "@/store";
 import { persistedAdapter } from "@/systems/persistence";
 import { useMusic } from "@/ui/hooks/useMusic";
 import { MusicControls } from "./MusicControls";
+import { pauseTickLoop } from "@/core/tickLoop";
 import treeIcon from "@/assets/bar_icons/tree.png";
 import paintingIcon from "@/assets/bar_icons/painting.png";
 import musicIcon from "@/assets/bar_icons/music.png";
@@ -112,6 +113,16 @@ export function TopBar(): JSX.Element {
               aria-current={isActive ? "page" : undefined}
               aria-label={label}
               title={label}
+              onClick={() => {
+                if (pathname !== to) {
+                  // Pause the tick loop for the duration of the navigation.
+                  // While paused, no store updates fire from the tick, which
+                  // means no useSyncExternalStore consistency invalidations
+                  // can preempt React's concurrent render of the new route.
+                  // App.tsx resumes on location change after the new route mounts.
+                  pauseTickLoop();
+                }
+              }}
             >
               <img src={icon} alt="" className={styles.navIcon} />
             </NavLink>
