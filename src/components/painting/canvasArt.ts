@@ -64,16 +64,20 @@ export function getSketchUrl(tier: number, canvasNumber: number): string | null 
 
 /**
  * Returns the side length of the NxN chunk grid used to reveal the easel
- * sketch for a given canvas tier. T1 = 5 (25 chunks); each subsequent tier
- * approximately doubles the cell count while keeping a square grid:
- * round(5 * sqrt(2)^(tier-1)) -> 5, 7, 10, 14, 20, 28, 40, 57, 80, 113, 160.
+ * sketch for a given canvas tier. Capped at 20 (= 400 chunks max) regardless
+ * of tier — high tiers all share the 20x20 grid to keep both the engine's
+ * crit-roll cadence and the visual render cost bounded.
  *
- * Square grids per tier mean the click-to-paint mechanic gets progressively
- * finer-grained at higher tiers.
+ * Raw formula (pre-cap): round(5 * sqrt(2)^(tier-1)) -> 5, 7, 10, 14, 20, 28, 40, ...
+ * After cap:                                            5, 7, 10, 14, 20, 20, 20, ...
+ *
+ * Square grids per tier mean the click-to-paint mechanic gets finer-grained
+ * from T1 through T5, then plateaus.
  */
 export function getSketchGridDim(tier: number): number {
   const clamped = Math.max(1, tier);
-  return Math.round(5 * Math.SQRT2 ** (clamped - 1));
+  const raw = Math.round(5 * Math.SQRT2 ** (clamped - 1));
+  return Math.min(20, raw);
 }
 
 /**
