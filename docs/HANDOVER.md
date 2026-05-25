@@ -2,7 +2,7 @@
 
 ## Tab navigation fix — pause tick loop + isolate canvas subscriptions (2026-05-25)
 
-One commit (`81cb2a1`), deployed (production bundle `index-D0XX0g7n.js`).
+Three commits (`81cb2a1` runtime fix, `dff3578` HANDOVER, `d39b199` regression test), deployed (production bundle `index-D0XX0g7n.js`).
 
 ### What the user reported
 
@@ -48,16 +48,18 @@ After the fix: **61ms click→paint on `/painting → /constellation`, 2 renders
 - **The `tickLoop` already had `pauseTickLoop` / `resumeTickLoop` from the visibilitychange hook in `src/systems/lifecycle.ts`.** Those still work — both call sites (lifecycle + nav) are idempotent and don't conflict. If a user navigates while the tab is hidden, the lifecycle's pause is in effect; nav's pause is a no-op; on tab-show, both resume paths converge.
 - **The asymmetry with `/tree → /constellation` is now explained.** TreeRoute doesn't subscribe to any per-tick-changing state (no canvasProgress, no inspiration directly — it derives inspiration display from `partLevels` which only changes on purchase). So leaving `/tree` doesn't have the invalidation source. After this fix, the asymmetry is gone — all transitions are fast.
 - **Diagnostic instrumentation was deleted (`src/dev/navPerf.ts`).** It served its purpose during this diagnosis. If a similar performance bug recurs, restore it from git history at commit `342be6e..81cb2a1` range.
-- **`tests/components/painting/BoundCanvasStage.test.tsx` was planned in `docs/superpowers/plans/2026-05-25-painting-route-tick-subscription-isolation.md` but not added here.** The runtime fix shipped without the regression test. A test asserting "PaintingRoute body re-renders ≤ 1 time when only canvasProgress changes" is still worth adding to prevent future drift.
+- **Regression test shipped in `d39b199`** (`tests/components/painting/BoundCanvasStage.test.tsx`). Two Profiler-based assertions:
+  - PaintingRoute body re-renders ≤ 3 times after 30 simulated `canvasProgress` setStates. The 3-callback ceiling absorbs React StrictMode's 2× double-invoke in dev/test + 1 slot for batching variance; pre-fix behavior was ~60 callbacks, so the bound catches a regression by 20×+.
+  - Sanity check that the visible progress display still updates when canvasProgress changes — guards against over-isolating (e.g. someone deletes BoundCanvasStage's subscription entirely).
+  - The two together pin both sides of the architecture: PaintingRoute must NOT subscribe to per-tick state, BoundCanvasStage MUST.
 
 ### Status
 
-- **1061 tests green** across 109 files. `npx tsc -b --noEmit` no new errors. `npx vite build` clean (5.85s).
+- **1063 tests green** across 110 files (+2 from the new regression test). `npx tsc -b --noEmit` no new errors. `npx vite build` clean (5.85s).
 - Production bundle `index-D0XX0g7n.js`. Live.
 
 ### Open follow-ups
 
-- **Regression test for BoundCanvasStage.** See the plan doc referenced above for the Profiler-based test design.
 - **Architectural cleanup of high-freq state.** The root cause was that high-freq tick state (canvasProgress) lives in the same Zustand store as low-freq game state. A future cleanup could split into two stores (or use refs / imperative DOM updates for `canvasProgress`-style data). The pause-on-nav stopgap is enough for now, but if other UI work (modals, heavy interactions) hits similar starvation, the architectural split becomes worth it.
 - **Same fix for designer routes?** `/dev/*` paths bypass TopBar's NavLink (they're a separate Routes block in App). If the user navigates between dev routes during heavy tick activity, they'd see the same starvation. Low priority — dev routes are author-only.
 
