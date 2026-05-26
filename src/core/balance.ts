@@ -110,6 +110,55 @@ export const costTierFactor = (tier: number): number =>
 export const timeFactor = (tier: number): number => Math.pow(2, tier - 1);
 
 // ============================================================================
+// Chunk-domain constants — see 2026-05-26-canvas-chunk-domain-design.md
+// ============================================================================
+
+/** Seconds per chunk at speed multiplier = 1.0 (no speed upgrades). Players
+ *  reduce this via the speed upgrade, skill nodes, items, workers. */
+export const BASE_CHUNK_INTERVAL = 5;
+
+/** Base gold per chunk before any multipliers, at T1. Compose with
+ *  `tierFactor(T)` × `getCanvasGoldMultiplier(state)`. Picked so T1
+ *  total canvas gold = chunks(1) × 1 = 10, matching old `CANVAS_GOLD_BASE`. */
+export const BASE_GOLD_PER_CHUNK = 1;
+
+/** Tier-upgrade cost ramp: cost(currentTier) = 1000^currentTier (T1→T2 = 1k,
+ *  T2→T3 = 1M, T3→T4 = 1B, ...). Steep on purpose; spec calls for ~1 hour
+ *  of preceding within-tier upgrade work before each tier-up. */
+export const TIER_UPGRADE_COST_BASE = 1000;
+
+/** Visual cell render cap. Beyond T7 (where chunks(T) > 640), chunks
+ *  decouple from cells: each cell represents `ceil(chunks(T) / cells)`
+ *  chunks. Per-frame render cost stays O(in-flight) thanks to the
+ *  rasterized-canvas + drip-fed in-flight pool from the 2026-05-25 rework. */
+export const CELL_RENDER_CAP = 640;
+
+/** Total chunks to fill canvas at tier T. `chunksPerCanvas(1) = 10`,
+ *  doubles per tier indefinitely. */
+export const chunksPerCanvas = (tier: number): number =>
+  10 * Math.pow(2, Math.max(1, tier) - 1);
+
+/** Gold paid when one chunk completes. Caller composes `mult` via
+ *  `getCanvasGoldMultiplier(state)` (which already folds in sellPriceLevel,
+ *  items, workers, color tree, rainbow, achievements, school). */
+export const goldPerChunk = (
+  _sellPriceLevel: number,
+  mult: number,
+  tier: number,
+): Big => big(BASE_GOLD_PER_CHUNK).mul(mult).mul(tierFactor(tier));
+
+/** Gold cost to advance from currentTier to currentTier+1. Idiom matches
+ *  the `*UpgradeCost(currentLevel)` pattern elsewhere in this file. */
+export const tierUpgradeCost = (currentTier: number): Big =>
+  big(TIER_UPGRADE_COST_BASE).pow(Math.max(1, currentTier));
+
+/** Seconds between auto-paints of a single chunk, given the current
+ *  speed multiplier. Floors at BASE_CHUNK_INTERVAL when multiplier <= 0
+ *  (defensive — no caller should pass non-positive, but cheap to guard). */
+export const chunkInterval = (speedMultiplier: number): number =>
+  speedMultiplier > 0 ? BASE_CHUNK_INTERVAL / speedMultiplier : BASE_CHUNK_INTERVAL;
+
+// ============================================================================
 // Formulas
 // ============================================================================
 

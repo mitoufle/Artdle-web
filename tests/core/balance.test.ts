@@ -53,6 +53,14 @@ import {
   timeFactor,
   costTierFactor,
   COST_GROWTH_BASE,
+  BASE_CHUNK_INTERVAL,
+  BASE_GOLD_PER_CHUNK,
+  TIER_UPGRADE_COST_BASE,
+  CELL_RENDER_CAP,
+  chunksPerCanvas,
+  goldPerChunk,
+  tierUpgradeCost,
+  chunkInterval,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -724,4 +732,53 @@ describe("comboUpgradeCost (tier-scaled)", () => {
     expect(comboUpgradeCost(0, 3).toNumber())
       .toBeCloseTo(COMBO_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
   });
+});
+
+describe("chunksPerCanvas", () => {
+  it("T1 = 10", () => expect(chunksPerCanvas(1)).toBe(10));
+  it("T2 = 20", () => expect(chunksPerCanvas(2)).toBe(20));
+  it("T3 = 40", () => expect(chunksPerCanvas(3)).toBe(40));
+  it("T7 = 640", () => expect(chunksPerCanvas(7)).toBe(640));
+  it("T8 = 1280 (chunks scale past cell cap)", () => expect(chunksPerCanvas(8)).toBe(1280));
+  it("T10 = 5120", () => expect(chunksPerCanvas(10)).toBe(5120));
+  it("clamps tier to >= 1", () => expect(chunksPerCanvas(0)).toBe(10));
+});
+
+describe("goldPerChunk", () => {
+  it("T1 base level=0 mult=1 returns 1", () => {
+    expect(goldPerChunk(0, 1, 1).toNumber()).toBe(1);
+  });
+  it("scales ×10 per tier (tierFactor)", () => {
+    expect(goldPerChunk(0, 1, 2).toNumber()).toBe(10);
+    expect(goldPerChunk(0, 1, 3).toNumber()).toBe(100);
+  });
+  it("applies multiplier", () => {
+    expect(goldPerChunk(0, 2.5, 1).toNumber()).toBe(2.5);
+  });
+  it("level adds SELL_PRICE_PER_LEVEL (0.10) per level — encoded inside multiplier by callers, formula itself takes mult literally", () => {
+    expect(goldPerChunk(99, 1, 1).toNumber()).toBe(1);
+  });
+});
+
+describe("tierUpgradeCost", () => {
+  it("T1 → T2 costs 1000", () => expect(tierUpgradeCost(1).toString()).toBe("1000"));
+  it("T2 → T3 costs 1,000,000", () => expect(tierUpgradeCost(2).toString()).toBe("1000000"));
+  it("T3 → T4 costs 1,000,000,000", () => expect(tierUpgradeCost(3).toString()).toBe("1000000000"));
+});
+
+describe("chunkInterval", () => {
+  it("speed multiplier 1 → 5s", () => expect(chunkInterval(1)).toBe(5));
+  it("speed multiplier 2 → 2.5s", () => expect(chunkInterval(2)).toBe(2.5));
+  it("speed multiplier 10 → 0.5s", () => expect(chunkInterval(10)).toBe(0.5));
+  it("guards against zero/negative speed multiplier", () => {
+    expect(chunkInterval(0)).toBe(BASE_CHUNK_INTERVAL);
+    expect(chunkInterval(-1)).toBe(BASE_CHUNK_INTERVAL);
+  });
+});
+
+describe("constants", () => {
+  it("BASE_CHUNK_INTERVAL = 5", () => expect(BASE_CHUNK_INTERVAL).toBe(5));
+  it("BASE_GOLD_PER_CHUNK = 1", () => expect(BASE_GOLD_PER_CHUNK).toBe(1));
+  it("TIER_UPGRADE_COST_BASE = 1000", () => expect(TIER_UPGRADE_COST_BASE).toBe(1000));
+  it("CELL_RENDER_CAP = 640", () => expect(CELL_RENDER_CAP).toBe(640));
 });
