@@ -86,3 +86,53 @@ describe("StatsRoom — cells-per-crit block", () => {
     expect(text).toMatch(/⚡ Cells per crit2/);
   });
 });
+
+describe("StatsRoom — CanvasBlock (chunk-domain stats)", () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      canvasTier: 1,
+      sellPriceLevel: 1,
+      speedLevel: 1,
+      critLevel: 0,
+      comboLevel: 0,
+      purchasedNodes: {},
+      equipped: {},
+      roster: [],
+    });
+  });
+
+  it("renders a 'Canvas' block heading (renamed from 'Canvas Tier')", () => {
+    const { container } = render(<StatsRoom />);
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/Canvas/);
+    // The old "Canvas Tier" header is gone.
+    expect(text).not.toMatch(/Canvas Tier/);
+  });
+
+  it("shows chunks per canvas, interval per chunk, gold per chunk, gold per canvas, and GPS", () => {
+    const { container } = render(<StatsRoom />);
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/Chunks per canvas/i);
+    expect(text).toMatch(/Interval per chunk/i);
+    expect(text).toMatch(/Gold per chunk/i);
+    expect(text).toMatch(/Gold per canvas/i);
+    expect(text).toMatch(/GPS/i);
+  });
+
+  it("does NOT show an 'Upgrade costs ×N' row", () => {
+    const { container } = render(<StatsRoom />);
+    const text = container.textContent ?? "";
+    expect(text).not.toMatch(/Upgrade costs/i);
+  });
+
+  it("does NOT show any Size-related row or block", () => {
+    const { container } = render(<StatsRoom />);
+    const text = container.textContent ?? "";
+    // No Size header/block.
+    expect(text).not.toMatch(/\bSize\b/);
+    // No Size² gold factor row.
+    expect(text).not.toMatch(/size²/i);
+    // No "Time factor" row tied to size/tier.
+    expect(text).not.toMatch(/Time factor/i);
+  });
+});

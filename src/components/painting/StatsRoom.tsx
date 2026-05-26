@@ -18,22 +18,24 @@ import {
   getAchievementSpeedContribution,
   getCritChance,
   getComboBaseChance,
-  getCanvasSize,
 } from "@/core/multipliers";
 import {
   SELL_PRICE_PER_LEVEL,
   SPEED_PER_LEVEL,
   CRIT_PER_LEVEL,
   COMBO_PER_LEVEL,
-  SIZE_PER_LEVEL,
   BASE_CRIT_CHANCE,
   BASE_CRIT_CHUNKS,
   MAX_CRIT_LEVEL,
   tierFactor,
-  timeFactor,
-  costTierFactor,
+  chunksPerCanvas,
+  chunkInterval,
+  goldPerChunk,
+  canvasGold,
   levelScale,
 } from "@/core/balance";
+import { big } from "@/core/bigNumber";
+import { formatBig } from "@/core/formatter";
 import { countCapability, getNodeLevel } from "@/store/skillTreeSlice";
 import { AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@/config/workshopAffixes";
 import type { SlotKind } from "@/store/workshopSlice";
@@ -54,17 +56,6 @@ interface StatBlock {
   intLines?: boolean;
   lines: BreakdownLine[];
   multiplicatives?: Array<{ source: string; factor: number }>;
-}
-
-interface SizeBlock {
-  name: "Size";
-  size: number;             // total size value (base 1)
-  canvasContribution: number;   // SIZE_PER_LEVEL × sizeLevel
-  itemContribution: number;
-  workerContribution: number;
-  skillTreeContribution: number;  // expanding_horizon → canvas_size_bonus capability
-  goldFactor: number;       // size²
-  timeFactor: number;       // size
 }
 
 function fmtPct(v: number, digits = 1): string {
@@ -117,15 +108,12 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   // toward what the player sees advance per crit (Trigger + Base + Items + Workers).
   const TRIGGER_CHUNK = 1;
   const chunksTotal = TRIGGER_CHUNK + BASE_CRIT_CHUNKS + chunksItems + chunksWorkers;
-  const size = getCanvasSize(state);
-  const sizeGoldFactor = size * size;
   const rainbowFactor = getRainbowMultiplier(state);
 
+  // Size² multiplicative is gone with the chunk-domain rework — Rainbow is the
+  // only remaining multiplicative on the sell-price block.
   const sellMultiplicatives: Array<{ source: string; factor: number }> = [];
   if (rainbowFactor > 1) sellMultiplicatives.push({ source: "Rainbow", factor: rainbowFactor });
-  if (sizeGoldFactor > 1) sellMultiplicatives.push({ source: "Size² factor", factor: sizeGoldFactor });
-
-  const effectiveGold = goldTotal * sizeGoldFactor;
 
   // Hide contributors that grant 0 — keeps locked/unowned features out of view
   // until they actually start contributing (no spoilers).
@@ -135,7 +123,7 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
     {
       name: "Sell Price (gold)",
       kind: "+sell_price%" as AffixKind,
-      totalLabel: fmtMult(effectiveGold),
+      totalLabel: fmtMult(goldTotal),
       lines: nonZero([
         { source: "Canvas upgrade", value: SELL_PRICE_PER_LEVEL * state.sellPriceLevel },
         { source: "Skill tree (color)", value: getColorTreeContribution(state) },
@@ -197,48 +185,55 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   ];
 }
 
-function sizeBlock(state: CanvasMultiplierInputs): SizeBlock {
-  const size = getCanvasSize(state);
-  const canvasContribution = SIZE_PER_LEVEL * state.sizeLevel;
-  const itemContribution = getEquippedContribution(state, "+size%");
-  const workerContribution = getOfficeContribution(state, "+size%").toNumber();
-  // Mirrors the +canvas_size_bonus branch of getCanvasSize (expanding_horizon
-  // node, +5% per level).
-  const skillTreeContribution = countCapability(state, "canvas_size_bonus") * 0.05;
-  return {
-    name: "Size",
-    size,
-    canvasContribution,
-    itemContribution,
-    workerContribution,
-    skillTreeContribution,
-    goldFactor: size * size,
-    timeFactor: size,
-  };
-}
+/**
+ * Chunk-domain canvas summary. Replaces the old "Canvas Tier" block (which
+ * exposed only the raw tier multipliers) with the rolled-up metrics players
+ * actually reason about: chunks per canvas, per-chunk interval, per-chunk and
+ * per-canvas gold, and gold-per-second at base.
+ *
+ * No "Upgrade costs ×N" row — the chunk-domain rework decoupled within-tier
+ * track costs from the tier index (costTierFactor was dropped from the four
+ * surviving *UpgradeCost functions).
+ */
+function CanvasBlock({ helperState, tier }: { helperState: CanvasMultiplierInputs; tier: number }): JSX.Element {
+  const chunks = chunksPerCanvas(tier);
+  const speedMult = getCanvasSpeedMultiplier(helperState);
+  const interval = chunkInterval(speedMult);
+  const goldMult = getCanvasGoldMultiplier(helperState);
+  const perChunk = goldPerChunk(helperState.sellPriceLevel, goldMult, tier);
+  const perCanvas = canvasGold(goldMult, tier);
+  const gps = interval > 0 ? perChunk.toNumber() / interval : 0;
 
-function TierBlock({ tier }: { tier: number }): JSX.Element {
-  const goldFactor = tierFactor(tier);
-  const timeFac = timeFactor(tier);
-  const costFactor = costTierFactor(tier);
   return (
     <article className={styles.block}>
       <header className={styles.blockHeader}>
-        <span className={styles.blockName}>Canvas Tier</span>
+        <span className={styles.blockName}>Canvas</span>
         <span className={styles.blockTotal}>T{tier}</span>
       </header>
       <ul className={styles.lines}>
         <li className={styles.line}>
-          <span className={styles.source}>Base gold</span>
-          <span className={styles.value}>×{goldFactor}</span>
+          <span className={styles.source}>Chunks per canvas</span>
+          <span className={styles.value}>{chunks}</span>
         </li>
         <li className={styles.line}>
-          <span className={styles.source}>Base time</span>
-          <span className={styles.value}>×{timeFac}</span>
+          <span className={styles.source}>Interval per chunk</span>
+          <span className={styles.value}>{interval.toFixed(2)}s</span>
         </li>
         <li className={styles.line}>
-          <span className={styles.source}>Upgrade costs</span>
-          <span className={styles.value}>×{costFactor}</span>
+          <span className={styles.source}>Gold per chunk</span>
+          <span className={styles.value}>{formatBig(perChunk)}</span>
+        </li>
+        <li className={styles.line}>
+          <span className={styles.source}>Gold per canvas</span>
+          <span className={styles.value}>{formatBig(perCanvas)}</span>
+        </li>
+        <li className={styles.line}>
+          <span className={styles.source}>GPS at base</span>
+          <span className={styles.value}>{formatBig(big(gps))}/s</span>
+        </li>
+        <li className={styles.line}>
+          <span className={styles.source}>Base gold multiplier</span>
+          <span className={styles.value}>×{tierFactor(tier)}</span>
         </li>
       </ul>
     </article>
@@ -251,32 +246,29 @@ export function StatsRoom(): JSX.Element {
   const roster = useGameStore((s) => s.roster);
   const sellPriceLevel = useGameStore((s) => s.sellPriceLevel);
   const speedLevel = useGameStore((s) => s.speedLevel);
-  const sizeLevel = useGameStore((s) => s.sizeLevel);
   const critLevel = useGameStore((s) => s.critLevel);
   const comboLevel = useGameStore((s) => s.comboLevel);
 
   const canvasTier = useGameStore((s) => s.canvasTier);
   const completedResearches = useGameStore((s) => s.completedResearches);
   const completedAchievements = useGameStore((s) => s.completedAchievements);
-  const { blocks, size } = useMemo(() => {
+  const { blocks, helperState } = useMemo(() => {
     const helperState: CanvasMultiplierInputs = {
       equipped, purchasedNodes, roster, canvasTier,
-      sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
+      sellPriceLevel, speedLevel, critLevel, comboLevel,
       completedResearches,
       completedAchievements,
     };
-    return { blocks: statBlocks(helperState), size: sizeBlock(helperState) };
-  }, [equipped, purchasedNodes, roster, canvasTier, sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel, completedResearches, completedAchievements]);
+    return { blocks: statBlocks(helperState), helperState };
+  }, [equipped, purchasedNodes, roster, canvasTier, sellPriceLevel, speedLevel, critLevel, comboLevel, completedResearches, completedAchievements]);
 
   // Hide entire blocks that have no contributors and no multiplicatives — keeps
-  // locked mechanics (Crit/Combo before their skill nodes are bought, Size at base)
-  // out of view. The Sell Price and Speed blocks always have a baseline Canvas-
-  // upgrade contribution (sellPriceLevel/speedLevel default to 1) so they never
-  // hide in practice.
+  // locked mechanics (Crit/Combo before their skill nodes are bought) out of
+  // view. The Sell Price and Speed blocks always have a baseline Canvas-upgrade
+  // contribution (sellPriceLevel/speedLevel default to 1) so they never hide.
   const visibleBlocks = blocks.filter(
     (b) => b.lines.length > 0 || (b.multiplicatives?.length ?? 0) > 0,
   );
-  const showSize = size.size > 1;
 
   return (
     <section className={styles.room} aria-label="Stats">
@@ -284,7 +276,7 @@ export function StatsRoom(): JSX.Element {
         <h2 className={styles.title}>Stats</h2>
         <p className={styles.subtitle}>Aggregated bonuses by source.</p>
       </header>
-      <TierBlock tier={canvasTier} />
+      <CanvasBlock helperState={helperState} tier={canvasTier} />
       {visibleBlocks.map((block) => (
         <article key={block.name} className={styles.block}>
           <header className={styles.blockHeader}>
@@ -318,58 +310,6 @@ export function StatsRoom(): JSX.Element {
           </ul>
         </article>
       ))}
-      {showSize && (
-        <article className={styles.block}>
-          <header className={styles.blockHeader}>
-            <span className={styles.blockName}>
-              <span style={{ color: AFFIX_COLOR["+size%"], fontSize: `${13 * AFFIX_SYMBOL_SCALE["+size%"]}px` }}>{AFFIX_SYMBOL["+size%"]}</span>{" "}Size
-            </span>
-            <span className={styles.blockTotal}>{fmtMult(size.size)}</span>
-          </header>
-          <ul className={styles.lines}>
-            <li className={styles.line}>
-              <span className={styles.source}>Base</span>
-              <span className={styles.value}>×1.00</span>
-            </li>
-            {size.canvasContribution > 0 && (
-              <li className={styles.line}>
-                <span className={styles.source}>Canvas upgrade</span>
-                <span className={styles.value}>+{fmtPct(size.canvasContribution)}</span>
-              </li>
-            )}
-            {size.skillTreeContribution > 0 && (
-              <li className={styles.line}>
-                <span className={styles.source}>Skill tree</span>
-                <span className={styles.value}>+{fmtPct(size.skillTreeContribution)}</span>
-              </li>
-            )}
-            {size.itemContribution > 0 && (
-              <li className={styles.line}>
-                <span className={styles.source}>Items</span>
-                <span className={styles.value}>+{fmtPct(size.itemContribution)}</span>
-              </li>
-            )}
-            {size.workerContribution > 0 && (
-              <li className={styles.line}>
-                <span className={styles.source}>Workers</span>
-                <span className={styles.value}>+{fmtPct(size.workerContribution)}</span>
-              </li>
-            )}
-            {size.goldFactor > 1 && (
-              <li className={styles.line}>
-                <span className={styles.source}>Gold factor (size²)</span>
-                <span className={styles.value}>{fmtMult(size.goldFactor)}</span>
-              </li>
-            )}
-            {size.timeFactor > 1 && (
-              <li className={styles.line}>
-                <span className={styles.source}>Time factor (size)</span>
-                <span className={styles.value}>{fmtMult(size.timeFactor)}</span>
-              </li>
-            )}
-          </ul>
-        </article>
-      )}
     </section>
   );
 }
