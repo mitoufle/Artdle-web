@@ -133,21 +133,21 @@ describe("getCanvasTrackUnlocked", () => {
     expect(getCanvasTrackUnlocked(useGameStore.getState(), "speed")).toBe(true);
   });
 
-  it("returns false for size when no purchased node unlocks canvas_size", () => {
+  it("returns false for crit when no purchased node unlocks canvas_crit", () => {
     useGameStore.setState({ purchasedNodes: {} });
-    expect(getCanvasTrackUnlocked(useGameStore.getState(), "size")).toBe(false);
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "crit")).toBe(false);
   });
 
-  it("returns true for size when a node with unlocks:[canvas_size] is purchased (regardless of node ID)", () => {
-    // size_matters node in skillTreeDesign.json has unlocks: ["canvas_size"]
-    useGameStore.setState({ purchasedNodes: { size_matters: 1 } });
-    expect(getCanvasTrackUnlocked(useGameStore.getState(), "size")).toBe(true);
+  it("returns true for crit when a node with unlocks:[canvas_crit] is purchased (regardless of node ID)", () => {
+    // genius_episode node has unlocks: ["canvas_crit"]
+    useGameStore.setState({ purchasedNodes: { genius_episode: 1 } });
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "crit")).toBe(true);
   });
 
-  it("returns false for size when the purchased node unlocks array does not include canvas_size", () => {
+  it("returns false for crit when the purchased node unlocks array does not include canvas_crit", () => {
     // get_inspired node has no unlocks array
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
-    expect(getCanvasTrackUnlocked(useGameStore.getState(), "size")).toBe(false);
+    expect(getCanvasTrackUnlocked(useGameStore.getState(), "crit")).toBe(false);
   });
 
   it("checks canvas_crit capability for crit track", () => {
@@ -167,29 +167,42 @@ describe("hasCapability", () => {
   });
 
   it("returns false when no nodes are purchased", () => {
-    expect(hasCapability(useGameStore.getState(), "canvas_size")).toBe(false);
+    expect(hasCapability(useGameStore.getState(), "canvas_crit")).toBe(false);
   });
 
   it("returns false when purchased nodes have no unlocks for the capability", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
-    expect(hasCapability(useGameStore.getState(), "canvas_size")).toBe(false);
+    expect(hasCapability(useGameStore.getState(), "canvas_crit")).toBe(false);
   });
 
   it("returns true when a purchased node has the capability in its unlocks", () => {
-    // size_matters has unlocks: ["canvas_size"] in the JSON
-    useGameStore.setState({ purchasedNodes: { size_matters: 1 } });
-    expect(hasCapability(useGameStore.getState(), "canvas_size")).toBe(true);
+    // genius_episode has unlocks: ["canvas_crit"] in SKILL_NODES
+    useGameStore.setState({ purchasedNodes: { genius_episode: 1 } });
+    expect(hasCapability(useGameStore.getState(), "canvas_crit")).toBe(true);
   });
 
   it("returns false when a node with the capability is in purchasedNodes at level 0", () => {
-    useGameStore.setState({ purchasedNodes: { size_matters: 0 } });
-    expect(hasCapability(useGameStore.getState(), "canvas_size")).toBe(false);
+    useGameStore.setState({ purchasedNodes: { genius_episode: 0 } });
+    expect(hasCapability(useGameStore.getState(), "canvas_crit")).toBe(false);
   });
 
-  it("size_matters node in SKILL_NODES has unlocks containing canvas_size", () => {
-    const node = SKILL_NODES.find((n) => n.id === "size_matters");
+  it("genius_episode node in SKILL_NODES has unlocks containing canvas_crit", () => {
+    const node = SKILL_NODES.find((n) => n.id === "genius_episode");
     expect(node).toBeDefined();
-    expect(node!.unlocks).toContain("canvas_size");
+    expect(node!.unlocks).toContain("canvas_crit");
+  });
+
+  it("no SKILL_NODES entry still grants the removed canvas_size or canvas_size_bonus capabilities", () => {
+    for (const node of SKILL_NODES) {
+      expect(node.unlocks).not.toContain("canvas_size");
+      expect(node.unlocks).not.toContain("canvas_size_bonus");
+    }
+  });
+
+  it("size_matters / big_picture / expanding_horizon nodes are removed from SKILL_NODES", () => {
+    expect(SKILL_NODES.find((n) => n.id === "size_matters")).toBeUndefined();
+    expect(SKILL_NODES.find((n) => n.id === "big_picture")).toBeUndefined();
+    expect(SKILL_NODES.find((n) => n.id === "expanding_horizon")).toBeUndefined();
   });
 });
 
@@ -200,14 +213,14 @@ describe("countCapability — sums level across nodes with the tag", () => {
 
   it("returns 0 when no purchased nodes carry the tag", () => {
     const state = useGameStore.getState();
-    expect(countCapability(state, "canvas_size")).toBe(0);
+    expect(countCapability(state, "canvas_crit")).toBe(0);
   });
 
   it("sums the level of each purchased node whose unlocks include the tag", () => {
-    // size_matters has unlocks: ["canvas_size"] in SKILL_NODES
-    useGameStore.setState({ purchasedNodes: { size_matters: 1 } });
+    // genius_episode has unlocks: ["canvas_crit"] in SKILL_NODES
+    useGameStore.setState({ purchasedNodes: { genius_episode: 1 } });
     const state = useGameStore.getState();
-    expect(countCapability(state, "canvas_size")).toBe(1);
+    expect(countCapability(state, "canvas_crit")).toBe(1);
   });
 
   it("sums multiple nodes with the same capability", () => {
@@ -218,20 +231,17 @@ describe("countCapability — sums level across nodes with the tag", () => {
     expect(countCapability(state, "canvas_combo")).toBe(1);
   });
 
-  it("sums across multiple nodes with the same capability tag", () => {
-    // Use get_inspired (level 5) and another node with canvas_size
-    // For now test the basic pattern
-    useGameStore.setState({ purchasedNodes: { size_matters: 1, genius_episode: 1, unrelentless: 1 } });
+  it("sums across multiple nodes with different capability tags", () => {
+    useGameStore.setState({ purchasedNodes: { genius_episode: 1, unrelentless: 1 } });
     const state = useGameStore.getState();
-    expect(countCapability(state, "canvas_size")).toBe(1);
     expect(countCapability(state, "canvas_crit")).toBe(1);
     expect(countCapability(state, "canvas_combo")).toBe(1);
   });
 
   it("returns 0 when a node with the capability is at level 0", () => {
-    useGameStore.setState({ purchasedNodes: { size_matters: 0 } });
+    useGameStore.setState({ purchasedNodes: { genius_episode: 0 } });
     const state = useGameStore.getState();
-    expect(countCapability(state, "canvas_size")).toBe(0);
+    expect(countCapability(state, "canvas_crit")).toBe(0);
   });
 });
 

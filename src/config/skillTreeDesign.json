@@ -569,46 +569,6 @@
       }
     },
     {
-      "id": "size_matters",
-      "name": "Size matters",
-      "description": "unlocks Size upgrade for your canvas (and associated affixes)",
-      "numericEffect": "1",
-      "parentIds": [
-        "muscle_memory"
-      ],
-      "stacking": "additive",
-      "kind": "major",
-      "maxLevel": 1,
-      "costs": [
-        10
-      ],
-      "unlocks": [
-        "canvas_size"
-      ],
-      "position": null
-    },
-    {
-      "id": "big_picture",
-      "name": "Big picture",
-      "description": "each level increase by 5% canvas completion time but increases its sell value by 15% per size canvas upgrade",
-      "numericEffect": "5 - 15",
-      "parentIds": [
-        "size_matters"
-      ],
-      "stacking": "additive",
-      "kind": "minor",
-      "maxLevel": 5,
-      "costs": [
-        20,
-        35,
-        60,
-        100,
-        160
-      ],
-      "unlocks": [],
-      "position": null
-    },
-    {
       "id": "genius_episode",
       "name": "Genius Episode",
       "description": "unlocks Critical upgrade for your canvas (and associated affixes)",
@@ -656,7 +616,6 @@
       "description": "each canvas upgrade is 2% more effective",
       "numericEffect": "2",
       "parentIds": [
-        "big_picture",
         "consistency"
       ],
       "stacking": "additive",
@@ -843,32 +802,6 @@
       "position": {
         "x": 589.9721448467967,
         "y": 77.33026467203683
-      }
-    },
-    {
-      "id": "expanding_horizon",
-      "name": "Expanding Horizon",
-      "description": "Each level adds +5% to canvas size.",
-      "numericEffect": "5%",
-      "parentIds": [
-        "big_picture"
-      ],
-      "stacking": "additive",
-      "kind": "minor",
-      "maxLevel": 5,
-      "costs": [
-        50,
-        90,
-        150,
-        250,
-        400
-      ],
-      "unlocks": [
-        "canvas_size_bonus"
-      ],
-      "position": {
-        "x": 559.2048994763231,
-        "y": 242.03047952333515
       }
     },
     {

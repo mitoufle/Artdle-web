@@ -71,7 +71,6 @@ const KIND_TO_TRACK: Record<AffixKind, CanvasTrackId> = {
   "+speed%": "speed",
   "+crit_chunks": "crit",
   "+combo_chance%": "combo",
-  "+size%": "size",
 };
 
 function availableKinds(state: GameStore): ReadonlyArray<AffixKind> {

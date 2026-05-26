@@ -103,7 +103,6 @@ const KIND_TO_TRACK: Record<AffixKind, CanvasTrackId> = {
   "+speed%": "speed",
   "+crit_chunks": "crit",
   "+combo_chance%": "combo",
-  "+size%": "size",
 };
 
 /** Available affix kinds at the player's current skill-tree state. */
@@ -117,8 +116,8 @@ function availableKinds(state: GameStore): ReadonlyArray<AffixKind> {
 /**
  * Roll the affixes for an item of the given tier. Duplicate kinds allowed.
  *
- * Pool is filtered by skill-tree unlocks: +crit_chunks / +combo_chance% /
- * +size% only roll when their matching `unlock_canvas_*`
+ * Pool is filtered by skill-tree unlocks: +crit_chunks / +combo_chance%
+ * only roll when their matching `unlock_canvas_*`
  * skill-tree node is owned. Sell-price + speed always roll (their canvas
  * tracks are unlocked from start).
  *

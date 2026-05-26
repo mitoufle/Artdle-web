@@ -171,11 +171,10 @@ export const countCapability = (state: Pick<GameStore, "purchasedNodes">, capabi
 
 /**
  * Returns true if the player has unlocked the given canvas upgrade track.
- * Sell price and speed are always unlocked. Size, crit, combo require a
+ * Sell price and speed are always unlocked. Crit and combo require a
  * purchased node that carries the matching capability tag:
- *   - canvas_size  (e.g. size_matters node)
- *   - canvas_crit
- *   - canvas_combo
+ *   - canvas_crit  (e.g. genius_episode node)
+ *   - canvas_combo (e.g. unrelentless node)
  *
  * Node IDs are a game-design decision — the engine reads `unlocks` tags only.
  */

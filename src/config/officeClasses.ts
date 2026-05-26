@@ -26,7 +26,6 @@ export const OFFICE_CLASSES: Record<ClassId, OfficeClassConfig> = {
     weightRanges: {
       "+sell_price%":   { min: 0, max: 4 },
       "+speed%":        { min: 0, max: 4 },
-      "+size%":         { min: 0, max: 4 },
       "+crit_chunks":   { min: 0, max: 1 },
       "+combo_chance%": { min: 0, max: 4 },
     },
@@ -37,7 +36,6 @@ export const OFFICE_CLASSES: Record<ClassId, OfficeClassConfig> = {
     weightRanges: {
       "+sell_price%":   { min: 3, max: 7 },
       "+speed%":        { min: 0, max: 2 },
-      "+size%":         { min: 1, max: 3 },
       "+crit_chunks":   { min: 0, max: 1 },
       "+combo_chance%": { min: 3, max: 7 },
     },
@@ -48,7 +46,6 @@ export const OFFICE_CLASSES: Record<ClassId, OfficeClassConfig> = {
     weightRanges: {
       "+sell_price%":   { min: 0, max: 2 },
       "+speed%":        { min: 3, max: 7 },
-      "+size%":         { min: 1, max: 3 },
       "+crit_chunks":   { min: 1, max: 2 },
       "+combo_chance%": { min: 0, max: 2 },
     },

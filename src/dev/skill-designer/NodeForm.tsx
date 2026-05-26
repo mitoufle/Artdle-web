@@ -173,7 +173,7 @@ export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Ele
         <input
           className={styles.input}
           type="text"
-          placeholder="canvas_size, canvas_crit, …"
+          placeholder="canvas_crit, canvas_combo, …"
           value={(node.unlocks ?? []).join(", ")}
           onChange={(e) => {
             const raw = e.target.value;
@@ -185,10 +185,9 @@ export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Ele
           }}
         />
         <div className={styles.capabilityHints}>
-          {(["canvas_size", "canvas_crit", "canvas_combo", "palette_slot", "roster_slot", "queue_slot", "class_goldsmith", "class_speedrunner"] as const).map(
+          {(["canvas_crit", "canvas_combo", "palette_slot", "roster_slot", "queue_slot", "class_goldsmith", "class_speedrunner"] as const).map(
             (cap) => {
               const labels: Record<string, string> = {
-                canvas_size: "Canvas Size",
                 canvas_crit: "Canvas Crit",
                 canvas_combo: "Canvas Combo",
                 palette_slot: "Palette Slot",

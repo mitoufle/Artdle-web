@@ -21,7 +21,7 @@ export interface SkillNodeConfig {
   /**
    * Generic capability tags granted by this node when purchased at level ≥ 1.
    * Engine reads these to decouple node IDs from recognized capabilities.
-   * Example: ["canvas_size"] unlocks the size track regardless of this node's ID.
+   * Example: ["canvas_crit"] unlocks the crit track regardless of this node's ID.
    * Empty array means no capability tags.
    */
   readonly unlocks: ReadonlyArray<string>;
@@ -69,11 +69,9 @@ export const SKILL_NODES: ReadonlyArray<SkillNodeConfig> = [
   { id: "entrepreneur", name: "Entrepreneur", description: "unlocks the Worker Office tab ", numericEffect: "1", parentIds: ["forget_pain"], stacking: "additive", kind: "major", maxLevel: 1, costs: [700], unlocks: ["roster_slot", "queue_slot"] },
   { id: "education", name: "Education", description: "increase by #% workers affixes magnitude", numericEffect: "1", parentIds: ["entrepreneur"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [1200, 2000, 3000, 4500, 6500], unlocks: [] },
   { id: "free_will", name: "Free will", description: "unlocks Speedrunner worker class", numericEffect: "1", parentIds: ["education"], stacking: "additive", kind: "major", maxLevel: 1, costs: [3500], unlocks: ["class_speedrunner"] },
-  { id: "size_matters", name: "Size matters", description: "unlocks Size upgrade for your canvas (and associated affixes)", numericEffect: "1", parentIds: ["muscle_memory"], stacking: "additive", kind: "major", maxLevel: 1, costs: [10], unlocks: ["canvas_size"] },
-  { id: "big_picture", name: "Big picture", description: "each level increase by 5% canvas completion time but increases its sell value by 15% per size canvas upgrade", numericEffect: "5 - 15", parentIds: ["size_matters"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [20, 35, 60, 100, 160], unlocks: [] },
   { id: "genius_episode", name: "Genius Episode", description: "unlocks Critical upgrade for your canvas (and associated affixes)", numericEffect: "1", parentIds: ["muscle_memory"], stacking: "additive", kind: "major", maxLevel: 1, costs: [10], unlocks: ["canvas_crit"] },
   { id: "consistency", name: "Consistency", description: "increases crit chance by 1%", numericEffect: "1", parentIds: ["genius_episode"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [20, 35, 60, 100, 160], unlocks: ["crit_chance"] },
-  { id: "fast_learner", name: "Fast Learner", description: "each canvas upgrade is 2% more effective", numericEffect: "2", parentIds: ["big_picture", "consistency"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [50, 100, 200, 350, 600], unlocks: [] },
+  { id: "fast_learner", name: "Fast Learner", description: "each canvas upgrade is 2% more effective", numericEffect: "2", parentIds: ["consistency"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [50, 100, 200, 350, 600], unlocks: [] },
   { id: "unrelentless", name: "unrelentless", description: "unlocks Combo upgrade for your canvas (and associated affixes)", numericEffect: "1", parentIds: ["fast_learner"], stacking: "additive", kind: "major", maxLevel: 1, costs: [150], unlocks: ["canvas_combo"] },
   { id: "gold_diggers", name: "Gold diggers", description: "Unlocks the Goldsmith worker class.", numericEffect: "1", parentIds: ["accelerator", "hire_manager"], stacking: "additive", kind: "major", maxLevel: 1, costs: [10000], unlocks: ["class_goldsmith"] },
   { id: "recruiter", name: "Recruiter", description: "Each level adds +1 queue slot in the Office.", numericEffect: "+1", parentIds: ["hire_manager"], stacking: "additive", kind: "minor", maxLevel: 3, costs: [7000, 8500, 10000], unlocks: ["queue_slot"] },
@@ -81,7 +79,6 @@ export const SKILL_NODES: ReadonlyArray<SkillNodeConfig> = [
   { id: "accelerator", name: "Accelerator Program", description: "Each level boosts the XP workers earn per canvas sale by +10%.", numericEffect: "10%", parentIds: ["free_will"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [4500, 6000, 7500, 9000, 10000], unlocks: ["worker_xp_mult"] },
   { id: "bookkeeper", name: "Bookkeeper", description: "Each level reduces hire cost by 10% (floored at 10% of base).", numericEffect: "-10%", parentIds: ["hire_manager"], stacking: "additive", kind: "minor", maxLevel: 4, costs: [7000, 8000, 9000, 10000], unlocks: ["hire_cost_reduction"] },
   { id: "afterburner", name: "Afterburner", description: "Each level reduces combo decay by 1 percentage point per chain link.", numericEffect: "-1pp", parentIds: ["unrelentless"], stacking: "additive", kind: "minor", maxLevel: 4, costs: [300, 500, 800, 1200], unlocks: ["combo_decay_reduction"] },
-  { id: "expanding_horizon", name: "Expanding Horizon", description: "Each level adds +5% to canvas size.", numericEffect: "5%", parentIds: ["big_picture"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [50, 90, 150, 250, 400], unlocks: ["canvas_size_bonus"] },
   { id: "enlightenment", name: "Enlightenment", description: "Each level reduces the inspiration needed to ascend by 5%.", numericEffect: "-5%", parentIds: ["Bargain"], stacking: "additive", kind: "minor", maxLevel: 4, costs: [8, 15, 25, 40], unlocks: ["ascend_threshold_reduction"] },
   { id: "patron", name: "Patron", description: "Each level boosts inspiration gain by +10% (stacks with Get Inspired).", numericEffect: "10%", parentIds: ["poke_tree"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [8, 15, 25, 40, 60], unlocks: ["inspi_mult_bonus"] },
   { id: "third_hand", name: "Third Hand", description: "reduces the time for autocraft by #% ", numericEffect: "10", parentIds: ["forget_pain"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [600, 900, 1400, 2000, 3000], unlocks: [] },
