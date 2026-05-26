@@ -33,15 +33,15 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().canvasProgress).toBe(0);
   });
 
-  it("canvasTick(BASE_CHUNK_INTERVAL) advances progress by 1 chunk; partial-canvas gold credited", () => {
+  it("canvasTick(BASE_CHUNK_INTERVAL) advances progress by 1 chunk; no gold mid-canvas", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(BASE_CHUNK_INTERVAL);
     // One chunk completes — progress advances to 1 (with possible crit spill up to 2.x
     // if the 1% crit roll fires under the seed).
     expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(1);
     expect(useGameStore.getState().canvasProgress).toBeLessThan(3);
-    // No full canvas sale — gold reflects per-chunk drip, not lump-sum.
-    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThan(goldBefore);
+    // Gold is paid as a single lump on canvas sale — mid-canvas chunks earn 0.
+    expect(useGameStore.getState().gold.toNumber()).toBe(goldBefore);
   });
 
   it("two canvasTick(2.5 × T1 canvas) calls fire multiple sales each (multi-sale per tick)", () => {
@@ -132,15 +132,14 @@ describe("canvasSlice — lastSale animation trigger", () => {
     expect(useGameStore.getState().lastSale).toBeNull();
   });
 
-  it("a sale sets lastSale to {id: 1, amount: per-chunk gold} (sellPriceLevel=0)", () => {
+  it("a sale sets lastSale to {id: 1, amount: full canvas gold} (sellPriceLevel=0)", () => {
     // Tick past one full canvas (50s + epsilon at T1) to guarantee a sale fires.
     useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
     const ls = useGameStore.getState().lastSale;
     expect(ls).not.toBeNull();
     expect(ls!.id).toBe(1);
-    // sellPriceLevel=0: per-chunk gold = 1 (T1: 10 chunks × 1g = 10g per canvas).
-    // lastSale.amount carries the FINAL chunk's gain, not the lump sum.
-    expect(ls!.amount.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE / chunksPerCanvas(1), 1);
+    // sellPriceLevel=0, T1: full canvas pays CANVAS_GOLD_BASE = 10g in one lump.
+    expect(ls!.amount.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE, 5);
   });
 
   it("two sales increment lastSale.id from 1 to 2", () => {

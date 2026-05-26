@@ -1,6 +1,6 @@
 import { big, type Big } from "@/core/bigNumber";
 import {
-  chunksPerCanvas, goldPerChunk, chunkInterval,
+  canvasGold, chunksPerCanvas, chunkInterval,
   COMBO_DECAY_PER_LINK, comboBonusFactor, comboEffectiveChance,
 } from "@/core/balance";
 import {
@@ -16,20 +16,14 @@ import {
 const MAX_SALES_PER_TICK = 1000;
 
 /**
- * Chunk-domain canvas tick. `canvasProgress` is now a FLOAT in [0, chunkCount):
- *   floor(canvasProgress) = whole chunks completed (gold already paid)
+ * Chunk-domain canvas tick. `canvasProgress` is a FLOAT in [0, chunkCount):
+ *   floor(canvasProgress) = whole chunks completed (no gold yet)
  *   fractional part       = sub-chunk progress toward the next chunk
  *
- * Each tick:
- *   1. Compute chunkInterval from current speed multiplier.
- *   2. Add deltaSeconds / chunkInterval to canvasProgress.
- *   3. For each integer crossed: credit `goldPerChunk` × combo bonus,
- *      roll crit (which may insert bonus chunks at no time cost),
- *      and if the canvas fills, fire the sale event + reset progress.
- *
- * lastSale fires on the chunk that completes a canvas, not as a separate
- * event — so the existing FloatingGoldText animation triggers on the final
- * chunk's payout.
+ * Gold is paid as a single lump sum when a canvas completes, NOT per chunk.
+ * Crit chunks accelerate canvas completion (insert bonus chunks at no time
+ * cost) but the gold-earning event is still the canvas-sale on the final
+ * chunk. The faster a canvas fills, the sooner the player sees gold.
  */
 export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
   if (deltaSeconds <= 0) return;
@@ -40,11 +34,10 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
   if (interval <= 0) return;
 
   // Multipliers are invariant over a single tick (no input field they read
-  // changes mid-tick), so hoist them out of the per-chunk hot path. At T8+
-  // canvases can have 1000+ chunks per tick during catch-up; recomputing
-  // these inside the loop would be a real regression.
+  // changes mid-tick). Hoist them; at T8+ a tick can complete many canvases
+  // in one catch-up call, and recomputing per-canvas would be a regression.
   const goldMult = getCanvasGoldMultiplier(draft);
-  const perChunkBase = goldPerChunk(draft.sellPriceLevel, goldMult, draft.canvasTier);
+  const baseSaleGold = canvasGold(goldMult, draft.canvasTier);
   const critChance = getCritChance(draft);
   const critChunksPerCrit = getCritChunks(draft);
 
@@ -63,30 +56,29 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
   let localMaxCritStreak = draft.statsRun.maxCritStreak;
   let localMaxCombo = draft.statsRun.maxComboChain;
 
-  const payChunk = (chunkIndex: number): void => {
-    const gain = perChunkBase.mul(comboBonusFactor(chain));
+  // Called when a chunk completes. If that chunk fills the canvas, fires the
+  // canvas-sale (full gold lump + lastSale animation) and resets progress.
+  const onChunkComplete = (chunkIndex: number): void => {
+    if (chunkIndex + 1 < chunkCount) return;
 
+    const gain = baseSaleGold.mul(comboBonusFactor(chain));
     addCurrency(draft, "gold", gain);
     trackSaleGoldPure(draft, gain);
     awardOfficeXpPure(draft, gain);
     tickGoldTotal = tickGoldTotal.add(gain);
 
-    // The chunk that completes the canvas also fires the lastSale animation
-    // and starts a new canvas (combo decision, reset progress).
-    if (chunkIndex + 1 >= chunkCount) {
-      lastSaleId += 1;
-      lastSaleAmount = gain;
-      sales += 1;
-      salesThisTick += 1;
-      progress = 0;
-      critChunks = {};
+    lastSaleId += 1;
+    lastSaleAmount = gain;
+    sales += 1;
+    salesThisTick += 1;
+    progress = 0;
+    critChunks = {};
 
-      if (chain > localMaxCombo) localMaxCombo = chain;
-      const baseChance = getComboBaseChance(draft);
-      const decay = Math.max(0, COMBO_DECAY_PER_LINK - getComboDecayReduction(draft));
-      const effChance = comboEffectiveChance(baseChance, chain, decay);
-      chain = rng() < effChance ? chain + 1 : 0;
-    }
+    if (chain > localMaxCombo) localMaxCombo = chain;
+    const baseChance = getComboBaseChance(draft);
+    const decay = Math.max(0, COMBO_DECAY_PER_LINK - getComboDecayReduction(draft));
+    const effChance = comboEffectiveChance(baseChance, chain, decay);
+    chain = rng() < effChance ? chain + 1 : 0;
   };
 
   while (timeBudget > 0 && sales < MAX_SALES_PER_TICK) {
@@ -110,18 +102,17 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
     const isLastChunkOfCanvas = completedChunkIndex + 1 >= chunkCount;
     if (!isLastChunkOfCanvas && rng() < critChance) {
       critChunks[completedChunkIndex] = true;
-
-      payChunk(completedChunkIndex);
+      onChunkComplete(completedChunkIndex);
 
       // Bonus chunks intentionally SPILL across canvas boundaries — no crit
-      // benefit is wasted. payChunk resets progress to 0 when a canvas
-      // completes, so the next iteration paints chunk 0 of the new canvas.
+      // benefit is wasted. onChunkComplete resets progress to 0 on canvas
+      // completion, so the next iteration paints chunk 0 of the new canvas.
       let bonusLeft = critChunksPerCrit;
       while (bonusLeft > 0 && sales < MAX_SALES_PER_TICK) {
         const bonusIndex = Math.floor(progress);
         critChunks[bonusIndex] = true;
         progress = bonusIndex + 1;
-        payChunk(bonusIndex);
+        onChunkComplete(bonusIndex);
         bonusLeft -= 1;
       }
 
@@ -130,12 +121,12 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
       localCritStreak += totalCritChunks;
       if (localCritStreak > localMaxCritStreak) localMaxCritStreak = localCritStreak;
     } else {
-      payChunk(completedChunkIndex);
+      onChunkComplete(completedChunkIndex);
       if (!isLastChunkOfCanvas) localCritStreak = 0;
     }
   }
 
-  if (salesThisTick > 0 || critChunksThisTick > 0 || tickGoldTotal.gt(0)) {
+  if (salesThisTick > 0 || critChunksThisTick > 0) {
     if (critChunksThisTick > 0) {
       incrementStatPure(draft, "lifetime", "critsLanded", critChunksThisTick);
       incrementStatPure(draft, "run", "critsLanded", critChunksThisTick);

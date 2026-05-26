@@ -70,17 +70,21 @@ describe("canvasTickPure (chunk-domain)", () => {
     expect(draft.lastSale).not.toBeNull();
   });
 
-  it("credits gold per chunk, not per canvas", () => {
-    // T1 base: 10 gold per canvas. 5 chunks = 5 gold credited.
+  it("does NOT credit gold mid-canvas (lump sum at sale only)", () => {
+    // T1 takes 10 chunks. After 5 chunks the canvas is half-painted but no
+    // gold has been earned — gold is paid as a single sale on chunk 10.
     const draft = makeDraft();
     canvasTickPure(draft, BASE_CHUNK_INTERVAL * 5);
-    expect(draft.gold.toNumber()).toBeCloseTo(5, 5);
+    expect(draft.gold.toNumber()).toBe(0);
+    expect(draft.statsRun.canvasesSold).toBe(0);
+    expect(draft.canvasProgress).toBeCloseTo(5, 5);
   });
 
-  it("credits full canvas gold across two ticks", () => {
+  it("credits full canvas gold once the canvas completes across two ticks", () => {
     const draft = makeDraft();
-    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 7); // 7 chunks
-    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 3); // 3 more chunks → sale
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 7); // 7 chunks, still no gold
+    expect(draft.gold.toNumber()).toBe(0);
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 3); // 3 more chunks → sale fires
     expect(draft.gold.toNumber()).toBeCloseTo(10, 5);
     expect(draft.statsRun.canvasesSold).toBe(1);
   });
@@ -99,11 +103,12 @@ describe("canvasTickPure (chunk-domain)", () => {
     expect(draft.statsRun.canvasesSold).toBe(1);
   });
 
-  it("statsRun.goldEarned tracks per-chunk drip, not just per-sale", () => {
+  it("statsRun.goldEarned only updates on canvas-sale (matches lump-sum gold)", () => {
     const draft = makeDraft();
-    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 5); // 5 chunks, no sale yet
-    expect(draft.gold.toNumber()).toBeCloseTo(5, 5);
-    expect(draft.statsRun.goldEarned.toNumber()).toBeCloseTo(5, 5);
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 5); // 5 chunks, no sale
+    expect(draft.statsRun.goldEarned.toNumber()).toBe(0);
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 5); // 5 more → sale fires
+    expect(draft.statsRun.goldEarned.toNumber()).toBeCloseTo(10, 5);
   });
 });
 
@@ -115,26 +120,23 @@ describe("canvasTickPure crit", () => {
     vi.restoreAllMocks();
   });
 
-  it("crit paints trigger + bonus chunks instantly (free gold)", () => {
+  it("crit advances canvas faster (no extra gold mid-canvas)", () => {
     const draft = makeDraft();
     canvasTickPure(draft, BASE_CHUNK_INTERVAL);
-    // Trigger chunk (1) + BASE_CRIT_CHUNKS (1) = 2 chunks credited
-    expect(draft.gold.toNumber()).toBeCloseTo(2, 5);
+    // Trigger chunk (chunk 0) + BASE_CRIT_CHUNKS=1 free bonus chunk = 2 chunks
+    // of progress against a 10-chunk T1 canvas. No sale yet, no gold yet.
+    expect(draft.canvasProgress).toBeCloseTo(2, 5);
+    expect(draft.gold.toNumber()).toBe(0);
     expect(Object.keys(draft.critChunks).length).toBe(2);
   });
 
-  it("bonus chunks spill across canvas boundaries (no crit benefit wasted)", () => {
-    // Start at chunk 9 of 10 with always-crit. The trigger rolls on chunk 9
-    // (the second-to-last; last-chunk skips crit), so this test relies on
-    // T1's last-chunk-no-crit rule by setting up at chunk 8 then paying the
-    // critting chunk. We seed progress directly to chunk 8 (so the next
-    // paid chunk is chunk 8 — the 9th in 0-indexed, which is NOT the last).
+  it("crit on second-to-last chunk completes the canvas and fires one sale", () => {
+    // Seed progress to chunk 8 of 10 — next chunk paid will be chunk 8 (the
+    // 9th, NOT the last; crit can fire). With BASE_CRIT_CHUNKS=1, the bonus
+    // (chunk 9) completes the canvas → exactly one sale, one canvas of gold.
     const draft = makeDraft({ canvasProgress: 8 });
     canvasTickPure(draft, BASE_CHUNK_INTERVAL);
-    // Chunk 8 fires crit. Trigger (chunk 8) + 1 bonus (chunk 9 — completes
-    // canvas, fires sale, resets progress to 0). With BASE_CRIT_CHUNKS=1
-    // the bonus stops after one chunk, having spilled the sale boundary.
     expect(draft.statsRun.canvasesSold).toBe(1);
-    expect(draft.gold.toNumber()).toBeCloseTo(2, 5);
+    expect(draft.gold.toNumber()).toBeCloseTo(10, 5);
   });
 });
