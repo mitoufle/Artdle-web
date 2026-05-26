@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import { CanvasStage } from "@/components/painting/CanvasStage";
 import { getCanvasCellLayout } from "@/components/painting/canvasArt";
+import { useGameStore } from "@/store";
 
 describe("<CanvasStage />", () => {
   it("renders the workshop scene static image inside the frame", () => {
@@ -20,7 +21,8 @@ describe("<CanvasStage />", () => {
     expect(img?.getAttribute("src")).toBeTruthy();
   });
 
-  it("displays the tier in the title row", () => {
+  it("displays the tier in the overlay TierUpgradeCard", () => {
+    useGameStore.setState({ canvasTier: 6 });
     const { container } = render(
       <CanvasStage
         canvasTier={6}
@@ -30,9 +32,11 @@ describe("<CanvasStage />", () => {
         nextSaleGold="250"
       />,
     );
-    const titleEl = container.querySelector("div[class*='title']");
-    expect(titleEl?.textContent).toMatch(/Tier 6/);
-    expect(titleEl?.textContent).toMatch(/Masterpiece/);
+    const tierButton = container.querySelector("button[aria-label*='Tier 7']");
+    expect(tierButton).not.toBeNull();
+    expect(tierButton?.textContent).toMatch(/Tier 6/);
+    expect(tierButton?.textContent).toMatch(/Masterpiece/);
+    expect(tierButton?.textContent).toMatch(/Tier 7/);
   });
 
   it("displays painting time as 'elapsed / total' (counts up to total)", () => {

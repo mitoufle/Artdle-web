@@ -17,7 +17,6 @@ import {
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import { BoundCanvasStage } from "@/components/painting/BoundCanvasStage";
-import { TierUpgradeCard } from "@/components/painting/TierUpgradeCard";
 import { TrackCard } from "@/components/painting/TrackCard";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
 import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
@@ -81,7 +80,6 @@ export function PaintingRoute(): JSX.Element {
       </div>
 
       <div className={styles.upgradesArea}>
-        <TierUpgradeCard />
         <CanvasUpgradesStrip>
           <TrackCard
             trackId="sell_price"

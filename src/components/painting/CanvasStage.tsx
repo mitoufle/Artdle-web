@@ -17,6 +17,7 @@ import { formatBig } from "@/core/formatter";
 import paintingScreen from "@/assets/images/Painting_screen_full.png";
 import { getSketchUrl, getCellRevealOrder, getCanvasCellLayout } from "./canvasArt";
 import { useRevealQueue } from "./useRevealQueue";
+import { TierUpgradeCard } from "./TierUpgradeCard";
 
 /**
  * Module-level cache: each unique sketch URL is decoded at most once across
@@ -274,9 +275,7 @@ export function CanvasStage({
         </div>
       )}
 
-      <div className={styles.title}>
-        — Tier {canvasTier} · {stageName} —
-      </div>
+      <TierUpgradeCard stageName={stageName} />
       <div className={styles.frame}>
         <div
           className={`${styles.imageContainer}${onChunkClick ? ` ${styles.imageContainerClickable}` : ""}`}

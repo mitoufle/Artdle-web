@@ -1,65 +1,73 @@
+/**
+ * Canvas-overlay banner. Lives at the top of CanvasStage's frame, on top of
+ * the canvas image. Replaces the static "— Tier {N} · {Name} —" title.
+ *
+ * Width tracks content. Translucent background so the painting shows
+ * through. When affordable, the shared .rainbowBorder class animates the
+ * conic-gradient ring around the button.
+ */
+
 .card {
-  position: relative;
-  display: block;
-  width: 100%;
-  padding: 16px 22px;
-  margin-bottom: 14px;
+  position: absolute;
+  top: var(--s-3);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px;
   border: none;
-  border-radius: 14px;
-  background:
-    radial-gradient(120% 140% at 100% 0%, rgba(155, 108, 214, 0.18), transparent 60%),
-    var(--bg-1);
+  border-radius: 999px;
+  background: rgba(8, 10, 16, 0.78);
+  backdrop-filter: blur(4px);
   color: var(--ink-0);
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
   cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  white-space: nowrap;
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  pointer-events: auto;
 }
 
 .card:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  transform: translateX(-50%) translateY(-1px);
+  background: rgba(20, 24, 36, 0.88);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .card:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.85;
 }
 
-.eyebrow {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+.tierFrom {
   color: var(--ink-1);
-  margin-bottom: 10px;
 }
 
-.body {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+.tierArrow {
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0;
 }
 
-.tierLine {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-family: var(--serif);
-  font-size: 20px;
-  font-weight: 700;
+.tierTo {
+  color: var(--ink-0);
 }
-
-.tierFrom { color: var(--ink-2); }
-.tierArrow { color: var(--ink-1); font-size: 16px; }
-.tierTo { color: var(--ink-0); }
 
 .cost {
+  margin-left: 8px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
   font-family: var(--mono);
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: none;
   color: var(--gold);
 }
