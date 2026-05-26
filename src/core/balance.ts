@@ -29,12 +29,6 @@ export const THIRD_HAND_INTERVAL_REDUCTION = 0.10; // fraction reduced per level
 export const SELL_PRICE_PER_LEVEL = 0.10;
 /** +5% speed per speed level (additive). */
 export const SPEED_PER_LEVEL = 0.05;
-/**
- * +15% size per canvas size-track level (additive into the single `size` value).
- * Size 1 is the base canvas. Gold scales as size², time scales as size¹ —
- * so doubling size quadruples gold and doubles time.
- */
-export const SIZE_PER_LEVEL = 0.15;
 /** +1% crit chance per crit level. */
 export const CRIT_PER_LEVEL = 0.01;
 /** Always-on crit chance floor. Skill-tree + critLevel sum on top, then soft-cap formula. */
@@ -60,7 +54,6 @@ export const COMBO_DECAY_PER_LINK = 0.05;
 /** Cost in gold at level 1 for the sell-price upgrade. */
 export const SELL_PRICE_COST_BASE = 100;
 export const SPEED_COST_BASE = 100;
-export const SIZE_COST_BASE = 1000;
 export const CRIT_COST_BASE = 5000;
 export const COMBO_COST_BASE = 5000;
 /** Shared exponential growth factor for all 5 track cost curves: cost = base × growth^(level-1). */
@@ -276,31 +269,30 @@ export const xpToNext = (currentLevel: number): number => 4 * (currentLevel + 1)
 
 /**
  * Gold cost to upgrade a track from `currentLevel` to `currentLevel + 1`.
- * Shared shape: `BASE × TRACK_COST_GROWTH^currentLevel × costTierFactor(tier)`.
- * Per-track BASEs differ; tier scales the entire curve by COST_GROWTH_BASE per
- * tier step (`costTierFactor(1) = 1` — no change at T1).
+ * Shared shape: `BASE × TRACK_COST_GROWTH^currentLevel`. Per-track BASEs differ.
  *
  * Mirrors the contract of `craftCost(level)` — the parameter is the CURRENT level (the player's
  * stored value), and the function returns the cost of the NEXT step.
  *
- * For tracks starting at L0 (size/crit/combo), first buy uses formula(0) = base × costTierFactor.
- * For tracks starting at L1 (sell-price/speed), first buy uses formula(1) = base × 1.5 × costTierFactor.
+ * For tracks starting at L0 (crit/combo), first buy uses formula(0) = base.
+ * For tracks starting at L1 (sell-price/speed), first buy uses formula(1) = base × 1.5.
  * No level cap.
+ *
+ * Tier-scaling lives on the separate `tierUpgradeCost(currentTier)` dial — the four
+ * within-tier track costs are tier-independent. The `_tier` parameter is kept for
+ * caller-signature compatibility during the chunk-domain rework transition.
  */
-export const sellPriceUpgradeCost = (currentLevel: number, tier = 1): Big =>
-  big(SELL_PRICE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(costTierFactor(tier));
+export const sellPriceUpgradeCost = (currentLevel: number, _tier = 1): Big =>
+  big(SELL_PRICE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
 
-export const speedUpgradeCost = (currentLevel: number, tier = 1): Big =>
-  big(SPEED_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(costTierFactor(tier));
+export const speedUpgradeCost = (currentLevel: number, _tier = 1): Big =>
+  big(SPEED_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
 
-export const sizeUpgradeCost = (currentLevel: number, tier = 1): Big =>
-  big(SIZE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(costTierFactor(tier));
+export const critUpgradeCost = (currentLevel: number, _tier = 1): Big =>
+  big(CRIT_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
 
-export const critUpgradeCost = (currentLevel: number, tier = 1): Big =>
-  big(CRIT_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(costTierFactor(tier));
-
-export const comboUpgradeCost = (currentLevel: number, tier = 1): Big =>
-  big(COMBO_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel)).mul(costTierFactor(tier));
+export const comboUpgradeCost = (currentLevel: number, _tier = 1): Big =>
+  big(COMBO_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
 
 /**
  * Multiplier on canvas gold from the current combo chain.

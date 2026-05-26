@@ -9,14 +9,12 @@ import {
   xpToNext,
   sellPriceUpgradeCost,
   speedUpgradeCost,
-  sizeUpgradeCost,
   critUpgradeCost,
   comboUpgradeCost,
   comboBonusFactor,
   comboEffectiveChance,
   SELL_PRICE_PER_LEVEL,
   SPEED_PER_LEVEL,
-  SIZE_PER_LEVEL,
   CRIT_PER_LEVEL,
   BASE_CRIT_CHANCE,
   BASE_CRIT_CHUNKS,
@@ -26,7 +24,6 @@ import {
   COMBO_DECAY_PER_LINK,
   SELL_PRICE_COST_BASE,
   SPEED_COST_BASE,
-  SIZE_COST_BASE,
   CRIT_COST_BASE,
   COMBO_COST_BASE,
   TRACK_COST_GROWTH,
@@ -253,7 +250,6 @@ describe("canvas-depth tuning constants", () => {
   it("exposes per-level rates matching spec §10 defaults", () => {
     expect(SELL_PRICE_PER_LEVEL).toBeCloseTo(0.10, 5);
     expect(SPEED_PER_LEVEL).toBeCloseTo(0.05, 5);
-    expect(SIZE_PER_LEVEL).toBeCloseTo(0.15, 5);
     expect(CRIT_PER_LEVEL).toBeCloseTo(0.01, 5);
     expect(COMBO_PER_LEVEL).toBeCloseTo(0.02, 5);
     expect(COMBO_PER_LINK).toBeCloseTo(0.10, 5);
@@ -263,7 +259,6 @@ describe("canvas-depth tuning constants", () => {
   it("exposes per-track cost bases + shared growth factor", () => {
     expect(SELL_PRICE_COST_BASE).toBe(100);
     expect(SPEED_COST_BASE).toBe(100);
-    expect(SIZE_COST_BASE).toBe(1000);
     expect(CRIT_COST_BASE).toBe(5000);
     expect(COMBO_COST_BASE).toBe(5000);
     expect(TRACK_COST_GROWTH).toBeCloseTo(1.5, 5);
@@ -292,11 +287,6 @@ describe("per-track upgrade costs", () => {
   it("speedUpgradeCost shares base 100 with sell-price", () => {
     expect(speedUpgradeCost(0).toNumber()).toBeCloseTo(100, 5);
     expect(speedUpgradeCost(5).toNumber()).toBeCloseTo(100 * 1.5 ** 5, 1);
-  });
-
-  it("sizeUpgradeCost uses base 1000", () => {
-    expect(sizeUpgradeCost(0).toNumber()).toBeCloseTo(1000, 5);
-    expect(sizeUpgradeCost(5).toNumber()).toBeCloseTo(1000 * 1.5 ** 5, 0);
   });
 
   it("critUpgradeCost and comboUpgradeCost share base 5000", () => {
@@ -625,92 +615,55 @@ describe("canvasTime (tier-scaled)", () => {
   });
 });
 
-describe("sellPriceUpgradeCost (tier-scaled)", () => {
-  it("T1 L1 = 100 (unchanged)", () => {
-    expect(sellPriceUpgradeCost(0, 1).toNumber()).toBeCloseTo(100, 1);
-    expect(sellPriceUpgradeCost(0).toNumber()).toBeCloseTo(100, 1); // default tier=1
+describe("sellPriceUpgradeCost (no tier scaling)", () => {
+  it("L0 → cost = SELL_PRICE_COST_BASE regardless of tier", () => {
+    expect(sellPriceUpgradeCost(0, 1).toNumber()).toBe(SELL_PRICE_COST_BASE);
+    expect(sellPriceUpgradeCost(0, 5).toNumber()).toBe(SELL_PRICE_COST_BASE);
   });
-
-  it("tier-scaling composes with 1.5^level cost ladder", () => {
-    // T2, L5: SELL_PRICE_COST_BASE × costTierFactor(2) × 1.5^5 = 100 × 20 × 7.59375 = 15187.5
-    expect(sellPriceUpgradeCost(5, 2).toNumber()).toBeCloseTo(
-      SELL_PRICE_COST_BASE * COST_GROWTH_BASE * Math.pow(TRACK_COST_GROWTH, 5),
-      0,
+  it("ramps with TRACK_COST_GROWTH per level only", () => {
+    expect(sellPriceUpgradeCost(2, 3).toNumber()).toBeCloseTo(
+      SELL_PRICE_COST_BASE * Math.pow(TRACK_COST_GROWTH, 2),
+      5,
     );
   });
+});
 
-  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
-    expect(sellPriceUpgradeCost(0, 2).toNumber())
-      .toBeCloseTo(SELL_PRICE_COST_BASE * COST_GROWTH_BASE, 5);
+describe("speedUpgradeCost (no tier scaling)", () => {
+  it("L0 → cost = SPEED_COST_BASE regardless of tier", () => {
+    expect(speedUpgradeCost(0, 1).toNumber()).toBe(SPEED_COST_BASE);
+    expect(speedUpgradeCost(0, 5).toNumber()).toBe(SPEED_COST_BASE);
   });
-
-  it("scales with costTierFactor at tier 3", () => {
-    expect(sellPriceUpgradeCost(0, 3).toNumber())
-      .toBeCloseTo(SELL_PRICE_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
+  it("ramps with TRACK_COST_GROWTH per level only", () => {
+    expect(speedUpgradeCost(2, 3).toNumber()).toBeCloseTo(
+      SPEED_COST_BASE * Math.pow(TRACK_COST_GROWTH, 2),
+      5,
+    );
   });
 });
 
-describe("speedUpgradeCost (tier-scaled)", () => {
-  it("T1 L1 = 100 (unchanged)", () => {
-    expect(speedUpgradeCost(0, 1).toNumber()).toBeCloseTo(100, 1);
+describe("critUpgradeCost (no tier scaling)", () => {
+  it("L0 → cost = CRIT_COST_BASE regardless of tier", () => {
+    expect(critUpgradeCost(0, 1).toNumber()).toBe(CRIT_COST_BASE);
+    expect(critUpgradeCost(0, 5).toNumber()).toBe(CRIT_COST_BASE);
   });
-
-  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
-    expect(speedUpgradeCost(0, 2).toNumber())
-      .toBeCloseTo(SPEED_COST_BASE * COST_GROWTH_BASE, 5);
-  });
-
-  it("scales with costTierFactor at tier 3", () => {
-    expect(speedUpgradeCost(0, 3).toNumber())
-      .toBeCloseTo(SPEED_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
+  it("ramps with TRACK_COST_GROWTH per level only", () => {
+    expect(critUpgradeCost(2, 3).toNumber()).toBeCloseTo(
+      CRIT_COST_BASE * Math.pow(TRACK_COST_GROWTH, 2),
+      5,
+    );
   });
 });
 
-describe("sizeUpgradeCost (tier-scaled)", () => {
-  it("T1 L1 = 1000 (unchanged)", () => {
-    expect(sizeUpgradeCost(0, 1).toNumber()).toBeCloseTo(1000, 1);
+describe("comboUpgradeCost (no tier scaling)", () => {
+  it("L0 → cost = COMBO_COST_BASE regardless of tier", () => {
+    expect(comboUpgradeCost(0, 1).toNumber()).toBe(COMBO_COST_BASE);
+    expect(comboUpgradeCost(0, 5).toNumber()).toBe(COMBO_COST_BASE);
   });
-
-  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
-    expect(sizeUpgradeCost(0, 2).toNumber())
-      .toBeCloseTo(SIZE_COST_BASE * COST_GROWTH_BASE, 5);
-  });
-
-  it("scales with costTierFactor at tier 3", () => {
-    expect(sizeUpgradeCost(0, 3).toNumber())
-      .toBeCloseTo(SIZE_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
-  });
-});
-
-describe("critUpgradeCost (tier-scaled)", () => {
-  it("T1 L1 = 5000 (unchanged)", () => {
-    expect(critUpgradeCost(0, 1).toNumber()).toBeCloseTo(5000, 1);
-  });
-
-  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
-    expect(critUpgradeCost(0, 2).toNumber())
-      .toBeCloseTo(CRIT_COST_BASE * COST_GROWTH_BASE, 5);
-  });
-
-  it("scales with costTierFactor at tier 3", () => {
-    expect(critUpgradeCost(0, 3).toNumber())
-      .toBeCloseTo(CRIT_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
-  });
-});
-
-describe("comboUpgradeCost (tier-scaled)", () => {
-  it("T1 L1 = 5000 (unchanged)", () => {
-    expect(comboUpgradeCost(0, 1).toNumber()).toBeCloseTo(5000, 1);
-  });
-
-  it("scales with costTierFactor, not tierFactor, at tier 2", () => {
-    expect(comboUpgradeCost(0, 2).toNumber())
-      .toBeCloseTo(COMBO_COST_BASE * COST_GROWTH_BASE, 5);
-  });
-
-  it("scales with costTierFactor at tier 3", () => {
-    expect(comboUpgradeCost(0, 3).toNumber())
-      .toBeCloseTo(COMBO_COST_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE, 5);
+  it("ramps with TRACK_COST_GROWTH per level only", () => {
+    expect(comboUpgradeCost(2, 3).toNumber()).toBeCloseTo(
+      COMBO_COST_BASE * Math.pow(TRACK_COST_GROWTH, 2),
+      5,
+    );
   });
 });
 
