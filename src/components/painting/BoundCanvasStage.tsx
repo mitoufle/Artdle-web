@@ -63,10 +63,6 @@ export function BoundCanvasStage({
   return (
     <>
       <CanvasStage
-        // TEMPORARY: CanvasStage still types `sizeLevel: number` (required).
-        // Task 13 removes this prop from CanvasStage; until then we pass 0 so
-        // the chunk-domain BoundCanvasStage no longer participates in size.
-        sizeLevel={0}
         canvasTier={canvasTier}
         progressPct={progressPct}
         timeElapsed={`${Math.floor(canvasProgress)}/${chunkCount}`}

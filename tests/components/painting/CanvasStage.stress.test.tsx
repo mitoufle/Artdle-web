@@ -8,8 +8,7 @@ describe("CanvasStage under crit-storm load", () => {
     let maxInFlight = 0;
     const { rerender, container } = render(
       <CanvasStage
-        sizeLevel={1}
-        canvasTier={5}
+        canvasTier={7}
         progressPct={0}
         timeElapsed="0"
         timeTotal="10"
@@ -19,11 +18,10 @@ describe("CanvasStage under crit-storm load", () => {
       />,
     );
 
-    // Engine signals all 400 cells revealed in a single tick. The first 50 are crits.
+    // Engine signals all 640 cells revealed in a single tick. The first 50 are crits.
     rerender(
       <CanvasStage
-        sizeLevel={1}
-        canvasTier={5}
+        canvasTier={7}
         progressPct={1}
         timeElapsed="10"
         timeTotal="10"
@@ -50,12 +48,11 @@ describe("CanvasStage under crit-storm load", () => {
     vi.useRealTimers();
   });
 
-  it("eventually drains the queue after a 400-cell storm", () => {
+  it("eventually drains the queue after a 640-cell storm", () => {
     vi.useFakeTimers();
     const { rerender, container } = render(
       <CanvasStage
-        sizeLevel={1}
-        canvasTier={5}
+        canvasTier={7}
         progressPct={0}
         timeElapsed="0"
         timeTotal="10"
@@ -66,8 +63,7 @@ describe("CanvasStage under crit-storm load", () => {
     );
     rerender(
       <CanvasStage
-        sizeLevel={1}
-        canvasTier={5}
+        canvasTier={7}
         progressPct={1}
         timeElapsed="10"
         timeTotal="10"
@@ -77,10 +73,10 @@ describe("CanvasStage under crit-storm load", () => {
       />,
     );
 
-    // 400 cells × 50ms drip ≈ 20s minimum to fully drain; add slack for the
+    // 640 cells × 50ms drip ≈ 32s minimum to fully drain; add slack for the
     // 220ms tail of the last cell + scheduling jitter.
     act(() => {
-      vi.advanceTimersByTime(25_000);
+      vi.advanceTimersByTime(40_000);
     });
 
     const inFlightDivs = container.querySelectorAll(

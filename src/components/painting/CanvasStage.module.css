@@ -66,6 +66,9 @@
   width: 21.58%;
   height: 39.19%;
   display: grid;
+  /* grid-template-rows / grid-template-columns are set inline from
+   * getCanvasCellLayout(tier) — non-square grids at chunk-domain tiers
+   * (T1=2×5, T2=4×5, ..., T7+=20×32). */
   pointer-events: none;
 }
 

@@ -9,13 +9,13 @@ import {
 import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
-import { canvasGold, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK } from "@/core/balance";
-import { getCanvasGoldMultiplier, getCanvasSize, getOfficeContribution } from "@/core/multipliers";
+import { canvasGold, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK, tierFactor } from "@/core/balance";
+import { getCanvasGoldMultiplier, getOfficeContribution } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import paintingScreen from "@/assets/images/Painting_screen_full.png";
-import { getSketchUrl, getCellRevealOrder, getSketchGridDim } from "./canvasArt";
+import { getSketchUrl, getCellRevealOrder, getCanvasCellLayout } from "./canvasArt";
 import { useRevealQueue } from "./useRevealQueue";
 
 /**
@@ -39,11 +39,16 @@ function getCachedSketchImage(url: string): HTMLImageElement {
  * Composes one cell of the sketch into the settled canvas via drawImage.
  * Defers itself to the image's load event if the source isn't decoded yet —
  * the next call after decode will draw immediately from the cache.
+ *
+ * Chunk-domain: cells form an `rows × cols` grid (no longer square). The
+ * source sketch is square; each cell's source slice is therefore not square,
+ * which is fine — the sketch is illustrative, not pixel-perfect-aligned.
  */
 function drawCellIntoCanvas(
   ctx: CanvasRenderingContext2D,
   cellIndex: number,
-  gridDim: number,
+  rows: number,
+  cols: number,
   sketchUrl: string,
   canvasW: number,
   canvasH: number,
@@ -52,27 +57,26 @@ function drawCellIntoCanvas(
   if (!img.complete || img.naturalWidth === 0) {
     const onLoad = (): void => {
       img.removeEventListener("load", onLoad);
-      drawCellIntoCanvas(ctx, cellIndex, gridDim, sketchUrl, canvasW, canvasH);
+      drawCellIntoCanvas(ctx, cellIndex, rows, cols, sketchUrl, canvasW, canvasH);
     };
     img.addEventListener("load", onLoad);
     return;
   }
-  const col = cellIndex % gridDim;
-  const row = Math.floor(cellIndex / gridDim);
-  const sx = (img.width / gridDim) * col;
-  const sy = (img.height / gridDim) * row;
-  const sw = img.width / gridDim;
-  const sh = img.height / gridDim;
-  const dx = (canvasW / gridDim) * col;
-  const dy = (canvasH / gridDim) * row;
-  const dw = canvasW / gridDim;
-  const dh = canvasH / gridDim;
+  const col = cellIndex % cols;
+  const row = Math.floor(cellIndex / cols);
+  const sx = (img.width / cols) * col;
+  const sy = (img.height / rows) * row;
+  const sw = img.width / cols;
+  const sh = img.height / rows;
+  const dx = (canvasW / cols) * col;
+  const dy = (canvasH / rows) * row;
+  const dw = canvasW / cols;
+  const dh = canvasH / rows;
   ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
 }
 
-function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
+function sellHoverBody(comboChain: number): JSX.Element {
   const state = useGameStore.getState();
-  const size = getCanvasSize(state);
   const goldMult = getCanvasGoldMultiplier(state);
   const itemBonus = getEquippedContribution(state, "+sell_price%");
   const workerBonus = getOfficeContribution(state, "+sell_price%").toNumber();
@@ -81,11 +85,12 @@ function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
   const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
   const additiveTotal = goldMult / rainbowFactor - 1;
   const colorSum = additiveTotal - itemBonus - workerBonus - sellPriceContribution;
-  const baseGold = 10 * size * size;
-  const total = canvasGold(size, goldMult, state.canvasTier).mul(1 + COMBO_PER_LINK * comboChain);
+  const tierMult = tierFactor(state.canvasTier);
+  const baseGold = 10 * tierMult;
+  const total = canvasGold(goldMult, state.canvasTier).mul(1 + COMBO_PER_LINK * comboChain);
   return (
     <>
-      <div>Base × size² = 10 × {size.toFixed(2)}² = {baseGold.toFixed(1)}</div>
+      <div>Base × tier = 10 × {tierMult} = {baseGold}</div>
       <div>───</div>
       <div>Sell Price (Lv {state.sellPriceLevel}): ×{(1 + sellPriceContribution).toFixed(2)}</div>
       <div>Items (sell):  ×{(1 + itemBonus).toFixed(2)}</div>
@@ -100,7 +105,6 @@ function sellHoverBody(_sizeLevel: number, comboChain: number): JSX.Element {
 }
 
 interface Props {
-  sizeLevel: number;
   canvasTier: number;
   progressPct: number;       // 0..1, drives the paint-fill overlay height
   timeElapsed: string;       // formatted seconds elapsed, e.g., "1.5"
@@ -109,14 +113,15 @@ interface Props {
   /** T14: combo chain depth for badge display. */
   comboChain?: number;
   /** Set of chunk indices in the current canvas painted by a crit. Cells in
-   *  this set get the gold-flash modifier. */
+   *  this set get the gold-flash modifier. At T8+ where multiple chunks map
+   *  to one cell, this is remapped internally to cell indices. */
   critChunks?: Record<number, true>;
   /** Canvas number (= lastSale.id) — keys fill elements so React re-mounts on sale,
    *  resetting CSS transition baseline to avoid the rubberband-down effect. */
   canvasNumber?: number;
   /** Click-to-paint: invoked when the player clicks the easel area. Advances
-   *  canvas progress by one chunk (1/25 of total paint time). Optional — when
-   *  omitted, the easel is not interactive. */
+   *  canvas progress by one chunk. Optional — when omitted, the easel is not
+   *  interactive. */
   onChunkClick?: () => void;
 }
 
@@ -145,7 +150,6 @@ const STAGE_NAMES: Record<number, string> = {
  * the TrackCards in the upgrades strip below).
  */
 export function CanvasStage({
-  sizeLevel,
   canvasTier,
   progressPct,
   timeElapsed,
@@ -158,11 +162,11 @@ export function CanvasStage({
 }: Props): JSX.Element {
   const stageName = STAGE_NAMES[canvasTier] ?? `Tier ${canvasTier}`;
   const barWidth = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
-  void sizeLevel;
 
-  // Chunk count doubles (approx) per tier: 5x5, 7x7, 10x10, 14x14, 20x20, ...
-  const gridDim = getSketchGridDim(canvasTier);
-  const totalCells = gridDim * gridDim;
+  // Chunk-domain cell layout: non-square grid varies by tier (T1=2×5,
+  // T7+=20×32 capped at 640 cells). chunksPerCell > 1 at T8+ where the
+  // engine fires more chunks than we render cells.
+  const { rows, cols, cellsRendered, chunksPerCell } = getCanvasCellLayout(canvasTier);
 
   // Sketch + reveal-order are stable for a given canvasNumber so re-renders
   // (every frame's progress update) don't reshuffle the chunks.
@@ -171,12 +175,28 @@ export function CanvasStage({
     [canvasTier, canvasNumber],
   );
   const cellOrder = useMemo(
-    () => getCellRevealOrder(canvasNumber, totalCells),
-    [canvasNumber, totalCells],
+    () => getCellRevealOrder(canvasNumber, cellsRendered),
+    [canvasNumber, cellsRendered],
   );
+  // progressPct is the fraction of chunks completed. floor(pct * cells) gives
+  // the cell count that should currently be visible. At T8+ this naturally
+  // collapses chunksPerCell — two chunks → one cell-reveal.
   const cellsRevealed = Math.floor(
-    Math.max(0, Math.min(1, progressPct)) * totalCells,
+    Math.max(0, Math.min(1, progressPct)) * cellsRendered,
   );
+
+  // Map engine chunk-indexed crit chunks to cell-indexed crit cells. At T1-T7
+  // (chunksPerCell=1) this is a no-op pass-through. At T8+ multiple chunk
+  // indices may collapse to the same cell index — object-key uniqueness
+  // dedupes them automatically.
+  const critCells = useMemo(() => {
+    if (chunksPerCell === 1) return critChunks;
+    const out: Record<number, true> = {};
+    for (const key of Object.keys(critChunks)) {
+      out[Math.floor(Number(key) / chunksPerCell)] = true;
+    }
+    return out;
+  }, [critChunks, chunksPerCell]);
 
   // Two-canvas hybrid: a long-lived <canvas> holds all settled pixels, and a
   // small grid overlay holds only the ~8 cells currently popping in. The
@@ -187,7 +207,7 @@ export function CanvasStage({
     targetRevealed: cellsRevealed,
     cellOrder,
     canvasNumber,
-    critCells: critChunks,
+    critCells,
   });
 
   // Commit newly-settled cells into the long-lived canvas. useLayoutEffect
@@ -205,14 +225,15 @@ export function CanvasStage({
       drawCellIntoCanvas(
         ctx,
         cellIndex,
-        gridDim,
+        rows,
+        cols,
         sketchUrl,
         canvas.width,
         canvas.height,
       );
       committedRef.current.add(cellIndex);
     }
-  }, [settled, sketchUrl, gridDim]);
+  }, [settled, sketchUrl, rows, cols]);
 
   // Reset the settled canvas + committed-cells set whenever the canvas
   // identity changes (sale completes, new canvas starts).
@@ -286,14 +307,17 @@ export function CanvasStage({
                 data-testid="sketch-overlay-in-flight"
                 aria-hidden="true"
                 style={{
-                  gridTemplateColumns: `repeat(${gridDim}, 1fr)`,
-                  gridTemplateRows: `repeat(${gridDim}, 1fr)`,
+                  gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                  gridTemplateRows: `repeat(${rows}, 1fr)`,
                 }}
               >
                 {inFlight.map(({ cellIndex, isCrit, startedAt }) => {
-                  const col = cellIndex % gridDim;
-                  const row = Math.floor(cellIndex / gridDim);
-                  const denom = Math.max(1, gridDim - 1);
+                  const col = cellIndex % cols;
+                  const row = Math.floor(cellIndex / cols);
+                  // Separate per-axis denominators because the grid is non-square
+                  // at most tiers. Floor at 1 to dodge divide-by-zero in 1×N grids.
+                  const denomX = Math.max(1, cols - 1);
+                  const denomY = Math.max(1, rows - 1);
                   return (
                     <div
                       key={`${cellIndex}-${startedAt}`}
@@ -304,8 +328,8 @@ export function CanvasStage({
                         gridColumn: col + 1,
                         gridRow: row + 1,
                         backgroundImage: `url(${sketchUrl})`,
-                        backgroundSize: `${gridDim * 100}% ${gridDim * 100}%`,
-                        backgroundPosition: `${(col / denom) * 100}% ${(row / denom) * 100}%`,
+                        backgroundSize: `${cols * 100}% ${rows * 100}%`,
+                        backgroundPosition: `${(col / denomX) * 100}% ${(row / denomY) * 100}%`,
                       }}
                     />
                   );
@@ -342,7 +366,7 @@ export function CanvasStage({
         </span>
         <Hoverable
           title="Sell Canvas"
-          body={() => sellHoverBody(sizeLevel, comboChain ?? 0)}
+          body={() => sellHoverBody(comboChain ?? 0)}
           footer="Auto-sells when paint progress reaches 100%."
         >
           <span className={styles.goldPreview} data-testid="canvas-sell-preview">+{nextSaleGold}g on next sale</span>
