@@ -88,15 +88,17 @@ describe("PaintingRoute subscription isolation (BoundCanvasStage regression guar
     // guards against over-isolating — e.g. someone accidentally removing
     // BoundCanvasStage's subscription would make this assertion fail.
     //
-    // Chunk-domain (2026-05-26 rework): canvasProgress is in chunks now, and
-    // the BoundCanvasStage formats it as `${floor(progress)}/${chunkCount}`.
-    // At canvasTier=1 the canvas has 10 chunks; progress=0 → "0/10".
-    expect(container.textContent).toContain("0/10");
+    // Chunk-domain (2026-05-26 rework): canvasProgress is in chunks. The bar
+    // text re-projects back to seconds (chunks × chunkInterval) for the
+    // classic "Xs / Ys" countdown display. Test fixture: speedLevel=5 →
+    // speedMult=1.25 → chunkInterval=4s; T1 chunkCount=10 → 40s total.
+    expect(container.textContent).toContain("0.0s / 40.0s");
 
     act(() => {
       useGameStore.setState({ canvasProgress: 3.5 });
     });
 
-    expect(container.textContent).toContain("3/10");
+    // 3.5 chunks × 4s/chunk = 14.0s elapsed.
+    expect(container.textContent).toContain("14.0s / 40.0s");
   });
 });

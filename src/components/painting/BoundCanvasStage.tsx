@@ -55,8 +55,12 @@ export function BoundCanvasStage({
   const canvasTick = useGameStore((s) => s.canvasTick);
 
   // Chunk-domain: canvasProgress is in chunks (integer + fractional). Progress
-  // bar fills as fraction of total chunks.
+  // bar fills as fraction of total chunks; the elapsed/total text is rendered
+  // back in seconds (chunks × per-chunk interval) for the familiar countdown
+  // UX — "5.0s / 50.0s" reads naturally; "5/10 chunks / 10 chunks" does not.
   const progressPct = chunkCount > 0 ? canvasProgress / chunkCount : 0;
+  const secondsElapsed = canvasProgress * chunkInterval;
+  const secondsTotal = chunkCount * chunkInterval;
   const comboFactor = 1 + COMBO_PER_LINK * comboChain;
   const nextSaleGold = baseGold.mul(comboFactor);
 
@@ -65,8 +69,8 @@ export function BoundCanvasStage({
       <CanvasStage
         canvasTier={canvasTier}
         progressPct={progressPct}
-        timeElapsed={`${Math.floor(canvasProgress)}/${chunkCount}`}
-        timeTotal={`${chunkCount}`}
+        timeElapsed={secondsElapsed.toFixed(1)}
+        timeTotal={secondsTotal.toFixed(1)}
         nextSaleGold={formatBig(nextSaleGold)}
         comboChain={comboChain}
         critChunks={critChunks}
