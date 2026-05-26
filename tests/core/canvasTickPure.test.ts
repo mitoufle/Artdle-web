@@ -122,4 +122,19 @@ describe("canvasTickPure crit", () => {
     expect(draft.gold.toNumber()).toBeCloseTo(2, 5);
     expect(Object.keys(draft.critChunks).length).toBe(2);
   });
+
+  it("bonus chunks spill across canvas boundaries (no crit benefit wasted)", () => {
+    // Start at chunk 9 of 10 with always-crit. The trigger rolls on chunk 9
+    // (the second-to-last; last-chunk skips crit), so this test relies on
+    // T1's last-chunk-no-crit rule by setting up at chunk 8 then paying the
+    // critting chunk. We seed progress directly to chunk 8 (so the next
+    // paid chunk is chunk 8 — the 9th in 0-indexed, which is NOT the last).
+    const draft = makeDraft({ canvasProgress: 8 });
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL);
+    // Chunk 8 fires crit. Trigger (chunk 8) + 1 bonus (chunk 9 — completes
+    // canvas, fires sale, resets progress to 0). With BASE_CRIT_CHUNKS=1
+    // the bonus stops after one chunk, having spilled the sale boundary.
+    expect(draft.statsRun.canvasesSold).toBe(1);
+    expect(draft.gold.toNumber()).toBeCloseTo(2, 5);
+  });
 });

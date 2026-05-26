@@ -39,6 +39,15 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
   const interval = chunkInterval(speedMult);
   if (interval <= 0) return;
 
+  // Multipliers are invariant over a single tick (no input field they read
+  // changes mid-tick), so hoist them out of the per-chunk hot path. At T8+
+  // canvases can have 1000+ chunks per tick during catch-up; recomputing
+  // these inside the loop would be a real regression.
+  const goldMult = getCanvasGoldMultiplier(draft);
+  const perChunkBase = goldPerChunk(draft.sellPriceLevel, goldMult, draft.canvasTier);
+  const critChance = getCritChance(draft);
+  const critChunksPerCrit = getCritChunks(draft);
+
   let chain = draft.comboChain;
   let critChunks: Record<number, true> = { ...draft.critChunks };
   let lastSaleId = draft.lastSale?.id ?? 0;
@@ -55,9 +64,7 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
   let localMaxCombo = draft.statsRun.maxComboChain;
 
   const payChunk = (chunkIndex: number): void => {
-    const goldMult = getCanvasGoldMultiplier(draft);
-    const perChunk = goldPerChunk(draft.sellPriceLevel, goldMult, draft.canvasTier);
-    const gain = perChunk.mul(comboBonusFactor(chain));
+    const gain = perChunkBase.mul(comboBonusFactor(chain));
 
     addCurrency(draft, "gold", gain);
     trackSaleGoldPure(draft, gain);
@@ -101,23 +108,24 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
     // Roll crit (skip on the canvas's last chunk so trigger + first bonus
     // stay together — matches old behavior).
     const isLastChunkOfCanvas = completedChunkIndex + 1 >= chunkCount;
-    if (!isLastChunkOfCanvas && rng() < getCritChance(draft)) {
-      const bonus = getCritChunks(draft);
+    if (!isLastChunkOfCanvas && rng() < critChance) {
       critChunks[completedChunkIndex] = true;
 
       payChunk(completedChunkIndex);
 
-      let bonusLeft = bonus;
+      // Bonus chunks intentionally SPILL across canvas boundaries — no crit
+      // benefit is wasted. payChunk resets progress to 0 when a canvas
+      // completes, so the next iteration paints chunk 0 of the new canvas.
+      let bonusLeft = critChunksPerCrit;
       while (bonusLeft > 0 && sales < MAX_SALES_PER_TICK) {
         const bonusIndex = Math.floor(progress);
-        if (bonusIndex >= chunkCount) break;
         critChunks[bonusIndex] = true;
         progress = bonusIndex + 1;
         payChunk(bonusIndex);
         bonusLeft -= 1;
       }
 
-      const totalCritChunks = 1 + bonus;
+      const totalCritChunks = 1 + critChunksPerCrit;
       critChunksThisTick += totalCritChunks;
       localCritStreak += totalCritChunks;
       if (localCritStreak > localMaxCritStreak) localMaxCritStreak = localCritStreak;
