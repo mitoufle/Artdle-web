@@ -1,7 +1,8 @@
 import type { StateCreator } from "zustand";
 import {
   sellPriceUpgradeCost, speedUpgradeCost,
-  sizeUpgradeCost, critUpgradeCost, comboUpgradeCost,
+  critUpgradeCost, comboUpgradeCost,
+  tierUpgradeCost,
 } from "@/core/balance";
 import type { GameStore } from "@/store";
 import { type Big } from "@/core/bigNumber";
@@ -10,26 +11,27 @@ import { canvasTickPure } from "@/core/canvasTickPure";
 
 export interface CanvasState {
   /**
-   * Seconds painted on the current canvas.
-   * Invariant: 0 ≤ canvasProgress < effectivePaintTime.
-   * On threshold-cross, a sale fires and progress resets (with optional carry).
+   * Chunk-domain progress in the current canvas.
+   *   floor(canvasProgress) = whole chunks completed (gold paid)
+   *   fractional part = sub-chunk progress (seconds budget pro-rated)
+   * Invariant: 0 ≤ canvasProgress < chunksPerCanvas(canvasTier).
+   * Reset to 0 when canvas completes and when tierUp() succeeds.
    */
   canvasProgress: number;
   /** New canvas-depth: sell-price track level (unlocked from start). */
   sellPriceLevel: number;
   /** New canvas-depth: completion-speed track level (unlocked from start). */
   speedLevel: number;
-  /** New canvas-depth: size track level. Gated by skill-tree node "unlock_canvas_size". */
-  sizeLevel: number;
+  // sizeLevel REMOVED — Size folded into Tier
   /** New canvas-depth: crit track level. Gated. */
   critLevel: number;
   /** New canvas-depth: combo track level. Gated. */
   comboLevel: number;
   /**
    * Canvas tier — within-run prestige level. Incremented by `tierUp()` when
-   * `sellPriceLevel >= 15 && speedLevel >= 15`. Drives `tierFactor(canvasTier)`
-   * scaling on base gold, upgrade costs, and per-track multiplier contributions.
-   * Default 1 (no scaling). Preserved across ascends but reset on full wipe.
+   * `gold >= tierUpgradeCost(canvasTier)`. Drives `tierFactor(canvasTier)`
+   * scaling on base gold and chunks-per-canvas progression. Default 1
+   * (no scaling). Preserved across ascends but reset on full wipe.
    */
   canvasTier: number;
   /** New canvas-depth: current combo chain. Run-state. Resets on miss / ascend. */
@@ -58,7 +60,6 @@ export const initialCanvasState: CanvasState = Object.freeze({
   canvasProgress: 0,
   sellPriceLevel: 0,
   speedLevel: 0,
-  sizeLevel: 0,
   critLevel: 0,
   comboLevel: 0,
   canvasTier: 1,
@@ -79,8 +80,7 @@ export interface CanvasSlice extends CanvasState {
   upgradeSellPrice: () => void;
   /** Validate → spend → mutate speed upgrade. No-op if gold < cost. */
   upgradeSpeed: () => void;
-  /** Gated upgrade: size track. No-op if locked or gold < cost. */
-  upgradeSize: () => void;
+  // upgradeSize REMOVED
   /** Gated upgrade: crit track. No-op if locked or gold < cost. */
   upgradeCrit: () => void;
   /** Gated upgrade: combo track. No-op if locked or gold < cost. */
@@ -90,13 +90,10 @@ export interface CanvasSlice extends CanvasState {
   /** Clear the lastSale animation trigger. Called from onAnimationComplete. */
   clearLastSale: () => void;
   /**
-   * Canvas tier-up: within-run prestige.
-   * Gate: sellPriceLevel >= 15 && speedLevel >= 15.
-   * On success: increments canvasTier, resets sellPriceLevel and speedLevel
-   * to 0 (the gated tracks — size/crit/combo — are preserved across tier-up),
-   * clears in-canvas state (canvasProgress, comboChain, critChunks), and
-   * calls evaluateAchievements().
-   * Returns true on success, false if gate not met (state unchanged).
+   * Tier upgrade: spend `tierUpgradeCost(canvasTier)` gold, increment
+   * canvasTier, reset in-canvas state (progress, combo chain, crit chunks).
+   * Within-tier upgrade levels and gear are PRESERVED.
+   * Returns true on success, false if insufficient gold.
    */
   tierUp: () => boolean;
 }
@@ -127,48 +124,29 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       };
     });
     if (fired) get().evaluateAchievements();
-    // Auto tier-up: if the gate is met, fire immediately. Covers both the
-    // just-bought-the-15th-upgrade case (next tick after the upgrade action)
-    // and the save-already-met case (first tick after rehydration).
-    const post = get();
-    if (post.sellPriceLevel >= 15 && post.speedLevel >= 15) {
-      get().tierUp();
-    }
+    // NO MORE auto tier-up — tier-up is now an explicit player action.
   },
 
   upgradeSellPrice: () => {
     const state = get();
-    // Contract: formula(currentLevel) returns cost to advance from currentLevel to currentLevel+1.
-    const cost = sellPriceUpgradeCost(state.sellPriceLevel, state.canvasTier);
+    const cost = sellPriceUpgradeCost(state.sellPriceLevel);
     if (state.gold.lt(cost)) return;
-    set({
-      gold: state.gold.sub(cost),
-      sellPriceLevel: state.sellPriceLevel + 1,
-    });
+    set({ gold: state.gold.sub(cost), sellPriceLevel: state.sellPriceLevel + 1 });
   },
 
   upgradeSpeed: () => {
     const state = get();
-    const cost = speedUpgradeCost(state.speedLevel, state.canvasTier);
+    const cost = speedUpgradeCost(state.speedLevel);
     if (state.gold.lt(cost)) return;
-    set({
-      gold: state.gold.sub(cost),
-      speedLevel: state.speedLevel + 1,
-    });
+    set({ gold: state.gold.sub(cost), speedLevel: state.speedLevel + 1 });
   },
 
-  upgradeSize: () => {
-    const state = get();
-    if (!getCanvasTrackUnlocked(state, "size")) return;
-    const cost = sizeUpgradeCost(state.sizeLevel, state.canvasTier);
-    if (state.gold.lt(cost)) return;
-    set({ gold: state.gold.sub(cost), sizeLevel: state.sizeLevel + 1 });
-  },
+  // upgradeSize DELETED
 
   upgradeCrit: () => {
     const state = get();
     if (!getCanvasTrackUnlocked(state, "crit")) return;
-    const cost = critUpgradeCost(state.critLevel, state.canvasTier);
+    const cost = critUpgradeCost(state.critLevel);
     if (state.gold.lt(cost)) return;
     set({ gold: state.gold.sub(cost), critLevel: state.critLevel + 1 });
   },
@@ -176,7 +154,7 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
   upgradeCombo: () => {
     const state = get();
     if (!getCanvasTrackUnlocked(state, "combo")) return;
-    const cost = comboUpgradeCost(state.comboLevel, state.canvasTier);
+    const cost = comboUpgradeCost(state.comboLevel);
     if (state.gold.lt(cost)) return;
     set({ gold: state.gold.sub(cost), comboLevel: state.comboLevel + 1 });
   },
@@ -186,15 +164,15 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
 
   tierUp: () => {
     const state = get();
-    if (state.sellPriceLevel < 15 || state.speedLevel < 15) return false;
+    const cost = tierUpgradeCost(state.canvasTier);
+    if (state.gold.lt(cost)) return false;
     set({
+      gold: state.gold.sub(cost),
       canvasTier: state.canvasTier + 1,
-      sellPriceLevel: 0,
-      speedLevel: 0,
-      // sizeLevel, critLevel, comboLevel preserved across tier-up
       canvasProgress: 0,
       comboChain: 0,
       critChunks: {},
+      // sellPriceLevel, speedLevel, critLevel, comboLevel PRESERVED
     });
     get().evaluateAchievements();
     return true;

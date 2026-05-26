@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useGameStore } from "@/store";
 import { initialCanvasState } from "@/store/canvasSlice";
-import { CANVAS_GOLD_BASE } from "@/core/balance";
+import { CANVAS_GOLD_BASE, tierUpgradeCost } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 import { setSeed } from "@/core/rng";
 
@@ -39,14 +39,14 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().lastSale!.id).toBeGreaterThanOrEqual(4);
   });
 
-  it("canvasTick just past effective threshold (sizeLevel=0, speedLevel=0 → 10s): one sale fires", () => {
+  it("canvasTick just past effective threshold (speedLevel=0 → 10s): one sale fires", () => {
     // effectiveTime = canvasTime(1) / getCanvasSpeedMultiplier = 10 / 1.0 = 10s
     // Per-chunk model: T1 has 5×5=25 chunks, each = 0.4s. Float accumulation means
     // exactly 10s may not complete the final chunk — use 10.01 to guarantee one sale.
     const effTimePlus = 10.01;
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(effTimePlus);
-    // sizeLevel=0, sellPriceLevel=0: gold = 10 × 1.0 = 10
+    // sellPriceLevel=0: gold = 10 × 1.0 = 10
     expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE, 1);
     expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(0);
     expect(useGameStore.getState().canvasProgress).toBeLessThan(10);
@@ -91,8 +91,8 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().gold.toNumber()).toBe(goldBefore);
   });
 
-  it("at default state (sizeLevel=0, sellPriceLevel=0), one sale credits CANVAS_GOLD_BASE", () => {
-    // sizeLevel=0 → canvasGold base = 10; sellPriceLevel=0 adds +0% → total 10
+  it("at default state (sellPriceLevel=0), one sale credits CANVAS_GOLD_BASE", () => {
+    // canvasGold base = 10; sellPriceLevel=0 adds +0% → total 10
     // Use effTime+0.01 to guarantee the last chunk clears despite floating-point accumulation.
     const goldBefore = useGameStore.getState().gold.toNumber();
     useGameStore.getState().canvasTick(10.01);
@@ -122,14 +122,15 @@ describe("canvasSlice — lastSale animation trigger", () => {
     expect(useGameStore.getState().lastSale).toBeNull();
   });
 
-  it("a sale sets lastSale to {id: 1, amount: CANVAS_GOLD_BASE} (sizeLevel=0, sellPriceLevel=0)", () => {
+  it("a sale sets lastSale to {id: 1, amount: CANVAS_GOLD_BASE / chunkCount} (sellPriceLevel=0)", () => {
     // Use 10.01 to guarantee the final chunk completes despite floating-point accumulation.
     useGameStore.getState().canvasTick(10.01);
     const ls = useGameStore.getState().lastSale;
     expect(ls).not.toBeNull();
     expect(ls!.id).toBe(1);
-    // sizeLevel=0, sellPriceLevel=0: gold = 10 × 1.0 = 10
-    expect(ls!.amount.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE, 1);
+    // sellPriceLevel=0: per-chunk gold = 1 (T1: 10 chunks × 1g = 10g per canvas)
+    // lastSale.amount carries the FINAL chunk's gain, not the lump sum.
+    expect(ls!.amount.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE / 10, 1);
   });
 
   it("two sales increment lastSale.id from 1 to 2", () => {
@@ -170,31 +171,20 @@ describe("canvasSlice — lastSale animation trigger", () => {
   });
 });
 
-describe("canvasSlice — size-aware tick (canvas-depth)", () => {
+describe("canvasSlice — sale gold (chunk-domain)", () => {
   beforeEach(() => {
     useGameStore.getState().resetCanvas();
     useGameStore.getState().resetRunCurrencies();
     useGameStore.getState()._setLifetimeGold(big(0));
   });
 
-  it("at sizeLevel=0, size=1, gold = 10 × 1² × 1.0 = 10", () => {
-    // canvasTime(size=1) = 10s; speedLevel=0 → speedMult = 1.0; effTime = 10s
-    // Use 10.01 to clear final chunk boundary despite float accumulation.
+  it("at default state (sellPriceLevel=0), one full canvas pays CANVAS_GOLD_BASE", () => {
+    // T1 = 10 chunks × 1g/chunk = 10g per canvas. Use 10.01 to clear the final
+    // chunk boundary despite float accumulation.
     useGameStore.getState().canvasTick(10.01);
     expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(0);
     expect(useGameStore.getState().canvasProgress).toBeLessThan(10);
-    // size = 1, sellPriceLevel=0 → gold = 10 × 1 × 1.0 = 10
     expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE, 1);
-  });
-
-  it("at sizeLevel=1, size = 1.15, gold = 10 × 1.15² × 1.0, time = 10 × 1.15", () => {
-    useGameStore.setState({ sizeLevel: 1 });
-    const effTime = 10 * 1.15 + 0.01; // slightly over threshold to guarantee completion
-    useGameStore.getState().canvasTick(effTime);
-    expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(0);
-    expect(useGameStore.getState().canvasProgress).toBeLessThan(11.5);
-    // size = 1 + 0.15 × 1 = 1.15 ; gold = 10 × 1.15² × 1.0 = 10 × 1.3225 = 13.225
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(13.225, 1);
   });
 
   it("sale calls trackSaleGold — lifetimeGold increments", () => {
@@ -214,9 +204,8 @@ describe("canvasSlice — new track state fields", () => {
     expect(s.speedLevel).toBe(0);
   });
 
-  it("starts with sizeLevel=0, critLevel=0, comboLevel=0 (gated tracks)", () => {
+  it("starts with critLevel=0, comboLevel=0 (gated tracks)", () => {
     const s = useGameStore.getState();
-    expect(s.sizeLevel).toBe(0);
     expect(s.critLevel).toBe(0);
     expect(s.comboLevel).toBe(0);
   });
@@ -227,16 +216,15 @@ describe("canvasSlice — new track state fields", () => {
     expect(s.critChunks).toEqual({});
   });
 
-  it("resetCanvas restores all five levels + chain + critChunks", () => {
+  it("resetCanvas restores all four levels + chain + critChunks", () => {
     useGameStore.setState({
-      sellPriceLevel: 7, speedLevel: 4, sizeLevel: 5,
+      sellPriceLevel: 7, speedLevel: 4,
       critLevel: 3, comboLevel: 2, comboChain: 4, critChunks: { 3: true },
     } as unknown as Parameters<typeof useGameStore.setState>[0]);
     useGameStore.getState().resetCanvas();
     const s = useGameStore.getState();
     expect(s.sellPriceLevel).toBe(0);
     expect(s.speedLevel).toBe(0);
-    expect(s.sizeLevel).toBe(0);
     expect(s.critLevel).toBe(0);
     expect(s.comboLevel).toBe(0);
     expect(s.comboChain).toBe(0);
@@ -293,33 +281,6 @@ describe("canvasSlice — upgradeSpeed", () => {
   });
 });
 
-describe("canvasSlice — upgradeSize (gated)", () => {
-  beforeEach(() => {
-    useGameStore.setState({ ...initialCanvasState, gold: big(0), purchasedNodes: {} });
-  });
-
-  it("no-ops when track is locked (no skill-tree node)", () => {
-    useGameStore.setState({ gold: big(10000), purchasedNodes: {} });
-    useGameStore.getState().upgradeSize();
-    expect(useGameStore.getState().sizeLevel).toBe(0);
-    expect(useGameStore.getState().gold.toNumber()).toBe(10000);
-  });
-
-  it("no-ops when gold < cost (even if unlocked)", () => {
-    useGameStore.setState({ gold: big(500), purchasedNodes: { size_matters: 1 } });
-    useGameStore.getState().upgradeSize();
-    expect(useGameStore.getState().sizeLevel).toBe(0);
-  });
-
-  it("spends gold and increments when unlocked + affordable", () => {
-    useGameStore.setState({ gold: big(2000), purchasedNodes: { size_matters: 1 } });
-    useGameStore.getState().upgradeSize();
-    // L0 → L1: cost = sizeUpgradeCost(0) = 1000 × 1.5^0 = 1000
-    expect(useGameStore.getState().sizeLevel).toBe(1);
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(1000, 1);
-  });
-});
-
 describe("canvasSlice — upgradeCrit + upgradeCombo (gated)", () => {
   beforeEach(() => {
     useGameStore.setState({ ...initialCanvasState, gold: big(0), purchasedNodes: {} });
@@ -367,8 +328,8 @@ describe("canvasTick — crit + combo behaviour", () => {
   });
 
   it("without crit (critLevel=0), painting takes effectiveTime = 10s; no sale in 9.9s", () => {
-    // sizeLevel=0, speedLevel=0 → effectiveTime = 10s
-    useGameStore.setState({ critLevel: 0, sizeLevel: 0, canvasProgress: 0 });
+    // speedLevel=0 → effectiveTime = 10s
+    useGameStore.setState({ critLevel: 0, canvasProgress: 0 });
     useGameStore.getState().canvasTick(9.9);
     expect(useGameStore.getState().gold.toNumber()).toBe(0);
     useGameStore.getState().canvasTick(0.2); // crosses threshold → sale fires
@@ -378,7 +339,7 @@ describe("canvasTick — crit + combo behaviour", () => {
   it("on sale, combo bonus from PRIOR comboChain applies to this canvas's gold", () => {
     setSeed(99);
     useGameStore.setState({ comboChain: 3, critLevel: 0, comboLevel: 0 });
-    // sizeLevel=0, speedLevel=0 (initial defaults)
+    // speedLevel=0 (initial default)
     // base gold = canvasGold(1, mult); mult = (1 + 0.10×0 sellPrice) × 1 (PM=0) = 1.0
     // baseGold = 10 × 1.0 = 10
     // combo factor = 1 + 0.10 × 3 = 1.30
@@ -432,99 +393,56 @@ describe("canvasTick — crit + combo behaviour", () => {
   });
 });
 
-describe("canvasTier — tierUp action", () => {
+describe("tierUp() — chunk-domain (gold-gated)", () => {
   beforeEach(() => {
-    useGameStore.setState({
-      ...initialCanvasState,
-      gold: big(0),
-    });
+    useGameStore.setState(useGameStore.getInitialState());
   });
 
-  it("rejects tier-up when gate not met (sellPriceLevel < 15)", () => {
-    useGameStore.setState({ sellPriceLevel: 14, speedLevel: 15 });
+  it("no-op when gold < cost", () => {
+    useGameStore.setState({ gold: big(999), canvasTier: 1 });
     const result = useGameStore.getState().tierUp();
     expect(result).toBe(false);
     expect(useGameStore.getState().canvasTier).toBe(1);
-    expect(useGameStore.getState().sellPriceLevel).toBe(14);
+    expect(useGameStore.getState().gold.toNumber()).toBe(999);
   });
 
-  it("rejects tier-up when gate not met (speedLevel < 15)", () => {
-    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 14 });
-    const result = useGameStore.getState().tierUp();
-    expect(result).toBe(false);
-    expect(useGameStore.getState().canvasTier).toBe(1);
-  });
-
-  it("accepts tier-up when gate met (both >= 15)", () => {
-    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15 });
+  it("succeeds when gold >= tierUpgradeCost(currentTier)", () => {
+    useGameStore.setState({ gold: big(1000), canvasTier: 1 });
     const result = useGameStore.getState().tierUp();
     expect(result).toBe(true);
     expect(useGameStore.getState().canvasTier).toBe(2);
+    expect(useGameStore.getState().gold.toNumber()).toBe(0);
   });
 
-  it("on success, resets sellPriceLevel and speedLevel to 0; preserves sizeLevel, critLevel, comboLevel", () => {
+  it("preserves sellPriceLevel, speedLevel, critLevel, comboLevel", () => {
     useGameStore.setState({
-      sellPriceLevel: 20, speedLevel: 18, sizeLevel: 10, critLevel: 5, comboLevel: 3,
+      gold: big(1000), canvasTier: 1,
+      sellPriceLevel: 10, speedLevel: 7, critLevel: 3, comboLevel: 5,
     });
     useGameStore.getState().tierUp();
-    const s = useGameStore.getState();
-    expect(s.sellPriceLevel).toBe(0);
-    expect(s.speedLevel).toBe(0);
-    expect(s.sizeLevel).toBe(10);
-    expect(s.critLevel).toBe(5);
-    expect(s.comboLevel).toBe(3);
+    const state = useGameStore.getState();
+    expect(state.sellPriceLevel).toBe(10);
+    expect(state.speedLevel).toBe(7);
+    expect(state.critLevel).toBe(3);
+    expect(state.comboLevel).toBe(5);
   });
 
-  it("on success, resets in-canvas state (canvasProgress, comboChain, critChunks)", () => {
+  it("resets canvasProgress, comboChain, critChunks", () => {
     useGameStore.setState({
-      sellPriceLevel: 15, speedLevel: 15,
-      canvasProgress: 5.5, comboChain: 3, critChunks: { 2: true, 5: true },
+      gold: big(1000), canvasTier: 1,
+      canvasProgress: 3.4, comboChain: 12, critChunks: { 0: true, 5: true },
     });
     useGameStore.getState().tierUp();
-    const s = useGameStore.getState();
-    expect(s.canvasProgress).toBe(0);
-    expect(s.comboChain).toBe(0);
-    expect(s.critChunks).toEqual({});
+    const state = useGameStore.getState();
+    expect(state.canvasProgress).toBe(0);
+    expect(state.comboChain).toBe(0);
+    expect(state.critChunks).toEqual({});
   });
 
-  it("multiple tier-ups bump canvasTier by 1 each time", () => {
-    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15 });
-    useGameStore.getState().tierUp();
-    expect(useGameStore.getState().canvasTier).toBe(2);
-    // Levels were reset; bump them back up to gate
-    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15 });
-    useGameStore.getState().tierUp();
-    expect(useGameStore.getState().canvasTier).toBe(3);
-  });
-});
-
-describe("canvasTier — auto tier-up on canvasTick when gate met", () => {
-  beforeEach(() => {
-    useGameStore.setState({
-      ...initialCanvasState,
-      gold: big(0),
-    });
-  });
-
-  it("canvasTick auto-fires tierUp when both gate levels >= 15", () => {
-    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15, canvasTier: 1 });
-    useGameStore.getState().canvasTick(0.1);
-    expect(useGameStore.getState().canvasTier).toBe(2);
-    expect(useGameStore.getState().sellPriceLevel).toBe(0);
-    expect(useGameStore.getState().speedLevel).toBe(0);
-  });
-
-  it("canvasTick does NOT auto-fire when gate not met", () => {
-    useGameStore.setState({ sellPriceLevel: 14, speedLevel: 15, canvasTier: 1 });
-    useGameStore.getState().canvasTick(0.1);
-    expect(useGameStore.getState().canvasTier).toBe(1);
-    expect(useGameStore.getState().sellPriceLevel).toBe(14);
-  });
-
-  it("idle tick (delta=0) does not auto-tier even if gate met", () => {
-    useGameStore.setState({ sellPriceLevel: 15, speedLevel: 15, canvasTier: 1 });
-    useGameStore.getState().canvasTick(0);
-    expect(useGameStore.getState().canvasTier).toBe(1);
+  it("costs scale ×1000 per tier", () => {
+    expect(tierUpgradeCost(1).toNumber()).toBe(1000);
+    expect(tierUpgradeCost(2).toNumber()).toBe(1_000_000);
+    expect(tierUpgradeCost(3).toNumber()).toBe(1_000_000_000);
   });
 });
 
@@ -532,44 +450,5 @@ describe("canvasSlice — critChunks run-state", () => {
   it("initial state has empty critChunks record", () => {
     const state = useGameStore.getState();
     expect(state.critChunks).toEqual({});
-  });
-});
-
-describe("canvasSlice — tierUp preserves gated tracks", () => {
-  beforeEach(() => {
-    useGameStore.setState({
-      canvasTier: 1,
-      sellPriceLevel: 15,
-      speedLevel: 15,
-      sizeLevel: 7,
-      critLevel: 12,
-      comboLevel: 5,
-      canvasProgress: 3.5,
-      comboChain: 2,
-    });
-  });
-
-  it("resets sellPriceLevel and speedLevel to 0", () => {
-    useGameStore.getState().tierUp();
-    const s = useGameStore.getState();
-    expect(s.sellPriceLevel).toBe(0);
-    expect(s.speedLevel).toBe(0);
-  });
-
-  it("preserves sizeLevel, critLevel, comboLevel across tier-up", () => {
-    useGameStore.getState().tierUp();
-    const s = useGameStore.getState();
-    expect(s.sizeLevel).toBe(7);
-    expect(s.critLevel).toBe(12);
-    expect(s.comboLevel).toBe(5);
-  });
-
-  it("clears canvasProgress, comboChain, critChunks on tier-up", () => {
-    useGameStore.setState({ critChunks: { 3: true, 7: true } });
-    useGameStore.getState().tierUp();
-    const s = useGameStore.getState();
-    expect(s.canvasProgress).toBe(0);
-    expect(s.comboChain).toBe(0);
-    expect(s.critChunks).toEqual({});
   });
 });
