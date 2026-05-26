@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getSketchUrl, getCellRevealOrder, getSketchGridDim } from "@/components/painting/canvasArt";
+import { getSketchUrl, getCellRevealOrder, getSketchGridDim, getCanvasCellLayout } from "@/components/painting/canvasArt";
 
 describe("canvasArt — getSketchUrl", () => {
   it("returns a string URL for T1", () => {
@@ -116,5 +116,46 @@ describe("getSketchGridDim cap", () => {
       const dim = getSketchGridDim(t);
       expect(dim * dim).toBeLessThanOrEqual(400);
     }
+  });
+});
+
+describe("getCanvasCellLayout", () => {
+  it("T1: 10 cells, 1 chunk/cell, 2×5 grid", () => {
+    const l = getCanvasCellLayout(1);
+    expect(l.cellsRendered).toBe(10);
+    expect(l.chunksPerCell).toBe(1);
+    expect(l.rows * l.cols).toBe(10);
+  });
+  it("T2: 20 cells, 1 chunk/cell", () => {
+    const l = getCanvasCellLayout(2);
+    expect(l.cellsRendered).toBe(20);
+    expect(l.chunksPerCell).toBe(1);
+    expect(l.rows * l.cols).toBe(20);
+  });
+  it("T7: 640 cells, 1 chunk/cell (cap reached)", () => {
+    const l = getCanvasCellLayout(7);
+    expect(l.cellsRendered).toBe(640);
+    expect(l.chunksPerCell).toBe(1);
+    expect(l.rows * l.cols).toBe(640);
+  });
+  it("T8: 640 cells, 2 chunks/cell", () => {
+    const l = getCanvasCellLayout(8);
+    expect(l.cellsRendered).toBe(640);
+    expect(l.chunksPerCell).toBe(2);
+  });
+  it("T10: 640 cells, 8 chunks/cell", () => {
+    const l = getCanvasCellLayout(10);
+    expect(l.cellsRendered).toBe(640);
+    expect(l.chunksPerCell).toBe(8);
+  });
+  it("rows * cols always equals cellsRendered", () => {
+    for (let t = 1; t <= 12; t++) {
+      const l = getCanvasCellLayout(t);
+      expect(l.rows * l.cols).toBe(l.cellsRendered);
+    }
+  });
+  it("clamps tier to >= 1", () => {
+    const l = getCanvasCellLayout(0);
+    expect(l.cellsRendered).toBe(10);
   });
 });

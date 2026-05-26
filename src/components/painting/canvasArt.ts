@@ -10,6 +10,8 @@
  * highest tier's art. Today that's T4 (full-color pixel art) for T5+.
  */
 
+import { chunksPerCanvas, CELL_RENDER_CAP } from "@/core/balance";
+
 const t1Modules = import.meta.glob("@/assets/canvas/T1/*.png", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
 const t2Modules = import.meta.glob("@/assets/canvas/T2/*.png", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
 const t3Modules = import.meta.glob("@/assets/canvas/T3/*.png", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
@@ -78,6 +80,55 @@ export function getSketchGridDim(tier: number): number {
   const clamped = Math.max(1, tier);
   const raw = Math.round(5 * Math.SQRT2 ** (clamped - 1));
   return Math.min(20, raw);
+}
+
+/**
+ * Cell layout for the canvas grid at a given tier.
+ *
+ *  - `cellsRendered = min(chunksPerCanvas(T), CELL_RENDER_CAP)` — visual cap.
+ *  - `chunksPerCell = ceil(chunksPerCanvas(T) / cellsRendered)` — at high
+ *     tiers one cell-reveal corresponds to multiple engine chunks.
+ *  - `(rows, cols)` factor `cellsRendered` into a roughly-landscape grid.
+ *
+ * Lookup table for cell layouts up to T7 (where the cap is reached):
+ *   T1 = 10  → 2×5
+ *   T2 = 20  → 4×5
+ *   T3 = 40  → 5×8
+ *   T4 = 80  → 8×10
+ *   T5 = 160 → 10×16
+ *   T6 = 320 → 16×20
+ *   T7 = 640 → 20×32
+ *   T8+ = 640 cells (same 20×32 grid), with chunksPerCell > 1.
+ */
+export interface CanvasCellLayout {
+  readonly rows: number;
+  readonly cols: number;
+  readonly cellsRendered: number;
+  readonly chunksPerCell: number;
+}
+
+const CELL_LAYOUT_BY_CELLS: Record<number, { rows: number; cols: number }> = {
+  10:  { rows: 2,  cols: 5  },
+  20:  { rows: 4,  cols: 5  },
+  40:  { rows: 5,  cols: 8  },
+  80:  { rows: 8,  cols: 10 },
+  160: { rows: 10, cols: 16 },
+  320: { rows: 16, cols: 20 },
+  640: { rows: 20, cols: 32 },
+};
+
+export function getCanvasCellLayout(tier: number): CanvasCellLayout {
+  const chunks = chunksPerCanvas(tier);
+  const cellsRendered = Math.min(chunks, CELL_RENDER_CAP);
+  const chunksPerCell = Math.ceil(chunks / cellsRendered);
+  const dims = CELL_LAYOUT_BY_CELLS[cellsRendered];
+  if (!dims) {
+    // Defensive fallback (should never hit — every value of chunksPerCanvas
+    // ≤ CELL_RENDER_CAP comes from the 10*2^(T-1) progression and is in the
+    // table above).
+    return { rows: 1, cols: cellsRendered, cellsRendered, chunksPerCell };
+  }
+  return { rows: dims.rows, cols: dims.cols, cellsRendered, chunksPerCell };
 }
 
 /**
