@@ -14,7 +14,7 @@ import type { Item } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
-import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, SIZE_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
+import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
 import { big, type Big } from "@/core/bigNumber";
 import type { AffixKind, SlotKind } from "@/config/workshopAffixes";
 
@@ -34,7 +34,6 @@ export type CanvasMultiplierInputs = Pick<GameStore,
   | "purchasedNodes"
   | "sellPriceLevel"
   | "speedLevel"
-  | "sizeLevel"
   | "critLevel"
   | "comboLevel"
   | "canvasTier"
@@ -231,24 +230,6 @@ export const getComboBaseChance = (state: CanvasMultiplierInputs): number => {
   chance += getEquippedContribution(state, "+combo_chance%");
   chance += getOfficeContribution(state, "+combo_chance%").toNumber();
   return Math.min(1.0, chance);
-};
-
-/**
- * Total canvas size, base 1. Every source contributes additively:
- *   - canvas size-track level: SIZE_PER_LEVEL × sizeLevel
- *   - equipped +size% items: getEquippedContribution(state, "+size%")
- *   - hired workers' +size% affixes: getOfficeContribution(state, "+size%")
- *   - future fame nodes can be wired in here when authored.
- *
- * Used by `canvasGold` (size² scaling) and `canvasTime` (linear scaling).
- * Gold-per-second scales linearly with size — doubling size doubles efficiency.
- */
-export const getCanvasSize = (state: CanvasMultiplierInputs): number => {
-  return 1
-    + SIZE_PER_LEVEL * state.sizeLevel
-    + getEquippedContribution(state, "+size%")
-    + getOfficeContribution(state, "+size%").toNumber()
-    + countCapability(state, "canvas_size_bonus") * 0.05;
 };
 
 /** Worker XP gain per canvas sale, multiplied by accelerator nodes and school bonuses. */

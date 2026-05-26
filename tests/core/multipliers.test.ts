@@ -7,7 +7,6 @@ import {
   getCritChance,
   getCritChunks,
   getComboBaseChance,
-  getCanvasSize,
   getOfficeContribution,
 } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
@@ -328,54 +327,6 @@ describe("getComboBaseChance — equipped +combo_chance% contribution", () => {
   });
 });
 
-describe("getCanvasSize — single unified size value", () => {
-  const stub = (over: Partial<GameStore> = {}): GameStore => ({
-    purchasedNodes: {}, equipped: {}, roster: [], sizeLevel: 0, canvasTier: 1, ...over,
-  } as GameStore);
-
-  it("returns 1.0 with no contributions (base canvas)", () => {
-    expect(getCanvasSize(stub())).toBeCloseTo(1.0, 5);
-  });
-
-  it("canvas upgrade contributes SIZE_PER_LEVEL × sizeLevel", () => {
-    // sizeLevel 5, SIZE_PER_LEVEL 0.15 → 1 + 0.75 = 1.75
-    expect(getCanvasSize(stub({ sizeLevel: 5 }))).toBeCloseTo(1.75, 5);
-  });
-
-  it("equipped +size% items add to size additively", () => {
-    const item: Item = {
-      id: "i1", slot: "brush", tier: "magic",
-      affixes: [
-        { kind: "+size%", magnitude: 10 },
-        { kind: "+size%", magnitude: 7 },
-      ],
-      fuseCount: 0,
-    };
-    const state = stub({ equipped: { brush: item } });
-    expect(getCanvasSize(state)).toBeCloseTo(1.17, 5);
-  });
-
-  it("canvas + items + workers all stack additively into size", () => {
-    const item: Item = {
-      id: "i1", slot: "brush", tier: "magic",
-      affixes: [{ kind: "+size%", magnitude: 10 }],
-      fuseCount: 0,
-    };
-    const state = stub({
-      sizeLevel: 4,                 // +0.60
-      equipped: { brush: item },    // +0.10
-      roster: [
-        {
-          id: "w1", class: "generalist", tier: "common", level: 1, xp: big(0),
-          affixes: [{ kind: "+size%", magnitude: 20 }],   // 0.20 × 1.04 = 0.208
-        },
-      ],
-    } as unknown as GameStore);
-    // 1 + 0.60 + 0.10 + 0.208 = 1.908
-    expect(getCanvasSize(state)).toBeCloseTo(1.908, 4);
-  });
-});
-
 describe("getOfficeContribution — sums worker affix magnitudes × levelScale", () => {
   it("returns 0 with empty roster", () => {
     const state = { roster: [] } as unknown as GameStore;
@@ -542,16 +493,6 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
     expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(3.80, 4);
   });
 
-  it("expanding_horizon: canvas_size_bonus adds +5% size per level", async () => {
-    const { getCanvasSize } = await import("@/core/multipliers");
-    const state = {
-      sizeLevel: 4, purchasedNodes: { expanding_horizon: 3 },
-      equipped: {}, roster: [], canvasTier: 1,
-    } as unknown as GameStore;
-    // 1 + 0.15×4 + 0.05×3 = 1.75
-    expect(getCanvasSize(state)).toBeCloseTo(1.75, 4);
-  });
-
   it("accelerator: worker_xp_mult returns 1 + 0.10 × level", async () => {
     const { getWorkerXpMultiplier } = await import("@/core/multipliers");
     const state = { purchasedNodes: { accelerator: 4 }, completedResearches: {} } as unknown as GameStore;
@@ -599,7 +540,7 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
   it("getCanvasGoldMultiplier: same per-level effect at T1, T2, T6", () => {
     const baseState = {
       purchasedNodes: {}, equipped: {}, roster: [],
-      sellPriceLevel: 5, speedLevel: 0, sizeLevel: 0, critLevel: 0, comboLevel: 0,
+      sellPriceLevel: 5, speedLevel: 0, critLevel: 0, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
     // 1 + 0.10 × 5 = 1.50, regardless of tier
@@ -611,7 +552,7 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
   it("getCanvasSpeedMultiplier: same per-level effect at T1, T2, T6 (was the worst-case bug)", () => {
     const baseState = {
       purchasedNodes: {}, equipped: {}, roster: [],
-      sellPriceLevel: 0, speedLevel: 1, sizeLevel: 0, critLevel: 0, comboLevel: 0,
+      sellPriceLevel: 0, speedLevel: 1, critLevel: 0, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
     // 1 + 0.05 × 1 = 1.05, regardless of tier
@@ -619,21 +560,10 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
     expect(getCanvasSpeedMultiplier({ ...baseState, canvasTier: 6 } as never)).toBeCloseTo(1.05, 5);
   });
 
-  it("getCanvasSize: same per-level effect at T1 and T2", () => {
-    const baseState = {
-      purchasedNodes: {}, equipped: {}, roster: [],
-      sellPriceLevel: 0, speedLevel: 0, sizeLevel: 3, critLevel: 0, comboLevel: 0,
-      completedResearches: {}, completedAchievements: {},
-    };
-    // 1 + 0.15 × 3 = 1.45, regardless of tier
-    expect(getCanvasSize({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(1.45, 5);
-    expect(getCanvasSize({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(1.45, 5);
-  });
-
   it("getCritChance: same per-level effect at T1 and T2", () => {
     const baseState = {
       purchasedNodes: {}, equipped: {}, roster: [],
-      sellPriceLevel: 0, speedLevel: 0, sizeLevel: 0, critLevel: 5, comboLevel: 0,
+      sellPriceLevel: 0, speedLevel: 0, critLevel: 5, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
     // BASE_CRIT_CHANCE (0.01) + 0.01 × 5 = 0.06, regardless of tier (below soft-cap on both)
@@ -644,7 +574,7 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
   it("getComboBaseChance: same per-level effect at T1 and T2", () => {
     const baseState = {
       purchasedNodes: {}, equipped: {}, roster: [],
-      sellPriceLevel: 0, speedLevel: 0, sizeLevel: 0, critLevel: 0, comboLevel: 10,
+      sellPriceLevel: 0, speedLevel: 0, critLevel: 0, comboLevel: 10,
       completedResearches: {}, completedAchievements: {},
     };
     // 0.02 × 10 = 0.20, regardless of tier
@@ -661,7 +591,7 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
         },
       },
       roster: [],
-      sellPriceLevel: 0, speedLevel: 0, sizeLevel: 0, critLevel: 0, comboLevel: 0,
+      sellPriceLevel: 0, speedLevel: 0, critLevel: 0, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
     expect(getCanvasGoldMultiplier({ ...itemOnly, canvasTier: 1 } as never)).toBeCloseTo(1.20, 5);
