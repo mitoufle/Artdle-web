@@ -31,9 +31,9 @@ Eighteen-task rework executed via subagent-driven plan. Spec: `docs/superpowers/
 ### Status
 
 - **1073 / 1073 tests passing** across 112 files.
-- `npx vite build` — clean (1.28s). Bundle `dist/assets/index-BxPPocNI.js` (666.78 kB, gzip 204.24 kB).
+- `npx vite build` — clean (~1s). Bundle `dist/assets/index-FXzWICKk.js` post-deploy.
 - `npx tsc -b --noEmit` — 24 errors remain, ALL pre-existing baseline (verified by checking out `2b2e0ed^`; the rework introduced zero new tsc errors). Eight tsc errors caused by `+size%` removal were fixed in commit `43c34c8`.
-- Not deployed yet (awaiting user signoff). Production URL when deployed: https://artdle-web.vercel.app
+- **Deployed to production** at https://artdle-web.vercel.app via `npx vercel --prod`. Live bundle verified to contain chunk-domain symbols (`chunkInterval`, `chunksPer*`, `tierUp`).
 
 ### Bot-sim warning — pacing concern
 
@@ -88,6 +88,8 @@ If anything fails or surprises you, surface it — the bot-sim doesn't exercise 
 `d1adf44` test(bot-sim): adapt to chunk-domain tier-up trigger
 `d3a179c` core(balance): delete dead chunk-domain symbols + clean canvasSlice tests
 `43c34c8` fix(ui,test): drop +size% AFFIX_LABEL entries + swap test fixtures
+`49ce50e` docs(handover): chunk-domain rework landed (pending deploy + browser smoke test)
+`6a835ce` ui(painting): move TierUpgradeCard to canvas-image overlay
 
 ### Open follow-ups
 
