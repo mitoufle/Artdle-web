@@ -2,24 +2,22 @@ import type { JSX } from "react";
 import { useState } from "react";
 import { useGameStore } from "@/store";
 import {
-  canvasGold, canvasTime,
+  canvasGold, chunksPerCanvas, chunkInterval,
   sellPriceUpgradeCost, speedUpgradeCost,
-  sizeUpgradeCost, critUpgradeCost, comboUpgradeCost,
+  critUpgradeCost, comboUpgradeCost,
   SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL,
-  SIZE_PER_LEVEL,
   CRIT_PER_LEVEL, COMBO_PER_LEVEL,
   MAX_CRIT_LEVEL,
 } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
-  getCanvasSize,
   type CanvasMultiplierInputs,
 } from "@/core/multipliers";
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import { BoundCanvasStage } from "@/components/painting/BoundCanvasStage";
-import { getSketchGridDim } from "@/components/painting/canvasArt";
+import { TierUpgradeCard } from "@/components/painting/TierUpgradeCard";
 import { TrackCard } from "@/components/painting/TrackCard";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
 import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
@@ -34,7 +32,6 @@ export function PaintingRoute(): JSX.Element {
 
   const sellPriceLevel = useGameStore((s) => s.sellPriceLevel);
   const speedLevel = useGameStore((s) => s.speedLevel);
-  const sizeLevel = useGameStore((s) => s.sizeLevel);
   const critLevel = useGameStore((s) => s.critLevel);
   const comboLevel = useGameStore((s) => s.comboLevel);
   const gold = useGameStore((s) => s.gold);
@@ -46,33 +43,27 @@ export function PaintingRoute(): JSX.Element {
   const completedAchievements = useGameStore((s) => s.completedAchievements);
   const upgradeSellPrice = useGameStore((s) => s.upgradeSellPrice);
   const upgradeSpeed = useGameStore((s) => s.upgradeSpeed);
-  const upgradeSize = useGameStore((s) => s.upgradeSize);
   const upgradeCrit = useGameStore((s) => s.upgradeCrit);
   const upgradeCombo = useGameStore((s) => s.upgradeCombo);
 
   const helperState: CanvasMultiplierInputs = {
     equipped, purchasedNodes, roster, canvasTier,
-    sellPriceLevel, speedLevel, sizeLevel, critLevel, comboLevel,
+    sellPriceLevel, speedLevel, critLevel, comboLevel,
     completedResearches,
     completedAchievements,
   };
 
-  const size = getCanvasSize(helperState);
-  const baseTime = canvasTime(size, canvasTier);
+  const chunkCount = chunksPerCanvas(canvasTier);
   const speedMult = getCanvasSpeedMultiplier(helperState);
-  const paintTimeSec = baseTime / speedMult;
+  const interval = chunkInterval(speedMult);
   const goldMult = getCanvasGoldMultiplier(helperState);
-  const baseGold = canvasGold(size, goldMult, canvasTier);
+  const baseGold = canvasGold(goldMult, canvasTier);
 
-  const sizeLocked = !getCanvasTrackUnlocked(helperState, "size");
   const critLocked = !getCanvasTrackUnlocked(helperState, "crit");
   const comboLocked = !getCanvasTrackUnlocked(helperState, "combo");
 
-  const chunkCount = getSketchGridDim(canvasTier) ** 2;
-
   const sellCost = sellPriceUpgradeCost(sellPriceLevel, canvasTier);
   const speedCost = speedUpgradeCost(speedLevel, canvasTier);
-  const sizeCost = sizeUpgradeCost(sizeLevel, canvasTier);
   const critCost = critUpgradeCost(critLevel, canvasTier);
   const comboCost = comboUpgradeCost(comboLevel, canvasTier);
 
@@ -82,15 +73,15 @@ export function PaintingRoute(): JSX.Element {
     <div className={styles.layout}>
       <div className={styles.stageArea}>
         <BoundCanvasStage
-          sizeLevel={sizeLevel}
           canvasTier={canvasTier}
-          paintTimeSec={paintTimeSec}
+          chunkInterval={interval}
           baseGold={baseGold}
           chunkCount={chunkCount}
         />
       </div>
 
       <div className={styles.upgradesArea}>
+        <TierUpgradeCard />
         <CanvasUpgradesStrip>
           <TrackCard
             trackId="sell_price"
@@ -113,17 +104,6 @@ export function PaintingRoute(): JSX.Element {
             canAfford={gold.gte(speedCost)}
             locked={false}
             onUpgrade={upgradeSpeed}
-          />
-          <TrackCard
-            trackId="size"
-            label="Size"
-            affixKind="+size%"
-            level={sizeLevel}
-            effectLine={sizeLocked ? "—" : `+${fmtPct(SIZE_PER_LEVEL, 0)} size / level (gold = size², time = size)`}
-            costLabel={sizeLocked ? "—" : `${formatBig(sizeCost)}`}
-            canAfford={gold.gte(sizeCost)}
-            locked={sizeLocked}
-            onUpgrade={upgradeSize}
           />
           <TrackCard
             trackId="crit"

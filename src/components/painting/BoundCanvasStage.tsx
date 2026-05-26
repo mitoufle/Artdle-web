@@ -8,9 +8,10 @@ import { FloatingGoldText } from "@/ui/widgets/FloatingGoldText";
 
 interface Props {
   /** Static-ish — recomputed by PaintingRoute on low-freq state changes. */
-  sizeLevel: number;
   canvasTier: number;
-  paintTimeSec: number;
+  /** Seconds per chunk, derived from `chunkInterval(speedMultiplier)`. Click-to-paint
+   *  feeds this exact value into `canvasTick` to advance one chunk. */
+  chunkInterval: number;
   baseGold: Big;
   chunkCount: number;
 }
@@ -40,9 +41,8 @@ interface Props {
  * Before this fix that count was ~30/sec.
  */
 export function BoundCanvasStage({
-  sizeLevel,
   canvasTier,
-  paintTimeSec,
+  chunkInterval,
   baseGold,
   chunkCount,
 }: Props): JSX.Element {
@@ -54,23 +54,28 @@ export function BoundCanvasStage({
   const clearLastSale = useGameStore((s) => s.clearLastSale);
   const canvasTick = useGameStore((s) => s.canvasTick);
 
-  const progressPct = paintTimeSec > 0 ? canvasProgress / paintTimeSec : 0;
+  // Chunk-domain: canvasProgress is in chunks (integer + fractional). Progress
+  // bar fills as fraction of total chunks.
+  const progressPct = chunkCount > 0 ? canvasProgress / chunkCount : 0;
   const comboFactor = 1 + COMBO_PER_LINK * comboChain;
   const nextSaleGold = baseGold.mul(comboFactor);
 
   return (
     <>
       <CanvasStage
-        sizeLevel={sizeLevel}
+        // TEMPORARY: CanvasStage still types `sizeLevel: number` (required).
+        // Task 13 removes this prop from CanvasStage; until then we pass 0 so
+        // the chunk-domain BoundCanvasStage no longer participates in size.
+        sizeLevel={0}
         canvasTier={canvasTier}
         progressPct={progressPct}
-        timeElapsed={canvasProgress.toFixed(1)}
-        timeTotal={paintTimeSec.toFixed(1)}
+        timeElapsed={`${Math.floor(canvasProgress)}/${chunkCount}`}
+        timeTotal={`${chunkCount}`}
         nextSaleGold={formatBig(nextSaleGold)}
         comboChain={comboChain}
         critChunks={critChunks}
         canvasNumber={canvasesSold}
-        onChunkClick={() => canvasTick(paintTimeSec / chunkCount)}
+        onChunkClick={() => canvasTick(chunkInterval)}
       />
       {lastSale && (
         <FloatingGoldText

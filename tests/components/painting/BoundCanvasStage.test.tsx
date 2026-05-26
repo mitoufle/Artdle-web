@@ -87,12 +87,16 @@ describe("PaintingRoute subscription isolation (BoundCanvasStage regression guar
     // canvasProgress) still receives updates and shows the new value. This
     // guards against over-isolating — e.g. someone accidentally removing
     // BoundCanvasStage's subscription would make this assertion fail.
-    expect(container.textContent).toContain("0.0s /");
+    //
+    // Chunk-domain (2026-05-26 rework): canvasProgress is in chunks now, and
+    // the BoundCanvasStage formats it as `${floor(progress)}/${chunkCount}`.
+    // At canvasTier=1 the canvas has 10 chunks; progress=0 → "0/10".
+    expect(container.textContent).toContain("0/10");
 
     act(() => {
       useGameStore.setState({ canvasProgress: 3.5 });
     });
 
-    expect(container.textContent).toContain("3.5s /");
+    expect(container.textContent).toContain("3/10");
   });
 });

@@ -6,7 +6,7 @@ import { useGameStore } from "@/store";
 import { initialCanvasState } from "@/store/canvasSlice";
 import { big } from "@/core/bigNumber";
 
-describe("<PaintingRoute> — 5 track cards", () => {
+describe("<PaintingRoute> — 4 track cards (post chunk-domain rework)", () => {
   beforeEach(() => {
     useGameStore.setState({
       ...initialCanvasState,
@@ -16,23 +16,24 @@ describe("<PaintingRoute> — 5 track cards", () => {
     });
   });
 
-  it("renders all 5 track cards by trackId data-attribute", () => {
+  it("renders all 4 track cards by trackId data-attribute (size removed)", () => {
     render(<MemoryRouter><PaintingRoute /></MemoryRouter>);
-    const ids = ["sell_price", "speed", "size", "crit", "combo"];
+    const ids = ["sell_price", "speed", "crit", "combo"];
     for (const id of ids) {
       expect(document.querySelector(`[data-track-id="${id}"]`)).not.toBeNull();
     }
+    // Size track is gone — Size was folded into Tier.
+    expect(document.querySelector(`[data-track-id="size"]`)).toBeNull();
   });
 
-  it("size/crit/combo cards render in locked state when their fame node is not purchased", () => {
+  it("crit/combo cards render in locked state when their fame node is not purchased", () => {
     render(<MemoryRouter><PaintingRoute /></MemoryRouter>);
-    expect(screen.getAllByText(/Locked/i).length).toBe(3);
+    expect(screen.getAllByText(/Locked/i).length).toBe(2);
   });
 
   it("all cards render unlocked once their fame node is purchased", () => {
     useGameStore.setState({
       purchasedNodes: {
-        size_matters: 1,
         genius_episode: 1,
         unrelentless: 1,
       },
