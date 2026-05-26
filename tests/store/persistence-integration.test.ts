@@ -335,7 +335,7 @@ describe("save migration v3 → v4 (lifetime gold add)", () => {
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(23);
+    expect(parsed.version).toBe(24);
   });
 });
 
@@ -674,12 +674,12 @@ describe("save migration v21 → v22 (canvas tier system)", () => {
     expect(Object.keys(migrated)).toEqual([]);
   });
 
-  it("SAVE_VERSION is 23", async () => {
+  it("SAVE_VERSION is 24", async () => {
     useGameStore.getState().add("gold", big(1));
     await persistedAdapter.flush();
     const raw = await idbAdapter.getItem("artdle-save");
     const parsed = JSON.parse(raw!);
-    expect(parsed.version).toBe(23);
+    expect(parsed.version).toBe(24);
   });
 });
 

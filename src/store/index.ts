@@ -40,7 +40,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 23;
+const SAVE_VERSION = 24;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -117,6 +117,12 @@ const SAVE_KEY = "artdle-save";
  * affix kind, removes `prismatic_eye` skill node, replaces canvas-level crit
  * speed with per-chunk crit chunk bonus. Per spec, full wipe — return `{}`
  * and let zustand merge fill from defaults.
+ *
+ * v23 → v24 (2026-05-26): canvas chunk-domain rework. `canvasProgress`
+ * semantics change from seconds → chunks (safe-reset to 0). Drop `sizeLevel`
+ * field. Strip `+size%` from equipped items, inventory, and worker affixes.
+ * Refund fame for the three removed size-related skill nodes (size_matters,
+ * big_picture, expanding_horizon) and delete them from `purchasedNodes`.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -379,6 +385,105 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
   if (fromVersion < 23) {
     // v22 → v23 (2026-05-24): crit per-chunk rework. Full wipe per spec.
     return {} as unknown as GameStore;
+  }
+
+  if (fromVersion < 24) {
+    // v23 → v24 (2026-05-26): canvas chunk-domain rework.
+    //   1. `canvasProgress` semantics changed (seconds → chunks). Safe-reset to 0.
+    //   2. Drop `sizeLevel` from persisted state (no longer in CanvasState).
+    //   3. Strip `+size%` affixes from equipped items + inventory (Task 8 removed
+    //      the affix kind from the runtime pool; dead affixes on existing gear
+    //      would otherwise contribute no effect but linger in saves).
+    //   4. Strip `+size%` from worker affixes in the roster (Task 9 dropped it
+    //      from the worker affix pool).
+    //   5. Refund fame for the three removed size-related skill nodes
+    //      (size_matters, big_picture, expanding_horizon — Task 9) so players
+    //      can re-spend on surviving nodes. Costs hard-coded here from the
+    //      pre-deletion config (the runtime config no longer holds them).
+    const stripSize = (affixes: unknown): unknown[] =>
+      Array.isArray(affixes)
+        ? affixes.filter(
+            (a) =>
+              a !== null &&
+              typeof a === "object" &&
+              (a as { kind?: unknown }).kind !== "+size%",
+          )
+        : [];
+
+    // Build the chunk-domain patch in a new object so the migration step
+    // mirrors the immutable style used by earlier steps.
+    const next: Record<string, unknown> = { ...state };
+    next.canvasProgress = 0;
+    delete next.sizeLevel;
+
+    const equipped = next.equipped as Record<string, unknown> | undefined;
+    if (equipped && typeof equipped === "object") {
+      const cleaned: Record<string, unknown> = {};
+      for (const [slot, item] of Object.entries(equipped)) {
+        if (item && typeof item === "object") {
+          cleaned[slot] = {
+            ...(item as object),
+            affixes: stripSize((item as { affixes?: unknown }).affixes),
+          };
+        } else {
+          cleaned[slot] = item;
+        }
+      }
+      next.equipped = cleaned;
+    }
+
+    if (Array.isArray(next.inventory)) {
+      next.inventory = (next.inventory as unknown[]).map((item) =>
+        item && typeof item === "object"
+          ? { ...(item as object), affixes: stripSize((item as { affixes?: unknown }).affixes) }
+          : item,
+      );
+    }
+
+    if (Array.isArray(next.roster)) {
+      next.roster = (next.roster as unknown[]).map((worker) =>
+        worker && typeof worker === "object"
+          ? {
+              ...(worker as object),
+              affixes: stripSize((worker as { affixes?: unknown }).affixes),
+            }
+          : worker,
+      );
+    }
+
+    // Per-level costs of the three removed size-related skill nodes, captured
+    // from src/config/skillTreeDesign.json prior to deletion in b729b84.
+    // refund(level N) = sum of REMOVED_NODE_COSTS[id][0..N-1].
+    const REMOVED_NODE_COSTS: Record<string, ReadonlyArray<number>> = {
+      size_matters: [10],
+      big_picture: [20, 35, 60, 100, 160],
+      expanding_horizon: [50, 90, 150, 250, 400],
+    };
+    const purchasedNodes = next.purchasedNodes as Record<string, number> | undefined;
+    if (purchasedNodes && typeof purchasedNodes === "object") {
+      let refund = 0;
+      const cleanedNodes: Record<string, number> = { ...purchasedNodes };
+      for (const [nodeId, costs] of Object.entries(REMOVED_NODE_COSTS)) {
+        const level = cleanedNodes[nodeId] ?? 0;
+        if (level > 0) {
+          for (let i = 0; i < Math.min(level, costs.length); i++) {
+            refund += costs[i]!;
+          }
+          delete cleanedNodes[nodeId];
+        }
+      }
+      next.purchasedNodes = cleanedNodes;
+      if (refund > 0) {
+        // `fame` arrives as a Big (reviver wraps `{ __big: "..." }` markers
+        // back to Decimal before migrate runs). Tests that pass `big(...)`
+        // hit the same `isBig` branch. Defensive fallback for missing/non-Big.
+        const currentFame = next.fame;
+        const baseFame = isBig(currentFame) ? currentFame : big(0);
+        next.fame = baseFame.add(refund);
+      }
+    }
+
+    state = next;
   }
 
   return state as unknown as GameStore;
