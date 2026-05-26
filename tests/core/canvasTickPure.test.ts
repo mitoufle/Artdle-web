@@ -1,113 +1,118 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { canvasTickPure } from "@/core/canvasTickPure";
+import { BASE_CHUNK_INTERVAL } from "@/core/balance";
 import { big } from "@/core/bigNumber";
-import { useGameStore } from "@/store";
-import { setSeed } from "@/core/rng";
+import * as rngModule from "@/core/rng";
+import type { DraftState } from "@/core/pureMutations";
 
-function freshDraft(overrides: Partial<Record<string, unknown>> = {}) {
-  const base = useGameStore.getState();
+// Minimal stub helper to construct a draft with chunk-domain defaults.
+function makeDraft(overrides: Partial<DraftState> = {}): DraftState {
   return {
-    ...base,
-    gold: big(0),
-    lifetimeGold: big(0),
     canvasProgress: 0,
-    sellPriceLevel: 1,
-    speedLevel: 1,
-    sizeLevel: 0,
-    critLevel: 0,
-    comboLevel: 0,
+    canvasTier: 1,
+    sellPriceLevel: 0, speedLevel: 0, critLevel: 0, comboLevel: 0,
     comboChain: 0,
     critChunks: {},
-    canvasTier: 1,
-    equipped: {},
-    roster: [],
-    purchasedNodes: {},
-    statsLifetime: { ...base.statsLifetime, canvasesSold: 0, critsLanded: 0 },
-    statsRun: { ...base.statsRun, canvasesSold: 0, critsLanded: 0, currentCritStreak: 0, maxCritStreak: 0, maxComboChain: 0, goldEarned: big(0) },
+    lastSale: null,
+    gold: big(0),
+    lifetimeGold: big(0),
+    equipped: {} as DraftState["equipped"],
+    purchasedNodes: {} as DraftState["purchasedNodes"],
+    roster: [] as DraftState["roster"],
+    completedResearches: {} as DraftState["completedResearches"],
+    completedAchievements: {} as DraftState["completedAchievements"],
+    workshopLevel: 1,
+    statsRun: {
+      canvasesSold: 0, critsLanded: 0, goldEarned: big(0),
+      currentCritStreak: 0, maxCritStreak: 0, maxComboChain: 0,
+    } as DraftState["statsRun"],
+    statsLifetime: {
+      canvasesSold: 0, critsLanded: 0,
+      maxComboChain: 0,
+    } as DraftState["statsLifetime"],
+    officeXp: big(0), officeLevel: 1,
     ...overrides,
-  } as Parameters<typeof canvasTickPure>[0];
+  } as DraftState;
 }
 
-describe("canvasTickPure — basic behavior", () => {
-  it("no-op on delta=0", () => {
-    const draft = freshDraft();
-    const before = draft.gold;
+describe("canvasTickPure (chunk-domain)", () => {
+  beforeEach(() => {
+    // Disable crit/combo for these tests
+    vi.spyOn(rngModule, "rng").mockReturnValue(0.999);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("no-op on zero delta", () => {
+    const draft = makeDraft();
     canvasTickPure(draft, 0);
-    expect(draft.gold.eq(before)).toBe(true);
+    expect(draft.canvasProgress).toBe(0);
   });
 
-  it("produces gold on a tick large enough to complete one canvas", () => {
-    const draft = freshDraft();
-    canvasTickPure(draft, 100);
-    expect(draft.gold.gt(0)).toBe(true);
-    expect(draft.statsLifetime.canvasesSold).toBeGreaterThanOrEqual(1);
+  it("advances canvasProgress by delta / chunkInterval", () => {
+    const draft = makeDraft();
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL); // 1 chunk's worth at speed=1
+    expect(draft.canvasProgress).toBeCloseTo(1, 5);
   });
 
-  it("produces many sales on a long delta", () => {
-    const draft = freshDraft();
-    canvasTickPure(draft, 600);
-    expect(draft.statsLifetime.canvasesSold).toBeGreaterThan(1);
-  });
-});
-
-describe("canvasTickPure — per-chunk crit roll", () => {
-  beforeEach(() => setSeed(12345));
-
-  it("records crit-painted chunk indices in draft.critChunks (bounded by chunkCount)", () => {
-    const draft = freshDraft({ critLevel: 50 });  // High chance; some crits should fire even in a partial canvas.
-    canvasTickPure(draft, 1.0);
-    for (const idxStr of Object.keys(draft.critChunks)) {
-      const idx = Number(idxStr);
-      expect(idx).toBeGreaterThanOrEqual(0);
-      expect(idx).toBeLessThan(25);  // T1: 5x5 grid = 25 chunks
-    }
+  it("partial chunk progress is preserved as fractional canvasProgress", () => {
+    const draft = makeDraft();
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL / 2); // half a chunk
+    expect(draft.canvasProgress).toBeCloseTo(0.5, 5);
   });
 
-  it("bonus chunks do NOT re-roll for crit (chain is finite)", () => {
-    const fakeBrush = {
-      slot: "brush", tier: "legendary", fuseCount: 0,
-      affixes: [{ kind: "+crit_chunks", magnitude: 100 }],
-    };
-    const draft = freshDraft({ critLevel: 50, equipped: { brush: fakeBrush } });
-    canvasTickPure(draft, 5.0);
-    // With huge bonus, if bonus chunks re-rolled, critsLanded would balloon
-    // explosively. Cap is chunkCount * salesThisTick.
-    expect(draft.statsRun.critsLanded).toBeLessThanOrEqual(draft.statsRun.canvasesSold * 25 + 25);
+  it("fires a sale on the chunk that completes the canvas at T1 (10 chunks)", () => {
+    const draft = makeDraft();
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 10);
+    expect(draft.statsRun.canvasesSold).toBe(1);
+    expect(draft.canvasProgress).toBeCloseTo(0, 5); // reset after sale
+    expect(draft.lastSale).not.toBeNull();
   });
 
-  it("critChunks resets to empty on canvas sale (set belongs to CURRENT canvas)", () => {
-    const draft = freshDraft({ critLevel: 50 });
-    canvasTickPure(draft, 200);  // many canvases sold
-    // After multiple sales, remaining critChunks belongs only to the CURRENT canvas.
-    for (const idxStr of Object.keys(draft.critChunks)) {
-      expect(Number(idxStr)).toBeLessThan(25);  // T1 chunk count
-    }
+  it("credits gold per chunk, not per canvas", () => {
+    // T1 base: 10 gold per canvas. 5 chunks = 5 gold credited.
+    const draft = makeDraft();
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 5);
+    expect(draft.gold.toNumber()).toBeCloseTo(5, 5);
   });
 
-  it("does not reference isCritThisCanvas (field removed)", () => {
-    const draft = freshDraft();
-    canvasTickPure(draft, 100);
-    expect("isCritThisCanvas" in draft).toBe(false);
+  it("credits full canvas gold across two ticks", () => {
+    const draft = makeDraft();
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 7); // 7 chunks
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 3); // 3 more chunks → sale
+    expect(draft.gold.toNumber()).toBeCloseTo(10, 5);
+    expect(draft.statsRun.canvasesSold).toBe(1);
+  });
+
+  it("click-paint: passing exactly chunkInterval advances 1 chunk", () => {
+    const draft = makeDraft();
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL);
+    expect(Math.floor(draft.canvasProgress)).toBe(1);
+  });
+
+  it("T2 takes 20 chunks", () => {
+    const draft = makeDraft({ canvasTier: 2 });
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 19);
+    expect(draft.statsRun.canvasesSold).toBe(0);
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL);
+    expect(draft.statsRun.canvasesSold).toBe(1);
   });
 });
 
-describe("canvasTickPure — streak counts trigger+bonus", () => {
-  beforeEach(() => setSeed(1));
-
-  it("currentCritStreak / maxCritStreak track chunk-level streaks, not canvas-level", () => {
-    const draft = freshDraft({ critLevel: 50, equipped: {
-      brush: { slot: "brush", tier: "rare", fuseCount: 0, affixes: [{ kind: "+crit_chunks", magnitude: 2 }] },
-    } });
-    canvasTickPure(draft, 0.5);
-    expect(draft.statsRun.currentCritStreak).toBeGreaterThanOrEqual(0);
-    expect(draft.statsRun.maxCritStreak).toBeGreaterThanOrEqual(draft.statsRun.currentCritStreak);
+describe("canvasTickPure crit", () => {
+  beforeEach(() => {
+    vi.spyOn(rngModule, "rng").mockReturnValue(0.0001); // always crit
   });
-});
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-describe("canvasTickPure — speed math no longer divides by CRIT_SPEED_FACTOR", () => {
-  it("paint completion uses baseTime / speedMult only (no crit speed factor)", () => {
-    const draft = freshDraft({ critLevel: 50 });
-    canvasTickPure(draft, 10);
-    expect(draft.statsLifetime.canvasesSold).toBeGreaterThan(0);
+  it("crit paints trigger + bonus chunks instantly (free gold)", () => {
+    const draft = makeDraft();
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL);
+    // Trigger chunk (1) + BASE_CRIT_CHUNKS (1) = 2 chunks credited
+    expect(draft.gold.toNumber()).toBeCloseTo(2, 5);
+    expect(Object.keys(draft.critChunks).length).toBe(2);
   });
 });
