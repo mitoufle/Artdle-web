@@ -1,5 +1,147 @@
 # Artdle Web — Handover
 
+## Canvas chunk-domain rework — landed, pending browser verification (2026-05-26)
+
+Eighteen-task rework executed via subagent-driven plan. Spec: `docs/superpowers/specs/2026-05-26-canvas-chunk-domain-design.md`. Plan: `docs/superpowers/plans/2026-05-26-canvas-chunk-domain-rework.md`.
+
+### What landed
+
+**Engine (chunk-domain):**
+- `src/core/balance.ts` — added `BASE_CHUNK_INTERVAL=5`, `BASE_GOLD_PER_CHUNK=1`, `TIER_UPGRADE_COST_BASE=1000`, `CELL_RENDER_CAP=640`, `chunksPerCanvas(T)`, `goldPerChunk(level, mult, T)`, `tierUpgradeCost(T)`, `chunkInterval(speedMult)`. Deleted `CANVAS_TIME_BASE`, `canvasTime`, `timeFactor`, `COST_GROWTH_BASE`, `costTierFactor`, `sizeUpgradeCost`, `SIZE_PER_LEVEL`, `SIZE_COST_BASE`. `canvasGold(mult, tier)` no longer takes `size`. Four `*UpgradeCost` helpers lost their `_tier` placeholder.
+- `src/core/canvasTickPure.ts` — full rewrite to integer-chunk-progress model. `canvasProgress` is now a FLOAT in `[0, chunkCount)`. Per-chunk gold drip via `goldPerChunk`. `lastSale` fires on the canvas-completing chunk. Crit unchanged in spirit (skips last chunk, bonus chunks spill across canvas boundaries). Multipliers hoisted out of hot path.
+- `src/core/multipliers.ts` — `getCanvasSize` deleted; `sizeLevel` dropped from `CanvasMultiplierInputs`.
+
+**State:**
+- `src/store/canvasSlice.ts` — `sizeLevel` field gone, `upgradeSize` action gone, auto-tier-up gone. `tierUp()` is now gold-gated (`gold >= tierUpgradeCost(canvasTier)`); preserves within-tier upgrade levels; only resets in-canvas state (progress, comboChain, critChunks).
+- `src/store/index.ts` — `SAVE_VERSION` 23 → 24. Migration: resets `canvasProgress`, drops `sizeLevel`, strips `+size%` from equipped/inventory/roster, refunds fame for the 3 removed size skill nodes using their actual per-level cost tables.
+
+**UI:**
+- `src/components/painting/TierUpgradeCard.tsx` (new) — dedicated card above the upgrade strip. Rainbow conic-gradient affordability border via shared `src/styles/rainbowBorderAffordable.module.css` (extracted from `AchievementToast.module.css` so both stay in sync).
+- `src/routes/PaintingRoute.tsx` — chunk-domain props through BoundCanvasStage; Size TrackCard removed.
+- `src/components/painting/BoundCanvasStage.tsx` — props swapped to `chunkInterval`/`chunkCount`; click handler calls `canvasTick(chunkInterval)` (one chunk).
+- `src/components/painting/CanvasStage.tsx` — variable cell grid via `getCanvasCellLayout(tier)` (new helper in `canvasArt.ts`). Cell cap at 640. At T8+, multiple chunks per cell with `Math.floor(chunkIdx / chunksPerCell)` mapping + Set-based dedupe. `getSketchGridDim` deleted.
+- `src/components/painting/StatsRoom.tsx` — `TierBlock` → `CanvasBlock` with chunk-domain rows (chunks/canvas, interval/chunk, gold/chunk, gold/canvas, GPS, base gold multiplier). `SizeBlock` deleted.
+
+**Catalog:**
+- `src/config/workshopAffixes.ts` — `+size%` affix removed from AffixKind union and all pools.
+- `src/config/officeClasses.ts`, `src/core/officeRoll.ts`, `src/core/workshopRoll.ts` — worker/item roll pools no longer include `+size%`.
+- `src/config/skillTreeNodes.ts` + `skillTreeDesign.json` — removed 3 size nodes (`size_matters`, `big_picture`, `expanding_horizon`); fixed `fast_learner.parentIds` cascade.
+- `src/store/skillTreeSlice.ts` — `CanvasTrackId = "size"` literal removed.
+
+### Status
+
+- **1073 / 1073 tests passing** across 112 files.
+- `npx vite build` — clean (1.28s). Bundle `dist/assets/index-BxPPocNI.js` (666.78 kB, gzip 204.24 kB).
+- `npx tsc -b --noEmit` — 24 errors remain, ALL pre-existing baseline (verified by checking out `2b2e0ed^`; the rework introduced zero new tsc errors). Eight tsc errors caused by `+size%` removal were fixed in commit `43c34c8`.
+- Not deployed yet (awaiting user signoff). Production URL when deployed: https://artdle-web.vercel.app
+
+### Bot-sim warning — pacing concern
+
+`tests/dev/bot-simulation.test.ts` updated to use the gold-gated tier-up (`gold >= tierUpgradeCost(canvasTier)`). With the steep `×1000`/tier cost ramp, the bot does NOT reach T2 in a 24-hour sim window under its existing ascend-heavy strategy (7 ascends, end-of-run G/s = 6.4, gold = 730). The T3→T4 ≥ T2→T3 × 0.9 inversion guard auto-skips when no tier-ups fire.
+
+Reading: **the within-tier upgrade ramp (sell-price, speed, crit, combo + items + workers + skill tree) needs to deliver ~×100 gold growth between tier-ups to bridge the ×1000 cost / ×10 base income gap.** Bot data shows that's not happening in 24h of sim time. Two possible causes worth checking in playtest:
+
+1. **Bot ascends too greedily.** Ascend-on-fame-available means bot never settles on a single run long enough to compound within-tier upgrades. Real player behavior may differ.
+2. **The ramp is actually too steep.** Within-tier ceiling may be too low for the bridge. If playtest confirms, the dial is `TIER_UPGRADE_COST_BASE` (currently `1000`) — easy to tune (e.g. `100` for ×100/tier, or non-linear `100^T × T`).
+
+Track for playtest validation before tweaking. The structural rework is correct; only the absolute numbers may need re-tuning.
+
+### Manual verification checklist (before / during deploy)
+
+When you next browse the dev or production build, walk through:
+
+1. **T1 canvas paints chunk-by-chunk** — visible 5s/chunk at L0 speed; click advances 1 chunk visually.
+2. **Gold drips per chunk** — gold counter ticks up smoothly, not in lump-sum bursts.
+3. **`lastSale` flash fires on the canvas-completing chunk** — the FloatingGoldText animation still appears at canvas end.
+4. **Buying a speed level visibly accelerates** the chunk paint.
+5. **TierUpgradeCard appears above the upgrade strip** with `Tier 1 → Tier 2` and `1.00K gold`.
+6. **Affordability border (rainbow conic-gradient)** appears when `gold >= 1000`.
+7. **Clicking the card spends 1k gold and advances to T2** — `Tier 2 → Tier 3 / 1.00M gold` shows after.
+8. **At T2, the canvas has 20 chunks** — visible 4×5 cell grid.
+9. **Size TrackCard is GONE** from the upgrade strip.
+10. **StatsRoom shows the new Canvas block** with chunk metrics (chunks/canvas, interval/chunk, gold/chunk, gold/canvas, GPS, base gold multiplier ×N).
+11. **Existing save loads cleanly** — `sizeLevel` gone, FP refunded if size nodes were purchased, no `+size%` affixes on items/workers.
+12. **At T3+** (after a few tier-ups): cell grid scales (40 cells at T3 = 5×8, etc.).
+13. **No console errors** during normal play or canvas transitions.
+
+If anything fails or surprises you, surface it — the bot-sim doesn't exercise the visual layer, so visual regressions need a human eye.
+
+### Commits (in execution order, most recent last)
+
+`3f7844c` core(balance): chunk-domain helpers
+`208d9cf` feat(canvas): getCanvasCellLayout
+`d96fd31` core(canvasTickPure): chunk-domain rewrite
+`2759cd7` fix(canvasTickPure): goldEarned gate
+`c7688a8` perf+fix(canvasTickPure): hoist multipliers, drop dead bonus-spill guard
+`870729b` core(balance): drop size² from canvasGold
+`196f883` core(balance): drop costTierFactor; delete sizeUpgradeCost + SIZE constants
+`b604adc` core(multipliers): delete getCanvasSize
+`794c45e` store(canvas): rewrite tierUp gold-gated; drop sizeLevel + upgradeSize
+`70e7031` config(workshop): remove +size% affix from item rolls
+`b729b84` config(skilltree+worker): remove canvas_size_bonus nodes and +size% worker affix
+`f3aab67` ui(shared): extract rainbow conic-gradient border to shared CSS module
+`527faff` feat(painting): TierUpgradeCard with rainbow-border affordability state
+`f69ed95` ui(painting): wire chunk-domain props; remove Size TrackCard
+`a456465` ui(canvas): variable cell grid for chunk-domain layouts (cap 640, chunksPerCell mapping)
+`ad0d649` ui(stats): rename TierBlock → CanvasBlock; drop SizeBlock and Upgrade-costs row
+`1ab3228` store(persistence): SAVE_VERSION 23 → 24 migration
+`d1adf44` test(bot-sim): adapt to chunk-domain tier-up trigger
+`d3a179c` core(balance): delete dead chunk-domain symbols + clean canvasSlice tests
+`43c34c8` fix(ui,test): drop +size% AFFIX_LABEL entries + swap test fixtures
+
+### Open follow-ups
+
+- **Browser-side smoke test (above checklist).** Required before declaring the rework playable.
+- **`npx vercel --prod` deploy.** Not run yet — awaiting user signoff because this is a substantial visible change.
+- **Playtest pacing.** Bot can't reach T2 in 24h — tune `TIER_UPGRADE_COST_BASE` if real-play feel matches.
+- **24 pre-existing tsc baseline errors.** Not introduced by this work; cleanup is a separate project.
+- **`getSketchGridDim` was deleted** but the underlying canvas-art-pool API stays. If any future feature needs grid dim, recompute from `getCanvasCellLayout(tier).rows × cols`.
+- **Crit border duration** in CanvasStage stays at 600ms (from 2026-05-25 chunk-rendering rework). Worth a visual check at T8+ where multiple chunks crit-spill into a single cell — the border should still feel responsive.
+
+---
+
+## Canvas timing → chunk-domain rework — paused mid-brainstorm (2026-05-26) — [SUPERSEDED]
+
+> Resolved by the work above. Kept for archaeology.
+
+User wants to flip the canvas-paint model from "set time per canvas, time doubles per tier" to **chunk-domain**: clicks fill a chunk; the speed upgrade governs an auto-fill interval; tier-up doubles the chunk count (which mathematically doubles total auto-complete time, since per-chunk interval is fixed).
+
+**Status:** brainstorm only. No code touched. Paused at the first clarifying question before any design decisions were made.
+
+### Current system (for context when resuming)
+
+- `canvasTime(size, tier) = CANVAS_TIME_BASE × size × timeFactor(tier)` in `src/core/balance.ts:168` — time-domain: total seconds-per-canvas is the designed number, chunk interval is derived.
+- `canvasTickPure` (`src/core/canvasTickPure.ts:33`) converts seconds-progress into integer chunk units via `chunkTime = canvasTime / chunkCount`, then steps in PAID chunk boundaries with epsilon-tolerant arithmetic. Crit rolls per chunk; bonus chunks are free.
+- Click-to-paint already exists — `src/components/painting/BoundCanvasStage.tsx:73` calls `canvasTick(paintTimeSec / chunkCount)` (= 1 chunk worth of seconds) per click.
+- `chunkCount = getSketchGridDim(T)²` from `src/components/painting/canvasArt.ts:74`. Returns `round(5 × √2^(T-1))` capped at dim 20 → 400 cells. Cell count is already ~doubling per tier (T1=25, T2=49, T3=100, T4=196, T5+=400 capped).
+- Speed: `SPEED_PER_LEVEL = 0.05` — additive +5%/level on a single `getCanvasSpeedMultiplier(draft)` multiplier in `multipliers.ts`.
+- Size: scales time linearly (×size) AND gold quadratically (×size²).
+
+### Open questions (asked but not answered)
+
+Resume by working through these in order:
+
+1. **Auto-fill at speed L0.** (a) Speed UNLOCKS auto-fill — L0 is clicks-only, L1+ enables ticking. Very active early-game; idle starts only after first purchase. (b) Generous base interval at L0; speed reduces it. Closer to current idle feel.
+2. **Chunk count progression per tier.** Current grid is ~doubling but not exactly (25/49/100/196/400). User said "tier-up doubles chunks." Use existing curve, switch to clean doublings (25/50/100/200/400), or new base?
+3. **Cap at T5+.** Current grid caps at 400 cells for rendering perf (see 2026-05-25 chunk-rendering rework). If chunks double per tier indefinitely, T6+ either breaks the cap (new render cost) or decouples chunk-count-for-balance from cells-rendered-as-pixels (bigger refactor).
+4. **Size upgrade's new role.** Today size affects both time and gold (size² gold, size¹ time). In chunk-domain: drop the time half? Make size add chunks? Or just a flat gold multiplier?
+5. **Base interval at speed L0** (or L1 if (a) is picked). Today T1 base = 10s ÷ 25 chunks = 0.4s/chunk. Keep that, or pick a new feel?
+6. **Workshop / skill speed bonuses.** `basic_technique`, `muscle_memory`, item speed affixes are currently multiplicative on `getCanvasSpeedMultiplier`. Convert to interval-reduction or leave the multiplier path and apply it to the per-chunk interval?
+7. **Save migration.** `canvasProgress` is persisted in seconds. Convert on load to a chunk count, or rename the field and bump `SAVE_VERSION`?
+8. **`timeFactor` retirement.** Once chunk-domain lands, `timeFactor`, `canvasTime`, `CANVAS_TIME_BASE` may all be dead (unless kept for back-compat displays). Plan their removal as part of the rework or leave for a cleanup pass.
+
+### Files touched during exploration
+
+None — read-only exploration via Grep + Read.
+
+### Resume prompt
+
+Paste this to pick the brainstorm back up:
+
+> Resume the canvas timing → chunk-domain rework brainstorm. The plan is to flip from "set time per canvas (tier doubles time)" to "chunk-domain: click fills a chunk, speed upgrade auto-fills a chunk per interval, tier-up doubles chunk count." See `docs/HANDOVER.md` 2026-05-26 entry for status and the 8 open questions to work through. Start by answering question 1 (speed L0 = clicks-only vs. generous base interval), then proceed in order.
+
+---
+
 ## Tab navigation fix — pause tick loop + isolate canvas subscriptions (2026-05-25)
 
 Three commits (`81cb2a1` runtime fix, `dff3578` HANDOVER, `d39b199` regression test), deployed (production bundle `index-D0XX0g7n.js`).
