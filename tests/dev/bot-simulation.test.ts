@@ -18,19 +18,19 @@ import { cloneGameState } from "@/systems/catchupClone";
 import { ACHIEVEMENTS } from "@/config/achievementConfig";
 import {
   canvasGold,
-  canvasTime,
+  chunksPerCanvas,
+  chunkInterval,
   craftCost,
   fameOnAscend,
   sellPriceUpgradeCost,
   speedUpgradeCost,
-  sizeUpgradeCost,
   critUpgradeCost,
   comboUpgradeCost,
+  tierUpgradeCost,
 } from "@/core/balance";
 import {
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
-  getCanvasSize,
 } from "@/core/multipliers";
 import { canBuyNode, getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { canAscend } from "@/systems/ascend";
@@ -138,16 +138,16 @@ function fmtN(n: number): string {
   return n.toFixed(1);
 }
 
-/** Effective gold per second for the current state. */
+/** Effective gold per second for the current state (chunk-domain). */
 function gps(state: ReturnType<typeof useGameStore.getState>): number {
-  const size = getCanvasSize(state);
-  const gm   = getCanvasGoldMultiplier(state);
-  const sm   = getCanvasSpeedMultiplier(state);
-  const baseTime  = canvasTime(size);
-  const normTime  = baseTime / sm;
-  const avgTime   = normTime;
-  const avgGold   = canvasGold(size, gm).toNumber();
-  return avgGold / avgTime;
+  const tier      = state.canvasTier;
+  const gm        = getCanvasGoldMultiplier(state);
+  const sm        = getCanvasSpeedMultiplier(state);
+  const chunks    = chunksPerCanvas(tier);
+  const interval  = chunkInterval(sm);
+  const canvasS   = chunks * interval;
+  const avgGold   = canvasGold(gm, tier).toNumber();
+  return avgGold / canvasS;
 }
 
 /** Inspiration per second. */
@@ -210,11 +210,6 @@ function decideCanvasUpgrades(): void {
   tryTrack(speedUpgradeCost(state.speedLevel).toNumber(),
     { speedLevel: state.speedLevel + 1 },
     () => useGameStore.getState().upgradeSpeed());
-
-  if (getCanvasTrackUnlocked(state, "size"))
-    tryTrack(sizeUpgradeCost(state.sizeLevel).toNumber(),
-      { sizeLevel: state.sizeLevel + 1 },
-      () => useGameStore.getState().upgradeSize());
 
   if (getCanvasTrackUnlocked(state, "crit"))
     tryTrack(critUpgradeCost(state.critLevel).toNumber(),
@@ -300,14 +295,14 @@ describe("bot-simulation", () => {
       milestones.push(`  [${fmtTime(t)}] *** ${msg} ***`);
     };
 
-    // Track first-time flag unlocks
-    let sizUnlocked = false, critUnlocked = false, comboUnlocked = false;
+    // Track first-time flag unlocks (Size track removed in chunk-domain rework)
+    let critUnlocked = false, comboUnlocked = false;
 
     // Progressive ascend target: starts small, doubles each run up to the cap
     let ascendMinFame = ASCEND_FAME_START;
 
     console.log("\n=== Artdle Bot Simulation ===");
-    console.log("Format: [H:MM:SS] G/s | I/s | SP:# Sp:# Si:# Cr:# Co:# | WS:L# | Asc:# | Fame:#\n");
+    console.log("Format: [H:MM:SS] G/s | I/s | SP:# Sp:# Cr:# Co:# | WS:L# | Asc:# | Fame:# | T:#\n");
 
     for (let t = 0; t < MAX_S; t += TICK_S) {
       useGameStore.getState().tickAll(TICK_S);
@@ -342,18 +337,22 @@ describe("bot-simulation", () => {
           ascendMinFame = Math.min(ASCEND_FAME_CAP, ascendMinFame * ASCEND_FAME_MULTIPLIER);
         }
 
+        // Tier up when affordable. Bot spends most gold on within-tier
+        // upgrades first (they're cheaper); tier-up cost (1000^T) gates
+        // the loop. Triggered before other decisions so freshly-earned gold
+        // tied to a sale doesn't get burned on cheap upgrades first.
+        if (state.gold.gte(tierUpgradeCost(state.canvasTier))) {
+          useGameStore.getState().tierUp();
+        }
+
         decideTreeParts();
         decideSkillTree(t, milestones);
         decideCanvasUpgrades();
         decideCraftAndEquip();
         decideHire();
 
-        // Detect first-time track unlocks
+        // Detect first-time track unlocks (size track removed)
         const s2 = useGameStore.getState();
-        if (!sizUnlocked && getCanvasTrackUnlocked(s2, "size")) {
-          sizUnlocked = true;
-          addMilestone(t, "UNLOCKED canvas_size track");
-        }
         if (!critUnlocked && getCanvasTrackUnlocked(s2, "crit")) {
           critUnlocked = true;
           addMilestone(t, "UNLOCKED canvas_crit track");
@@ -372,8 +371,9 @@ describe("bot-simulation", () => {
           `[${fmtTime(t)}]`,
           `G/s:${fmtN(gps(state)).padStart(8)}`,
           `I/s:${fmtN(ips(state)).padStart(8)}`,
-          `SP:${state.sellPriceLevel} Sp:${state.speedLevel} Si:${state.sizeLevel} Cr:${state.critLevel} Co:${state.comboLevel}`,
+          `SP:${state.sellPriceLevel} Sp:${state.speedLevel} Cr:${state.critLevel} Co:${state.comboLevel}`,
           `WS:L${state.workshopLevel}`,
+          `T:${state.canvasTier}`,
           `Asc:${state.ascendCount}`,
           `Fame:${fmtN(state.fame.toNumber())}`,
           `Gold:${fmtN(state.gold.toNumber())}`,
@@ -392,10 +392,11 @@ describe("bot-simulation", () => {
     console.log(`  Ascends:       ${final.ascendCount}`);
     console.log(`  G/s:           ${fmtN(gps(final))}`);
     console.log(`  I/s:           ${fmtN(ips(final))}`);
-    console.log(`  Canvas tracks: SP:${final.sellPriceLevel} Sp:${final.speedLevel} Si:${final.sizeLevel} Cr:${final.critLevel} Co:${final.comboLevel}`);
+    console.log(`  Canvas tracks: SP:${final.sellPriceLevel} Sp:${final.speedLevel} Cr:${final.critLevel} Co:${final.comboLevel}`);
+    console.log(`  Canvas tier:   T${final.canvasTier}`);
     console.log(`  Workshop:      L${final.workshopLevel} (${final.inventory.length} in inv, ${Object.keys(final.equipped).length} equipped)`);
     console.log(`  First ascend:  ${firstAscendAt >= 0 ? fmtTime(firstAscendAt) : "never"}`);
-    console.log(`  Size unlocked: ${sizUnlocked} | Crit unlocked: ${critUnlocked} | Combo unlocked: ${comboUnlocked}`);
+    console.log(`  Crit unlocked: ${critUnlocked} | Combo unlocked: ${comboUnlocked}`);
 
     console.log("\n=== Per-tier progression ===");
     if (tierIntervals.length === 0) {
@@ -412,14 +413,16 @@ describe("bot-simulation", () => {
       }
     }
 
-    // Regression guard for the canvas tier cost rebalance (commits ea05a2a / b2ef9a8).
-    // The mid-tier inversion the user reported manifested as "T3→T4 takes LESS time
-    // than T2→T3" because non-reset multipliers compound across tiers. After the
-    // costTierFactor split (COST_GROWTH_BASE = 20) the inversion is gone; this
-    // assertion catches a future regression that re-opens it. The guard is loose
-    // (>= 0.9× allows mild noise) and skipped when the bot doesn't reach T4 in
-    // the 24h sim — failing here means the curve actually inverted, not that
-    // progression slowed.
+    // Regression guard for tier-cost progression.
+    // After the chunk-domain rework the tier-up cost ramp became `1000^T`
+    // (T1→T2 = 1k, T2→T3 = 1M, T3→T4 = 1B). The mid-tier inversion guard
+    // (T3→T4 ≥ T2→T3 × 0.9) still applies — non-reset multipliers compound
+    // across tiers, and we want to make sure the ramp keeps each tier-up
+    // strictly more expensive in wall-clock terms than the last. With the
+    // steeper ramp the bot may not reach T3 (let alone T4) inside the
+    // simulation budget; the assertion is guarded so it auto-skips when
+    // the relevant intervals aren't observed. A failure here means the
+    // curve actually inverted, not that progression slowed.
     const t23 = tierIntervals.find((r) => r.from === 2 && r.to === 3);
     const t34 = tierIntervals.find((r) => r.from === 3 && r.to === 4);
     if (t23 && t34 && t23.intervalS > 0) {
