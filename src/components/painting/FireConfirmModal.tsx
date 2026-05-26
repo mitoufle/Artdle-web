@@ -7,7 +7,7 @@ import styles from "./OfficeRoom.module.css";
 const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
   "+sell_price%": (m) => `+${m}% sell price`,
   "+speed%": (m) => `+${m}% speed`,
-  "+crit_chunks": (m) => `+${m} crit chunks`,
+  "+crit_chunks": (m) => `+${m} crit strokes`,
   "+combo_chance%": (m) => `+${m}% combo chance`,
 };
 

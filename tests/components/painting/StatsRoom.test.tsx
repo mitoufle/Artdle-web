@@ -3,17 +3,17 @@ import { render } from "@testing-library/react";
 import { StatsRoom } from "@/components/painting/StatsRoom";
 import { useGameStore } from "@/store";
 
-describe("StatsRoom — crit labels reflect chunk semantics", () => {
+describe("StatsRoom — crit labels reflect stroke semantics", () => {
   beforeEach(() => {
     // Set up a state with some crit level so the Crit block renders (not hidden).
     useGameStore.setState({ critLevel: 5 });
   });
 
-  it("uses 'chunk' wording for crit-related stats", () => {
+  it("uses 'stroke' wording for crit-related stats", () => {
     const { container } = render(<StatsRoom />);
     const text = container.textContent ?? "";
-    // Labels must mention "chunk" somewhere on a crit row.
-    expect(text).toMatch(/crit.*chunk/i);
+    // Player-facing word is "stroke" (was "chunk", a dev term).
+    expect(text).toMatch(/crit.*stroke/i);
   });
 
   it("does not use the old 'crit canvas' wording", () => {
@@ -75,15 +75,15 @@ describe("StatsRoom — cells-per-crit block", () => {
     });
   });
 
-  it("renders 'Cells per crit' with Trigger and Bonus rows + ⚡ icon", () => {
+  it("renders 'Strokes per crit' with Trigger and Bonus rows + ⚡ icon", () => {
     const { container } = render(<StatsRoom />);
     const text = container.textContent ?? "";
-    expect(text).toMatch(/Cells per crit/);
+    expect(text).toMatch(/Strokes per crit/);
     expect(text).toContain("⚡");
     expect(text).toMatch(/Trigger/);
     expect(text).toMatch(/Bonus/);
-    // No items, no workers, no consistency → 1 trigger + 1 base bonus = 2 cells.
-    expect(text).toMatch(/⚡ Cells per crit2/);
+    // No items, no workers, no consistency → 1 trigger + 1 base bonus = 2 strokes.
+    expect(text).toMatch(/⚡ Strokes per crit2/);
   });
 });
 
@@ -109,12 +109,12 @@ describe("StatsRoom — CanvasBlock (chunk-domain stats)", () => {
     expect(text).not.toMatch(/Canvas Tier/);
   });
 
-  it("shows chunks per canvas, interval per chunk, gold per chunk, gold per canvas, and GPS", () => {
+  it("shows strokes per canvas, interval per stroke, gold per stroke, gold per canvas, and GPS", () => {
     const { container } = render(<StatsRoom />);
     const text = container.textContent ?? "";
-    expect(text).toMatch(/Chunks per canvas/i);
-    expect(text).toMatch(/Interval per chunk/i);
-    expect(text).toMatch(/Gold per chunk/i);
+    expect(text).toMatch(/Strokes per canvas/i);
+    expect(text).toMatch(/Interval per stroke/i);
+    expect(text).toMatch(/Gold per stroke/i);
     expect(text).toMatch(/Gold per canvas/i);
     expect(text).toMatch(/GPS/i);
   });

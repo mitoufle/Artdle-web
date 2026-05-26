@@ -148,7 +148,7 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
       ]),
     },
     {
-      name: "Crit chance (chunk roll)",
+      name: "Crit chance (per stroke)",
       iconOverride: "✦",
       colorOverride: "#e85c5c",
       totalLabel: fmtPct(critTotal),
@@ -170,7 +170,7 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
       ]),
     },
     {
-      name: "Cells per crit",
+      name: "Strokes per crit",
       iconOverride: "⚡",
       colorOverride: "#ffaf3a",
       totalLabel: `${chunksTotal.toFixed(chunksTotal % 1 === 0 ? 0 : 1)}`,
@@ -212,15 +212,15 @@ function CanvasBlock({ helperState, tier }: { helperState: CanvasMultiplierInput
       </header>
       <ul className={styles.lines}>
         <li className={styles.line}>
-          <span className={styles.source}>Chunks per canvas</span>
+          <span className={styles.source}>Strokes per canvas</span>
           <span className={styles.value}>{chunks}</span>
         </li>
         <li className={styles.line}>
-          <span className={styles.source}>Interval per chunk</span>
+          <span className={styles.source}>Interval per stroke</span>
           <span className={styles.value}>{interval.toFixed(2)}s</span>
         </li>
         <li className={styles.line}>
-          <span className={styles.source}>Gold per chunk</span>
+          <span className={styles.source}>Gold per stroke</span>
           <span className={styles.value}>{formatBig(perChunk)}</span>
         </li>
         <li className={styles.line}>

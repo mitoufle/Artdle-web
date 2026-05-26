@@ -108,8 +108,8 @@ function sellHoverBody(comboChain: number): JSX.Element {
 interface Props {
   canvasTier: number;
   progressPct: number;       // 0..1, drives the paint-fill overlay height
-  timeElapsed: string;       // formatted seconds elapsed, e.g., "1.5"
-  timeTotal: string;         // formatted seconds, e.g., "6.0"
+  timeElapsed: string;       // completed chunks, e.g., "5"
+  timeTotal: string;         // total chunks per canvas, e.g., "10"
   nextSaleGold: string;      // formatted gold preview, e.g., "184" or "1.2K"
   /** T14: combo chain depth for badge display. */
   comboChain?: number;
@@ -281,7 +281,7 @@ export function CanvasStage({
           className={`${styles.imageContainer}${onChunkClick ? ` ${styles.imageContainerClickable}` : ""}`}
           onClick={onChunkClick}
           role={onChunkClick ? "button" : undefined}
-          aria-label={onChunkClick ? "Paint a chunk" : undefined}
+          aria-label={onChunkClick ? "Paint a stroke" : undefined}
         >
           <img
             src={paintingScreen}
@@ -361,7 +361,7 @@ export function CanvasStage({
       {/* Bottom info row */}
       <div className={styles.bottomRow}>
         <span className={styles.painting}>
-          Painting · {timeElapsed}s / {timeTotal}s
+          Painting · {timeElapsed} / {timeTotal} strokes
         </span>
         <Hoverable
           title="Sell Canvas"
