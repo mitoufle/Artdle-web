@@ -9,22 +9,18 @@ import type { ItemTier } from "@/core/workshopRoll";
  *   +speed%        → getCanvasSpeedMultiplier
  *   +crit_chunks   → getCritChunks         (gated by unlock_canvas_crit; raw integer magnitude, NOT percent)
  *   +combo_chance% → getComboBaseChance    (gated by unlock_canvas_combo)
- *   +size%         → getSizeMultiplier     (gated by unlock_canvas_size)
- *                    Scales effective sizeLevel — applies to BOTH gold and time formulas.
  */
 export type AffixKind =
   | "+sell_price%"
   | "+speed%"
   | "+crit_chunks"
-  | "+combo_chance%"
-  | "+size%";
+  | "+combo_chance%";
 
 export const AFFIX_KINDS: ReadonlyArray<AffixKind> = [
   "+sell_price%",
   "+speed%",
   "+crit_chunks",
   "+combo_chance%",
-  "+size%",
 ];
 
 /** Single-character symbol for each affix kind, used in compact item displays. */
@@ -33,7 +29,6 @@ export const AFFIX_SYMBOL: Record<AffixKind, string> = {
   "+speed%":        "»",
   "+crit_chunks":   "⚡",
   "+combo_chance%": "∞",
-  "+size%":         "⊕",
 };
 
 /** Accent color for each affix symbol. */
@@ -42,7 +37,6 @@ export const AFFIX_COLOR: Record<AffixKind, string> = {
   "+speed%":        "#4fc3e8",
   "+crit_chunks":   "#ffaf3a",
   "+combo_chance%": "#b06ee8",
-  "+size%":         "#4cb87a",
 };
 
 /** Font-size scale factor to compensate for glyphs with different optical sizes. */
@@ -51,7 +45,6 @@ export const AFFIX_SYMBOL_SCALE: Record<AffixKind, number> = {
   "+speed%":        1.0,
   "+crit_chunks":   1.0,
   "+combo_chance%": 1.2,
-  "+size%":         1.15,
 };
 
 /**
@@ -71,35 +64,30 @@ export const AFFIX_MAGNITUDE_RANGE: Record<ItemTier, Record<AffixKind, { min: nu
   normal: {
     "+sell_price%": { min: 15, max: 25 },
     "+speed%":      { min: 15, max: 25 },
-    "+size%":       { min: 15, max: 25 },
     "+crit_chunks":   { min: 1,  max: 1  },
     "+combo_chance%": { min: 5,  max: 20 },
   },
   magic: {
     "+sell_price%": { min: 20, max: 30 },
     "+speed%":      { min: 20, max: 30 },
-    "+size%":       { min: 20, max: 30 },
     "+crit_chunks":   { min: 1,  max: 2  },
     "+combo_chance%": { min: 10, max: 25 },
   },
   rare: {
     "+sell_price%": { min: 26, max: 38 },
     "+speed%":      { min: 26, max: 38 },
-    "+size%":       { min: 26, max: 38 },
     "+crit_chunks":   { min: 2,  max: 3  },
     "+combo_chance%": { min: 16, max: 32 },
   },
   epic: {
     "+sell_price%": { min: 35, max: 50 },
     "+speed%":      { min: 35, max: 50 },
-    "+size%":       { min: 35, max: 50 },
     "+crit_chunks":   { min: 2,  max: 4  },
     "+combo_chance%": { min: 24, max: 42 },
   },
   legendary: {
     "+sell_price%": { min: 48, max: 66 },
     "+speed%":      { min: 48, max: 66 },
-    "+size%":       { min: 48, max: 66 },
     "+crit_chunks":   { min: 3,  max: 5  },
     "+combo_chance%": { min: 36, max: 56 },
   },

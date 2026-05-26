@@ -7,8 +7,8 @@ import {
 import { ALL_ITEM_TIERS } from "@/core/workshopRoll";
 
 describe("workshopAffixes config", () => {
-  it("AFFIX_KINDS has exactly 5 entries (painting-only pool: sell_price, speed, crit, combo, size)", () => {
-    expect(AFFIX_KINDS).toHaveLength(5);
+  it("AFFIX_KINDS has exactly 4 entries (painting-only pool: sell_price, speed, crit, combo)", () => {
+    expect(AFFIX_KINDS).toHaveLength(4);
   });
 
   it("the affix kinds are unique", () => {
@@ -24,7 +24,7 @@ describe("workshopAffixes config", () => {
     }
   });
 
-  it("AFFIX_MAGNITUDE_RANGE: every tier has all 5 kinds with valid bounds (min >= 1, max >= min)", () => {
+  it("AFFIX_MAGNITUDE_RANGE: every tier has all 4 kinds with valid bounds (min >= 1, max >= min)", () => {
     for (const tier of ALL_ITEM_TIERS) {
       for (const kind of AFFIX_KINDS) {
         const range = AFFIX_MAGNITUDE_RANGE[tier][kind];
@@ -38,7 +38,6 @@ describe("workshopAffixes config", () => {
   it("AFFIX_MAGNITUDE_RANGE: normal tier matches base ranges", () => {
     expect(AFFIX_MAGNITUDE_RANGE.normal["+sell_price%"]).toEqual({ min: 15, max: 25 });
     expect(AFFIX_MAGNITUDE_RANGE.normal["+speed%"]).toEqual({ min: 15, max: 25 });
-    expect(AFFIX_MAGNITUDE_RANGE.normal["+size%"]).toEqual({ min: 15, max: 25 });
     expect(AFFIX_MAGNITUDE_RANGE.normal["+crit_chunks"]).toEqual({ min: 1, max: 1 });
     expect(AFFIX_MAGNITUDE_RANGE.normal["+combo_chance%"]).toEqual({ min: 5, max: 20 });
   });
