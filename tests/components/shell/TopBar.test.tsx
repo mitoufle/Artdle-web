@@ -1,11 +1,20 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { TopBar } from "@/components/shell/TopBar";
+import { useGameStore } from "@/store";
 
 vi.mock("@/ui/hooks/useMusic", () => ({
   useMusic: () => ({ volume: 0.2, muted: false, setVolume: vi.fn(), toggleMute: vi.fn() }),
 }));
+
+beforeEach(() => {
+  // The "all 5 nav items" and "active route" tests assume Ascension +
+  // Constellation render as <NavLink>. Both are now sticky-unlock-gated
+  // (2026-05-27), so seed the unlocks for tests that don't specifically
+  // test the locked state.
+  useGameStore.setState({ unlockedAscension: true, unlockedConstellation: true });
+});
 
 function renderAt(path: string) {
   return render(

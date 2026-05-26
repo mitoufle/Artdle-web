@@ -40,7 +40,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 24;
+const SAVE_VERSION = 25;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -484,6 +484,27 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     }
 
     state = next;
+  }
+
+  if (fromVersion < 25) {
+    // v24 → v25 (2026-05-27): sticky top-bar unlocks for Ascension + Constellation.
+    // Existing players who have ever ascended (ascendCount > 0) get both unlocks
+    // immediately. Players currently sitting on enough inspiration to ascend
+    // (or enough fame to spend) also start unlocked — the lock should never
+    // appear for someone whose state already justifies the unlock.
+    const next = state as Record<string, unknown>;
+    const ascendCount = typeof next.ascendCount === "number" ? next.ascendCount : 0;
+    const fame = isBig(next.fame) ? next.fame : big(0);
+    const inspiration = isBig(next.inspiration) ? next.inspiration : big(0);
+    // canAscend is true when fameOnAscend(inspiration, threshold-reduction) >= 1.
+    // Migration doesn't have access to purchasedNodes-derived threshold reductions
+    // in a clean way here (the typed selectors live in multipliers.ts and operate
+    // on a GameStore-shaped argument). Approximate: if inspiration crosses the
+    // base 10,000 threshold OR ascendCount > 0, unlock ascension.
+    const hasInspiThreshold = inspiration.gte(10_000);
+    next.unlockedAscension = ascendCount > 0 || hasInspiThreshold || next.unlockedAscension === true;
+    next.unlockedConstellation = ascendCount > 0 || fame.gte(1) || next.unlockedConstellation === true;
+    state = next as unknown as GameStore;
   }
 
   return state as unknown as GameStore;

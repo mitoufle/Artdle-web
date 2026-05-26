@@ -1,11 +1,12 @@
 import type { JSX } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useGameStore } from "@/store";
 import { persistedAdapter } from "@/systems/persistence";
 import { useMusic } from "@/ui/hooks/useMusic";
 import { MusicControls } from "./MusicControls";
 import { pauseTickLoop } from "@/core/tickLoop";
+import { canAscend } from "@/systems/ascend";
 import treeIcon from "@/assets/bar_icons/tree.png";
 import paintingIcon from "@/assets/bar_icons/painting.png";
 import musicIcon from "@/assets/bar_icons/music.png";
@@ -63,11 +64,47 @@ export function TopBar(): JSX.Element {
   const [confirming, setConfirming] = useState(false);
   const music = useMusic();
 
+  // Sticky unlocks — flip false→true once the threshold is FIRST crossed,
+  // then persist forever (survives ascend even though inspiration resets to 0
+  // and fame may be spent back to 0). Subscribe to the BOOLEAN derived value
+  // rather than raw inspiration/fame Bigs so TopBar only re-renders on
+  // threshold-cross events, not every per-tick currency tick.
+  const unlockedAscension = useGameStore((s) => s.unlockedAscension);
+  const unlockedConstellation = useGameStore((s) => s.unlockedConstellation);
+  const canAscendNow = useGameStore((s) =>
+    canAscend({ inspiration: s.inspiration, purchasedNodes: s.purchasedNodes }),
+  );
+  const hasFame = useGameStore((s) => s.fame.gte(1));
+  const unlockAscension = useGameStore((s) => s.unlockAscension);
+  const unlockConstellationFn = useGameStore((s) => s.unlockConstellation);
+
+  useEffect(() => {
+    if (!unlockedAscension && canAscendNow) unlockAscension();
+    if (!unlockedConstellation && hasFame) unlockConstellationFn();
+  }, [
+    unlockedAscension, unlockedConstellation,
+    canAscendNow, hasFame,
+    unlockAscension, unlockConstellationFn,
+  ]);
+
+  const dynamicLock = (to: string, baseLocked: boolean | undefined): boolean => {
+    if (baseLocked) return true;
+    if (to === "/ascension") return !unlockedAscension;
+    if (to === "/constellation") return !unlockedConstellation;
+    return false;
+  };
+  const lockTitle = (to: string, label: string): string => {
+    if (to === "/ascension") return `${label} — reach the inspiration threshold to unlock`;
+    if (to === "/constellation") return `${label} — earn your first fame to unlock`;
+    return `${label} — coming soon`;
+  };
+
   return (
     <header className={styles.bar}>
       <img src="/artdle_logo.png" alt="Artdle" className={styles.brand} />
       <nav className={styles.nav} aria-label="Primary">
-        {NAV_ITEMS.map(({ to, label, icon, locked }) => {
+        {NAV_ITEMS.map(({ to, label, icon, locked: baseLocked }) => {
+          const locked = dynamicLock(to, baseLocked);
           if (locked) {
             return (
               <span
@@ -75,7 +112,7 @@ export function TopBar(): JSX.Element {
                 className={`${styles.navItem as string} ${styles.navItemLocked as string}`}
                 aria-disabled="true"
                 aria-label={`${label} (locked)`}
-                title={`${label} — coming soon`}
+                title={lockTitle(to, label)}
               >
                 <img src={icon} alt="" className={styles.navIcon} />
                 <svg

@@ -26,6 +26,20 @@ export interface MetaSlice {
    */
   lastSeen: number;
 
+  /**
+   * Sticky unlock for the Ascension tab in TopBar. Flips false → true once
+   * the player FIRST reaches the inspiration threshold for ascending
+   * (canAscend predicate true). NEVER resets, even though canAscend itself
+   * flips back to false after an ascend (inspiration → 0). Persisted.
+   */
+  unlockedAscension: boolean;
+  /**
+   * Sticky unlock for the Constellation tab in TopBar. Flips false → true
+   * once the player has at least 1 fame for the first time. NEVER resets,
+   * even if the player spends all fame on skill nodes. Persisted.
+   */
+  unlockedConstellation: boolean;
+
   /** Bumped on each successful ascend. */
   incrementAscendCount: () => void;
   /** Append a single past run entry. Called by the orchestrator. */
@@ -38,6 +52,10 @@ export interface MetaSlice {
    * appends a pastRun entry). Returns true on success; false if canAscend is false.
    */
   performAscend: () => boolean;
+  /** Flip unlockedAscension to true. Idempotent. */
+  unlockAscension: () => void;
+  /** Flip unlockedConstellation to true. Idempotent. */
+  unlockConstellation: () => void;
 }
 
 export const createMetaSlice: StateCreator<GameStore, [], [], MetaSlice> = (set, get) => ({
@@ -45,10 +63,14 @@ export const createMetaSlice: StateCreator<GameStore, [], [], MetaSlice> = (set,
   ascendCount: 0,
   pastRuns: [],
   lastSeen: Date.now(),
+  unlockedAscension: false,
+  unlockedConstellation: false,
 
   incrementAscendCount: () => set((s) => ({ ascendCount: s.ascendCount + 1 })),
   addPastRun: (run) =>
     set((s) => ({ pastRuns: [...s.pastRuns, run] as ReadonlyArray<PastRun> })),
   _setPlayerId: (id) => set({ playerId: id }),
   performAscend: () => performAscendOrchestrator(get),
+  unlockAscension: () => set((s) => (s.unlockedAscension ? {} : { unlockedAscension: true })),
+  unlockConstellation: () => set((s) => (s.unlockedConstellation ? {} : { unlockedConstellation: true })),
 });
