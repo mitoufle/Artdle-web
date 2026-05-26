@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useGameStore } from "@/store";
 import type { AchievementCategory } from "@/config/achievementConfig";
+import sharedStyles from "@/styles/rainbowBorderAffordable.module.css";
 import styles from "./AchievementToast.module.css";
 
 const CATEGORY_LABEL: Record<AchievementCategory, string> = {
@@ -22,7 +23,7 @@ export function AchievementToast(): JSX.Element {
         {notification && (
           <motion.div
             key={notification.id}
-            className={styles.card}
+            className={`${styles.card} ${sharedStyles.rainbowBorder}`}
             initial={{ y: "-130%", scale: 0.7, opacity: 0 }}
             animate={{
               y: 0,

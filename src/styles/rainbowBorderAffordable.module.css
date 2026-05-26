@@ -1,0 +1,47 @@
+@property --rb-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/**
+ * Apply this class to any element that should show the rainbow
+ * conic-gradient affordability border. The element must establish a
+ * positioning context (position: relative/absolute/fixed) and have a
+ * border-radius if you want the border to follow rounded corners.
+ *
+ * Used by:
+ *   - AchievementToast (its `.card`)
+ *   - TierUpgradeCard when `gold >= tierUpgradeCost(canvasTier)`
+ */
+.rainbowBorder {
+  position: relative;
+}
+
+.rainbowBorder::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2.5px;
+  background: conic-gradient(
+    from var(--rb-angle),
+    #ff0040, #ff8a00, #ffe600, #00ff66,
+    #00d4ff, #7a5cff, #ff00c8, #ff0040
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: rbSpin 2.4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rbSpin {
+  to { --rb-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rainbowBorder::before { animation: none; }
+}

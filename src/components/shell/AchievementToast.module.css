@@ -1,9 +1,3 @@
-@property --rb-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
 .anchor {
   position: fixed;
   top: 18px;
@@ -28,27 +22,6 @@
   overflow: hidden;
 }
 
-/* Animated rainbow border via masked conic-gradient ring. */
-.card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 2.5px;
-  background: conic-gradient(
-    from var(--rb-angle),
-    #ff0040, #ff8a00, #ffe600, #00ff66,
-    #00d4ff, #7a5cff, #ff00c8, #ff0040
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: rbSpin 2.4s linear infinite;
-  pointer-events: none;
-}
-
 /* Soft inner sheen sweeping across once on entry. */
 .card::after {
   content: "";
@@ -64,10 +37,6 @@
   transform: translateX(-120%);
   animation: rbSheen 1.1s ease-out 0.15s 1 both;
   pointer-events: none;
-}
-
-@keyframes rbSpin {
-  to { --rb-angle: 360deg; }
 }
 
 @keyframes rbSheen {
@@ -150,7 +119,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card::before { animation: none; }
   .card::after { animation: none; opacity: 0; }
   .eyebrow, .category { animation: none; }
 }
