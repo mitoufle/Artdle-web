@@ -9,7 +9,6 @@ const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
   "+speed%": (m) => `+${m}% speed`,
   "+crit_chunks": (m) => `+${m} crit chunks`,
   "+combo_chance%": (m) => `+${m}% combo chance`,
-  "+size%": (m) => `+${m}% size`,
 };
 
 const TIER_LABEL: Record<string, string> = {

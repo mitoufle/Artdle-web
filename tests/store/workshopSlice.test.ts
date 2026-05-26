@@ -513,7 +513,7 @@ describe("fusion — getFusionTarget", () => {
     };
     const eq: Item = {
       id: "eq-1", slot: "brush", tier: "legendary",
-      affixes: [{ kind: "+size%", magnitude: 40 }],
+      affixes: [{ kind: "+combo_chance%", magnitude: 40 }],
       fuseCount: 0,
     };
     expect(getFusionTarget(inv, { brush: eq }, withMA)).toBe(eq);
@@ -569,7 +569,7 @@ describe("fusion — getFusionTarget", () => {
     };
     const eq: Item = {
       id: "eq-1", slot: "brush", tier: "epic",
-      affixes: [{ kind: "+speed%", magnitude: 25 }, { kind: "+size%", magnitude: 25 }],
+      affixes: [{ kind: "+speed%", magnitude: 25 }, { kind: "+crit_chunks", magnitude: 25 }],
       fuseCount: 0,
     };
     expect(getFusionTarget(inv, { brush: eq }, withMA)).toBeNull();
@@ -736,7 +736,7 @@ describe("fusion — fuseItem action", () => {
       affixes: [
         { kind: "+crit_chunks", magnitude: 14 },
         { kind: "+combo_chance%", magnitude: 24 },
-        { kind: "+size%", magnitude: 25 },
+        { kind: "+sell_price%", magnitude: 25 },
         { kind: "+sell_price%", magnitude: 25 },
       ],
       fuseCount: 0,
