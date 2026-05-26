@@ -62,10 +62,10 @@ export function PaintingRoute(): JSX.Element {
   const critLocked = !getCanvasTrackUnlocked(helperState, "crit");
   const comboLocked = !getCanvasTrackUnlocked(helperState, "combo");
 
-  const sellCost = sellPriceUpgradeCost(sellPriceLevel, canvasTier);
-  const speedCost = speedUpgradeCost(speedLevel, canvasTier);
-  const critCost = critUpgradeCost(critLevel, canvasTier);
-  const comboCost = comboUpgradeCost(comboLevel, canvasTier);
+  const sellCost = sellPriceUpgradeCost(sellPriceLevel);
+  const speedCost = speedUpgradeCost(speedLevel);
+  const critCost = critUpgradeCost(critLevel);
+  const comboCost = comboUpgradeCost(comboLevel);
 
   const fmtPct = (x: number, frac = 0): string => `${(x * 100).toFixed(frac)}%`;
 

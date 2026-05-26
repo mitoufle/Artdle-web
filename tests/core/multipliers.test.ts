@@ -532,10 +532,10 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
 
 describe("multipliers — per-level effects do NOT scale with canvasTier", () => {
   // Per-level effects stay flat across tiers. The tier-scaling reward comes from
-  // base canvas gold (×10/tier in canvasGold), base canvas time (×2/tier in
-  // canvasTime), and upgrade costs (×10/tier). Multiplying the per-level *effect*
-  // by tierFactor would compound destructively on speed (which divides time),
-  // making a single L1 speed upgrade at T6 collapse canvas time to near zero.
+  // base canvas gold (×10/tier in canvasGold / goldPerChunk) and chunks-per-canvas
+  // (×2/tier in chunksPerCanvas). Multiplying the per-level *effect* by tierFactor
+  // would compound destructively on speed (which divides chunkInterval), making
+  // a single L1 speed upgrade at T6 collapse chunk time to near zero.
 
   it("getCanvasGoldMultiplier: same per-level effect at T1, T2, T6", () => {
     const baseState = {

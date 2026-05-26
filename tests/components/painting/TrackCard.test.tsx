@@ -27,9 +27,9 @@ describe("<TrackCard>", () => {
   it("renders 'Locked' state when locked=true (no upgrade button or disabled)", () => {
     render(
       <TrackCard
-        trackId="size"
-        affixKind="+size%"
-        label="Size"
+        trackId="crit"
+        affixKind="+crit_chunks"
+        label="Crit"
         level={0}
         effectLine="—"
         costLabel="—"
@@ -38,7 +38,7 @@ describe("<TrackCard>", () => {
         onUpgrade={() => {}}
       />,
     );
-    expect(screen.getByText(/Size/i)).toBeInTheDocument();
+    expect(screen.getByText(/Crit/i)).toBeInTheDocument();
     expect(screen.getByText(/Locked/i)).toBeInTheDocument();
     const btn = screen.queryByRole("button");
     expect(btn === null || (btn as HTMLButtonElement).disabled).toBe(true);
@@ -193,9 +193,9 @@ describe("<TrackCard> — hover info", () => {
   it("hover on locked card pushes title with 'Locked'", () => {
     render(
       <TrackCard
-        trackId="size"
-        affixKind="+size%"
-        label="Size"
+        trackId="crit"
+        affixKind="+crit_chunks"
+        label="Crit"
         level={0}
         effectLine="—"
         costLabel="—"
@@ -204,8 +204,8 @@ describe("<TrackCard> — hover info", () => {
         onUpgrade={() => {}}
       />,
     );
-    fireEvent.mouseEnter(screen.getByTestId("track-card-upgrade-size"));
-    expect(useGameStore.getState().hoverTitle).toMatch(/Size.*Locked/i);
+    fireEvent.mouseEnter(screen.getByTestId("track-card-upgrade-crit"));
+    expect(useGameStore.getState().hoverTitle).toMatch(/Crit.*Locked/i);
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
     expect(container.textContent).toMatch(/Unlocks via/i);
   });

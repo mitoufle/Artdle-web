@@ -135,8 +135,8 @@ export const sumLevels = (
   ids: ReadonlyArray<SkillNodeId>,
 ): number => ids.reduce((acc, id) => acc + getNodeLevel(state, id), 0);
 
-/** Canvas-depth track ID — five tracks total. */
-export type CanvasTrackId = "sell_price" | "speed" | "size" | "crit" | "combo";
+/** Canvas-depth track ID — four tracks total. (Size was folded into Tier.) */
+export type CanvasTrackId = "sell_price" | "speed" | "crit" | "combo";
 
 /**
  * Returns true if any purchased node (level ≥ 1) has `capability` in its

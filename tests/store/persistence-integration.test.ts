@@ -57,9 +57,10 @@ describe("persistence integration", () => {
   });
 
   it("lastSale transient is partialized OUT of the save", async () => {
-    // Trigger a sale to make lastSale non-null.
-    // Use 10.01 to clear the final chunk despite floating-point accumulation in the per-chunk model.
-    useGameStore.getState().canvasTick(10.01);
+    // Trigger a sale to make lastSale non-null. T1 chunk-domain: full canvas =
+    // chunksPerCanvas(1)=10 chunks × BASE_CHUNK_INTERVAL=5s = 50s. +0.01 to clear
+    // the final-chunk float-accumulation boundary.
+    useGameStore.getState().canvasTick(50.01);
     expect(useGameStore.getState().lastSale).not.toBeNull();
     await persistedAdapter.flush();
 

@@ -3,7 +3,6 @@ import {
   fameOnAscend,
   treePartCost,
   canvasGold,
-  canvasTime,
   inspiPerSec,
   craftCost,
   xpToNext,
@@ -27,7 +26,6 @@ import {
   CRIT_COST_BASE,
   COMBO_COST_BASE,
   TRACK_COST_GROWTH,
-  CANVAS_TIME_BASE,
   levelScale,
   workerXpToNext,
   officeXpToNext,
@@ -47,9 +45,6 @@ import {
   getPartMilestoneMultiplier,
   getNextPartMilestone,
   tierFactor,
-  timeFactor,
-  costTierFactor,
-  COST_GROWTH_BASE,
   BASE_CHUNK_INTERVAL,
   BASE_GOLD_PER_CHUNK,
   TIER_UPGRADE_COST_BASE,
@@ -169,23 +164,6 @@ describe("inspiPerSec", () => {
   });
 });
 
-describe("canvasTime (linear size scaling)", () => {
-  it("returns CANVAS_TIME_BASE × size", () => {
-    // size 1 → 10s (baseline canvas)
-    expect(canvasTime(1)).toBeCloseTo(10, 5);
-    // size 2 → 20s (double canvas, double time)
-    expect(canvasTime(2)).toBeCloseTo(20, 5);
-    // size 1.5 → 15s
-    expect(canvasTime(1.5)).toBeCloseTo(15, 5);
-  });
-
-  it("doubles size doubles time (linear relationship)", () => {
-    const a = canvasTime(1);
-    const b = canvasTime(2);
-    expect(b / a).toBeCloseTo(2, 5);
-  });
-});
-
 // ============================================================================
 // Workshop leveling
 // ============================================================================
@@ -262,10 +240,6 @@ describe("canvas-depth tuning constants", () => {
     expect(CRIT_COST_BASE).toBe(5000);
     expect(COMBO_COST_BASE).toBe(5000);
     expect(TRACK_COST_GROWTH).toBeCloseTo(1.5, 5);
-  });
-
-  it("exposes new canvas time base", () => {
-    expect(CANVAS_TIME_BASE).toBe(10);
   });
 });
 
@@ -539,42 +513,6 @@ describe("tierFactor (canvas tier scaling)", () => {
   });
 });
 
-describe("costTierFactor (canvas upgrade-cost scaling)", () => {
-  it("returns 1 at tier 1 (no scaling)", () => {
-    expect(costTierFactor(1)).toBe(1);
-  });
-
-  it("returns COST_GROWTH_BASE at tier 2", () => {
-    expect(costTierFactor(2)).toBe(COST_GROWTH_BASE);
-  });
-
-  it("returns COST_GROWTH_BASE squared at tier 3", () => {
-    expect(costTierFactor(3)).toBe(COST_GROWTH_BASE * COST_GROWTH_BASE);
-  });
-
-  it("returns COST_GROWTH_BASE cubed at tier 4", () => {
-    expect(costTierFactor(4)).toBe(COST_GROWTH_BASE * COST_GROWTH_BASE * COST_GROWTH_BASE);
-  });
-
-  it("differs from tierFactor at tier 2 (decoupling)", () => {
-    expect(costTierFactor(2)).not.toBe(tierFactor(2));
-  });
-});
-
-describe("timeFactor (canvas tier base-time scaling)", () => {
-  it("T1 returns 1", () => {
-    expect(timeFactor(1)).toBe(1);
-  });
-
-  it("T2 returns 2", () => {
-    expect(timeFactor(2)).toBe(2);
-  });
-
-  it("T4 returns 8", () => {
-    expect(timeFactor(4)).toBe(8);
-  });
-});
-
 // ============================================================================
 // Crit per-chunk constants (Task 1 of T12)
 // ============================================================================
@@ -598,30 +536,14 @@ describe("crit per-chunk constants", () => {
 });
 
 // ============================================================================
-// Tier-scaled formula variants (CT4)
+// Per-track upgrade cost — confirms no tier scaling (level-only)
 // ============================================================================
-describe("canvasTime (tier-scaled)", () => {
-  it("T1 unchanged: returns CANVAS_TIME_BASE × size", () => {
-    expect(canvasTime(1, 1)).toBeCloseTo(10, 5);
-    expect(canvasTime(1)).toBeCloseTo(10, 5); // default tier=1
-  });
-
-  it("T2: ×2 base time", () => {
-    expect(canvasTime(1, 2)).toBeCloseTo(20, 5);
-  });
-
-  it("T4: ×8 base time", () => {
-    expect(canvasTime(1, 4)).toBeCloseTo(80, 5);
-  });
-});
-
 describe("sellPriceUpgradeCost (no tier scaling)", () => {
-  it("L0 → cost = SELL_PRICE_COST_BASE regardless of tier", () => {
-    expect(sellPriceUpgradeCost(0, 1).toNumber()).toBe(SELL_PRICE_COST_BASE);
-    expect(sellPriceUpgradeCost(0, 5).toNumber()).toBe(SELL_PRICE_COST_BASE);
+  it("L0 → cost = SELL_PRICE_COST_BASE", () => {
+    expect(sellPriceUpgradeCost(0).toNumber()).toBe(SELL_PRICE_COST_BASE);
   });
   it("ramps with TRACK_COST_GROWTH per level only", () => {
-    expect(sellPriceUpgradeCost(2, 3).toNumber()).toBeCloseTo(
+    expect(sellPriceUpgradeCost(2).toNumber()).toBeCloseTo(
       SELL_PRICE_COST_BASE * Math.pow(TRACK_COST_GROWTH, 2),
       5,
     );
@@ -629,12 +551,11 @@ describe("sellPriceUpgradeCost (no tier scaling)", () => {
 });
 
 describe("speedUpgradeCost (no tier scaling)", () => {
-  it("L0 → cost = SPEED_COST_BASE regardless of tier", () => {
-    expect(speedUpgradeCost(0, 1).toNumber()).toBe(SPEED_COST_BASE);
-    expect(speedUpgradeCost(0, 5).toNumber()).toBe(SPEED_COST_BASE);
+  it("L0 → cost = SPEED_COST_BASE", () => {
+    expect(speedUpgradeCost(0).toNumber()).toBe(SPEED_COST_BASE);
   });
   it("ramps with TRACK_COST_GROWTH per level only", () => {
-    expect(speedUpgradeCost(2, 3).toNumber()).toBeCloseTo(
+    expect(speedUpgradeCost(2).toNumber()).toBeCloseTo(
       SPEED_COST_BASE * Math.pow(TRACK_COST_GROWTH, 2),
       5,
     );
@@ -642,12 +563,11 @@ describe("speedUpgradeCost (no tier scaling)", () => {
 });
 
 describe("critUpgradeCost (no tier scaling)", () => {
-  it("L0 → cost = CRIT_COST_BASE regardless of tier", () => {
-    expect(critUpgradeCost(0, 1).toNumber()).toBe(CRIT_COST_BASE);
-    expect(critUpgradeCost(0, 5).toNumber()).toBe(CRIT_COST_BASE);
+  it("L0 → cost = CRIT_COST_BASE", () => {
+    expect(critUpgradeCost(0).toNumber()).toBe(CRIT_COST_BASE);
   });
   it("ramps with TRACK_COST_GROWTH per level only", () => {
-    expect(critUpgradeCost(2, 3).toNumber()).toBeCloseTo(
+    expect(critUpgradeCost(2).toNumber()).toBeCloseTo(
       CRIT_COST_BASE * Math.pow(TRACK_COST_GROWTH, 2),
       5,
     );
@@ -655,12 +575,11 @@ describe("critUpgradeCost (no tier scaling)", () => {
 });
 
 describe("comboUpgradeCost (no tier scaling)", () => {
-  it("L0 → cost = COMBO_COST_BASE regardless of tier", () => {
-    expect(comboUpgradeCost(0, 1).toNumber()).toBe(COMBO_COST_BASE);
-    expect(comboUpgradeCost(0, 5).toNumber()).toBe(COMBO_COST_BASE);
+  it("L0 → cost = COMBO_COST_BASE", () => {
+    expect(comboUpgradeCost(0).toNumber()).toBe(COMBO_COST_BASE);
   });
   it("ramps with TRACK_COST_GROWTH per level only", () => {
-    expect(comboUpgradeCost(2, 3).toNumber()).toBeCloseTo(
+    expect(comboUpgradeCost(2).toNumber()).toBeCloseTo(
       COMBO_COST_BASE * Math.pow(TRACK_COST_GROWTH, 2),
       5,
     );

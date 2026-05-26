@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
+import { BASE_CHUNK_INTERVAL, chunksPerCanvas } from "@/core/balance";
+
+// T1 chunk-domain: chunksPerCanvas(1) = 10, chunkInterval = 5s → 50s per canvas sale.
+const T1_CANVAS_TIME = BASE_CHUNK_INTERVAL * chunksPerCanvas(1);
 
 describe("tickAll orchestrator", () => {
   // Captured at suite scope so afterEach restores method references even
@@ -27,14 +31,14 @@ describe("tickAll orchestrator", () => {
   });
 
   it("tickAll(1) credits inspiration AND advances canvas in one call", () => {
-    // Set up: cotyledon@5 produces 0.5 inspi/sec; canvas starts mid-paint.
-    // effectiveTime = canvasTime(1) / speedMult = 10 / 1.0 = 10s.
-    // Start at 9.5s; delta=1 pushes to 10.5 ≥ 10 → sale fires, leftover = 10.5 - 10 = 0.5s.
+    // Set up: cotyledon@5 produces 0.5 inspi/sec; canvas starts at chunk 9 of 10.
+    // Chunk-domain T1: chunkInterval = 5s. canvasProgress=9 means 9 chunks done.
+    // A 1s tick adds 0.2 chunks → progress 9.2. No sale yet (need to reach 10).
     useGameStore.getState().add("gold", big(10000));
     for (let i = 0; i < 5; i++) {
       useGameStore.getState().buyPartLevel("cotyledon");
     }
-    useGameStore.setState({ canvasProgress: 9.5 });
+    useGameStore.setState({ canvasProgress: 9 });
     const inspBefore = useGameStore.getState().inspiration.toNumber();
     const goldBefore = useGameStore.getState().gold.toNumber();
 
@@ -42,12 +46,20 @@ describe("tickAll orchestrator", () => {
 
     // Tree credit: 5 * 0.1 * 1 = 0.5
     expect(useGameStore.getState().inspiration.toNumber() - inspBefore).toBeCloseTo(0.5, 6);
-    // Canvas: one sale fires; gold = 10 × 1.0 = 10
-    // (sizeLevel=0, sellPriceLevel=0, no items).
-    expect(useGameStore.getState().gold.toNumber() - goldBefore).toBeCloseTo(10, 5);
-    // Progress carries leftover = 0.5s (< effectiveTime → no clamp).
-    const expectedLeftover = 0.5;
-    expect(useGameStore.getState().canvasProgress).toBeCloseTo(expectedLeftover, 9);
+    // Canvas: 1s = 0.2 chunks. No sale yet — partial chunk progress only,
+    // and no chunk boundary crossed → no per-chunk gold credit either.
+    expect(useGameStore.getState().gold.toNumber() - goldBefore).toBe(0);
+    // Progress: 9 + 0.2 = 9.2 (no chunk completes).
+    expect(useGameStore.getState().canvasProgress).toBeCloseTo(9.2, 5);
+  });
+
+  it("tickAll(full canvas time) fires a sale and credits canvas gold", () => {
+    // From canvasProgress=0, ticking exactly past one full canvas worth of time
+    // (50s + ε at T1) fires one sale → 10g credited.
+    useGameStore.setState({ canvasProgress: 0 });
+    const goldBefore = useGameStore.getState().gold.toNumber();
+    useGameStore.getState().tickAll(T1_CANVAS_TIME + 0.01);
+    expect(useGameStore.getState().gold.toNumber() - goldBefore).toBeGreaterThanOrEqual(10);
   });
 
   it("tickAll calls treeTick BEFORE canvasTick (order pinned for Phase 3 forward-compat)", () => {

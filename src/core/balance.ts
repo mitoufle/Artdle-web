@@ -59,48 +59,15 @@ export const COMBO_COST_BASE = 5000;
 /** Shared exponential growth factor for all 5 track cost curves: cost = base × growth^(level-1). */
 export const TRACK_COST_GROWTH = 1.5;
 
-/** Base paint time at sizeLevel = 0, before speed multipliers. Matches the v1.1 tier-1 baseline. */
-export const CANVAS_TIME_BASE = 10;
-
 /**
  * Multiplier on base canvas gold at canvas tier T.
  * `tierFactor(1) = 1`, `tierFactor(2) = 10`, `tierFactor(3) = 100`, ...
  *
- * Used by `canvasGold(size, mult, tier)` to scale base canvas gold.
- * Cost scaling lives on `costTierFactor` so the two can be tuned independently.
- *
- * The ×10/tier ramp matches the spec's prestige design — see
+ * Used by `canvasGold(mult, tier)` and `goldPerChunk(...)` to scale base
+ * canvas gold. The ×10/tier ramp matches the spec's prestige design — see
  * `docs/superpowers/specs/2026-05-23-canvas-tier-system-design.md`.
  */
 export const tierFactor = (tier: number): number => Math.pow(10, tier - 1);
-
-/**
- * Growth base for upgrade-cost tier scaling. Decoupled from `tierFactor` (which
- * scales base canvas gold ×10/tier) so the cost-side curve can be tuned
- * independently. Set to 20 to eliminate the T3→T4 mid-tier inversion observed
- * in `tests/dev/bot-simulation.test.ts` — see
- * `docs/superpowers/plans/2026-05-24-canvas-tier-cost-rebalance.md`.
- */
-export const COST_GROWTH_BASE = 20;
-
-/**
- * Multiplier on upgrade costs at canvas tier T. `costTierFactor(1) = 1`,
- * `costTierFactor(2) = COST_GROWTH_BASE`, etc. Used by the five
- * `*UpgradeCost(level, tier)` functions in this file.
- *
- * Distinct from `tierFactor` (which scales base canvas gold). Splitting them
- * lets us make tier-ups progressively harder to clear without weakening the
- * immediate gold boost players feel on tier-up.
- */
-export const costTierFactor = (tier: number): number =>
-  Math.pow(COST_GROWTH_BASE, tier - 1);
-
-/**
- * Multiplier on base canvas paint time at tier T. `timeFactor(1) = 1`,
- * `timeFactor(2) = 2`, `timeFactor(4) = 8`. Time grows linearly per tier while
- * gold grows by ×10 — so gold/sec at base scales by ×5 per tier.
- */
-export const timeFactor = (tier: number): number => Math.pow(2, tier - 1);
 
 // ============================================================================
 // Chunk-domain constants — see 2026-05-26-canvas-chunk-domain-design.md
@@ -197,20 +164,6 @@ export const canvasGold = (multiplier: number, tier = 1): Big =>
   big(CANVAS_GOLD_BASE).mul(multiplier).mul(tierFactor(tier));
 
 /**
- * Paint time per canvas in seconds, before speed/crit modifiers.
- * `time = CANVAS_TIME_BASE × size × timeFactor(tier)`. Linear scaling: doubling
- * the canvas doubles the time. Combined with size² gold, this means gold-per-second
- * scales linearly with size — bigger canvas = strictly more efficient.
- * Tier scales base time by ×2 per tier step — `timeFactor(1) = 1` (no change at T1),
- * `timeFactor(2) = 2`, `timeFactor(4) = 8`. Gold grows ×10/tier while time grows
- * ×2/tier, so net gold/sec scales ×5 per tier.
- *
- * size = 1, tier = 1 (no upgrades, no items, no workers) ⇒ time = CANVAS_TIME_BASE = 10s.
- */
-export const canvasTime = (size: number, tier = 1): number =>
-  CANVAS_TIME_BASE * size * timeFactor(tier);
-
-/**
  * Inspiration produced per second from a list of tree parts and an aggregate multiplier.
  */
 export interface TreePartLevel {
@@ -274,24 +227,21 @@ export const xpToNext = (currentLevel: number): number => 4 * (currentLevel + 1)
  * Mirrors the contract of `craftCost(level)` — the parameter is the CURRENT level (the player's
  * stored value), and the function returns the cost of the NEXT step.
  *
- * For tracks starting at L0 (crit/combo), first buy uses formula(0) = base.
- * For tracks starting at L1 (sell-price/speed), first buy uses formula(1) = base × 1.5.
- * No level cap.
+ * For tracks starting at L0, first buy uses formula(0) = base. No level cap.
  *
  * Tier-scaling lives on the separate `tierUpgradeCost(currentTier)` dial — the four
- * within-tier track costs are tier-independent. The `_tier` parameter is kept for
- * caller-signature compatibility during the chunk-domain rework transition.
+ * within-tier track costs are tier-independent.
  */
-export const sellPriceUpgradeCost = (currentLevel: number, _tier = 1): Big =>
+export const sellPriceUpgradeCost = (currentLevel: number): Big =>
   big(SELL_PRICE_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
 
-export const speedUpgradeCost = (currentLevel: number, _tier = 1): Big =>
+export const speedUpgradeCost = (currentLevel: number): Big =>
   big(SPEED_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
 
-export const critUpgradeCost = (currentLevel: number, _tier = 1): Big =>
+export const critUpgradeCost = (currentLevel: number): Big =>
   big(CRIT_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
 
-export const comboUpgradeCost = (currentLevel: number, _tier = 1): Big =>
+export const comboUpgradeCost = (currentLevel: number): Big =>
   big(COMBO_COST_BASE).mul(big(TRACK_COST_GROWTH).pow(currentLevel));
 
 /**

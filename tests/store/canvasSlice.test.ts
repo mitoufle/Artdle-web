@@ -1,9 +1,24 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useGameStore } from "@/store";
 import { initialCanvasState } from "@/store/canvasSlice";
-import { CANVAS_GOLD_BASE, tierUpgradeCost } from "@/core/balance";
+import {
+  CANVAS_GOLD_BASE, BASE_CHUNK_INTERVAL, tierUpgradeCost,
+  chunksPerCanvas,
+} from "@/core/balance";
 import { big } from "@/core/bigNumber";
 import { setSeed } from "@/core/rng";
+import * as rngModule from "@/core/rng";
+
+// Chunk-domain canvas tick semantics at T1:
+//   - chunkInterval = BASE_CHUNK_INTERVAL = 5s, chunksPerCanvas(1) = 10
+//   - 1 chunk = 1g, 1 full canvas = 10g, full canvas time = 50s
+//   - canvasProgress is in [0, chunksPerCanvas(tier)); resets to 0 on sale.
+//
+// These slice-level tests exercise the wiring between `canvasTick` and the
+// pure engine (`canvasTickPure`). Engine-timing edge cases live in
+// `tests/core/canvasTickPure.test.ts`.
+
+const T1_CANVAS_TIME = BASE_CHUNK_INTERVAL * chunksPerCanvas(1); // 50s
 
 describe("canvasSlice — canvasTick", () => {
   beforeEach(() => {
@@ -18,69 +33,65 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().canvasProgress).toBe(0);
   });
 
-  it("canvasTick(1) advances progress to 1 (< tier-1 paint time of 10s); gold unchanged", () => {
+  it("canvasTick(BASE_CHUNK_INTERVAL) advances progress by 1 chunk; partial-canvas gold credited", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(1);
-    // Progress is between 1 and 1.5 — exact 1.0 if no crit fires (deterministic
-    // via the seed above), up to 1.4 if a crit adds one bonus chunk worth (0.4s).
+    useGameStore.getState().canvasTick(BASE_CHUNK_INTERVAL);
+    // One chunk completes — progress advances to 1 (with possible crit spill up to 2.x
+    // if the 1% crit roll fires under the seed).
     expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(1);
-    expect(useGameStore.getState().canvasProgress).toBeLessThan(1.5);
-    expect(useGameStore.getState().gold.toNumber()).toBe(goldBefore);
+    expect(useGameStore.getState().canvasProgress).toBeLessThan(3);
+    // No full canvas sale — gold reflects per-chunk drip, not lump-sum.
+    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThan(goldBefore);
   });
 
-  it("two canvasTick(25) calls fire multiple sales each (effectiveTime = 10s, multi-sale per tick)", () => {
+  it("two canvasTick(2.5 × T1 canvas) calls fire multiple sales each (multi-sale per tick)", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(25);
-    useGameStore.getState().canvasTick(25);
-    // 25s / 10s = 2.5 sales per tick → 2 sales per tick = 4 total over 2 ticks.
-    // Expect at least 4 × 10g = 40g earned (sellPriceLevel=0, no multiplier).
+    const tickDelta = 2.5 * T1_CANVAS_TIME; // 125s = 2.5 canvases per tick
+    useGameStore.getState().canvasTick(tickDelta);
+    useGameStore.getState().canvasTick(tickDelta);
+    // 2.5 canvases × 2 ticks = 5 canvases (floor); each = 10g (sellPriceLevel=0).
+    // Plus 0.5 partial canvas residual per tick (5 chunks × 1g = 5g extra each).
     expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(goldBefore + CANVAS_GOLD_BASE * 4);
-    // lastSale.id reflects total sales across both ticks (>= 4).
     expect(useGameStore.getState().lastSale!.id).toBeGreaterThanOrEqual(4);
   });
 
-  it("canvasTick just past effective threshold (speedLevel=0 → 10s): one sale fires", () => {
-    // effectiveTime = canvasTime(1) / getCanvasSpeedMultiplier = 10 / 1.0 = 10s
-    // Per-chunk model: T1 has 5×5=25 chunks, each = 0.4s. Float accumulation means
-    // exactly 10s may not complete the final chunk — use 10.01 to guarantee one sale.
-    const effTimePlus = 10.01;
+  it("canvasTick just past a full canvas (T1: 50s + ε): one sale fires, full gold credited", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(effTimePlus);
-    // sellPriceLevel=0: gold = 10 × 1.0 = 10
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE, 1);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
+    // sellPriceLevel=0: gold = CANVAS_GOLD_BASE (10g per canvas at T1)
+    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(goldBefore + CANVAS_GOLD_BASE);
     expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(0);
-    expect(useGameStore.getState().canvasProgress).toBeLessThan(10);
+    expect(useGameStore.getState().canvasProgress).toBeLessThan(chunksPerCanvas(1));
   });
 
-  it("canvasTick(effectiveTime + 0.5) produces one sale and leaves leftover < effectiveTime", () => {
-    // effectiveTime = 10 / 1.0 = 10s; leftover ≈ 0.5s after one sale
-    const effTimePlus = 10.5;
+  it("canvasTick(full canvas + half chunk) produces one sale and leaves small leftover", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(effTimePlus);
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE, 1);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + BASE_CHUNK_INTERVAL / 2);
+    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(goldBefore + CANVAS_GOLD_BASE);
+    // Leftover after one canvas sale should be well under a full canvas. Crit
+    // chunks at base 1% chance may spill 1-2 chunks across the sale boundary,
+    // so leave headroom past the strict <1 bound.
     expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(0);
-    expect(useGameStore.getState().canvasProgress).toBeLessThan(10);
+    expect(useGameStore.getState().canvasProgress).toBeLessThan(chunksPerCanvas(1));
   });
 
-  it("without crit, effectiveTime = 10s, no sale in 0.5s tick", () => {
-    // No crit (critLevel=0 → 0% chance); effectiveTime = 10s.
-    // 0.5s is far less than 10s — no sale should fire.
-    useGameStore.setState({ critLevel: 0, canvasProgress: 0.001 });
-    useGameStore.getState().canvasTick(0.5);
+  it("sub-chunk tick (delta < chunkInterval): no chunk completes, no gold credited", () => {
+    // No crit (critLevel=0 + seed-mocked rng → 0% chance). Half a chunk = no completion.
+    useGameStore.setState({ critLevel: 0, canvasProgress: 0 });
+    useGameStore.getState().canvasTick(BASE_CHUNK_INTERVAL / 2);
     expect(useGameStore.getState().gold.toNumber()).toBe(0);
   });
 
   it("canvasTick(huge delta) — fires multiple sales until budget exhausted (multi-sale per tick)", () => {
     const goldBefore = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(100); // 100 / 10 = 10 sales
-    // Floor of 100 / 10 = 10 sales. Each sale = 10g (sellPriceLevel=0), so total = 100g.
-    const expectedSales = Math.floor(100 / 10);
+    const tickDelta = T1_CANVAS_TIME * 10; // 10 full canvases worth of time
+    useGameStore.getState().canvasTick(tickDelta);
+    // Floor of 10 sales × 10g per canvas = 100g (sellPriceLevel=0).
     expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(
-      goldBefore + CANVAS_GOLD_BASE * expectedSales,
+      goldBefore + CANVAS_GOLD_BASE * 10,
     );
-    // Progress carries the small leftover from the last partial canvas.
     expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(0);
-    expect(useGameStore.getState().canvasProgress).toBeLessThan(10);
+    expect(useGameStore.getState().canvasProgress).toBeLessThan(chunksPerCanvas(1));
   });
 
   it("canvasTick(0) is a no-op: no sale, no progress change, no gold change", () => {
@@ -91,12 +102,11 @@ describe("canvasSlice — canvasTick", () => {
     expect(useGameStore.getState().gold.toNumber()).toBe(goldBefore);
   });
 
-  it("at default state (sellPriceLevel=0), one sale credits CANVAS_GOLD_BASE", () => {
-    // canvasGold base = 10; sellPriceLevel=0 adds +0% → total 10
-    // Use effTime+0.01 to guarantee the last chunk clears despite floating-point accumulation.
+  it("at default state (sellPriceLevel=0), one full canvas credits CANVAS_GOLD_BASE", () => {
+    // T1: 10 chunks × 1g = 10g per canvas. Use +0.01 to clear the final-chunk boundary.
     const goldBefore = useGameStore.getState().gold.toNumber();
-    useGameStore.getState().canvasTick(10.01);
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(goldBefore + CANVAS_GOLD_BASE, 1);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
+    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(goldBefore + CANVAS_GOLD_BASE);
   });
 });
 
@@ -122,33 +132,33 @@ describe("canvasSlice — lastSale animation trigger", () => {
     expect(useGameStore.getState().lastSale).toBeNull();
   });
 
-  it("a sale sets lastSale to {id: 1, amount: CANVAS_GOLD_BASE / chunkCount} (sellPriceLevel=0)", () => {
-    // Use 10.01 to guarantee the final chunk completes despite floating-point accumulation.
-    useGameStore.getState().canvasTick(10.01);
+  it("a sale sets lastSale to {id: 1, amount: per-chunk gold} (sellPriceLevel=0)", () => {
+    // Tick past one full canvas (50s + epsilon at T1) to guarantee a sale fires.
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
     const ls = useGameStore.getState().lastSale;
     expect(ls).not.toBeNull();
     expect(ls!.id).toBe(1);
-    // sellPriceLevel=0: per-chunk gold = 1 (T1: 10 chunks × 1g = 10g per canvas)
+    // sellPriceLevel=0: per-chunk gold = 1 (T1: 10 chunks × 1g = 10g per canvas).
     // lastSale.amount carries the FINAL chunk's gain, not the lump sum.
-    expect(ls!.amount.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE / 10, 1);
+    expect(ls!.amount.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE / chunksPerCanvas(1), 1);
   });
 
   it("two sales increment lastSale.id from 1 to 2", () => {
-    useGameStore.getState().canvasTick(10.01);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
     expect(useGameStore.getState().lastSale!.id).toBe(1);
-    useGameStore.getState().canvasTick(10.01);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
     expect(useGameStore.getState().lastSale!.id).toBe(2);
   });
 
   it("clearLastSale() resets lastSale to null", () => {
-    useGameStore.getState().canvasTick(10.01);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
     expect(useGameStore.getState().lastSale).not.toBeNull();
     useGameStore.getState().clearLastSale();
     expect(useGameStore.getState().lastSale).toBeNull();
   });
 
   it("clearLastSale() does not affect canvasProgress or gold", () => {
-    useGameStore.getState().canvasTick(10.5);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + BASE_CHUNK_INTERVAL / 2);
     const goldBefore = useGameStore.getState().gold.toNumber();
     const progressBefore = useGameStore.getState().canvasProgress;
     useGameStore.getState().clearLastSale();
@@ -157,13 +167,13 @@ describe("canvasSlice — lastSale animation trigger", () => {
   });
 
   it("a no-op tick (delta=0) does not advance lastSale", () => {
-    useGameStore.getState().canvasTick(10.01); // first sale → id=1
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01); // first sale → id=1
     useGameStore.getState().canvasTick(0);
     expect(useGameStore.getState().lastSale!.id).toBe(1);
   });
 
   it("resetCanvas() clears lastSale alongside progress", () => {
-    useGameStore.getState().canvasTick(10.01);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
     expect(useGameStore.getState().lastSale).not.toBeNull();
     useGameStore.getState().resetCanvas();
     expect(useGameStore.getState().lastSale).toBeNull();
@@ -179,17 +189,17 @@ describe("canvasSlice — sale gold (chunk-domain)", () => {
   });
 
   it("at default state (sellPriceLevel=0), one full canvas pays CANVAS_GOLD_BASE", () => {
-    // T1 = 10 chunks × 1g/chunk = 10g per canvas. Use 10.01 to clear the final
-    // chunk boundary despite float accumulation.
-    useGameStore.getState().canvasTick(10.01);
+    // T1 = 10 chunks × 1g/chunk = 10g per canvas. Use full canvas time + epsilon
+    // to clear the final chunk boundary despite float accumulation.
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
     expect(useGameStore.getState().canvasProgress).toBeGreaterThanOrEqual(0);
-    expect(useGameStore.getState().canvasProgress).toBeLessThan(10);
-    expect(useGameStore.getState().gold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE, 1);
+    expect(useGameStore.getState().canvasProgress).toBeLessThan(chunksPerCanvas(1));
+    expect(useGameStore.getState().gold.toNumber()).toBeGreaterThanOrEqual(CANVAS_GOLD_BASE);
   });
 
   it("sale calls trackSaleGold — lifetimeGold increments", () => {
-    useGameStore.getState().canvasTick(10.01);
-    expect(useGameStore.getState().lifetimeGold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE, 1);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.01);
+    expect(useGameStore.getState().lifetimeGold.toNumber()).toBeGreaterThanOrEqual(CANVAS_GOLD_BASE);
   });
 });
 
@@ -327,47 +337,45 @@ describe("canvasTick — crit + combo behaviour", () => {
     expect(typeof useGameStore.getState().critChunks).toBe("object");
   });
 
-  it("without crit (critLevel=0), painting takes effectiveTime = 10s; no sale in 9.9s", () => {
-    // speedLevel=0 → effectiveTime = 10s
+  it("without crit (critLevel=0), one chunk fires per BASE_CHUNK_INTERVAL; no sale until 10 chunks", () => {
+    // T1 chunk-domain: 10 chunks per canvas, 5s per chunk → 50s for one sale.
+    // 49s = 9.8 chunks, still no canvas sale (per-chunk gold drips though).
     useGameStore.setState({ critLevel: 0, canvasProgress: 0 });
-    useGameStore.getState().canvasTick(9.9);
-    expect(useGameStore.getState().gold.toNumber()).toBe(0);
-    useGameStore.getState().canvasTick(0.2); // crosses threshold → sale fires
-    expect(useGameStore.getState().gold.gt(big(0))).toBe(true);
+    useGameStore.getState().canvasTick(BASE_CHUNK_INTERVAL * 9.8); // 49s
+    expect(useGameStore.getState().lastSale).toBeNull();
+    useGameStore.getState().canvasTick(BASE_CHUNK_INTERVAL * 0.3); // crosses 10-chunk boundary
+    expect(useGameStore.getState().lastSale).not.toBeNull();
   });
 
-  it("on sale, combo bonus from PRIOR comboChain applies to this canvas's gold", () => {
-    setSeed(99);
+  it("on sale, combo bonus from PRIOR comboChain applies to all chunks of this canvas's gold", () => {
+    // Disable crit (BASE_CRIT_CHANCE = 1% would otherwise spill an extra chunk
+    // and skew the gold assertion). Mocking rng to a high value forces no-crit
+    // and a combo-miss after the sale fires.
+    const rngSpy = vi.spyOn(rngModule, "rng").mockReturnValue(0.999);
     useGameStore.setState({ comboChain: 3, critLevel: 0, comboLevel: 0 });
-    // speedLevel=0 (initial default)
-    // base gold = canvasGold(1, mult); mult = (1 + 0.10×0 sellPrice) × 1 (PM=0) = 1.0
-    // baseGold = 10 × 1.0 = 10
-    // combo factor = 1 + 0.10 × 3 = 1.30
-    // total = 10 × 1.30 = 13.0
-    const effTime = 10; // canvasTime(1) = 10; speedMult = 1.0
-    useGameStore.getState().canvasTick(effTime + 0.1);
+    // Per-chunk gold = 1 × comboBonusFactor(3) = 1 × 1.30 = 1.3
+    // Full canvas = 10 chunks × 1.3 = 13.0
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.1);
     const gold = useGameStore.getState().gold.toNumber();
     expect(gold).toBeCloseTo(13.0, 1);
+    rngSpy.mockRestore();
   });
 
   it("after sale, on combo hit (chance 1.0), comboChain increments", () => {
     // With comboLevel=100 (100% chance at chain=0 & chain=1), both rolls should hit.
-    // RNG sequence is now shifted by the crit re-roll in the sale path.
     setSeed(99);
-    useGameStore.setState({ comboLevel: 100, comboChain: 0 }); // chance saturates at 1.0
-    const effTime = 10;
-    useGameStore.getState().canvasTick(effTime + 0.1);
+    useGameStore.setState({ comboLevel: 100, comboChain: 0 });
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.1);
     expect(useGameStore.getState().comboChain).toBe(1);
     // Next sale, chain becomes 2
-    useGameStore.getState().canvasTick(effTime + 0.1);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.1);
     expect(useGameStore.getState().comboChain).toBe(2);
   });
 
   it("after sale, on combo miss (chance 0.0), comboChain resets to 0", () => {
     setSeed(7);
     useGameStore.setState({ comboLevel: 0, comboChain: 5 });
-    const effTime = 10;
-    useGameStore.getState().canvasTick(effTime + 0.1);
+    useGameStore.getState().canvasTick(T1_CANVAS_TIME + 0.1);
     expect(useGameStore.getState().comboChain).toBe(0);
   });
 
