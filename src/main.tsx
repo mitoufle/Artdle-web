@@ -22,6 +22,21 @@ import { CatchupRecapModal } from "@/components/catchup/CatchupRecapModal";
 import "./styles/globals.css";
 import "./index.css";
 
+// Dev console surface. Single-player game, no secrets — exposing the store
+// and a few helpers makes manual debugging trivial. Examples:
+//   __artdle.catchup(7200)            // simulate 2h offline progress now
+//   __artdle.store.getState().gold    // read current gold
+//   __artdle.store.setState({...})    // mutate
+if (typeof window !== "undefined") {
+  (window as unknown as { __artdle: unknown }).__artdle = {
+    store: useGameStore,
+    runCatchupSimulation,
+    /** Run the offline-progress sim for `seconds` of game time. Returns the recap. */
+    catchup: (seconds: number) => runCatchupSimulation(seconds, () => {}),
+    persistedAdapter,
+  };
+}
+
 // Reload always lands on /tree. Every page load goes through a splash (logo +
 // optional progress bar); when it fades away the player should see the same
 // scene every time — the inspiration tree — regardless of which sub-route
