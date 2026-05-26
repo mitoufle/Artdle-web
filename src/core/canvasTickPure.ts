@@ -127,7 +127,7 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
     }
   }
 
-  if (salesThisTick > 0 || critChunksThisTick > 0) {
+  if (salesThisTick > 0 || critChunksThisTick > 0 || tickGoldTotal.gt(0)) {
     if (critChunksThisTick > 0) {
       incrementStatPure(draft, "lifetime", "critsLanded", critChunksThisTick);
       incrementStatPure(draft, "run", "critsLanded", critChunksThisTick);

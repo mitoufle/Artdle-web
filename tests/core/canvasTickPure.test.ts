@@ -98,6 +98,13 @@ describe("canvasTickPure (chunk-domain)", () => {
     canvasTickPure(draft, BASE_CHUNK_INTERVAL);
     expect(draft.statsRun.canvasesSold).toBe(1);
   });
+
+  it("statsRun.goldEarned tracks per-chunk drip, not just per-sale", () => {
+    const draft = makeDraft();
+    canvasTickPure(draft, BASE_CHUNK_INTERVAL * 5); // 5 chunks, no sale yet
+    expect(draft.gold.toNumber()).toBeCloseTo(5, 5);
+    expect(draft.statsRun.goldEarned.toNumber()).toBeCloseTo(5, 5);
+  });
 });
 
 describe("canvasTickPure crit", () => {
