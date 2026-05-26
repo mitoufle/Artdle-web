@@ -1,4 +1,6 @@
 .card {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -7,6 +9,29 @@
   border: 1px solid var(--gold);
   border-radius: var(--r-md);
   background: var(--bg-1);
+}
+
+/* Sub-stroke cycle fill — driven from BoundSpeedTrackCard. Behind content. */
+.cycleFill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(120, 200, 255, 0.22) 0%, rgba(120, 200, 255, 0.05) 100%);
+  pointer-events: none;
+  z-index: 0;
+  transition: none;
+}
+
+.card > *:not(.cycleFill) {
+  position: relative;
+  z-index: 1;
+}
+
+.rate {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-2);
+  letter-spacing: 0.06em;
 }
 
 .locked {

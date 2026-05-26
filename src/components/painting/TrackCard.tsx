@@ -17,6 +17,14 @@ interface Props {
   /** If set, the button shows "MAX" and is disabled when level >= maxLevel. */
   maxLevel?: number;
   effectLine: string;
+  /** Optional secondary line below effectLine — e.g. live rate display. */
+  rateLine?: string;
+  /**
+   * 0..1 sub-stroke cycle progress. When defined, renders a background fill
+   * that wipes left→right as the cycle advances and snaps back when the
+   * stroke completes. Used by the Speed track to show next-stroke ETA.
+   */
+  cycleProgressPct?: number;
   costLabel: string;
   canAfford: boolean;
   locked: boolean;
@@ -25,7 +33,8 @@ interface Props {
 
 export function TrackCard({
   trackId, label, affixKind, iconOverride, colorOverride,
-  level, maxLevel, effectLine, costLabel, canAfford, locked, onUpgrade,
+  level, maxLevel, effectLine, rateLine, cycleProgressPct,
+  costLabel, canAfford, locked, onUpgrade,
 }: Props): JSX.Element {
   const isMaxed = typeof maxLevel === "number" && level >= maxLevel;
   const disabled = locked || !canAfford || isMaxed;
@@ -33,17 +42,29 @@ export function TrackCard({
   const color = colorOverride ?? (affixKind ? AFFIX_COLOR[affixKind] : "var(--ink-2)");
   const scale = affixKind ? AFFIX_SYMBOL_SCALE[affixKind] : 1.0;
   const coinIcon = <CurrencyAmount kind="gold" value={costLabel} />;
+  const fillPct = typeof cycleProgressPct === "number"
+    ? Math.max(0, Math.min(1, cycleProgressPct)) * 100
+    : null;
   return (
     <div
       className={`${styles.card} ${locked ? styles.locked : ""}`}
       data-track-id={trackId}
     >
+      {fillPct !== null && (
+        <div
+          className={styles.cycleFill}
+          style={{ width: `${fillPct}%` }}
+          aria-hidden="true"
+          data-testid={`track-card-cycle-fill-${trackId}`}
+        />
+      )}
       <div className={styles.label}>
         <span className={styles.symbol} style={{ color, fontSize: `${20 * scale}px` }}>{symbol}</span>
         {label}
       </div>
       <div className={styles.level}>Level {level}</div>
       <div className={styles.effect}>{effectLine}</div>
+      {rateLine && <div className={styles.rate} data-testid={`track-card-rate-${trackId}`}>{rateLine}</div>}
       <Hoverable
         as="div"
         title={() => locked ? `${label} — Locked` : isMaxed ? `${label} — MAX` : `${label} — Level ${level}`}

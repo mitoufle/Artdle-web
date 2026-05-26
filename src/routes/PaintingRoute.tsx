@@ -18,6 +18,7 @@ import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import { BoundCanvasStage } from "@/components/painting/BoundCanvasStage";
 import { TrackCard } from "@/components/painting/TrackCard";
+import { BoundSpeedTrackCard } from "@/components/painting/BoundSpeedTrackCard";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
 import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
 import { WorkshopRoom } from "@/components/painting/WorkshopRoom";
@@ -92,15 +93,12 @@ export function PaintingRoute(): JSX.Element {
             locked={false}
             onUpgrade={upgradeSellPrice}
           />
-          <TrackCard
-            trackId="speed"
-            label="Speed"
-            affixKind="+speed%"
+          <BoundSpeedTrackCard
             level={speedLevel}
             effectLine={`+${fmtPct(SPEED_PER_LEVEL, 0)} speed/level`}
+            chunkInterval={interval}
             costLabel={`${formatBig(speedCost)}`}
             canAfford={gold.gte(speedCost)}
-            locked={false}
             onUpgrade={upgradeSpeed}
           />
           <TrackCard
