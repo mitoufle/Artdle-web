@@ -195,13 +195,13 @@ export const treePartCost = (level: number, baseCost: number): Big =>
   big(baseCost).mul(big(TREE_PART_COST_GROWTH).pow(level));
 
 /**
- * Gold awarded when a canvas is sold, before sell-price / PM / combo modifiers.
- * `gold = CANVAS_GOLD_BASE × size² × multiplier × tierFactor(tier)`. Size² scaling is
- * the design relationship: doubling the canvas quadruples the gold. Tier scales the
- * base reward by ×10 per tier step — `tierFactor(1) = 1` (no change at T1).
+ * Gold awarded by a complete canvas at tier T. Chunk-domain: this equals
+ * `chunksPerCanvas(T) × goldPerChunk(...)`. Kept as a separate helper for
+ * UI sites that want the lump-sum display (StatsRoom, BoundCanvasStage's
+ * "next sale" preview). The engine pays per-chunk via `goldPerChunk`.
  */
-export const canvasGold = (size: number, multiplier: number, tier = 1): Big =>
-  big(CANVAS_GOLD_BASE).mul(size * size).mul(multiplier).mul(tierFactor(tier));
+export const canvasGold = (multiplier: number, tier = 1): Big =>
+  big(CANVAS_GOLD_BASE).mul(multiplier).mul(tierFactor(tier));
 
 /**
  * Paint time per canvas in seconds, before speed/crit modifiers.

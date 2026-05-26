@@ -61,6 +61,7 @@ import {
   goldPerChunk,
   tierUpgradeCost,
   chunkInterval,
+  CANVAS_GOLD_BASE,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 
@@ -131,20 +132,19 @@ describe("treePartCost", () => {
   });
 });
 
-describe("canvasGold (size² scaling)", () => {
-  it("returns BASE × size² × multiplier", () => {
-    // size 1, mult 1 → 10 × 1² × 1 = 10
-    expect(canvasGold(1, 1).toNumber()).toBeCloseTo(10, 5);
-    // size 2, mult 1 → 10 × 4 × 1 = 40
-    expect(canvasGold(2, 1).toNumber()).toBeCloseTo(40, 5);
-    // size 1.5, mult 2 → 10 × 2.25 × 2 = 45
-    expect(canvasGold(1.5, 2).toNumber()).toBeCloseTo(45, 5);
+describe("canvasGold (chunk-domain)", () => {
+  it("T1 base mult=1 returns CANVAS_GOLD_BASE × tierFactor(1) = 10", () => {
+    expect(canvasGold(1, 1).toNumber()).toBe(10);
   });
-
-  it("doubles size quadruples gold (size² relationship)", () => {
-    const a = canvasGold(1, 1).toNumber();
-    const b = canvasGold(2, 1).toNumber();
-    expect(b / a).toBeCloseTo(4, 5);
+  it("scales linearly with multiplier", () => {
+    expect(canvasGold(2.5, 1).toNumber()).toBe(25);
+  });
+  it("scales by tierFactor(T)", () => {
+    expect(canvasGold(1, 2).toNumber()).toBe(10 * tierFactor(2));
+    expect(canvasGold(1, 3).toNumber()).toBe(10 * tierFactor(3));
+  });
+  it("CANVAS_GOLD_BASE constant is 10", () => {
+    expect(CANVAS_GOLD_BASE).toBe(10);
   });
 });
 
@@ -610,26 +610,6 @@ describe("crit per-chunk constants", () => {
 // ============================================================================
 // Tier-scaled formula variants (CT4)
 // ============================================================================
-describe("canvasGold (tier-scaled)", () => {
-  it("T1 unchanged: returns CANVAS_GOLD_BASE × size² × mult", () => {
-    expect(canvasGold(1, 1, 1).toNumber()).toBeCloseTo(10, 5);
-    expect(canvasGold(1, 1).toNumber()).toBeCloseTo(10, 5); // default tier=1
-  });
-
-  it("T2: ×10 base", () => {
-    expect(canvasGold(1, 1, 2).toNumber()).toBeCloseTo(100, 5);
-  });
-
-  it("T3: ×100 base", () => {
-    expect(canvasGold(1, 1, 3).toNumber()).toBeCloseTo(1000, 5);
-  });
-
-  it("tier composes with size² and multiplier", () => {
-    // T2, size=2, mult=3: 10 × 4 × 3 × 10 = 1200
-    expect(canvasGold(2, 3, 2).toNumber()).toBeCloseTo(1200, 5);
-  });
-});
-
 describe("canvasTime (tier-scaled)", () => {
   it("T1 unchanged: returns CANVAS_TIME_BASE × size", () => {
     expect(canvasTime(1, 1)).toBeCloseTo(10, 5);
