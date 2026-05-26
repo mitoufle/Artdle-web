@@ -1,0 +1,65 @@
+.card {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 16px 22px;
+  margin-bottom: 14px;
+  border: none;
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(155, 108, 214, 0.18), transparent 60%),
+    var(--bg-1);
+  color: var(--ink-0);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.card:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+}
+
+.card:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-1);
+  margin-bottom: 10px;
+}
+
+.body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.tierLine {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.tierFrom { color: var(--ink-2); }
+.tierArrow { color: var(--ink-1); font-size: 16px; }
+.tierTo { color: var(--ink-0); }
+
+.cost {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gold);
+}
