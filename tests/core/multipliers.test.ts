@@ -148,10 +148,10 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getCanvasSpeedMultiplier sums basic_technique 5%/lvl + muscle_memory 5%/lvl", () => {
+  it("getCanvasSpeedMultiplier sums basic_technique 10%/lvl + muscle_memory 10%/lvl", () => {
     useGameStore.setState({ purchasedNodes: { basic_technique: 5, muscle_memory: 5 } });
-    // 1 + 0.05*5 + 0.05*5 = 1 + 0.25 + 0.25 = 1.50
-    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
+    // 1 + 0.10*5 + 0.10*5 = 1 + 0.50 + 0.50 = 2.00
+    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBeCloseTo(2.00, 5);
   });
 
   it("getTreeUpgradeCostMultiplier returns 1 with no Bargain", () => {

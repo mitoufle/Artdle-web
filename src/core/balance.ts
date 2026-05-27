@@ -286,10 +286,10 @@ export const COLOR_PER_LEVEL: Readonly<Record<string, number>> = {
 export const RAINBOW_PER_LEVEL = 5.00;
 /** get_inspired: +50% inspi rate per level (additive). */
 export const GET_INSPIRED_PER_LEVEL = 0.50;
-/** basic_technique: +5% canvas speed per level (additive). */
-export const BASIC_TECHNIQUE_PER_LEVEL = 0.05;
-/** muscle_memory: +5% canvas speed per level (additive). */
-export const MUSCLE_MEMORY_PER_LEVEL = 0.05;
+/** basic_technique: +10% canvas speed per level (additive). */
+export const BASIC_TECHNIQUE_PER_LEVEL = 0.10;
+/** muscle_memory: +10% canvas speed per level (additive). */
+export const MUSCLE_MEMORY_PER_LEVEL = 0.10;
 /** Bargain: -5% tree upgrade cost per level (additive discount). */
 export const BARGAIN_PER_LEVEL = 0.05;
 /** Tree upgrade cost can never drop below 50% of base, regardless of Bargain level. */

@@ -101,8 +101,8 @@ export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number =
  * Aggregate multiplier on canvas SPEED. Higher = faster.
  *
  * Wiring:
- *   - basic_technique (per level): +5% additive
- *   - muscle_memory (per level): +5% additive
+ *   - basic_technique (per level): +10% additive
+ *   - muscle_memory (per level): +10% additive
  *   - speedLevel (canvas-depth track): +15% per level additive
  *   - equipped +speed% affixes: additive (each magnitude is fractional via getEquippedContribution)
  */

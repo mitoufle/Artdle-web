@@ -61,9 +61,9 @@ const ASCEND_FAME_CAP = 500;       // stop raising the bar here (~3M inspi)
 
 const NODE_PRIORITY: SkillNodeId[] = [
   // Core roots: cheap, high ROI, open the tree
-  "basic_technique",   // +2%/L speed (1/2/3/4/5 fame); opens color tree, muscle_memory, entrepreneur
+  "basic_technique",   // +10%/L speed (1/2/3/4/5 fame); opens color tree, muscle_memory, entrepreneur
   "black_white",       // +20% gold (1 fame; requires basic_technique≥1)
-  "muscle_memory",     // +5%/L speed (5 fame/L); opens size_matters + genius_episode
+  "muscle_memory",     // +10%/L speed (5 fame/L); opens size_matters + genius_episode
   "entrepreneur",      // unlocks office roster + queue (10 fame; requires basic_technique≥1)
   // Key canvas-track unlocks — buy BEFORE maxing expensive multi-level nodes
   "size_matters",      // 5 fame → UNLOCK canvas_size track (requires muscle_memory≥1)
