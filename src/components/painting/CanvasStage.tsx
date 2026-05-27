@@ -186,18 +186,25 @@ export function CanvasStage({
     Math.max(0, Math.min(1, progressPct)) * cellsRendered,
   );
 
-  // Map engine chunk-indexed crit chunks to cell-indexed crit cells. At T1-T7
-  // (chunksPerCell=1) this is a no-op pass-through. At T8+ multiple chunk
-  // indices may collapse to the same cell index — object-key uniqueness
-  // dedupes them automatically.
+  // Map engine chunk-indexed crit chunks to LAYOUT cell indices via cellOrder.
+  // critChunks is keyed by chunk completion ordinal (0..chunkCount-1). The
+  // reveal queue ingests cells by layout index (cellOrder[k]), so the crit
+  // lookup needs the same coordinate system, otherwise the crit modifier
+  // sticks to whichever cell happens to live at the chunk-ordinal layout slot
+  // — uncorrelated to the cells actually being revealed for the crit chunks.
+  // At T8+ (chunksPerCell > 1) the chunk-ordinal is first collapsed to a
+  // reveal step via floor(chunkIdx / chunksPerCell), then translated to
+  // layout via cellOrder.
   const critCells = useMemo(() => {
-    if (chunksPerCell === 1) return critChunks;
     const out: Record<number, true> = {};
     for (const key of Object.keys(critChunks)) {
-      out[Math.floor(Number(key) / chunksPerCell)] = true;
+      const chunkIdx = Number(key);
+      const revealSlot = Math.floor(chunkIdx / chunksPerCell);
+      const layoutIdx = cellOrder[revealSlot];
+      if (layoutIdx !== undefined) out[layoutIdx] = true;
     }
     return out;
-  }, [critChunks, chunksPerCell]);
+  }, [critChunks, chunksPerCell, cellOrder]);
 
   // Two-canvas hybrid: a long-lived <canvas> holds all settled pixels, and a
   // small grid overlay holds only the ~8 cells currently popping in. The

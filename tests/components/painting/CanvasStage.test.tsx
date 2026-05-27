@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import { CanvasStage } from "@/components/painting/CanvasStage";
-import { getCanvasCellLayout } from "@/components/painting/canvasArt";
+import { getCanvasCellLayout, getCellRevealOrder } from "@/components/painting/canvasArt";
 import { useGameStore } from "@/store";
 
 describe("<CanvasStage />", () => {
@@ -256,7 +256,7 @@ describe("<CanvasStage />", () => {
       expect(container.querySelector("[data-testid='crit-indicator']")).toBeNull();
     });
 
-    it("applies the sketchCellCrit modifier to in-flight cells listed in critChunks", () => {
+    it("applies sketchCellCrit to the LAYOUT cells of each crit chunk (not raw chunk indices)", () => {
       vi.useFakeTimers();
       try {
         const { container } = render(
@@ -267,11 +267,13 @@ describe("<CanvasStage />", () => {
             timeTotal="6.0"
             nextSaleGold="100"
             critChunks={{ 0: true, 1: true }}
+            canvasNumber={0}
           />,
         );
-        // Drip the queue enough for the first cells (which include the
-        // critChunks indices since they sit early in the engine reveal order)
-        // to be in-flight. The crit cells stay in-flight for 600ms.
+        // After ~150ms the queue has promoted the first batch of pending
+        // cells to in-flight. With MAX_IN_FLIGHT=8 and 10 pending cells the
+        // first tick promotes 8, so cellOrder[0] and cellOrder[1] are both
+        // in-flight (and stay there 600ms because of the crit duration).
         act(() => {
           vi.advanceTimersByTime(150);
         });
@@ -282,22 +284,19 @@ describe("<CanvasStage />", () => {
         const cells = Array.from(
           inFlight!.querySelectorAll<HTMLDivElement>("div"),
         );
-        // The two crit cells (indices 0 and 1) are early in cellOrder for
-        // canvasNumber=0 (default), so they appear in the first in-flight
-        // batch. We assert the modifier is applied somewhere on the screen
-        // during the in-flight window.
         const critCells = cells.filter((c) =>
           c.className.includes("sketchCellCrit"),
         );
         const critIndices = critCells.map((c) =>
           Number(c.getAttribute("data-cell-index")),
         );
-        // Both crit-marked indices that appear in-flight should be flagged.
-        for (const idx of critIndices) {
-          expect([0, 1]).toContain(idx);
-        }
-        // At least one of the two crit cells should be in-flight by now.
-        expect(critCells.length).toBeGreaterThanOrEqual(1);
+        // The crit chunks (0 and 1) are revealed at LAYOUT positions
+        // cellOrder[0] and cellOrder[1] for this canvas. Both should carry
+        // the crit modifier — that's the whole point of marking N+1 chunks
+        // crit when a crit fires.
+        const cellOrder = getCellRevealOrder(0, 10);
+        const expectedLayout = [cellOrder[0]!, cellOrder[1]!].sort((a, b) => a - b);
+        expect(critIndices.sort((a, b) => a - b)).toEqual(expectedLayout);
       } finally {
         vi.useRealTimers();
       }
