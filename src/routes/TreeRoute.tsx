@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/store";
 import { TREE_STAGES } from "@/config/treeStages";
 import { treePartCost, inspiPerSec } from "@/core/balance";
-import { getInspiMultiplier } from "@/core/multipliers";
+import { big } from "@/core/bigNumber";
+import { getInspiMultiplier, getTreeUpgradeCostMultiplier } from "@/core/multipliers";
 import {
   getProducingParts,
   getTotalLevelsInStage,
@@ -27,6 +28,7 @@ export function TreeRoute(): JSX.Element {
   const buyAllAffordableTreeParts = useGameStore((s) => s.buyAllAffordableTreeParts);
 
   const helperState = { currentStage, partLevels, purchasedNodes, completedResearches, completedAchievements };
+  const treeUpgradeDiscount = getTreeUpgradeCostMultiplier(helperState);
 
   const rate = inspiPerSec(getProducingParts(helperState), getInspiMultiplier(helperState));
   const stageConfig = TREE_STAGES[currentStage];
@@ -51,7 +53,7 @@ export function TreeRoute(): JSX.Element {
     return undefined;
   }, [currentStage, stageName]);
   const anyAffordable = visibleParts.some((part) =>
-    gold.gte(treePartCost(partLevels[part.id] ?? 0, part.baseCost)),
+    gold.gte(treePartCost(partLevels[part.id] ?? 0, part.baseCost).mul(big(treeUpgradeDiscount))),
   );
 
   return (
@@ -91,7 +93,7 @@ export function TreeRoute(): JSX.Element {
           <ul className={styles.upgradeList}>
             {visibleParts.map((part) => {
               const level = partLevels[part.id] ?? 0;
-              const cost = treePartCost(level, part.baseCost);
+              const cost = treePartCost(level, part.baseCost).mul(big(treeUpgradeDiscount));
               const canAfford = gold.gte(cost);
               return (
                 <UpgradeRow

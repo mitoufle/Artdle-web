@@ -63,4 +63,18 @@ describe("TreeRoute (v2 visual)", () => {
     renderTreeRoute();
     expect(screen.getByTestId("upgrade-buy-cotyledon")).not.toBeDisabled();
   });
+
+  it("Bargain discount: lowers displayed cost AND enables a buy that would otherwise be unaffordable", () => {
+    // Cotyledon raw cost = 10g (treeStages.ts). Bargain L5 = -25%, so discounted = 7.5g.
+    // With gold=8 and no Bargain → can't afford; with Bargain L5 → can afford and the
+    // displayed price drops to 7-8 (formatBig rounds).
+    useGameStore.setState({ gold: big(8) });
+    const { unmount } = renderTreeRoute();
+    expect(screen.getByTestId("upgrade-buy-cotyledon")).toBeDisabled();
+    unmount();
+
+    useGameStore.setState({ gold: big(8), purchasedNodes: { Bargain: 5 } });
+    renderTreeRoute();
+    expect(screen.getByTestId("upgrade-buy-cotyledon")).not.toBeDisabled();
+  });
 });
