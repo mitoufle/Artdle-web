@@ -145,38 +145,25 @@ describe("<CanvasStage />", () => {
       expect(inFlight?.children.length).toBe(0);
     });
 
-    it("at progressPct=0.5, the queue surfaces cells into the in-flight overlay as time advances (max 8 simultaneously)", () => {
-      vi.useFakeTimers();
-      try {
-        // Use T5 (160 cells) so a half-canvas reveal (80 cells) saturates the
-        // 8-in-flight pool over a 400ms drip window. T1's 10-cell layout
-        // drains too fast to assert presence.
-        const { container } = render(
-          <CanvasStage
-            canvasTier={5}
-            progressPct={0.5}
-            timeElapsed="5.0"
-            timeTotal="10.0"
-            nextSaleGold="10"
-            canvasNumber={1}
-          />,
-        );
-        // Drive a few drip-ticks so the queue promotes pending into in-flight.
-        act(() => {
-          vi.advanceTimersByTime(400);
-        });
-        const inFlight = container.querySelector(
-          '[data-testid="sketch-overlay-in-flight"]',
-        );
-        // Engine reports floor(0.5 * 160) = 80 cells revealed at T5; queue caps at 8.
-        expect(inFlight?.children.length ?? 0).toBeGreaterThan(0);
-        expect(inFlight?.children.length ?? 0).toBeLessThanOrEqual(8);
-      } finally {
-        vi.useRealTimers();
-      }
+    it("at progressPct=0.5, every newly-revealed cell lands in-flight immediately (no cap, no drip)", () => {
+      // T5: 160 cells, half-progress → 80 cells revealed in one render pass.
+      const { container } = render(
+        <CanvasStage
+          canvasTier={5}
+          progressPct={0.5}
+          timeElapsed="5.0"
+          timeTotal="10.0"
+          nextSaleGold="10"
+          canvasNumber={1}
+        />,
+      );
+      const inFlight = container.querySelector(
+        '[data-testid="sketch-overlay-in-flight"]',
+      );
+      expect(inFlight?.children.length ?? 0).toBe(80);
     });
 
-    it("at progressPct=1.0, the engine target is reached and the queue eventually drains all reveals (max 8 concurrent)", () => {
+    it("at progressPct=1.0, all cells fill in-flight at once and then graduate after their duration", () => {
       vi.useFakeTimers();
       try {
         const { container } = render(
@@ -189,18 +176,14 @@ describe("<CanvasStage />", () => {
             canvasNumber={1}
           />,
         );
-        // Saturate the queue with several drip-ticks.
-        act(() => {
-          vi.advanceTimersByTime(400);
-        });
         const inFlight = container.querySelector(
           '[data-testid="sketch-overlay-in-flight"]',
         );
-        // At T1 we have 10 cells total; in-flight stays capped at 8.
-        expect(inFlight?.children.length ?? 0).toBeLessThanOrEqual(8);
-        // Drain the queue: 10 cells * ~50ms drip + 220ms animation tail.
+        // All 10 T1 cells in-flight in the same frame the engine target hits.
+        expect(inFlight?.children.length ?? 0).toBe(10);
+        // 220ms is the regular-cell duration; tick poll grain is 50ms.
         act(() => {
-          vi.advanceTimersByTime(2000);
+          vi.advanceTimersByTime(500);
         });
         expect(inFlight?.children.length ?? 0).toBe(0);
       } finally {
@@ -257,49 +240,39 @@ describe("<CanvasStage />", () => {
     });
 
     it("applies sketchCellCrit to the LAYOUT cells of each crit chunk (not raw chunk indices)", () => {
-      vi.useFakeTimers();
-      try {
-        const { container } = render(
-          <CanvasStage
-            canvasTier={1}
-            progressPct={1.0}  // all 10 cells revealed at T1
-            timeElapsed="6.0"
-            timeTotal="6.0"
-            nextSaleGold="100"
-            critChunks={{ 0: true, 1: true }}
-            canvasNumber={0}
-          />,
-        );
-        // After ~150ms the queue has promoted the first batch of pending
-        // cells to in-flight. With MAX_IN_FLIGHT=8 and 10 pending cells the
-        // first tick promotes 8, so cellOrder[0] and cellOrder[1] are both
-        // in-flight (and stay there 600ms because of the crit duration).
-        act(() => {
-          vi.advanceTimersByTime(150);
-        });
-        const inFlight = container.querySelector(
-          "[data-testid='sketch-overlay-in-flight']",
-        );
-        expect(inFlight).not.toBeNull();
-        const cells = Array.from(
-          inFlight!.querySelectorAll<HTMLDivElement>("div"),
-        );
-        const critCells = cells.filter((c) =>
-          c.className.includes("sketchCellCrit"),
-        );
-        const critIndices = critCells.map((c) =>
-          Number(c.getAttribute("data-cell-index")),
-        );
-        // The crit chunks (0 and 1) are revealed at LAYOUT positions
-        // cellOrder[0] and cellOrder[1] for this canvas. Both should carry
-        // the crit modifier — that's the whole point of marking N+1 chunks
-        // crit when a crit fires.
-        const cellOrder = getCellRevealOrder(0, 10);
-        const expectedLayout = [cellOrder[0]!, cellOrder[1]!].sort((a, b) => a - b);
-        expect(critIndices.sort((a, b) => a - b)).toEqual(expectedLayout);
-      } finally {
-        vi.useRealTimers();
-      }
+      const { container } = render(
+        <CanvasStage
+          canvasTier={1}
+          progressPct={1.0}  // all 10 cells revealed at T1
+          timeElapsed="6.0"
+          timeTotal="6.0"
+          nextSaleGold="100"
+          critChunks={{ 0: true, 1: true }}
+          canvasNumber={0}
+        />,
+      );
+      // No drip wait needed — all 10 cells go in-flight immediately on the
+      // advance-target dispatch that runs in this render's useEffect.
+      const inFlight = container.querySelector(
+        "[data-testid='sketch-overlay-in-flight']",
+      );
+      expect(inFlight).not.toBeNull();
+      const cells = Array.from(
+        inFlight!.querySelectorAll<HTMLDivElement>("div"),
+      );
+      const critCells = cells.filter((c) =>
+        c.className.includes("sketchCellCrit"),
+      );
+      const critIndices = critCells.map((c) =>
+        Number(c.getAttribute("data-cell-index")),
+      );
+      // The crit chunks (0 and 1) are revealed at LAYOUT positions
+      // cellOrder[0] and cellOrder[1] for this canvas. Both should carry the
+      // crit modifier — that's the whole point of marking N+1 chunks crit
+      // when a crit fires.
+      const cellOrder = getCellRevealOrder(0, 10);
+      const expectedLayout = [cellOrder[0]!, cellOrder[1]!].sort((a, b) => a - b);
+      expect(critIndices.sort((a, b) => a - b)).toEqual(expectedLayout);
     });
   });
 });

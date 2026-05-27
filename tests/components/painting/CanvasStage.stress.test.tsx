@@ -3,9 +3,8 @@ import { render, act } from "@testing-library/react";
 import { CanvasStage } from "@/components/painting/CanvasStage";
 
 describe("CanvasStage under crit-storm load", () => {
-  it("never exposes more than 8 in-flight cells at any single frame", () => {
+  it("renders all 640 cells in-flight immediately at T7 (no cap)", () => {
     vi.useFakeTimers();
-    let maxInFlight = 0;
     const { rerender, container } = render(
       <CanvasStage
         canvasTier={7}
@@ -33,18 +32,13 @@ describe("CanvasStage under crit-storm load", () => {
       />,
     );
 
-    // Sample the DOM after every drip-interval (50ms) over 5 seconds.
-    for (let t = 0; t < 5000; t += 50) {
-      act(() => {
-        vi.advanceTimersByTime(50);
-      });
-      const inFlightDivs = container.querySelectorAll(
-        '[data-testid="sketch-overlay-in-flight"] > div',
-      );
-      maxInFlight = Math.max(maxInFlight, inFlightDivs.length);
-    }
-
-    expect(maxInFlight).toBeLessThanOrEqual(8);
+    // No setInterval tick required — the advance-target effect places every
+    // newly-revealed cell into in-flight in the same render pass. This locks
+    // in the "crit instantly fills its cells" behavior.
+    const inFlightDivs = container.querySelectorAll(
+      '[data-testid="sketch-overlay-in-flight"] > div',
+    );
+    expect(inFlightDivs.length).toBe(640);
     vi.useRealTimers();
   });
 
@@ -73,10 +67,10 @@ describe("CanvasStage under crit-storm load", () => {
       />,
     );
 
-    // 640 cells × 50ms drip ≈ 32s minimum to fully drain; add slack for the
-    // 220ms tail of the last cell + scheduling jitter.
+    // With no drip and a 220ms non-crit duration, the entire wave graduates
+    // shortly after 220ms. Add slack for the 50ms tick-poll granularity.
     act(() => {
-      vi.advanceTimersByTime(40_000);
+      vi.advanceTimersByTime(500);
     });
 
     const inFlightDivs = container.querySelectorAll(

@@ -16,7 +16,7 @@ describe("useRevealQueue", () => {
     expect(result.current.settled).toEqual([]);
   });
 
-  it("queues new reveals when targetRevealed advances", () => {
+  it("promotes all newly-revealed cells to in-flight immediately when targetRevealed advances", () => {
     vi.useFakeTimers();
     const { result, rerender } = renderHook(
       ({ target }) =>
@@ -29,34 +29,32 @@ describe("useRevealQueue", () => {
       { initialProps: { target: 0 } },
     );
     rerender({ target: 10 });
-    // After one drip interval (~50ms), one cell should be in-flight.
-    act(() => {
-      vi.advanceTimersByTime(50);
-    });
-    expect(result.current.inFlight.length).toBeGreaterThan(0);
-    expect(result.current.inFlight.length).toBeLessThanOrEqual(8);
+    // No drip — all 10 cells land in-flight in the same frame the engine
+    // signals their reveal. No setInterval tick is required.
+    expect(result.current.inFlight.length).toBe(10);
     vi.useRealTimers();
   });
 
-  it("caps in-flight count at 8", () => {
+  it("does not cap the in-flight pool (crit burst of 50 lights up all at once)", () => {
     vi.useFakeTimers();
     const order = Array.from({ length: 100 }, (_, i) => i);
+    const critCells = Object.fromEntries(
+      Array.from({ length: 50 }, (_, i) => [i, true]),
+    ) as Record<number, true>;
     const { result, rerender } = renderHook(
       ({ target }) =>
         useRevealQueue({
           targetRevealed: target,
           cellOrder: order,
           canvasNumber: 1,
-          critCells: {},
+          critCells,
         }),
       { initialProps: { target: 0 } },
     );
-    rerender({ target: 100 });
-    // After 8 drip intervals (~400ms), the pool should be saturated.
-    act(() => {
-      vi.advanceTimersByTime(400);
-    });
-    expect(result.current.inFlight.length).toBeLessThanOrEqual(8);
+    rerender({ target: 50 });
+    expect(result.current.inFlight.length).toBe(50);
+    // All 50 are crit, so they share the 600ms crit duration.
+    expect(result.current.inFlight.every((c) => c.isCrit)).toBe(true);
     vi.useRealTimers();
   });
 
@@ -73,15 +71,11 @@ describe("useRevealQueue", () => {
       { initialProps: { target: 0 } },
     );
     rerender({ target: 1 });
-    // First cell enters in-flight at t=50ms (one drip).
-    act(() => {
-      vi.advanceTimersByTime(50);
-    });
     expect(result.current.inFlight.length).toBe(1);
     expect(result.current.settled.length).toBe(0);
-    // After 220ms in flight, it settles. Total elapsed: 50ms drip + 220ms in-flight = 270ms.
+    // After 220ms in flight, it settles.
     act(() => {
-      vi.advanceTimersByTime(220);
+      vi.advanceTimersByTime(250); // a bit past 220 + tick poll grain
     });
     expect(result.current.inFlight.length).toBe(0);
     expect(result.current.settled).toContain(0);
@@ -101,17 +95,15 @@ describe("useRevealQueue", () => {
       { initialProps: { target: 0 } },
     );
     rerender({ target: 1 });
-    act(() => {
-      vi.advanceTimersByTime(50);
-    }); // cell 0 enters in-flight
     expect(result.current.inFlight.length).toBe(1);
+    expect(result.current.inFlight[0]?.isCrit).toBe(true);
     act(() => {
-      vi.advanceTimersByTime(250);
-    }); // 300ms total in-flight — under 600
+      vi.advanceTimersByTime(300);
+    }); // under 600 → still in-flight
     expect(result.current.inFlight.length).toBe(1);
     act(() => {
       vi.advanceTimersByTime(400);
-    }); // 700ms total in-flight — past 600
+    }); // 700ms total → past 600
     expect(result.current.inFlight.length).toBe(0);
     expect(result.current.settled).toContain(0);
     vi.useRealTimers();

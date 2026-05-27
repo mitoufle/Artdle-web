@@ -1,9 +1,8 @@
 import { useEffect, useReducer, useRef } from "react";
 
-const DRIP_INTERVAL_MS = 50;
+const TICK_INTERVAL_MS = 50;
 const ANIMATION_DURATION_MS = 220;
 const CRIT_DURATION_MS = 600;
-const MAX_IN_FLIGHT = 8;
 
 export interface InFlightCell {
   cellIndex: number;
@@ -12,9 +11,8 @@ export interface InFlightCell {
 }
 
 interface QueueState {
-  pending: number[]; // cellIndex FIFO
-  inFlight: InFlightCell[]; // currently animating, max MAX_IN_FLIGHT
-  settled: number[]; // cells whose animation finished (consumer commits them to canvas)
+  inFlight: InFlightCell[];
+  settled: number[];
   lastTargetRevealed: number;
   canvasNumber: number;
 }
@@ -25,12 +23,13 @@ type Action =
       targetRevealed: number;
       cellOrder: number[];
       canvasNumber: number;
+      critCells: Record<number, true>;
+      now: number;
     }
-  | { type: "tick"; now: number; critCells: Record<number, true> }
+  | { type: "tick"; now: number }
   | { type: "reset"; canvasNumber: number };
 
 const INITIAL: QueueState = {
-  pending: [],
   inFlight: [],
   settled: [],
   lastTargetRevealed: 0,
@@ -40,29 +39,25 @@ const INITIAL: QueueState = {
 function reducer(state: QueueState, action: Action): QueueState {
   switch (action.type) {
     case "advance-target": {
-      if (action.canvasNumber !== state.canvasNumber) {
-        // Canvas changed — wipe state, then enqueue any cells the engine already considers revealed.
-        return {
-          pending: action.cellOrder.slice(0, action.targetRevealed),
-          inFlight: [],
-          settled: [],
-          lastTargetRevealed: action.targetRevealed,
-          canvasNumber: action.canvasNumber,
-        };
+      const isCanvasReset = action.canvasNumber !== state.canvasNumber;
+      const fromIdx = isCanvasReset ? 0 : state.lastTargetRevealed;
+      if (!isCanvasReset && action.targetRevealed <= state.lastTargetRevealed) {
+        return state;
       }
-      if (action.targetRevealed <= state.lastTargetRevealed) return state;
-      const newCells = action.cellOrder.slice(
-        state.lastTargetRevealed,
-        action.targetRevealed,
-      );
+      const newCellIndices = action.cellOrder.slice(fromIdx, action.targetRevealed);
+      const newInFlight: InFlightCell[] = newCellIndices.map((cellIndex) => ({
+        cellIndex,
+        startedAt: action.now,
+        isCrit: action.critCells[cellIndex] === true,
+      }));
       return {
-        ...state,
-        pending: [...state.pending, ...newCells],
+        inFlight: isCanvasReset ? newInFlight : [...state.inFlight, ...newInFlight],
+        settled: isCanvasReset ? [] : state.settled,
         lastTargetRevealed: action.targetRevealed,
+        canvasNumber: action.canvasNumber,
       };
     }
     case "tick": {
-      // 1. Graduate any in-flight cells whose duration is up.
       const stillFlying: InFlightCell[] = [];
       const newlySettled: number[] = [];
       for (const cell of state.inFlight) {
@@ -73,44 +68,15 @@ function reducer(state: QueueState, action: Action): QueueState {
           stillFlying.push(cell);
         }
       }
-      // 2. Promote pending cells into in-flight while there's room.
-      // The tick is a poll, not the event source: a cell promoted on this
-      // tick has effectively been animating since the start of the bucket
-      // (one DRIP_INTERVAL_MS ago). Recording `startedAt = now - DRIP_INTERVAL_MS`
-      // means graduation lines up with multiples of the bucket boundary —
-      // e.g. with duration=220ms a cell promoted at t=50 graduates at t=250
-      // (age = 200 + 50 bucket-credit = 250 >= 220), not t=300.
-      const nextPending = [...state.pending];
-      const nextInFlight = [...stillFlying];
-      while (nextInFlight.length < MAX_IN_FLIGHT && nextPending.length > 0) {
-        const cellIndex = nextPending.shift()!;
-        nextInFlight.push({
-          cellIndex,
-          startedAt: action.now - DRIP_INTERVAL_MS,
-          isCrit: action.critCells[cellIndex] === true,
-        });
-      }
-      if (
-        nextPending.length === state.pending.length &&
-        nextInFlight.length === state.inFlight.length &&
-        newlySettled.length === 0
-      ) {
-        // Nothing changed — return the same state to avoid re-renders.
-        return state;
-      }
+      if (newlySettled.length === 0) return state;
       return {
         ...state,
-        pending: nextPending,
-        inFlight: nextInFlight,
-        settled:
-          newlySettled.length > 0
-            ? [...state.settled, ...newlySettled]
-            : state.settled,
+        inFlight: stillFlying,
+        settled: [...state.settled, ...newlySettled],
       };
     }
     case "reset": {
       return {
-        pending: [],
         inFlight: [],
         settled: [],
         lastTargetRevealed: 0,
@@ -127,27 +93,30 @@ interface UseRevealQueueArgs {
   cellOrder: number[];
   /** Increments on each canvas sale — drives the per-canvas reset. */
   canvasNumber: number;
-  /** Map of cellIndex -> true for cells whose pop-in should use the longer crit animation duration. */
+  /** Map of LAYOUT cellIndex -> true for cells whose pop-in should use the
+   *  longer crit animation duration. CanvasStage builds this by translating
+   *  engine chunk indices through cellOrder. */
   critCells: Record<number, true>;
 }
 
 interface UseRevealQueueResult {
   inFlight: InFlightCell[];
   settled: number[];
-  pending: number[];
 }
 
 /**
- * Buffers engine reveal events so that no matter how big a single tick's
- * reveal burst (e.g. a crit paints 50 chunks at once), the UI never has more
- * than MAX_IN_FLIGHT cells animating simultaneously. Excess cells drip-feed
- * into the in-flight pool one per `DRIP_INTERVAL_MS`. Each in-flight cell
- * graduates to `settled` after its animation duration — the consumer commits
- * settled cells to the long-lived canvas at that point.
+ * Tracks the per-canvas reveal animation lifecycle.
+ *
+ * When `targetRevealed` advances, every newly-revealed cell is pushed to
+ * `inFlight` IMMEDIATELY — no drip, no in-flight cap. A burst of crit chunks
+ * therefore lights up all its cells in the same frame, matching the engine's
+ * "trigger + N bonus" semantics. Cells graduate from `inFlight` to `settled`
+ * once their per-cell duration elapses (220ms regular, 600ms crit). The
+ * consumer (CanvasStage) commits settled cells into the long-lived <canvas>
+ * via drawImage and then drops the in-flight DOM nodes.
  *
  * Why setInterval instead of requestAnimationFrame: tests need to drive the
- * timer deterministically via vi.useFakeTimers(). Real-time smoothness is
- * fine at 50ms — that's well below the 220ms animation duration.
+ * timer deterministically via vi.useFakeTimers().
  */
 export function useRevealQueue({
   targetRevealed,
@@ -167,23 +136,20 @@ export function useRevealQueue({
       targetRevealed,
       cellOrder: cellOrderRef.current,
       canvasNumber,
+      critCells: critCellsRef.current,
+      now: performance.now(),
     });
   }, [targetRevealed, canvasNumber]);
 
   useEffect(() => {
     const id = setInterval(() => {
-      dispatch({
-        type: "tick",
-        now: performance.now(),
-        critCells: critCellsRef.current,
-      });
-    }, DRIP_INTERVAL_MS);
+      dispatch({ type: "tick", now: performance.now() });
+    }, TICK_INTERVAL_MS);
     return () => clearInterval(id);
   }, []);
 
   return {
     inFlight: state.inFlight,
     settled: state.settled,
-    pending: state.pending,
   };
 }
