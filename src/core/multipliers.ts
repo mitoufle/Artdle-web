@@ -103,7 +103,7 @@ export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number =
  * Wiring:
  *   - basic_technique (per level): +5% additive
  *   - muscle_memory (per level): +5% additive
- *   - speedLevel (canvas-depth track): +5% per level additive
+ *   - speedLevel (canvas-depth track): +15% per level additive
  *   - equipped +speed% affixes: additive (each magnitude is fractional via getEquippedContribution)
  */
 export const getCanvasSpeedMultiplier = (state: CanvasMultiplierInputs): number => {

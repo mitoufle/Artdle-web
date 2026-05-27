@@ -27,15 +27,15 @@ describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
     ...over,
   } as GameStore);
 
-  it("getCanvasGoldMultiplier: includes (1 + 0.10 × sellPriceLevel) additive", () => {
-    expect(getCanvasGoldMultiplier(stub({ sellPriceLevel: 1 }))).toBeCloseTo(1.10, 5);
-    expect(getCanvasGoldMultiplier(stub({ sellPriceLevel: 5 }))).toBeCloseTo(1.50, 5);
-    expect(getCanvasGoldMultiplier(stub({ sellPriceLevel: 10 }))).toBeCloseTo(2.00, 5);
+  it("getCanvasGoldMultiplier: includes (1 + 0.15 × sellPriceLevel) additive", () => {
+    expect(getCanvasGoldMultiplier(stub({ sellPriceLevel: 1 }))).toBeCloseTo(1.15, 5);
+    expect(getCanvasGoldMultiplier(stub({ sellPriceLevel: 5 }))).toBeCloseTo(1.75, 5);
+    expect(getCanvasGoldMultiplier(stub({ sellPriceLevel: 10 }))).toBeCloseTo(2.50, 5);
   });
 
-  it("getCanvasSpeedMultiplier: includes (1 + 0.05 × speedLevel) additive", () => {
-    expect(getCanvasSpeedMultiplier(stub({ speedLevel: 1 }))).toBeCloseTo(1.05, 5);
-    expect(getCanvasSpeedMultiplier(stub({ speedLevel: 10 }))).toBeCloseTo(1.50, 5);
+  it("getCanvasSpeedMultiplier: includes (1 + 0.15 × speedLevel) additive", () => {
+    expect(getCanvasSpeedMultiplier(stub({ speedLevel: 1 }))).toBeCloseTo(1.15, 5);
+    expect(getCanvasSpeedMultiplier(stub({ speedLevel: 10 }))).toBeCloseTo(2.50, 5);
   });
 });
 
@@ -226,8 +226,8 @@ describe("getCanvasSpeedMultiplier — equipped +speed% contribution", () => {
       fuseCount: 0,
     };
     const state = stub({ equipped: { brush: item }, speedLevel: 1 });
-    // bonus = SPEED_PER_LEVEL × speedLevel(1) + 0.10 + 0.05 = 0.05 + 0.15 = 0.20
-    expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.20, 5);
+    // bonus = SPEED_PER_LEVEL × speedLevel(1) + 0.10 + 0.05 = 0.15 + 0.15 = 0.30
+    expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.30, 5);
   });
 });
 
@@ -380,9 +380,9 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
         },
       ],
     } as unknown as GameStore;
-    // Canvas: 0.10 × 5 = 0.50; Items: 10/100 = 0.10; Workers: (20/100) × 1.04 = 0.208
-    // Total bonus = 0.808 → multiplier = 1.808 (no rainbow, no color tree)
-    expect(getCanvasGoldMultiplier(state)).toBeCloseTo(1.808, 4);
+    // Canvas: 0.15 × 5 = 0.75; Items: 10/100 = 0.10; Workers: (20/100) × 1.04 = 0.208
+    // Total bonus = 1.058 → multiplier = 2.058 (no rainbow, no color tree)
+    expect(getCanvasGoldMultiplier(state)).toBeCloseTo(2.058, 4);
   });
 
   it("getCanvasSpeedMultiplier sums all three sources additively", () => {
@@ -404,9 +404,9 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
         },
       ],
     } as unknown as GameStore;
-    // Canvas: 0.05 × 4 = 0.20; Items: 0.10; Workers: 0.15 × 1.04 = 0.156
-    // Total bonus = 0.456 → multiplier = 1.456
-    expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.456, 4);
+    // Canvas: 0.15 × 4 = 0.60; Items: 0.10; Workers: 0.15 × 1.04 = 0.156
+    // Total bonus = 0.856 → multiplier = 1.856
+    expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.856, 4);
   });
 
   it("getCritChance: only critLevel contributes (items + workers moved to getCritChunks)", () => {
@@ -543,10 +543,10 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
       sellPriceLevel: 5, speedLevel: 0, critLevel: 0, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
-    // 1 + 0.10 × 5 = 1.50, regardless of tier
-    expect(getCanvasGoldMultiplier({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(1.50, 5);
-    expect(getCanvasGoldMultiplier({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(1.50, 5);
-    expect(getCanvasGoldMultiplier({ ...baseState, canvasTier: 6 } as never)).toBeCloseTo(1.50, 5);
+    // 1 + 0.15 × 5 = 1.75, regardless of tier
+    expect(getCanvasGoldMultiplier({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(1.75, 5);
+    expect(getCanvasGoldMultiplier({ ...baseState, canvasTier: 2 } as never)).toBeCloseTo(1.75, 5);
+    expect(getCanvasGoldMultiplier({ ...baseState, canvasTier: 6 } as never)).toBeCloseTo(1.75, 5);
   });
 
   it("getCanvasSpeedMultiplier: same per-level effect at T1, T2, T6 (was the worst-case bug)", () => {
@@ -555,9 +555,9 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
       sellPriceLevel: 0, speedLevel: 1, critLevel: 0, comboLevel: 0,
       completedResearches: {}, completedAchievements: {},
     };
-    // 1 + 0.05 × 1 = 1.05, regardless of tier
-    expect(getCanvasSpeedMultiplier({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(1.05, 5);
-    expect(getCanvasSpeedMultiplier({ ...baseState, canvasTier: 6 } as never)).toBeCloseTo(1.05, 5);
+    // 1 + 0.15 × 1 = 1.15, regardless of tier
+    expect(getCanvasSpeedMultiplier({ ...baseState, canvasTier: 1 } as never)).toBeCloseTo(1.15, 5);
+    expect(getCanvasSpeedMultiplier({ ...baseState, canvasTier: 6 } as never)).toBeCloseTo(1.15, 5);
   });
 
   it("getCritChance: same per-level effect at T1 and T2", () => {

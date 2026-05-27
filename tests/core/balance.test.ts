@@ -226,8 +226,8 @@ describe("xpToNext", () => {
 // ============================================================================
 describe("canvas-depth tuning constants", () => {
   it("exposes per-level rates matching spec §10 defaults", () => {
-    expect(SELL_PRICE_PER_LEVEL).toBeCloseTo(0.10, 5);
-    expect(SPEED_PER_LEVEL).toBeCloseTo(0.05, 5);
+    expect(SELL_PRICE_PER_LEVEL).toBeCloseTo(0.15, 5);
+    expect(SPEED_PER_LEVEL).toBeCloseTo(0.15, 5);
     expect(CRIT_PER_LEVEL).toBeCloseTo(0.01, 5);
     expect(COMBO_PER_LEVEL).toBeCloseTo(0.02, 5);
     expect(COMBO_PER_LINK).toBeCloseTo(0.10, 5);
@@ -607,7 +607,7 @@ describe("goldPerChunk", () => {
   it("applies multiplier", () => {
     expect(goldPerChunk(0, 2.5, 1).toNumber()).toBe(2.5);
   });
-  it("level adds SELL_PRICE_PER_LEVEL (0.10) per level — encoded inside multiplier by callers, formula itself takes mult literally", () => {
+  it("level adds SELL_PRICE_PER_LEVEL (0.15) per level — encoded inside multiplier by callers, formula itself takes mult literally", () => {
     expect(goldPerChunk(99, 1, 1).toNumber()).toBe(1);
   });
 });

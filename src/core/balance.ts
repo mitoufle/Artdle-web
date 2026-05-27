@@ -25,10 +25,11 @@ export const THIRD_HAND_INTERVAL_REDUCTION = 0.10; // fraction reduced per level
 // ============================================================================
 // Canvas depth — see docs/superpowers/specs/2026-05-10-canvas-depth-design.md
 // ============================================================================
-/** +10% gold per sell-price level (additive). */
-export const SELL_PRICE_PER_LEVEL = 0.10;
-/** +5% speed per speed level (additive). */
-export const SPEED_PER_LEVEL = 0.05;
+/** +15% gold per sell-price level (additive). */
+export const SELL_PRICE_PER_LEVEL = 0.15;
+/** +15% speed per speed level (additive). Matched to SELL_PRICE_PER_LEVEL so the two
+ *  canvas-depth tracks have identical marginal efficiency (same cost curve, same per-level %). */
+export const SPEED_PER_LEVEL = 0.15;
 /** +1% crit chance per crit level. */
 export const CRIT_PER_LEVEL = 0.01;
 /** Always-on crit chance floor. Skill-tree + critLevel sum on top, then soft-cap formula. */

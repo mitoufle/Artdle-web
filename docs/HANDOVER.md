@@ -1,5 +1,59 @@
 # Artdle Web — Handover
 
+## Post-rework polish, regressions found, dev surface (2026-05-27)
+
+After the 2026-05-26 chunk-domain rework deployed, the user playtested and surfaced a series of fixes. All landed; production now on bundle `index-B56w_Qgb.js`.
+
+### What landed
+
+**Per-chunk gold drip reverted (`25ddba0`).** The spec called for gold to drip per chunk; user playtested and it felt wrong. Reverted to lump-sum payout on canvas sale. The chunk-by-chunk progress display stays, but gold is now credited as a single lump when a canvas completes (matching classic feel). `lastSale.amount` carries the full canvas total again. Crit still adds bonus chunks — its reward is "sale fires sooner," not "free gold mid-canvas."
+
+**TierUpgradeCard moved to canvas overlay (`6a835ce`).** Was sitting above the upgrade strip in a card form; user wanted it as a horizontal banner overlay at the top of the canvas image, replacing the static "— Tier N · StageName —" title. Now: pill-shaped semi-transparent banner with `Tier N · StageName → Tier N+1  |  cost gold`; rainbow conic-gradient affordability border when funds suffice; `e.stopPropagation()` on click so the canvas paint-click underneath doesn't also fire.
+
+**Progress bar redesign (`02fea27` → `44f305f`).** Two-step fix.
+- First pass (`02fea27`) reverted the bar label to seconds-based because the chunk-format string was being rendered as malformed nonsense ("5/10s / 10s"). Patched the wrong axis — user wanted chunks, and discrete fill, not continuous.
+- Real fix (`44f305f`): bar fill is now DISCRETE (floored to integer completed strokes — visibly jumps one step per stroke completion); label reads `Painting · 5 / 10 strokes`. **Player-facing wording changed from "chunk" to "stroke"** across the UI: StatsRoom CanvasBlock rows ("Strokes per canvas", "Interval per stroke", "Gold per stroke"), "Strokes per crit" stat name, all four `+crit_chunks` affix labels (WorkshopRoom/QueueCard/WorkerCard/FireConfirmModal), "Crit chance (per stroke)", and the canvas click `aria-label`. Internal field names (`canvasProgress`, `chunkCount`, `chunkInterval`, `+crit_chunks`) stay — only strings the player sees changed.
+
+**Speed card: live stroke rate + cycle-fill (`f04a232`).** Speed TrackCard now displays `0.20 strokes/s` below its effect line, and the card's background fills horizontally over the sub-stroke cycle (0→100% per chunkInterval, snaps back at each stroke completion). Implemented via two optional props on `TrackCard` (`rateLine?`, `cycleProgressPct?`) that are no-ops when omitted, plus a new `BoundSpeedTrackCard` wrapper that subscribes to `canvasProgress`. The subscription is scoped to the wrapper so PaintingRoute body isolation (BoundCanvasStage perf-guard) still holds.
+
+**TopBar sticky locks for Ascension + Constellation (`9955aec`).** Both tabs now lock until the player first crosses the unlock threshold; once unlocked they STAY unlocked forever (survive ascends, fame-spending). Implementation:
+- `metaSlice`: new `unlockedAscension` + `unlockedConstellation` boolean fields with idempotent setters.
+- `SAVE_VERSION` 24 → 25 with migration that pre-unlocks for any existing save where `ascendCount > 0`, `inspiration >= 10000`, or `fame >= 1`.
+- `TopBar`: subscribes to derived BOOLEAN conditions (`canAscend(...)`, `fame.gte(1)`), NOT raw `Big` currencies — re-renders only on threshold-cross events, not per-tick. `useEffect` flips the persistent flag once the condition is true.
+- Locked tabs render with the existing lock badge + tooltip naming the unlock condition.
+
+**Dev console surface `__artdle` (`1805eef`).** Single-player game, no secrets — exposed `window.__artdle` with handles to `store` (useGameStore), `runCatchupSimulation`, `catchup(seconds)` shortcut, and `persistedAdapter`. Example: `__artdle.catchup(7200)` instantly credits 2h of offline progress to the live store (uses the same simulation the boot flow does).
+
+### Status
+
+- **1073 / 1073 tests passing.**
+- `npx vite build` clean.
+- `npx tsc -b --noEmit`: still the 24 pre-existing baseline errors (verified at start of chunk-domain rework — zero added by these post-rework fixes).
+- Production: `index-B56w_Qgb.js`. Live.
+
+### Notes & lessons
+
+- **`feedback_ask_before_patching_visual_bugs.md` was authored mid-session** after I patched the wrong axis on the progress bar ("5/10s / 10s" — I assumed THAT was the bug and switched to seconds; user actually wanted chunks + discrete fill). The lesson: on vague UI-regression reports, ask a clarifying multiple-choice question BEFORE editing. Linked from MEMORY.md.
+- **The per-chunk gold drip lesson**: spec design choices marked "reversible if playtest hates it" by the advisor genuinely are — but should be flagged in the spec as risk. Worth tightening the spec template if this becomes a pattern.
+- **The dev `__artdle` surface should grow** if more debugging needs arise. Don't over-design — add helpers as they prove useful. `catchup(seconds)`, `store`, and `persistedAdapter` cover the common cases.
+
+### Open follow-ups
+
+- **24 pre-existing tsc baseline errors** still untouched. Separate cleanup project.
+- **Bot-sim pacing** flagged in the original rework HANDOVER still applies — the bot can't reach T2 in a 24h sim at `TIER_UPGRADE_COST_BASE = 1000`. Needs real-play data; if too steep, tune the constant. The new `__artdle.catchup()` helper makes manual feel-testing easier.
+- **TierUpgradeCard click vs canvas click**: relies on `e.stopPropagation()` — works but is a soft bond. If a future canvas click handler ever uses capture-phase, the propagation guard wouldn't stop it. No issue today.
+
+### Commits (in execution order, most recent last)
+
+`25ddba0` revert(canvasTickPure): pay gold as lump sum on canvas-sale, not per chunk
+`02fea27` fix(painting): progress bar label back to seconds (wrong axis fix — superseded)
+`44f305f` fix(painting): discrete stroke-based progress bar + 'stroke' player wording
+`f04a232` feat(painting): Speed card shows live stroke rate + cycle-fill progress
+`9955aec` feat(topbar): sticky locks on Ascension + Constellation tabs
+`1805eef` chore(dev): expose __artdle on window for console debugging
+
+---
+
 ## Canvas chunk-domain rework — landed, pending browser verification (2026-05-26)
 
 Eighteen-task rework executed via subagent-driven plan. Spec: `docs/superpowers/specs/2026-05-26-canvas-chunk-domain-design.md`. Plan: `docs/superpowers/plans/2026-05-26-canvas-chunk-domain-rework.md`.
@@ -116,7 +170,7 @@ User wants to flip the canvas-paint model from "set time per canvas, time double
 - `canvasTickPure` (`src/core/canvasTickPure.ts:33`) converts seconds-progress into integer chunk units via `chunkTime = canvasTime / chunkCount`, then steps in PAID chunk boundaries with epsilon-tolerant arithmetic. Crit rolls per chunk; bonus chunks are free.
 - Click-to-paint already exists — `src/components/painting/BoundCanvasStage.tsx:73` calls `canvasTick(paintTimeSec / chunkCount)` (= 1 chunk worth of seconds) per click.
 - `chunkCount = getSketchGridDim(T)²` from `src/components/painting/canvasArt.ts:74`. Returns `round(5 × √2^(T-1))` capped at dim 20 → 400 cells. Cell count is already ~doubling per tier (T1=25, T2=49, T3=100, T4=196, T5+=400 capped).
-- Speed: `SPEED_PER_LEVEL = 0.05` — additive +5%/level on a single `getCanvasSpeedMultiplier(draft)` multiplier in `multipliers.ts`.
+- Speed: `SPEED_PER_LEVEL = 0.15` — additive +15%/level on a single `getCanvasSpeedMultiplier(draft)` multiplier in `multipliers.ts`. Matched to `SELL_PRICE_PER_LEVEL` so both canvas-depth tracks have identical marginal efficiency at any level (same cost curve, same per-level %).
 - Size: scales time linearly (×size) AND gold quadratically (×size²).
 
 ### Open questions (asked but not answered)
@@ -1717,8 +1771,8 @@ Subproject 3 — Painter's Office. Sketch design at `docs/superpowers/specs/2026
 ### What landed
 
 - **5 tracks, each with its own gold-cost curve `BASE × 1.5^currentLevel`:**
-  - **Sell Price** (unlocked from L1, `+10%` gold per level, base cost 100g)
-  - **Speed** (unlocked from L1, `+5%` speed per level, base cost 100g)
+  - **Sell Price** (unlocked from L1, `+15%` gold per level, base cost 100g)
+  - **Speed** (unlocked from L1, `+15%` speed per level, base cost 100g)
   - **Size** (gated, `+30%` gold AND `+15%` time per level — net positive, base cost 1000g, replaces the old tier² scaling)
   - **Crit** (gated, `+1%` chance per level, fixed 10× speed on hit i.e. "90% faster", base cost 5000g)
   - **Combo** (gated, `+2%` base chain chance per level, fixed `+10%` gold per chained link, decay -5pp per current link, base cost 5000g)
