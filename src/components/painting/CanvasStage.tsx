@@ -14,7 +14,7 @@ import { getCanvasGoldMultiplier, getOfficeContribution } from "@/core/multiplie
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
-import paintingScreen from "@/assets/images/Painting_screen_full.png";
+import paintingScreenAnim from "@/assets/images/painting_screen_anim.mp4";
 import { getSketchUrl, getCellRevealOrder, getCanvasCellLayout } from "./canvasArt";
 import { useRevealQueue } from "./useRevealQueue";
 import { TierUpgradeCard } from "./TierUpgradeCard";
@@ -283,12 +283,16 @@ export function CanvasStage({
           role={onChunkClick ? "button" : undefined}
           aria-label={onChunkClick ? "Paint a stroke" : undefined}
         >
-          <img
-            src={paintingScreen}
+          <video
+            src={paintingScreenAnim}
             className={styles.canvasArt}
-            alt="Artist's workshop scene with central easel"
-            draggable={false}
+            autoPlay
+            loop
+            muted
+            playsInline
+            aria-label="Artist's workshop scene with central easel"
           />
+          <div className={styles.canvasMask} aria-hidden="true" />
           {sketchUrl && (
             <>
               <canvas

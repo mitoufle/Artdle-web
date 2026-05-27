@@ -5,7 +5,7 @@ import { getCanvasCellLayout } from "@/components/painting/canvasArt";
 import { useGameStore } from "@/store";
 
 describe("<CanvasStage />", () => {
-  it("renders the workshop scene static image inside the frame", () => {
+  it("renders the workshop scene animation inside the frame", () => {
     const { container } = render(
       <CanvasStage
         canvasTier={1}
@@ -15,10 +15,10 @@ describe("<CanvasStage />", () => {
         nextSaleGold="10"
       />,
     );
-    const img = container.querySelector("img") as HTMLImageElement | null;
-    expect(img).toBeInTheDocument();
-    expect(img?.getAttribute("alt")).toMatch(/workshop/i);
-    expect(img?.getAttribute("src")).toBeTruthy();
+    const video = container.querySelector("video") as HTMLVideoElement | null;
+    expect(video).toBeInTheDocument();
+    expect(video?.getAttribute("aria-label")).toMatch(/workshop/i);
+    expect(video?.getAttribute("src")).toBeTruthy();
   });
 
   it("displays the tier in the overlay TierUpgradeCard", () => {

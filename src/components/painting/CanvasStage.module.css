@@ -44,6 +44,22 @@
   display: block;
 }
 
+/* Solid dark rectangle layered between the workshop video and the sketch
+ * overlays. The video's easel region likely shows animation we don't want
+ * to peek through painted-cell gaps; this mask hides that area so the
+ * painting overlay always renders against a clean uniform background.
+ * Color (#0e0c0e) matches the easel region of the legacy PNG so the look
+ * stays identical at the canvas seam. */
+.canvasMask {
+  position: absolute;
+  left: 39.17%;
+  top: 19.40%;
+  width: 21.58%;
+  height: 39.19%;
+  background: #0e0c0e;
+  pointer-events: none;
+}
+
 /* The easel-canvas region inside the workshop image. The settled <canvas>
  * holds all cells whose pop-in is finished as pixels (1 DOM node total).
  * The in-flight overlay is a sibling CSS grid that holds only the small
