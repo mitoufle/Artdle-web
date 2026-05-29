@@ -336,7 +336,7 @@ describe("save migration v3 → v4 (lifetime gold add)", () => {
     expect(raw).not.toBeNull();
     const parsed = JSON.parse(raw!);
     expect(parsed.state.lifetimeGold).toEqual({ __big: "50000" });
-    expect(parsed.version).toBe(25);
+    expect(parsed.version).toBe(26);
   });
 });
 
@@ -675,12 +675,12 @@ describe("save migration v21 → v22 (canvas tier system)", () => {
     expect(Object.keys(migrated)).toEqual([]);
   });
 
-  it("SAVE_VERSION is 25", async () => {
+  it("SAVE_VERSION is 26", async () => {
     useGameStore.getState().add("gold", big(1));
     await persistedAdapter.flush();
     const raw = await idbAdapter.getItem("artdle-save");
     const parsed = JSON.parse(raw!);
-    expect(parsed.version).toBe(25);
+    expect(parsed.version).toBe(26);
   });
 });
 
@@ -698,5 +698,20 @@ describe("save migration v22 → v23 (crit per-chunk rework)", () => {
     // Full wipe: migrate returns an empty (or near-empty) object so zustand's
     // shallow merge fills the rest from defaults.
     expect(Object.keys(migrated)).toEqual([]);
+  });
+});
+
+describe("save migration v25 → v26 (10-tier tree rework)", () => {
+  it("v25 → v26 wipes the tree to the new 10-tier structure", () => {
+    const old = {
+      currentStage: 5,
+      partLevels: { cotyledon: 40, tendril: 12, stalk: 3 }, // old IDs
+    };
+    const migrated = migrate(old, 25);
+    expect(migrated.currentStage).toBe(0);
+    expect(Object.keys(migrated.partLevels).sort()).toEqual(
+      ["u1","u10","u2","u3","u4","u5","u6","u7","u8","u9"].sort(),
+    );
+    expect(Object.values(migrated.partLevels).every((v) => v === 0)).toBe(true);
   });
 });

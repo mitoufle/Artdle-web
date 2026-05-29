@@ -14,6 +14,7 @@ import { createSchoolSlice, type SchoolSlice } from "./schoolSlice";
 import { createStatsSlice, type StatsSlice } from "./statsSlice";
 import { createAchievementSlice, type AchievementSlice } from "./achievementSlice";
 import { big, isBig } from "@/core/bigNumber";
+import { TREE_STAGES } from "@/config/treeStages";
 
 export interface GameTick {
   /**
@@ -40,7 +41,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 25;
+const SAVE_VERSION = 26;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -505,6 +506,15 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     next.unlockedAscension = ascendCount > 0 || hasInspiThreshold || next.unlockedAscension === true;
     next.unlockedConstellation = ascendCount > 0 || fame.gte(1) || next.unlockedConstellation === true;
     state = next as unknown as GameStore;
+  }
+
+  if (fromVersion < 26) {
+    // v25 → v26 (2026-05-29): inspiration tree reworked to 10 single-upgrade tiers
+    // (IDs u1..u10) with inspi/sec unlock + back-loaded milestones. Old part IDs have
+    // no equivalent; the tree resets every ascend, so wipe + reseed is correct.
+    const wiped: Record<string, number> = {};
+    for (const stage of TREE_STAGES) for (const part of stage.parts) wiped[part.id] = 0;
+    state = { ...state, currentStage: 0, partLevels: wiped };
   }
 
   return state as unknown as GameStore;
