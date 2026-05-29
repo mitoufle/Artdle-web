@@ -26,6 +26,8 @@ Until this branch merges, *every* production player ascends with no office, so `
 
 Also: a worker that gained XP but **no level** is absent from `lastAscendRoll` (C only pushes entries where `levelAfter > levelBefore`). The reveal naturally omits it — assert that, so nobody "fixes" it into rendering 0-level entries.
 
+**Conscious behavior (do NOT "fix"):** an ascend where you HAVE an office but **no worker leveled this run** yields `lastAscendRoll === null` → the reveal shows nothing, indistinguishable from an office-less ascend. That's acceptable for Phase D (spec §4.2 is about revealing level-ups). Do NOT add a "your painters trained but didn't level up" message — out of scope.
+
 ### 2. `WorkerAvatars` self-subscribes — never prop-drill from `PaintingRoute` (LOCKED, Task 3)
 `WorkerAvatars` reads `roster` + `painterClocks` via its OWN `useGameStore` selectors. Do NOT have `PaintingRoute` read them and pass as props — that re-subscribes `PaintingRoute` to per-tick state and re-renders the whole route every frame, silently undoing A2's removal of the `roster` subscription and the `BoundCanvasStage` isolation (see the repo's painting-route-tick-subscription-isolation work). Guarded by extending the existing `BoundCanvasStage.test.tsx` re-render-count assertion.
 
@@ -433,6 +435,7 @@ Do NOT add any `useGameStore((s) => s.roster)` / `painterClocks` selector to `Pa
 
 In `tests/components/painting/BoundCanvasStage.test.tsx`, there is a test asserting PaintingRoute's body re-renders ≤ 1 time when only `canvasProgress` changes. Add an analogous case: with `WorkerAvatars` mounted (i.e. a non-empty roster), PaintingRoute's body re-renders ≤ 1 time when only `painterClocks` changes. Mirror the existing test's harness (render-count ref / spy). This proves `WorkerAvatars` self-subscription does not leak per-tick re-renders into the route.
 > If the existing test renders `PaintingRoute` and counts a body render, set a roster first (`useGameStore.setState({ roster: [createWorker()] })`), then mutate only `painterClocks` and assert the route body render count stays ≤ 1 while the avatar subtree updates.
+> **The counter MUST stay on `PaintingRoute`'s body** (mirror the existing `canvasProgress` guard's placement). A counter accidentally placed on the `WorkerAvatars` subtree would pass vacuously and defeat the guard. The test must also confirm the tick actually propagated (the avatar subtree re-rendered / the fill changed) so it's not passing because nothing happened — i.e. it discriminates "isolated update" from "no update."
 
 - [ ] **Step 6: Run + build**
 
@@ -488,9 +491,12 @@ describe("OfficeRoom", () => {
     useGameStore.setState({ roster: [w], purchasedNodes: { hire_manager: 1, entrepreneur: 1 } });
     render(<OfficeRoom />);
     expect(screen.getByText(/Level 7/i)).toBeInTheDocument();
-    // five stat labels present
+    // five stat labels present — use EXACT string match (default exact:true),
+    // NOT a regex: a regex `getByText(/Crit/i)` matches BOTH "Crit" and
+    // "Strokes/crit" and throws on multiple matches. Exact full-string equality
+    // resolves each label to its single row.
     for (const label of ["Gold", "Speed", "Crit", "Strokes/crit", "Combo"]) {
-      expect(screen.getByText(new RegExp(label, "i"))).toBeInTheDocument();
+      expect(screen.getByText(label)).toBeInTheDocument();
     }
     // a base worker's gold reads +0%, speed ×1.00
     expect(screen.getByText("+0%")).toBeInTheDocument();
@@ -498,7 +504,7 @@ describe("OfficeRoom", () => {
   });
 });
 ```
-> If `getByText` collides on a label that also appears elsewhere, scope with `within(card)` using a `data-testid="worker-stat-card"` on each card. Keep assertions matching the file's existing test idioms.
+> jest-dom matchers (`toBeInTheDocument`) are already wired via `vitest.setup.ts` (and `tsconfig.app.json` types) — mirror the imports of an existing component test like `tests/ui/widgets/FloatingGoldText.test.tsx`. The `getByText(label)` exact-match resolves the `"Crit"` vs `"Strokes/crit"` collision; do NOT switch it to a regex.
 
 - [ ] **Step 2: Run, verify FAIL**
 
