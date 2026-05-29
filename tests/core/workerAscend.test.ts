@@ -83,6 +83,11 @@ describe("applyAscendXpToWorker", () => {
     const POOL = big(10_000);
     const freshGain = applyAscendXpToWorker(fresh, POOL).levelAfter - 1;
     const vetGain = applyAscendXpToWorker(veteran, POOL).levelAfter - 50;
+    // At default growth, a 10k pool gives ~34 levels to a fresh worker but 0 to a
+    // level-50 veteran (their next level alone costs ~10.8k > the whole pool) —
+    // so vetGain==0 here is INTENTIONAL (the curve flatlines veterans; see the
+    // plan's Phase D feel-test note on WORKER_XP_GROWTH). The rails below assert
+    // cap-safety (freshGain << LEVEL_UP_CAP) and the fresh>vet catch-up shape.
     expect(freshGain).toBeGreaterThan(vetGain);
     expect(freshGain).toBeLessThan(200);
     expect(vetGain).toBeLessThan(20);

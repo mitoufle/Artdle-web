@@ -1,4 +1,4 @@
-import { big, type Big } from "@/core/bigNumber";
+import { type Big } from "@/core/bigNumber";
 import { workerXpToNext, WORKER_BASELINE_XP_FRACTION } from "@/core/balance";
 import { applyStatLevelUp, type WorkerStats } from "@/core/workerModel";
 import type { Worker } from "@/store/officeSlice";
