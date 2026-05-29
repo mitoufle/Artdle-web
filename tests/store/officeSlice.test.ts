@@ -88,11 +88,10 @@ describe("reconcileRoster", () => {
 
 describe("buying a roster_slot node spawns a worker", () => {
   it("reconciles the roster after a successful purchase", () => {
-    // hire_manager's parent is free_will (no roster_slot tag), so seeding it
-    // satisfies the prereq without inflating the roster cap.
+    // hire_manager's parent is entrepreneur, so seeding it satisfies the prereq.
     useGameStore.setState({
       roster: [],
-      purchasedNodes: { free_will: 1 },
+      purchasedNodes: { entrepreneur: 1 },
       devFreeNodes: true,
     });
     const ok = useGameStore.getState().buyNode("hire_manager");

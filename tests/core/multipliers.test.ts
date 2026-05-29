@@ -456,15 +456,6 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
     expect(getWorkerXpMultiplier(state)).toBeCloseTo(1.40, 4);
   });
 
-  it("bookkeeper: hire_cost_reduction returns max(0.1, 1 - 0.10 × level), floored", async () => {
-    const { getHireCostMultiplier } = await import("@/core/multipliers");
-    const stateLow = { purchasedNodes: { bookkeeper: 2 } } as unknown as GameStore;
-    expect(getHireCostMultiplier(stateLow)).toBeCloseTo(0.80, 4);
-    // Maxed bookkeeper at L4 → 1 - 0.40 = 0.60 (still above the 0.1 floor)
-    const stateMax = { purchasedNodes: { bookkeeper: 4 } } as unknown as GameStore;
-    expect(getHireCostMultiplier(stateMax)).toBeCloseTo(0.60, 4);
-  });
-
   it("afterburner: combo_decay_reduction returns 0.01 × level", async () => {
     const { getComboDecayReduction } = await import("@/core/multipliers");
     const state = { purchasedNodes: { afterburner: 3 } } as unknown as GameStore;
@@ -475,14 +466,6 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
     const { getAscendThresholdReduction } = await import("@/core/multipliers");
     const state = { purchasedNodes: { enlightenment: 4 } } as unknown as GameStore;
     expect(getAscendThresholdReduction(state)).toBeCloseTo(0.20, 4);
-  });
-
-  it("class_goldsmith capability is reachable from a registered node (currently `gold_diggers`)", async () => {
-    const { hasCapability } = await import("@/store/skillTreeSlice");
-    // Use whichever node currently carries the class_goldsmith tag.
-    // (User renamed master_painter → gold_diggers; the engine reads the tag, not the ID.)
-    useGameStore.setState({ purchasedNodes: { gold_diggers: 1 } });
-    expect(hasCapability(useGameStore.getState(), "class_goldsmith")).toBe(true);
   });
 
 });

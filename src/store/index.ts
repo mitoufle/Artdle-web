@@ -41,7 +41,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 27;
+const SAVE_VERSION = 28;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -131,6 +131,13 @@ const SAVE_KEY = "artdle-save";
  * trickleTimer from persisted state, and reset roster to []. Fresh level-1
  * workers respawn via reconcileRoster() for each currently-unlocked
  * roster_slot. Worker XP/level and skill-node refunds are handled in Phase C.
+ *
+ * v27 → v28 (2026-05-29): Office redesign Phase C — the old office skill
+ * sub-tree (worker classes, queue, hire-cost, affix-magnitude) is gone. Delete
+ * the 5 now-dead nodes (education, free_will, recruiter, bookkeeper,
+ * gold_diggers) and refund their fame at the pre-deletion per-level costs.
+ * Surviving office nodes (entrepreneur/hire_manager/accelerator) are reparented
+ * in config; parent edges aren't persisted, so nothing to migrate there.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -536,6 +543,42 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     } = state;
     void _ol; void _ox; void _q; void _tt;
     state = { ...rest, roster: [] };
+  }
+
+  if (fromVersion < 28) {
+    // v27 → v28 (2026-05-29): Office redesign Phase C — the old office skill
+    // sub-tree (worker classes, queue, hire-cost, affix-magnitude) is gone.
+    // Delete the 5 now-dead nodes and refund their fame at the pre-deletion
+    // per-level costs. Surviving office nodes (entrepreneur/hire_manager/
+    // accelerator → roster_slot + worker_xp_mult) are reparented in config, and
+    // unlock_school is reparented onto accelerator (parent edges aren't
+    // persisted, so nothing to migrate there).
+    const REMOVED_NODE_COSTS: Record<string, ReadonlyArray<number>> = {
+      education: [1200, 2000, 3000, 4500, 6500],
+      free_will: [3500],
+      recruiter: [7000, 8500, 10000],
+      bookkeeper: [7000, 8000, 9000, 10000],
+      gold_diggers: [10000],
+    };
+    const purchasedNodes = (state as Record<string, unknown>).purchasedNodes as Record<string, number> | undefined;
+    if (purchasedNodes && typeof purchasedNodes === "object") {
+      let refund = 0;
+      const cleaned: Record<string, number> = { ...purchasedNodes };
+      for (const [nodeId, costs] of Object.entries(REMOVED_NODE_COSTS)) {
+        const level = cleaned[nodeId] ?? 0;
+        if (level > 0) {
+          for (let i = 0; i < Math.min(level, costs.length); i++) refund += costs[i]!;
+          delete cleaned[nodeId];
+        }
+      }
+      const next: Record<string, unknown> = { ...state, purchasedNodes: cleaned };
+      if (refund > 0) {
+        const currentFame = next.fame;
+        const baseFame = isBig(currentFame) ? currentFame : big(0);
+        next.fame = baseFame.add(refund);
+      }
+      state = next as Record<string, unknown>;
+    }
   }
 
   return state as unknown as GameStore;

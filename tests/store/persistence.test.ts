@@ -177,3 +177,31 @@ describe("save migration v23 → v24 (chunk-domain rework)", () => {
     expect("sizeLevel" in migrated).toBe(false);
   });
 });
+
+describe("save migration v27 → v28 (office dead-branch collapse)", () => {
+  it("v27→v28 migration: deletes the 5 dead office nodes and refunds their fame", () => {
+    const persisted = {
+      fame: big(0),
+      purchasedNodes: {
+        entrepreneur: 1, hire_manager: 2, accelerator: 1, // survivors
+        education: 5,    // 1200+2000+3000+4500+6500 = 17200
+        free_will: 1,    // 3500
+        recruiter: 3,    // 7000+8500+10000 = 25500
+        bookkeeper: 4,   // 7000+8000+9000+10000 = 34000
+        gold_diggers: 1, // 10000
+      },
+    };
+    const migrated = migrate(persisted, 27) as Record<string, unknown>;
+    const nodes = migrated.purchasedNodes as Record<string, number>;
+    expect(nodes.education).toBeUndefined();
+    expect(nodes.free_will).toBeUndefined();
+    expect(nodes.recruiter).toBeUndefined();
+    expect(nodes.bookkeeper).toBeUndefined();
+    expect(nodes.gold_diggers).toBeUndefined();
+    expect(nodes.entrepreneur).toBe(1);
+    expect(nodes.hire_manager).toBe(2);
+    expect(nodes.accelerator).toBe(1);
+    // total refund = 17200 + 3500 + 25500 + 34000 + 10000 = 90200
+    expect((migrated.fame as ReturnType<typeof big>).eq(big(90200))).toBe(true);
+  });
+});

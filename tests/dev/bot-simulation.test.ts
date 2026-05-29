@@ -89,13 +89,8 @@ const NODE_PRIORITY: SkillNodeId[] = [
   // Workshop slot unlocks
   "gear_up",           // unlocks palette slot + craftsmanship path (100 fame; requires muscle_memory)
   // Office path
-  "education",         // path to hire capabilities
-  "free_will",         // unlocks class_speedrunner; gateway to hire_manager
-  "hire_manager",      // +roster slots (5 fame/L)
-  "recruiter",         // +queue slots (3 fame/L)
-  "accelerator",       // worker_xp_mult (20 fame/L; requires free_will)
-  "bookkeeper",        // hire_cost_reduction (10 fame/L; requires hire_manager)
-  "gold_diggers",      // unlocks class_goldsmith (requires accelerator + hire_manager)
+  "hire_manager",      // +roster slots (5 fame/L; requires entrepreneur)
+  "accelerator",       // worker_xp_mult (20 fame/L; requires entrepreneur)
   // More color tree
   "rainbow",           // multiplicative gold bonus (100 fame; requires orange+brown+purple)
   // Workshop craftsmanship
