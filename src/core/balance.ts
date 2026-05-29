@@ -173,14 +173,25 @@ export interface TreePartLevel {
 }
 
 /**
- * Level thresholds at which a tree part's output doubles (compounding).
- * Reaching level 10 → ×2, level 25 → ×4, level 50 → ×8, etc.
+ * Level thresholds at which a tree upgrade's output gets a milestone multiplier.
+ * Back-loaded: the big jumps live at 400/800/1000 so deep-leveling an OLD upgrade
+ * is a deliberate late-game investment that lets it catch up to the frontier tier.
+ * TUNABLE (shape locked: 8 back-loaded milestones).
  */
-export const PART_MILESTONES: ReadonlyArray<number> = [10, 25, 50, 100, 200, 400];
+export const PART_MILESTONES: ReadonlyArray<number> = [10, 25, 50, 100, 200, 400, 800, 1000];
 
-/** 2^(count of milestones the part level has crossed). */
-export const getPartMilestoneMultiplier = (level: number): number =>
-  Math.pow(2, PART_MILESTONES.filter((m) => level >= m).length);
+/** Per-milestone multiplier, index-aligned with PART_MILESTONES. Cumulative product
+ *  at L1000 ≈ ×34,560 — enough to offset a ×5-per-tier base-rate gap. TUNABLE. */
+export const PART_MILESTONE_FACTORS: ReadonlyArray<number> = [2, 2, 3, 3, 4, 5, 6, 8];
+
+/** Product of the factors of every milestone the level has reached. */
+export const getPartMilestoneMultiplier = (level: number): number => {
+  let mult = 1;
+  for (let i = 0; i < PART_MILESTONES.length; i++) {
+    if (level >= PART_MILESTONES[i]!) mult *= PART_MILESTONE_FACTORS[i]!;
+  }
+  return mult;
+};
 
 /** Next milestone the part hasn't yet reached, or null if all passed. */
 export const getNextPartMilestone = (level: number): number | null =>

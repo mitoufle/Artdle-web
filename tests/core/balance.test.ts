@@ -42,6 +42,7 @@ import {
   XP_GOLD_FRACTION,
   HIRE_OFFICE_LEVEL_GROWTH,
   PART_MILESTONES,
+  PART_MILESTONE_FACTORS,
   getPartMilestoneMultiplier,
   getNextPartMilestone,
   tierFactor,
@@ -399,39 +400,24 @@ describe("hireCost", () => {
 });
 
 // ============================================================================
-// Tree part milestones
+// Tree part milestones — escalating back-loaded schedule
 // ============================================================================
-describe("PART_MILESTONES", () => {
-  it("is [10, 25, 50, 100, 200, 400]", () => {
-    expect(PART_MILESTONES).toEqual([10, 25, 50, 100, 200, 400]);
+describe("getPartMilestoneMultiplier — escalating back-loaded schedule", () => {
+  it("milestone levels and factors are aligned and back-loaded", () => {
+    expect(PART_MILESTONES).toEqual([10, 25, 50, 100, 200, 400, 800, 1000]);
+    expect(PART_MILESTONE_FACTORS).toEqual([2, 2, 3, 3, 4, 5, 6, 8]);
+    expect(PART_MILESTONES.length).toBe(PART_MILESTONE_FACTORS.length);
   });
-});
-
-describe("getPartMilestoneMultiplier", () => {
-  it("returns 1 below the first threshold (L0–L9)", () => {
+  it("is 1 below the first milestone", () => {
     expect(getPartMilestoneMultiplier(0)).toBe(1);
     expect(getPartMilestoneMultiplier(9)).toBe(1);
   });
-
-  it("doubles at L10 → ×2", () => {
+  it("compounds the factors of every milestone reached", () => {
     expect(getPartMilestoneMultiplier(10)).toBe(2);
-    expect(getPartMilestoneMultiplier(24)).toBe(2);
-  });
-
-  it("doubles again at L25 → ×4", () => {
     expect(getPartMilestoneMultiplier(25)).toBe(4);
-    expect(getPartMilestoneMultiplier(49)).toBe(4);
-  });
-
-  it("compounding: ×8 at L50, ×16 at L100, ×32 at L200, ×64 at L400", () => {
-    expect(getPartMilestoneMultiplier(50)).toBe(8);
-    expect(getPartMilestoneMultiplier(100)).toBe(16);
-    expect(getPartMilestoneMultiplier(200)).toBe(32);
-    expect(getPartMilestoneMultiplier(400)).toBe(64);
-  });
-
-  it("stays at ×64 above L400", () => {
-    expect(getPartMilestoneMultiplier(1000)).toBe(64);
+    expect(getPartMilestoneMultiplier(50)).toBe(12);
+    expect(getPartMilestoneMultiplier(100)).toBe(36);
+    expect(getPartMilestoneMultiplier(1000)).toBe(34560);
   });
 });
 
@@ -454,11 +440,13 @@ describe("getNextPartMilestone", () => {
     expect(getNextPartMilestone(50)).toBe(100);
     expect(getNextPartMilestone(100)).toBe(200);
     expect(getNextPartMilestone(200)).toBe(400);
+    expect(getNextPartMilestone(400)).toBe(800);
+    expect(getNextPartMilestone(800)).toBe(1000);
   });
 
-  it("returns null when all milestones passed (L400+)", () => {
-    expect(getNextPartMilestone(400)).toBeNull();
+  it("returns null when all milestones passed (L1000+)", () => {
     expect(getNextPartMilestone(1000)).toBeNull();
+    expect(getNextPartMilestone(1500)).toBeNull();
   });
 });
 
