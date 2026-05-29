@@ -470,7 +470,7 @@ describe("bot-simulation", () => {
     for (const a of ACHIEVEMENTS) allCompleted[a.id] = true;
     useGameStore.setState({
       currentStage: 0,
-      partLevels: { cotyledon: 5 },
+      partLevels: { u1: 5 },
       completedAchievements: allCompleted,
     });
 

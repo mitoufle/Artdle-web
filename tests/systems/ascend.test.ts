@@ -59,15 +59,15 @@ describe("systems/ascend", () => {
 
   it("performAscendOrchestrator on success: tree resets (currentStage=0, all partLevels=0)", () => {
     useGameStore.getState().add("gold", big(10000));
-    useGameStore.getState().buyPartLevel("cotyledon");
+    useGameStore.getState().buyPartLevel("u1");
     useGameStore.setState({ currentStage: 1 });
-    useGameStore.getState().buyPartLevel("tendril");
+    useGameStore.getState().buyPartLevel("u2");
     useGameStore.getState().add("inspiration", big(12_000));
     performAscendOrchestrator(useGameStore.getState);
     const s = useGameStore.getState();
     expect(s.currentStage).toBe(0);
-    expect(s.partLevels.cotyledon).toBe(0);
-    expect(s.partLevels.tendril).toBe(0);
+    expect(s.partLevels.u1).toBe(0);
+    expect(s.partLevels.u2).toBe(0);
   });
 
   it("performAscendOrchestrator on success: canvas resets (canvasProgress=0)", () => {

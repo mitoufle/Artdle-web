@@ -24,11 +24,11 @@ describe("runCatchupSimulation", () => {
   });
 
   it("credits inspiration over 1h for a producing tree", async () => {
-    // Stage-0 part is `cotyledon` (see src/config/treeStages.ts). With 5 levels
+    // Stage-0 part is `u1` (Cotyledon, see src/config/treeStages.ts). With 5 levels
     // the tree produces 0.5 inspi/sec at the base rate.
     useGameStore.setState({
       currentStage: 0,
-      partLevels: { cotyledon: 5 },
+      partLevels: { u1: 5 },
       inspiration: big(0),
     });
     const result = await runCatchupSimulation(3600, () => {});

@@ -1,8 +1,8 @@
 import type { StateCreator } from "zustand";
 import { TREE_STAGES, type TreePartConfig } from "@/config/treeStages";
-import { treePartCost } from "@/core/balance";
-import { big } from "@/core/bigNumber";
-import { getTreeUpgradeCostMultiplier } from "@/core/multipliers";
+import { inspiPerSec, treePartCost } from "@/core/balance";
+import { big, type Big } from "@/core/bigNumber";
+import { getInspiMultiplier, getTreeUpgradeCostMultiplier } from "@/core/multipliers";
 import { treeTickPure } from "@/core/treeTickPure";
 import type { GameStore } from "@/store";
 
@@ -168,14 +168,18 @@ export const getProducingParts = (
   return out;
 };
 
+/** Total tree inspiration/sec right now: producing parts × the global inspi multiplier. */
+export const getTreeInspiPerSec = (state: GameStore): Big =>
+  inspiPerSec(getProducingParts(state), getInspiMultiplier(state));
+
 /**
- * True iff the player can grow into the next stage:
- * - `currentStage + 1` exists in TREE_STAGES, AND
- * - total levels across the CURRENT stage's parts ≥ the next stage's `unlockThreshold`.
+ * True iff the player can grow into the next tier:
+ *  - `currentStage + 1` exists, AND
+ *  - total tree inspiration/sec ≥ the next tier's `unlockInspiPerSec`.
  */
 export const canGrowSapling = (state: GameStore): boolean => {
   const next = state.currentStage + 1;
   if (next >= TREE_STAGES.length) return false;
-  const required = TREE_STAGES[next]!.unlockThreshold;
-  return getTotalLevelsInStage(state, state.currentStage) >= required;
+  const threshold = TREE_STAGES[next]!.unlockInspiPerSec;
+  return getTreeInspiPerSec(state).gte(big(threshold));
 };

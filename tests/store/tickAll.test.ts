@@ -31,12 +31,12 @@ describe("tickAll orchestrator", () => {
   });
 
   it("tickAll(1) credits inspiration AND advances canvas in one call", () => {
-    // Set up: cotyledon@5 produces 0.5 inspi/sec; canvas starts at chunk 9 of 10.
+    // Set up: u1 (Cotyledon)@5 produces 0.5 inspi/sec; canvas starts at chunk 9 of 10.
     // Chunk-domain T1: chunkInterval = 5s. canvasProgress=9 means 9 chunks done.
     // A 1s tick adds 0.2 chunks → progress 9.2. No sale yet (need to reach 10).
     useGameStore.getState().add("gold", big(10000));
     for (let i = 0; i < 5; i++) {
-      useGameStore.getState().buyPartLevel("cotyledon");
+      useGameStore.getState().buyPartLevel("u1");
     }
     useGameStore.setState({ canvasProgress: 9 });
     const inspBefore = useGameStore.getState().inspiration.toNumber();

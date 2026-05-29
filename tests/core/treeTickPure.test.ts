@@ -14,25 +14,25 @@ describe("treeTickPure", () => {
   });
 
   it("credits inspiration for producing parts", () => {
-    // stage 0 — cotyledon at level 5, rate 0.1/level → 0.5 inspi/sec.
+    // stage 0 — u1 (Cotyledon) at level 5, rate 0.1/level → 0.5 inspi/sec.
+    // 5 levels is below the tier-2 threshold (5/s), so no auto-advance fires.
     const draft = { ...useGameStore.getState() } as any;
     draft.currentStage = 0;
-    draft.partLevels = { ...draft.partLevels, cotyledon: 5 };
+    draft.partLevels = { ...draft.partLevels, u1: 5 };
     draft.inspiration = big(0);
     draft.lifetimeInspiration = big(0);
     treeTickPure(draft, 1);
-    // The auto-advance fires (5 levels meets stage-1 unlockThreshold=5)
-    // but inspiration is credited from the pre-advance producing set, so
-    // we expect 5 * 0.1 * 1 = 0.5 inspi.
+    // No auto-advance (0.5/s < 5/s threshold); inspiration credited from producing set:
+    // 5 * 0.1 * 1 = 0.5 inspi.
     expect(draft.inspiration.toNumber()).toBeCloseTo(0.5, 6);
     expect(draft.lifetimeInspiration.toNumber()).toBeCloseTo(draft.inspiration.toNumber(), 6);
   });
 
-  it("auto-advances stage if threshold met", () => {
-    // stage 1 unlockThreshold = 5. Seed cotyledon @ 5 levels in stage 0.
+  it("auto-advances stage if inspi/sec threshold met", () => {
+    // tier-2 unlockInspiPerSec = 5/s. Seed u1 @ 25 levels: 25 * 0.1 * 4 = 10/s >= 5/s.
     const draft = { ...useGameStore.getState() } as any;
     draft.currentStage = 0;
-    draft.partLevels = { ...draft.partLevels, cotyledon: 5 };
+    draft.partLevels = { ...draft.partLevels, u1: 25 };
     treeTickPure(draft, 0.001);
     expect(draft.currentStage).toBe(1);
   });
