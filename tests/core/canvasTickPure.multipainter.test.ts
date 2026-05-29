@@ -56,14 +56,20 @@ describe("canvasTickPure — multi-painter", () => {
     expect(d.gold.toNumber()).toBeCloseTo(CANVAS_GOLD_BASE * 1.5, 5); // 15
   });
 
-  it("worker strokes do NOT perturb player crit-streak stats (Phase B: player-only)", () => {
+  it("worker crits do NOT count toward player crit stats (Phase B: player-only)", () => {
+    // rng 0.2 sits BETWEEN the player's crit chance (BASE_CRIT_CHANCE 0.01, since
+    // critLevel 0) and the worker's (0.5): the player NEVER crits, the worker
+    // ALWAYS crits. With the player-only gate, critsLanded must be exactly 0 —
+    // a worker crit leaking in would make it > 0. (strokesPerCrit 3 → each worker
+    // crit fills 1+3=4 chunks, so strokesThisRun proves the worker actually crit,
+    // making the `=== 0` assertion non-vacuous.)
     vi.restoreAllMocks();
-    vi.spyOn(rngModule, "rng").mockReturnValue(0.0001); // everyone crits
-    const d = makeDraft({ critLevel: 0, roster: [worker({ speed: 1, critChance: 0.5, strokesPerCrit: 1 })] });
-    canvasTickPure(d, BASE_CHUNK_INTERVAL * 2);
-    // critsLanded counts ONLY player crit chunks (player base = 1 trigger + 1 bonus = 2 per crit).
-    expect(d.statsRun.critsLanded).toBeGreaterThan(0);
-    expect(d.statsRun.critsLanded % 2).toBe(0); // multiple of player's per-crit count; no worker contribution
+    vi.spyOn(rngModule, "rng").mockReturnValue(0.2);
+    const d = makeDraft({ critLevel: 0, comboLevel: 0, roster: [worker({ speed: 1, critChance: 0.5, strokesPerCrit: 3 })] });
+    canvasTickPure(d, BASE_CHUNK_INTERVAL * 5);
+    expect(d.statsRun.critsLanded).toBe(0);            // player never crit; worker crits excluded
+    expect(d.statsRun.currentCritStreak).toBe(0);       // worker strokes never built/reset a player streak
+    expect(d.roster[0]!.strokesThisRun).toBeGreaterThanOrEqual(4); // proves the worker DID crit (non-vacuous)
   });
 
   it("the completing painter's combo base drives the chain (witnessed by combo gold)", () => {
