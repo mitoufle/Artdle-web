@@ -450,12 +450,6 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
     expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(3.80, 4);
   });
 
-  it("accelerator: worker_xp_mult returns 1 + 0.10 × level", async () => {
-    const { getWorkerXpMultiplier } = await import("@/core/multipliers");
-    const state = { purchasedNodes: { accelerator: 4 }, completedResearches: {} } as unknown as GameStore;
-    expect(getWorkerXpMultiplier(state)).toBeCloseTo(1.40, 4);
-  });
-
   it("afterburner: combo_decay_reduction returns 0.01 × level", async () => {
     const { getComboDecayReduction } = await import("@/core/multipliers");
     const state = { purchasedNodes: { afterburner: 3 } } as unknown as GameStore;

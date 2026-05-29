@@ -201,16 +201,6 @@ export const getComboBaseChance = (state: CanvasMultiplierInputs): number => {
   return Math.min(1.0, chance);
 };
 
-/** Worker XP gain per canvas sale, multiplied by accelerator nodes and school bonuses. */
-export const getWorkerXpMultiplier = (
-  state: Pick<GameStore, "purchasedNodes" | "completedResearches">,
-): number =>
-  1 + countCapability(state, "worker_xp_mult") * 0.10 + getSchoolBonus(state, "worker_xp_pct");
-
-/** Hire cost reduction, floored at 90% (so cost can't go below 10% of base). */
-export const getHireCostMultiplier = (state: Pick<GameStore, "purchasedNodes">): number =>
-  Math.max(0.1, 1 - countCapability(state, "hire_cost_reduction") * 0.10);
-
 /** Combo decay reduction per chain link (subtracted from COMBO_DECAY_PER_LINK). */
 export const getComboDecayReduction = (state: Pick<GameStore, "purchasedNodes">): number =>
   countCapability(state, "combo_decay_reduction") * 0.01;
@@ -236,7 +226,7 @@ export const getSkillAffixMagnitudeMultiplier = (
 /**
  * Multiplier on the worker ascend-XP pool from the Accelerator node
  * (`worker_xp_mult` capability): `1 + ACCELERATOR_XP_PER_LEVEL × levels`.
- * Replaces the old per-sale `getWorkerXpMultiplier` (deleted later in Phase C).
+ * Replaces the old per-sale `getWorkerXpMultiplier` (deleted in Phase C cleanup).
  */
 export const getWorkerXpPoolMultiplier = (state: Pick<GameStore, "purchasedNodes">): number =>
   1 + countCapability(state, "worker_xp_mult") * ACCELERATOR_XP_PER_LEVEL;
