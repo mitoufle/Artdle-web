@@ -86,19 +86,6 @@ describe("reconcileRoster", () => {
   });
 });
 
-describe("resetOffice (ascend) — workers persist, run contribution resets", () => {
-  it("keeps the roster and its levels/xp but zeroes strokesThisRun", () => {
-    const w: Worker = { ...createWorker(), level: 4, xp: big(99), strokesThisRun: 1234 };
-    useGameStore.setState({ roster: [w] });
-    useGameStore.getState().resetOffice();
-    const after = useGameStore.getState().roster;
-    expect(after.length).toBe(1);
-    expect(after[0]!.level).toBe(4);
-    expect(after[0]!.xp.eq(big(99))).toBe(true);
-    expect(after[0]!.strokesThisRun).toBe(0);
-  });
-});
-
 describe("buying a roster_slot node spawns a worker", () => {
   it("reconciles the roster after a successful purchase", () => {
     // hire_manager's parent is free_will (no roster_slot tag), so seeding it

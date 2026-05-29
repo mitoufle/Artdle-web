@@ -4,6 +4,7 @@ import {
   performAscendOrchestrator,
 } from "@/systems/ascend";
 import { useGameStore } from "@/store";
+import { createWorker } from "@/store/officeSlice";
 import { big } from "@/core/bigNumber";
 import { fameOnAscend } from "@/core/balance";
 
@@ -211,6 +212,39 @@ describe("systems/ascend", () => {
       performAscendOrchestrator(useGameStore.getState);
       expect(useGameStore.getState().lifetimeGold.toNumber()).toBe(99_999);
       expect(useGameStore.getState().lifetimeInspiration.toNumber()).toBe(123);
+    });
+  });
+
+  describe("performAscendOrchestrator — empty-roster ascend is byte-identical to pre-office", () => {
+    it("no roster: fame credited, run currencies reset, no error, no roll", () => {
+      useGameStore.setState({
+        inspiration: big(1_000_000), // well above the 10k fame gate
+        gold: big(5000),
+        roster: [],
+        lastAscendRoll: null,
+      });
+      const fameBefore = useGameStore.getState().fame;
+      const ok = performAscendOrchestrator(useGameStore.getState);
+      expect(ok).toBe(true);
+      const s = useGameStore.getState();
+      expect(s.gold.eq(big(0))).toBe(true);
+      expect(s.inspiration.eq(big(0))).toBe(true);
+      expect(s.fame.gt(fameBefore)).toBe(true);
+      expect(s.roster).toEqual([]);
+      expect(s.lastAscendRoll).toBeNull();
+    });
+
+    it("with a roster: workers gain XP from the fame pool and strokesThisRun resets", () => {
+      const w = { ...createWorker(), strokesThisRun: 100 };
+      // Pin purchasedNodes so a leaked accelerator from another test can't alter the pool.
+      useGameStore.setState({ inspiration: big(1_000_000), roster: [w], purchasedNodes: {}, lastAscendRoll: null });
+      performAscendOrchestrator(useGameStore.getState);
+      const after = useGameStore.getState();
+      expect(after.roster[0]!.strokesThisRun).toBe(0);
+      // fameGain at 1e6 inspi = floor((6-4)^5 × 3.2) = 102 → pool ≈ 102 → several levels
+      // for a fresh worker. MUST be `> 1`: a worker starts at level 1 and level only
+      // increases, so `>= 1` would pass even if applyAscendXp did nothing.
+      expect(after.roster[0]!.level).toBeGreaterThan(1);
     });
   });
 });

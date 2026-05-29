@@ -28,7 +28,7 @@ describe("PaintingRoute subscription isolation (BoundCanvasStage regression guar
     useGameStore.getState().resetCanvas();
     useGameStore.getState().resetTree();
     useGameStore.getState().resetSkillTree();
-    useGameStore.getState().resetOffice();
+    useGameStore.setState({ roster: [] });
     // Give the player enough state to render the full UI (upgrade levels > 0
     // so the TrackCards have real cost previews; canvasProgress at 0 so we
     // start from a clean baseline before the simulated tick updates).

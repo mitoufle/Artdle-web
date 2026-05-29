@@ -261,7 +261,7 @@ describe("bot-simulation", () => {
     useGameStore.getState().resetCanvas();
     useGameStore.getState().resetTree();
     useGameStore.getState().resetSkillTree();
-    useGameStore.getState().resetOffice();
+    useGameStore.getState().applyAscendXp(big(0));
     useGameStore.setState({
       ...initialWorkshopState,
       fame: big(0),

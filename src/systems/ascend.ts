@@ -41,7 +41,10 @@ export const performAscendOrchestrator = (
   state.resetTree();
   state.resetCanvas();
   state.resetWorkshop();
-  state.resetOffice();
+  // Workers persist across ascend; convert run contribution into XP/level-ups.
+  // Anchor: the fame credited this ascend (log-compressed → stable levels/ascend).
+  // Swapping the anchor later is a one-line change here.
+  state.applyAscendXp(big(fameGain));
 
   // 3. Credit fame (after reset; fame survived resetRunCurrencies).
   if (fameGain > 0) {

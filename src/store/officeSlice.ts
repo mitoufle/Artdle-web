@@ -70,8 +70,6 @@ export interface OfficeSlice extends OfficeState {
   applyAscendXp: (poolMagnitude: Big) => void;
   /** Clear the post-ascend roll (Phase D dismiss hook). */
   clearAscendRoll: () => void;
-  /** @deprecated removed in Phase C Task 4 — use applyAscendXp(big(0)). */
-  resetOffice: () => void;
 }
 
 /** Max number of workers — sum of fame-node levels carrying the `roster_slot` tag. */
@@ -138,10 +136,4 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
   },
 
   clearAscendRoll: () => set({ lastAscendRoll: null }),
-
-  resetOffice: () => {
-    set((s) => ({
-      roster: s.roster.map((w) => ({ ...w, strokesThisRun: 0 })),
-    }));
-  },
 });
