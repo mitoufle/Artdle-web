@@ -102,35 +102,46 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
   > so multi-painter is step-exact, OR set an explicit catch-up-vs-live tolerance. A fix is incomplete
   > unless ALL of {gold, crits, maxCombo, per-worker strokes} equalize across step sizes (an epsilon
   > tie-break alone is not enough — empirically decide with a multi-painter probe before claiming fixed).
-- ⏭️ **C — Ascend XP + persistence.** `computeAscendXpPool(runGold)` + hybrid split + `applyAscendXp`
-  (xp→levels→`applyStatLevelUp`); **`ascend.ts:44` still calls `state.resetOffice()`** — A2 already made
-  that keep-roster/zero-strokes, so C just swaps in the XP/level-up pass (don't re-add persistence);
-  skill-node migration (`roster_slot`→spawn slot — already wired, `worker_xp_mult`→ascend-XP boost;
-  DELETE `queue_slot`/`hire_cost_reduction`/`class_goldsmith`/`class_speedrunner` + refund fame).
-  **Dead-code cleanup C inherits** (now src-dead, kept by A2, tested-green, safe to delete with the node
-  migration): in `multipliers.ts` — `getWorkerXpMultiplier`, `getHireCostMultiplier`; in `balance.ts` —
-  `levelScale`/`LEVEL_SCALE_GROWTH`, `workerXpToNext`/`WORKER_XP_BASE`/`WORKER_XP_GROWTH`,
-  `officeXpToNext`/`OFFICE_XP_BASE`/`OFFICE_XP_GROWTH`, `trickleSeconds`, `WorkerTier`/`ALL_WORKER_TIERS`,
-  `OFFICE_TIER_UNLOCK_LEVEL`/`OFFICE_TIER_AFFIX_COUNT`/`computeOfficeTierProbabilities`,
-  `hireCost`/`HireCostInput`/`HIRE_TIER_BASE`/`HIRE_QUALITY_MAX`/`HIRE_OFFICE_LEVEL_GROWTH`,
-  `XP_GOLD_FRACTION` (+ their `balance.test.ts` cases). Keep the `WORKER_*` stat-model constants
-  (live — used by `workerModel.ts`).
-- ⏭️ **D — UI.** Post-ascend roll screen in `AscendCinematicOverlay`; on-canvas worker avatars +
-  next-stroke indicators; office tab rework (roster + class switch). Rework/retire `WorkerCard`,
-  `QueueCard`, `FireConfirmModal`.
+- ✅ **C — Ascend XP + persistence + skill-node migration** (DONE, reviewed, green). Plan
+  `2026-05-29-office-C-ascend-xp.md`. Commits `363cdec` (constants + `getWorkerXpPoolMultiplier`),
+  `7541d8c`/`1634df7` (pure `workerAscend.ts`: `splitAscendPool` + `applyAscendXpToWorker`), `51f82a1`/`c29dcaf`
+  (`applyAscendXp` action + `lastAscendRoll` capture), `1d9f355` (ascend wiring + `resetOffice` removed),
+  `795c78b` (skill-tree collapse + v28 refund), `7062d30` (dead-code cleanup).
+  Workers now level at ascend: `ascend.ts` calls `state.applyAscendXp(big(fameGain))` (anchor = fame
+  gained — log-compressed, one-line swap to change); pool split baseline-floor + `strokesThisRun`-weighted;
+  per-worker xp→levels each rolling `applyStatLevelUp`; `mastery` increments per level; `strokesThisRun`
+  resets; `lastAscendRoll` (transient before/after snapshot) captured for D's roll screen. `resetOffice`
+  is GONE (`applyAscendXp(big(0))` subsumes it).
+  Skill tree collapsed: deleted `education`/`free_will`/`recruiter`/`bookkeeper`/`gold_diggers`;
+  `hire_manager`+`accelerator` reparented to `entrepreneur`; `entrepreneur` keeps `roster_slot` only;
+  `accelerator` repurposed to ascend-XP boost (`worker_xp_mult`); **`unlock_school` reparented onto
+  `accelerator`** (user decision — `gold_diggers` was its only parent; keeps Painting School reachable).
+  Save `v28` deletes the 5 dead nodes from `purchasedNodes` + refunds 90,200 fame.
+  > **Feel-test flag for D/playtest:** at default `WORKER_XP_GROWTH=1.15`, a level-50 veteran gains ~0
+  > levels from a max-fame pool (cap-safe but possibly *dead*-feeling late-game). Tune `WORKER_XP_GROWTH`
+  > (curve steepness), not just `WORKER_BASELINE_XP_FRACTION`, if veterans flatline.
+  > **Correction applied:** the A2 "dead-code" list wrongly included `workerXpToNext`/`WORKER_XP_*` —
+  > C resurrects them as the level curve, so they were KEPT (only the genuinely-dead office machinery deleted).
+  > Designer `skillTreeDesign.json` is now out of sync for the office branch (decoupled user spec — left as-is).
+- ⏭️ **D — UI (final phase).** Post-ascend roll screen in `AscendCinematicOverlay` reading `lastAscendRoll`
+  (per-worker before/after; diff to show "Level X→Y, +N% gold, +1 stroke/crit"); call `clearAscendRoll()`
+  on dismiss. On-canvas worker avatars + next-stroke indicators reading `painterClocks` (ISOLATE that
+  subtree — it changes every tick). Office tab rework (roster + class switch). Then revisit the two C/D
+  decisions below (worker-crit achievements; multi-painter step-invariance). When D lands → merge to master
+  + `npx vercel --prod`. Note: old office UI (`WorkerCard`/`QueueCard`/`FireConfirmModal`/`OfficeLevelHeader`)
+  was already deleted in A2; the office tab is the minimal read-only `OfficeRoom` from A2.
 
 ### Status
-- **1066 passing + 1 skipped** on the branch after B (the 1 skipped is the deliberate multi-painter
-  step-invariance guard — see the B bullet); `npx vite build` clean. HEAD = `858cf3c`.
+- **1068 passing + 1 skipped** on the branch after C (the 1 skipped is the deliberate multi-painter
+  step-invariance guard — see the B bullet); `npx vite build` clean. HEAD = `7062d30`. `SAVE_VERSION = 28`.
 - `npx tsc -b --noEmit`: ~25 pre-existing baseline errors in TEST files (NOT a gate — green bar is
   vitest + `vite build`; prod deploy via `npx vercel --prod` is not gated on `tsc -b`). No new tsc
-  errors in non-test source from A2/B. A cleanup pass on the test-file tsc errors would be welcome
+  errors in non-test source from A2/B/C. A cleanup pass on the test-file tsc errors would be welcome
   (out of scope for the office phases).
 - **Not merged to master.** Prod is still on the pre-office branch bundle (live game + crit + tree).
-  Per plan, merge `painter-office-redesign` → master only when the office is fully done (B→C→D). A2+B
-  commits are dormant in prod terms: workers exist as data and now paint in the tick engine, but no
-  roster slot is reachable in the live game until the office UI/acquisition lands (C/D), and the office
-  isn't in prod regardless.
+  Per plan, merge `painter-office-redesign` → master only when the office is fully done (after D). A2+B+C
+  commits are dormant in prod terms: the engine + ascend XP + tree migration are all in place, but the
+  office tab is a minimal read-only panel and the full UI/roll-screen lands in D. Only D remains before merge.
 - Memory corrected this session: the **v2.0 visual redesign is shelved** (user confirmed none planned);
   `project_v12_scope.md` updated — don't gate work behind a v2.
 
@@ -151,7 +162,10 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
 delete orphans · `60e2f55` office A2 spawn wiring ·
 `fa6050e` office B plan · `d2c75c5` office B plan fix · `bb37bbc` B workerGoldFactor · `af00d26` B
 painterClocks state · `542c044` B golden master · `e8fd0bd` B multi-painter scheduler · `d5cc9c6` B
-harden crit-stats test · `858cf3c` B store integration + step-invariance guard
+harden crit-stats test · `858cf3c` B store integration + step-invariance guard ·
+`bf47637` office C plan · `e5a8f7e` C plan fixes · `363cdec` C constants+selector · `7541d8c`/`1634df7`
+C pure xp engine · `51f82a1`/`c29dcaf` C applyAscendXp+roll · `1d9f355` C ascend wiring (resetOffice removed) ·
+`795c78b` C tree collapse+v28 refund · `7062d30` C dead-code cleanup
 
 ---
 
