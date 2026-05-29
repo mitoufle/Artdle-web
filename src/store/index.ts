@@ -627,6 +627,7 @@ export const useGameStore = create<GameStore>()(
           hoverFooter: _f,
           lastSale: _ls,
           painterClocks: _pc,
+          lastAscendRoll: _lar,
           devFreeNodes: _dfn,
           activeNotification: _an,
           notificationQueue: _nq,

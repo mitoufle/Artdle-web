@@ -4,6 +4,8 @@ import { big, type Big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
 import { countCapability } from "@/store/skillTreeSlice";
 import { createBaseStats, type WorkerStats } from "@/core/workerModel";
+import { getWorkerXpPoolMultiplier } from "@/core/multipliers";
+import { splitAscendPool, applyAscendXpToWorker } from "@/core/workerAscend";
 
 /**
  * A redesigned autonomous-painter worker. See
@@ -28,12 +30,27 @@ export interface Worker {
   readonly strokesThisRun: number;
 }
 
+/** Transient per-worker reveal data for the post-ascend roll screen (Phase D).
+ *  A dumb before/after snapshot — the UI diffs it. Captured here because the
+ *  level-up rolls consume global rng() and are unrecoverable afterward. */
+export interface AscendRollEntry {
+  readonly id: string;
+  readonly levelBefore: number;
+  readonly levelAfter: number;
+  readonly statsBefore: WorkerStats;
+  readonly statsAfter: WorkerStats;
+}
+
 export interface OfficeState {
   readonly roster: ReadonlyArray<Worker>;
+  /** Most recent ascend's level-up reveal data (workers that gained ≥1 level).
+   *  TRANSIENT — stripped from `partialize`, cleared on dismiss. null = nothing to show. */
+  readonly lastAscendRoll: ReadonlyArray<AscendRollEntry> | null;
 }
 
 export const initialOfficeState: OfficeState = Object.freeze({
   roster: Object.freeze([]) as ReadonlyArray<Worker>,
+  lastAscendRoll: null,
 }) as OfficeState;
 
 export interface OfficeSlice extends OfficeState {
@@ -44,10 +61,16 @@ export interface OfficeSlice extends OfficeState {
    */
   reconcileRoster: () => void;
   /**
-   * Ascend hook. Workers PERSIST across ascend; this resets only per-run
-   * contribution (strokesThisRun → 0). Phase C renames this at the ascend
-   * call site and adds the XP/level-up pass.
+   * Ascend XP pass: pool = `poolMagnitude × getWorkerXpPoolMultiplier`, split
+   * across the roster (baseline floor + strokes-weighted), converted to
+   * level-ups (each rolls applyStatLevelUp), captures `lastAscendRoll`, and
+   * resets every worker's `strokesThisRun`. No-op (clears the roll) on an empty
+   * roster. `applyAscendXp(big(0))` = "reset run contribution" with no XP.
    */
+  applyAscendXp: (poolMagnitude: Big) => void;
+  /** Clear the post-ascend roll (Phase D dismiss hook). */
+  clearAscendRoll: () => void;
+  /** @deprecated removed in Phase C Task 4 — use applyAscendXp(big(0)). */
   resetOffice: () => void;
 }
 
@@ -78,6 +101,43 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
     for (let i = 0; i < missing; i++) spawned.push(createWorker());
     set({ roster: [...state.roster, ...spawned] });
   },
+
+  applyAscendXp: (poolMagnitude) => {
+    const state = get();
+    if (state.roster.length === 0) {
+      set({ lastAscendRoll: null });
+      return;
+    }
+    // Zero pool = "reset run contribution" only (subsumes resetOffice): no XP
+    // pass, so banked XP is left untouched. applyAscendXpToWorker always drains
+    // banked XP into levels, so we must short-circuit before it runs.
+    if (poolMagnitude.lte(0)) {
+      set({
+        roster: state.roster.map((w) => ({ ...w, strokesThisRun: 0 })),
+        lastAscendRoll: null,
+      });
+      return;
+    }
+    const pool = poolMagnitude.mul(getWorkerXpPoolMultiplier(state));
+    const shares = splitAscendPool(pool, state.roster);
+    const roll: AscendRollEntry[] = [];
+    const newRoster = state.roster.map((w, i) => {
+      const res = applyAscendXpToWorker(w, shares[i]!);
+      if (res.levelAfter > res.levelBefore) {
+        roll.push({
+          id: w.id,
+          levelBefore: res.levelBefore,
+          levelAfter: res.levelAfter,
+          statsBefore: res.statsBefore,
+          statsAfter: res.statsAfter,
+        });
+      }
+      return { ...res.worker, strokesThisRun: 0 };
+    });
+    set({ roster: newRoster, lastAscendRoll: roll.length > 0 ? roll : null });
+  },
+
+  clearAscendRoll: () => set({ lastAscendRoll: null }),
 
   resetOffice: () => {
     set((s) => ({
