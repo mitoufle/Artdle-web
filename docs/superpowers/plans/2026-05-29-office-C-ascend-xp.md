@@ -582,12 +582,16 @@ describe("performAscendOrchestrator — empty-roster ascend is byte-identical to
 
   it("with a roster: workers gain XP from the fame pool and strokesThisRun resets", () => {
     const w = { ...createWorker(), strokesThisRun: 100 };
-    useGameStore.setState({ inspiration: big(1_000_000), roster: [w], lastAscendRoll: null });
+    // Pin purchasedNodes so a leaked `accelerator` from another test can't alter the pool.
+    useGameStore.setState({ inspiration: big(1_000_000), roster: [w], purchasedNodes: {}, lastAscendRoll: null });
     performAscendOrchestrator(useGameStore.getState);
     const after = useGameStore.getState();
     expect(after.roster[0]!.strokesThisRun).toBe(0);
-    // fameGain at 1e6 inspi ≈ 102 → pool ≈ 102 → at least one level for a fresh worker
-    expect(after.roster[0]!.level).toBeGreaterThanOrEqual(1);
+    // fameGain at 1e6 inspi = floor((6-4)^5 × 3.2) = 102 → pool ≈ 102 → several levels
+    // for a fresh worker. MUST be `> 1` (not `>= 1`): a worker starts at level 1 and
+    // level only increases, so `>= 1` would pass even if applyAscendXp did nothing —
+    // this is the discriminating assertion for the phase's headline behavior.
+    expect(after.roster[0]!.level).toBeGreaterThan(1);
   });
 });
 ```
@@ -743,7 +747,8 @@ Add before `return state as unknown as GameStore;` (after the `fromVersion < 27`
 - [ ] **Step 6: Run, verify PASS**
 
 Run the persistence test file, then `npx vitest run` (full). Expected: PASS.
-> Watch for: bot-simulation or skill-tree tests that referenced the deleted node ids (`recruiter`/`bookkeeper`/`gold_diggers`/`free_will`/`education`) or the `queue_slot`/`hire_cost_reduction`/`class_*` capabilities. Update or remove those references (the capabilities no longer exist on any node). The `getQueueCap` selector was already removed in A2; confirm nothing reads `queue_slot` anymore.
+> **Watch for `tests/dev/bot-simulation.test.ts` specifically — it's a purchase PATH, not just references.** The bot walks an ordered node-purchase sequence to reach `hire_manager`; in A2 that sequence went through `entrepreneur → education → free_will → hire_manager`. After this collapse, `education`/`free_will` no longer exist and `hire_manager`'s parent is `entrepreneur` directly, so the bot's ordered purchase LIST must DROP `education` and `free_will` (and `recruiter`/`bookkeeper`/`gold_diggers` if present) — a grep for the capabilities alone will miss the sequence edit. Update the list so the bot still reaches `hire_manager`/`accelerator` via the new edges.
+> Also: any skill-tree test that referenced the deleted node ids or the `queue_slot`/`hire_cost_reduction`/`class_*` capabilities — update/remove (those capabilities exist on no node now). `getQueueCap` was already removed in A2; confirm nothing reads `queue_slot`.
 
 - [ ] **Step 7: Build + commit**
 
@@ -783,7 +788,7 @@ From `src/core/multipliers.ts`, delete `getWorkerXpMultiplier` and `getHireCostM
 
 - [ ] **Step 3: Delete the corresponding tests**
 
-In `tests/core/balance.test.ts`, delete the describe/it blocks exercising the removed symbols (`officeXpToNext`, `trickleSeconds`, `computeOfficeTierProbabilities`, `hireCost`, `levelScale`, `officeLevelFactor`, the office-tier tests). Keep the `workerXpToNext` tests (if any) and the new ascend-xp-constant tests from Task 1. If `tests/core/multipliers.test.ts` has cases for `getWorkerXpMultiplier`/`getHireCostMultiplier`, delete those.
+In `tests/core/balance.test.ts`, delete the describe/it blocks exercising the removed symbols (`officeXpToNext`, `trickleSeconds`, `computeOfficeTierProbabilities`, `hireCost`, `levelScale`, the office-tier tests). Note: the `"officeLevelFactor at L20 ≈ 1.10^20"` test (line ~395) is a test *name* only — there is no `officeLevelFactor` function in source; it exercises `HIRE_OFFICE_LEVEL_GROWTH` (deleted in Step 2). Delete that test too. (Hence nothing extra to remove for it in Step 2 — confirm via the Step 1 grep, which should show `officeLevelFactor` ONLY in this test file.) Keep the `workerXpToNext` tests (if any) and the new ascend-xp-constant tests from Task 1. If `tests/core/multipliers.test.ts` has cases for `getWorkerXpMultiplier`/`getHireCostMultiplier`, delete those.
 
 - [ ] **Step 4: Run, verify PASS**
 
@@ -823,4 +828,5 @@ git commit -m "office(cleanup): delete dead office balance/multiplier code" -m "
 - On-canvas worker avatars + next-stroke indicators reading `painterClocks` (B note: isolate the subtree — `painterClocks` changes every tick).
 - Office tab rework (roster + class switch). Reconcile `skillTreeDesign.json` with the runtime office branch if the user wants the designer file synced.
 - Revisit the C/D decisions flagged in B: (1) should worker crits feed `critsLanded`/`maxComboChain` achievements; (2) multi-painter step-invariance (known measured gap — skipped guard test) — rework to absolute next-stroke scheduling or set an explicit catch-up tolerance.
+- **Feel-test the leveling curve, not just the split.** The anchor-shape gate guarantees cap-safety, but with the default `WORKER_XP_GROWTH = 1.15` a veteran (level ~50) gains ~0 levels from a max-fame pool — late-game worker progress may feel *dead*, not just slow. The steepness knob is `WORKER_XP_GROWTH` (and `WORKER_XP_BASE`); `WORKER_BASELINE_XP_FRACTION` only shifts floor-vs-contribution, not veteran flatlining. Lower the growth if veterans stall in playtest.
 - When D lands, the office is complete → merge `painter-office-redesign` → master and `npx vercel --prod`.
