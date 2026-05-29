@@ -385,6 +385,30 @@ export const HIRE_QUALITY_MAX = 5;
 export const HIRE_OFFICE_LEVEL_GROWTH = 1.10;
 export const XP_GOLD_FRACTION = 0.01;
 
+// ============================================================================
+// Worker stat model — redesigned Painter's Office (autonomous painters).
+// See docs/superpowers/specs/2026-05-29-office-painter-redesign-design.md.
+// TUNABLE values; the stat set + roll shape are locked.
+// ============================================================================
+
+/** A level-1 worker ≈ a fresh painter. */
+export const WORKER_BASE_STATS = Object.freeze({
+  goldPct: 0,        // additive fraction → gold multiplier = 1 + goldPct
+  speed: 1,          // stroke-rate multiplier (interval = BASE_CHUNK_INTERVAL / speed)
+  critChance: 0.01,  // per-stroke crit probability (capped at WORKER_CRIT_CHANCE_CAP)
+  strokesPerCrit: 1, // integer bonus chunks per crit
+  comboChance: 0,    // combo trigger probability when this worker completes a sale
+});
+
+/** Per-level-up increment options for the four fractional stats: +0..+5pp in 1-pt steps. */
+export const WORKER_PCT_INCREMENTS: ReadonlyArray<number> = [0, 0.01, 0.02, 0.03, 0.04, 0.05];
+
+/** Per-level-up increment options for strokes-per-crit: +0 or +1. */
+export const WORKER_STROKES_PER_CRIT_INCREMENTS: ReadonlyArray<number> = [0, 1];
+
+/** Hard ceiling on a worker's crit chance. */
+export const WORKER_CRIT_CHANCE_CAP = 0.5;
+
 interface HireCostInput {
   readonly tier: WorkerTier;
   readonly magnitudeSum: number;

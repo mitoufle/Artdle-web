@@ -622,3 +622,25 @@ describe("constants", () => {
   it("TIER_UPGRADE_COST_BASE = 1000", () => expect(TIER_UPGRADE_COST_BASE).toBe(1000));
   it("CELL_RENDER_CAP = 640", () => expect(CELL_RENDER_CAP).toBe(640));
 });
+
+// ============================================================================
+// Worker stat model constants (redesigned Painter's Office)
+// ============================================================================
+import {
+  WORKER_BASE_STATS, WORKER_PCT_INCREMENTS, WORKER_STROKES_PER_CRIT_INCREMENTS, WORKER_CRIT_CHANCE_CAP,
+} from "@/core/balance";
+
+describe("worker stat model constants", () => {
+  it("base stats match a fresh painter", () => {
+    expect(WORKER_BASE_STATS).toEqual({ goldPct: 0, speed: 1, critChance: 0.01, strokesPerCrit: 1, comboChance: 0 });
+  });
+  it("percent-stat increments are 0..5 points in 1-point steps", () => {
+    expect(WORKER_PCT_INCREMENTS).toEqual([0, 0.01, 0.02, 0.03, 0.04, 0.05]);
+  });
+  it("strokes-per-crit increments are 0 or 1", () => {
+    expect(WORKER_STROKES_PER_CRIT_INCREMENTS).toEqual([0, 1]);
+  });
+  it("crit chance is hard-capped at 50%", () => {
+    expect(WORKER_CRIT_CHANCE_CAP).toBe(0.5);
+  });
+});
