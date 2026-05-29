@@ -178,7 +178,7 @@ describe("applyAscendXp", () => {
     expect(useGameStore.getState().lastAscendRoll).toBeNull();
   });
 
-  it("accelerator nodes boost the pool (more or equal levels)", () => {
+  it("accelerator nodes boost the pool (more levels)", () => {
     const base = { ...createWorker(), strokesThisRun: 10 };
     useGameStore.setState({ roster: [base], purchasedNodes: {} });
     useGameStore.getState().applyAscendXp(big(100));
@@ -188,7 +188,9 @@ describe("applyAscendXp", () => {
     useGameStore.setState({ roster: [base2], purchasedNodes: { accelerator: 5 } });
     useGameStore.getState().applyAscendXp(big(100));
     const boosted = useGameStore.getState().roster[0]!.level;
-    expect(boosted).toBeGreaterThanOrEqual(noBoost);
+    // Strict: a +50% pool (accelerator ×5) must produce a strictly higher level —
+    // `>=` would pass even if getWorkerXpPoolMultiplier were broken to return 1.
+    expect(boosted).toBeGreaterThan(noBoost);
   });
 
   it("baseline floor: a zero-stroke worker in a mixed roster still gains XP", () => {
