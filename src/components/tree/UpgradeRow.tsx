@@ -4,7 +4,7 @@ import { Hoverable } from "@/ui/widgets/Hoverable";
 import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
 import { useGameStore } from "@/store";
 import { getInspiMultiplier } from "@/core/multipliers";
-import { getPartMilestoneMultiplier, getNextPartMilestone, isApproachingMilestone } from "@/core/balance";
+import { getPartMilestoneMultiplier, getNextPartMilestone, isApproachingMilestone, PART_MILESTONES, PART_MILESTONE_FACTORS } from "@/core/balance";
 
 interface Props {
   partId: string;
@@ -52,6 +52,8 @@ export function UpgradeRow({
   const monogram = name.charAt(0).toUpperCase();
   const milestoneMult = getPartMilestoneMultiplier(level);
   const approaching = isApproachingMilestone(level);
+  const nextMilestone = getNextPartMilestone(level);
+  const nextFactor = nextMilestone !== null ? PART_MILESTONE_FACTORS[PART_MILESTONES.indexOf(nextMilestone)] : null;
   return (
     <li className={styles.row} data-part-id={partId}>
       <span className={styles.monogram} aria-hidden="true">
@@ -65,6 +67,9 @@ export function UpgradeRow({
             <span className={styles.milestoneBadge}>×{milestoneMult}</span>
           )}
         </span>
+        {nextMilestone !== null && nextFactor != null && (
+          <span className={styles.milestone}>next ×{nextFactor} at Lv {nextMilestone}</span>
+        )}
       </span>
       <Hoverable
         title={name}

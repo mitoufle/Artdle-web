@@ -7,7 +7,6 @@ import { big } from "@/core/bigNumber";
 import { getInspiMultiplier, getTreeUpgradeCostMultiplier } from "@/core/multipliers";
 import {
   getProducingParts,
-  getTotalLevelsInStage,
 } from "@/store/treeSlice";
 import { formatBig } from "@/core/formatter";
 import { TreeScene } from "@/components/tree/TreeScene";
@@ -34,7 +33,6 @@ export function TreeRoute(): JSX.Element {
   const stageConfig = TREE_STAGES[currentStage];
   const stageName = stageConfig?.name ?? "?";
   const nextStageConfig = TREE_STAGES[currentStage + 1];
-  const totalLevels = getTotalLevelsInStage(helperState, currentStage);
 
   // Visible parts: every part of stages 0..currentStage (all unlocked).
   const visibleParts = TREE_STAGES.slice(0, currentStage + 1).flatMap((stage) => stage.parts);
@@ -73,8 +71,8 @@ export function TreeRoute(): JSX.Element {
           currentStageIndex={currentStage}
           currentStageName={stageName}
           nextStageName={nextStageConfig?.name}
-          totalLevelsInStage={totalLevels}
-          unlockThreshold={nextStageConfig?.unlockThreshold ?? 0}
+          inspiPerSec={rate.toNumber()}
+          unlockInspiPerSec={nextStageConfig?.unlockInspiPerSec ?? 0}
         />
 
         <section className={styles.upgrades} aria-label="Upgrades">

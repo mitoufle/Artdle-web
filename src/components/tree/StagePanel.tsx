@@ -7,13 +7,13 @@ interface Props {
   currentStageIndex: number;
   currentStageName: string;
   nextStageName: string | undefined;
-  totalLevelsInStage: number;
-  unlockThreshold: number;
+  inspiPerSec: number;        // total tree inspi/sec now
+  unlockInspiPerSec: number;  // next tier's threshold
 }
 
 function stagePanelHoverBody(
   isFinal: boolean,
-  totalLevels: number,
+  inspiPerSec: number,
   threshold: number,
 ): JSX.Element {
   if (isFinal) {
@@ -24,15 +24,14 @@ function stagePanelHoverBody(
       </>
     );
   }
-  const pct = threshold > 0 ? Math.min(100, (totalLevels / threshold) * 100) : 0;
-  const need = Math.max(0, threshold - totalLevels);
-  const thresholdMet = need === 0;
+  const pct = threshold > 0 ? Math.min(100, (inspiPerSec / threshold) * 100) : 0;
+  const thresholdMet = inspiPerSec >= threshold;
   return (
     <>
-      <div>Levels in stage: {totalLevels} / {threshold}</div>
+      <div>Inspiration/sec: {inspiPerSec.toFixed(1)} / {threshold}</div>
       <div>Progress: {pct.toFixed(0)}%</div>
       <div>───</div>
-      <div>{thresholdMet ? "Threshold reached — advancing!" : `Need ${need} more levels.`}</div>
+      <div>{thresholdMet ? "Threshold reached — advancing!" : "Grow any upgrade to reach it."}</div>
     </>
   );
 }
@@ -45,12 +44,12 @@ export function StagePanel({
   currentStageIndex,
   currentStageName,
   nextStageName,
-  totalLevelsInStage,
-  unlockThreshold,
+  inspiPerSec,
+  unlockInspiPerSec,
 }: Props): JSX.Element {
   const isFinal = nextStageName === undefined;
   const progressPct =
-    unlockThreshold > 0 ? Math.min(100, (totalLevelsInStage / unlockThreshold) * 100) : 0;
+    unlockInspiPerSec > 0 ? Math.min(100, (inspiPerSec / unlockInspiPerSec) * 100) : 0;
 
   return (
     <Hoverable
@@ -60,7 +59,7 @@ export function StagePanel({
           ? `${currentStageName} · Final stage`
           : `${currentStageName} → ${nextStageName}`
       }
-      body={() => stagePanelHoverBody(isFinal, totalLevelsInStage, unlockThreshold)}
+      body={() => stagePanelHoverBody(isFinal, inspiPerSec, unlockInspiPerSec)}
       footer={() => (isFinal ? "" : "Stage advances automatically when threshold is reached.")}
     >
       <section
@@ -93,14 +92,14 @@ export function StagePanel({
             <div
               className={styles.progress}
               role="progressbar"
-              aria-valuenow={totalLevelsInStage}
+              aria-valuenow={inspiPerSec}
               aria-valuemin={0}
-              aria-valuemax={unlockThreshold}
+              aria-valuemax={unlockInspiPerSec}
             >
               <div className={styles.progressFill} style={{ width: `${progressPct}%` }} />
             </div>
             <div className={styles.progressLabel}>
-              {totalLevelsInStage} / {unlockThreshold} levels in stage
+              {inspiPerSec.toFixed(1)} / {unlockInspiPerSec} inspi/sec
             </div>
           </>
         )}

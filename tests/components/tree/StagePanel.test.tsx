@@ -9,8 +9,8 @@ describe("<StagePanel />", () => {
         currentStageIndex={1}
         currentStageName="Bud"
         nextStageName="Leaflet"
-        totalLevelsInStage={5}
-        unlockThreshold={12}
+        inspiPerSec={5}
+        unlockInspiPerSec={12}
       />,
     );
     const chips = screen.getAllByTestId(/stage-chip-/);
@@ -20,17 +20,17 @@ describe("<StagePanel />", () => {
   });
 
 
-  it("renders the progress label '{N} / {threshold} levels in stage'", () => {
+  it("renders the progress label '{N} / {threshold} inspi/sec'", () => {
     render(
       <StagePanel
         currentStageIndex={1}
         currentStageName="Bud"
         nextStageName="Leaflet"
-        totalLevelsInStage={5}
-        unlockThreshold={12}
+        inspiPerSec={5}
+        unlockInspiPerSec={12}
       />,
     );
-    expect(screen.getByText(/5 \/ 12 levels in stage/i)).toBeInTheDocument();
+    expect(screen.getByText(/5\.0 \/ 12 inspi\/sec/i)).toBeInTheDocument();
   });
 
   it("does NOT render a Grow button (advancement is automatic)", () => {
@@ -39,8 +39,8 @@ describe("<StagePanel />", () => {
         currentStageIndex={1}
         currentStageName="Bud"
         nextStageName="Leaflet"
-        totalLevelsInStage={12}
-        unlockThreshold={12}
+        inspiPerSec={12}
+        unlockInspiPerSec={12}
       />,
     );
     expect(screen.queryByRole("button", { name: /Grow/i })).not.toBeInTheDocument();

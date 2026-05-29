@@ -85,4 +85,35 @@ describe("<UpgradeRow />", () => {
     );
     expect(screen.getByText("L")).toBeInTheDocument();
   });
+
+  it("shows milestone hint with next factor when below max milestone", () => {
+    render(
+      <UpgradeRow
+        partId="cotyledon"
+        name="Cotyledon"
+        level={3}
+        rate={0.1}
+        cost="120"
+        canAfford={true}
+        onBuy={() => {}}
+      />,
+    );
+    // Level 3 → next milestone is Lv 10, factor ×2
+    expect(screen.getByText(/next ×2 at Lv 10/i)).toBeInTheDocument();
+  });
+
+  it("does not show milestone hint when at max milestone level", () => {
+    render(
+      <UpgradeRow
+        partId="cotyledon"
+        name="Cotyledon"
+        level={1000}
+        rate={0.1}
+        cost="9999"
+        canAfford={true}
+        onBuy={() => {}}
+      />,
+    );
+    expect(screen.queryByText(/next ×/i)).not.toBeInTheDocument();
+  });
 });

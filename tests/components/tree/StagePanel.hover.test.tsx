@@ -14,15 +14,15 @@ describe("StagePanel hover wiring", () => {
     render(
       <StagePanel
         currentStageIndex={0} currentStageName="Tiny Sprout" nextStageName="Bud"
-        totalLevelsInStage={2} unlockThreshold={5}
+        inspiPerSec={2} unlockInspiPerSec={5}
       />,
     );
     fireEvent.mouseEnter(screen.getByTestId("stage-panel"));
     expect(useGameStore.getState().hoverTitle).toBe("Tiny Sprout → Bud");
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/Levels in stage: 2 \/ 5/);
+    expect(container.textContent).toMatch(/Inspiration\/sec: 2\.0 \/ 5/);
     expect(container.textContent).toMatch(/Progress: 40%/);
-    expect(container.textContent).toMatch(/Need 3 more levels/);
+    expect(container.textContent).toMatch(/Grow any upgrade to reach it/);
     expect(String(useGameStore.getState().hoverFooter)).toMatch(/automatically/i);
   });
 
@@ -30,7 +30,7 @@ describe("StagePanel hover wiring", () => {
     render(
       <StagePanel
         currentStageIndex={0} currentStageName="Tiny Sprout" nextStageName="Bud"
-        totalLevelsInStage={5} unlockThreshold={5}
+        inspiPerSec={5} unlockInspiPerSec={5}
       />,
     );
     fireEvent.mouseEnter(screen.getByTestId("stage-panel"));
@@ -42,7 +42,7 @@ describe("StagePanel hover wiring", () => {
     render(
       <StagePanel
         currentStageIndex={5} currentStageName="Verdant Shoot" nextStageName={undefined}
-        totalLevelsInStage={150} unlockThreshold={0}
+        inspiPerSec={150} unlockInspiPerSec={0}
       />,
     );
     fireEvent.mouseEnter(screen.getByTestId("stage-panel"));
