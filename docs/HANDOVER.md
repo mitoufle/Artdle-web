@@ -62,32 +62,52 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
   New files only: `src/core/workerModel.ts` (`WorkerStats`, `createBaseStats`, `applyStatLevelUp`)
   + `balance.ts` constants (`WORKER_BASE_STATS`, `WORKER_PCT_INCREMENTS`,
   `WORKER_STROKES_PER_CRIT_INCREMENTS`, `WORKER_CRIT_CHANCE_CAP`). Commits `c746e8a`, `9d65373`.
-- ⏭️ **A2 — Office-slice rewrite + remove old wiring.** Rewrite `officeSlice.ts` to the new `Worker`
-  (`{id, classId, level, xp, stats: WorkerStats, mastery, strokesThisRun}`); spawn-to-cap on slot
-  unlock; **delete** `src/core/officeRoll.ts`, `src/core/officeTickPure.ts`,
-  `src/config/officeClasses.ts` + hire/queue/awardOfficeXp actions; **remove** the old additive
-  worker contributions from `multipliers.ts` (`getOfficeContribution`, the `getCritChunks` worker
-  branch, worker combo/speed) and `StatsRoom.tsx` (`critChunksFromWorkers` + Workers lines).
-  Expect wide test fallout (officeSlice/officeRoll/officeClasses/multipliers tests) — adapt to the
-  new model. End state: workers exist as data, contribute NOTHING yet, game compiles + green.
+- ✅ **A2 — Office-slice rewrite + remove old wiring** (DONE, reviewed, green). Plan
+  `2026-05-29-office-A2-slice-rewrite.md`. Commits `93d1bf6` (slice rewrite + engine rewiring +
+  v27 migration + minimal OfficeRoom), `d6a4801` (delete orphaned roll/class/old-UI), `60e2f55`
+  (spawn wiring: `reconcileRoster` into `buyNode` + Bootstrap rehydration gate).
+  `officeSlice.ts` is now `{ roster: Worker[] }` with `createWorker()`/`reconcileRoster()` (spawn-to-cap,
+  idempotent)/`resetOffice()` (keeps roster, zeroes `strokesThisRun`)/`getRosterCap`. `Worker =
+  {id, classId, level, xp:Big, stats:WorkerStats, mastery, strokesThisRun}`. **Workers now contribute
+  NOTHING to canvas math** — `roster` was removed from `CanvasMultiplierInputs` (structural guarantee).
+  Deleted: `officeRoll.ts`, `officeTickPure.ts`, `officeClasses.ts`, old office UI
+  (`QueueCard`/`FireConfirmModal`/`OfficeLevelHeader`/`WorkerCard`), `awardOfficeXpPure`, and the
+  hire/queue/Office-Level wiring. Save `v26→v27` drops `officeLevel`/`officeXp`/`queue`/`trickleTimer`
+  + resets roster to `[]`; `reconcileRoster()` repopulates at runtime.
+  > **A2 pulled one sliver of C forward:** `resetOffice()` already keeps the roster (workers persist
+  > across ascend) — its body had to change since it referenced deleted fields. Phase C must NOT
+  > re-implement worker persistence; it only renames the `ascend.ts` call site and adds the XP pass.
 - ⏭️ **B — Multi-painter canvas tick** (the big, risky one). Rewrite `src/core/canvasTickPure.ts`
   single-painter time-budget loop → discrete-event scheduler over player + workers; wire
-  `workerGoldFactor`; per-worker crit/combo/strokesPerCrit; track `strokesThisRun`. **Recommend an
-  advisor call before committing to the scheduler design.**
+  `workerGoldFactor`; per-worker crit/combo/strokesPerCrit; increment `strokesThisRun` (field exists,
+  nothing fills it yet). **Recommend an advisor call before committing to the scheduler design.**
 - ⏭️ **C — Ascend XP + persistence.** `computeAscendXpPool(runGold)` + hybrid split + `applyAscendXp`
-  (xp→levels→`applyStatLevelUp`); **remove `resetOffice()` from `ascend.ts:44`** (workers persist),
-  reset only run-contribution; save migration (drop old office fields, spawn level-1 workers for
-  unlocked slots); skill-node migration (`roster_slot`→spawn slot, `worker_xp_mult`→ascend-XP boost;
+  (xp→levels→`applyStatLevelUp`); **`ascend.ts:44` still calls `state.resetOffice()`** — A2 already made
+  that keep-roster/zero-strokes, so C just swaps in the XP/level-up pass (don't re-add persistence);
+  skill-node migration (`roster_slot`→spawn slot — already wired, `worker_xp_mult`→ascend-XP boost;
   DELETE `queue_slot`/`hire_cost_reduction`/`class_goldsmith`/`class_speedrunner` + refund fame).
+  **Dead-code cleanup C inherits** (now src-dead, kept by A2, tested-green, safe to delete with the node
+  migration): in `multipliers.ts` — `getWorkerXpMultiplier`, `getHireCostMultiplier`; in `balance.ts` —
+  `levelScale`/`LEVEL_SCALE_GROWTH`, `workerXpToNext`/`WORKER_XP_BASE`/`WORKER_XP_GROWTH`,
+  `officeXpToNext`/`OFFICE_XP_BASE`/`OFFICE_XP_GROWTH`, `trickleSeconds`, `WorkerTier`/`ALL_WORKER_TIERS`,
+  `OFFICE_TIER_UNLOCK_LEVEL`/`OFFICE_TIER_AFFIX_COUNT`/`computeOfficeTierProbabilities`,
+  `hireCost`/`HireCostInput`/`HIRE_TIER_BASE`/`HIRE_QUALITY_MAX`/`HIRE_OFFICE_LEVEL_GROWTH`,
+  `XP_GOLD_FRACTION` (+ their `balance.test.ts` cases). Keep the `WORKER_*` stat-model constants
+  (live — used by `workerModel.ts`).
 - ⏭️ **D — UI.** Post-ascend roll screen in `AscendCinematicOverlay`; on-canvas worker avatars +
   next-stroke indicators; office tab rework (roster + class switch). Rework/retire `WorkerCard`,
   `QueueCard`, `FireConfirmModal`.
 
 ### Status
-- **1086 / 1086 tests passing** on the branch; `npx vite build` clean.
-- `npx tsc -b --noEmit`: ~22 pre-existing baseline errors (unrelated files: officeSlice, statsSlice,
-  achievementSlice, StatsRoom cast, SortableCard, bot-simulation, catchup tests, SchoolDesignerRoute,
-  store/index.ts:508). No new errors from this session's shipped work.
+- **1053 / 1053 tests passing** on the branch after A2 (count dropped from 1086: deleted
+  officeRoll/officeClasses/officeTickPure/officeSlice.xp test suites + adapted the rest); `npx vite
+  build` clean. HEAD = `60e2f55`.
+- `npx tsc -b --noEmit`: ~22 pre-existing baseline errors (NOT a gate — green bar is vitest + vite
+  build). A2 left the old office UI files deleted, so some prior baseline tsc errors in those files
+  are gone; no NEW tsc errors introduced.
+- **Not merged to master.** Prod is still on the pre-office branch bundle (live game + crit + tree).
+  Per plan, merge `painter-office-redesign` → master only when the office is fully done (B→C→D).
+  A2 commits are dormant in prod terms (workers exist as data, contribute nothing yet).
 - Memory corrected this session: the **v2.0 visual redesign is shelved** (user confirmed none planned);
   `project_v12_scope.md` updated — don't gate work behind a v2.
 
@@ -103,7 +123,9 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
 `94182cd` specs · `bf3f86d` crit plan · `ebf2a25` crit engine · `1419caa` crit stats mirror ·
 `8755505` crit UI · `330e201` tree plan · `5c12e54` tree milestones · `32dbb8a` tree config ·
 `2421029` tree unlock gate · `fce8a57` tree migration · `524f01d` tree UI · `7ab0428` tree hover fix ·
-`e07a3b0` office A1 plan · `c746e8a` office worker constants · `9d65373` office worker model
+`e07a3b0` office A1 plan · `c746e8a` office worker constants · `9d65373` office worker model ·
+`510f7a0` office A2 plan · `93d1bf6` office A2 slice rewrite + engine rewiring · `d6a4801` office A2
+delete orphans · `60e2f55` office A2 spawn wiring
 
 ---
 
