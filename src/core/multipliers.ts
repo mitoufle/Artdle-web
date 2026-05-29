@@ -193,24 +193,29 @@ export const getCritChance = (state: CanvasMultiplierInputs): number => {
 /**
  * Bonus chunks added per crit. Returns an integer >= 0.
  * Sources:
- *   - BASE_CRIT_CHUNKS (1)
- *   - Equipped items with +crit_chunks affix (raw integer magnitudes; socks ×1.5 on boots)
- *   - Worker affixes with +crit_chunks (scaled by levelScale(worker.level))
- *
- * Does NOT use getEquippedContribution/getOfficeContribution because those
- * divide by 100 (percent semantics). crit_chunks is raw integer counts.
+ *   - BASE_CRIT_CHUNKS (1), scaled by item-contributed percentages
+ *   - Equipped items with +crit_chunks affix: magnitude is read as a PERCENT of the base
+ *     (e.g. magnitude 85 → +85% → base × 1.85). Socks ×1.5 multiplier applies to the
+ *     boots slot percentage. Additively stacked across all equipped items.
+ *   - Worker affixes with +crit_chunks (scaled by levelScale(worker.level), flat add)
  */
 export const getCritChunks = (state: CanvasMultiplierInputs): number => {
-  let chunks = BASE_CRIT_CHUNKS;
   const hasSocks = getNodeLevel(state, "socks") > 0;
+
+  // Items contribute a PERCENTAGE of the base additional-chunks-per-crit.
+  // magnitude is read as a percent (85 -> +85%); socks x1.5 on boots.
+  let itemPct = 0;
   for (const entry of Object.entries(state.equipped)) {
     const [slot, item] = entry as [SlotKind, Item | undefined];
     if (!item) continue;
     const slotMult = hasSocks && slot === "boots" ? 1.5 : 1.0;
     for (const affix of item.affixes) {
-      if (affix.kind === "+crit_chunks") chunks += affix.magnitude * slotMult;
+      if (affix.kind === "+crit_chunks") itemPct += (affix.magnitude / 100) * slotMult;
     }
   }
+  let chunks = BASE_CRIT_CHUNKS * (1 + itemPct);
+
+  // Worker branch unchanged — flat add scaled by levelScale.
   for (const worker of state.roster) {
     const scale = levelScale(worker.level).toNumber();
     for (const affix of worker.affixes) {

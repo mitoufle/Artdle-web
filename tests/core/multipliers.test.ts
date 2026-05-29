@@ -9,10 +9,11 @@ import {
   getComboBaseChance,
   getOfficeContribution,
 } from "@/core/multipliers";
+import type { CanvasMultiplierInputs } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
 import type { Item } from "@/store/workshopSlice";
 import { big } from "@/core/bigNumber";
-import { levelScale, CRIT_SOFT_CAP_CEILING } from "@/core/balance";
+import { levelScale, CRIT_SOFT_CAP_CEILING, BASE_CRIT_CHUNKS } from "@/core/balance";
 
 describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
   // Helper: minimal state-shape stub. The selectors only read certain fields.
@@ -268,27 +269,6 @@ describe("getCritChunks", () => {
     expect(getCritChunks(state)).toBe(1);
   });
 
-  it("adds equipped +crit_chunks raw magnitudes (no /100)", () => {
-    const state = {
-      equipped: {
-        brush: { slot: "brush", tier: "rare", affixes: [{ kind: "+crit_chunks", magnitude: 3 }], fuseCount: 0 },
-      },
-      roster: [],
-      purchasedNodes: {},
-    } as unknown as GameStore;
-    expect(getCritChunks(state)).toBe(1 + 3);  // base + 3 chunks from item
-  });
-
-  it("applies socks (1.5×) on boots slot only", () => {
-    const onBoots = {
-      equipped: { boots: { slot: "boots", tier: "rare", affixes: [{ kind: "+crit_chunks", magnitude: 4 }], fuseCount: 0 } },
-      roster: [],
-      purchasedNodes: { socks: 1 },
-    } as unknown as GameStore;
-    // 1 + floor(4 * 1.5) = 1 + 6 = 7
-    expect(getCritChunks(onBoots)).toBe(7);
-  });
-
   it("adds office +crit_chunks contributions scaled by levelScale", () => {
     const state = {
       equipped: {},
@@ -305,6 +285,45 @@ describe("getCritChunks", () => {
     const state = { equipped: {}, roster: [], purchasedNodes: {} } as unknown as GameStore;
     expect(Number.isFinite(getCritChunks(state))).toBe(true);
     expect(getCritChunks(state)).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("getCritChunks — item magnitude as percent of base", () => {
+  /** Minimal state for getCritChunks: it reads equipped, roster, and purchasedNodes (socks). */
+  function critState(
+    equipped: Record<string, { affixes: { kind: string; magnitude: number }[] }>,
+    opts: { socks?: boolean } = {},
+  ): CanvasMultiplierInputs {
+    return {
+      equipped,
+      roster: [],
+      purchasedNodes: opts.socks ? { socks: 1 } : {},
+    } as unknown as CanvasMultiplierInputs;
+  }
+
+  it("returns BASE_CRIT_CHUNKS when nothing is equipped", () => {
+    expect(getCritChunks(critState({}))).toBe(BASE_CRIT_CHUNKS); // 1
+  });
+
+  it("reads a single +crit_chunks magnitude as a percent (85 -> +85% of base -> floor 1.85 = 1)", () => {
+    const s = critState({ brush: { affixes: [{ kind: "+crit_chunks", magnitude: 85 }] } });
+    expect(getCritChunks(s)).toBe(1); // floor(1 * 1.85)
+  });
+
+  it("stacks item percentages additively (85 + 85 -> +170% -> floor 2.7 = 2)", () => {
+    const s = critState({
+      brush: { affixes: [{ kind: "+crit_chunks", magnitude: 85 }] },
+      palette: { affixes: [{ kind: "+crit_chunks", magnitude: 85 }] },
+    });
+    expect(getCritChunks(s)).toBe(2);
+  });
+
+  it("applies socks x1.5 to a boots crit affix percentage (100 * 1.5 = +150% -> floor 2.5 = 2)", () => {
+    const s = critState(
+      { boots: { affixes: [{ kind: "+crit_chunks", magnitude: 100 }] } },
+      { socks: true },
+    );
+    expect(getCritChunks(s)).toBe(2);
   });
 });
 
