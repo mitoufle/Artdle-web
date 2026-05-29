@@ -1,87 +1,35 @@
 export interface TreePartConfig {
-  /** Stable identifier; used as a key in the slice's `partLevels` record. */
   readonly id: string;
-  /** Display name (Phase 4 UI). */
   readonly name: string;
   /** Gold cost at level 0 → 1. Subsequent levels scale by `treePartCost(level, baseCost)`. */
   readonly baseCost: number;
-  /** Inspi/sec contribution per level (final = level * rate * multiplier). */
+  /** Inspi/sec contribution per level (final = level × rate × milestoneMult(level) × global mult). */
   readonly rate: number;
 }
 
 export interface TreeStageConfig {
   readonly id: string;
   readonly name: string;
-  /**
-   * Total levels required in the PRIOR stage's parts to grow into this stage.
-   * Stage 0 has unlockThreshold 0 (always available).
-   */
-  readonly unlockThreshold: number;
+  /** Total tree inspiration/sec required to grow into this tier. Tier 0 = 0 (always open). */
+  readonly unlockInspiPerSec: number;
   readonly parts: ReadonlyArray<TreePartConfig>;
 }
 
 /**
- * v1.x tree config: 6 stages with variable parts per stage (1/2/2/3/3/4).
- * Ratios match the v1.0 curve (×10 cost+rate between stages, ×5 within stage).
- * Names lock the first six entries of the long-term 25-stage roadmap; see
- * docs/superpowers/specs/2026-05-12-inspiration-tree-expansion-design.md.
+ * 10 single-upgrade tiers. Base rate and base cost ramp ×5 per tier; tiers unlock at
+ * rising flat inspiration/sec thresholds (×10 ladder). ALL NUMBERS TUNABLE (feel-tested
+ * in play); the one-upgrade-per-tier shape + inspi/sec gating are locked.
+ * Tier names 7-10 are provisional — reconcile with the long-term roadmap when known.
  */
 export const TREE_STAGES: ReadonlyArray<TreeStageConfig> = [
-  {
-    id: "tiny-sprout",
-    name: "Tiny Sprout",
-    unlockThreshold: 0,
-    parts: [
-      { id: "cotyledon", name: "Cotyledon", baseCost: 10, rate: 0.1 },
-    ],
-  },
-  {
-    id: "bud",
-    name: "Bud",
-    unlockThreshold: 5,
-    parts: [
-      { id: "tendril", name: "Tendril", baseCost: 100, rate: 1 },
-      { id: "budtip", name: "Bud Tip", baseCost: 500, rate: 5 },
-    ],
-  },
-  {
-    id: "leaflet",
-    name: "Leaflet",
-    unlockThreshold: 12,
-    parts: [
-      { id: "vein", name: "Vein", baseCost: 1_000, rate: 10 },
-      { id: "leaftip", name: "Leaf Tip", baseCost: 5_000, rate: 50 },
-    ],
-  },
-  {
-    id: "sapling",
-    name: "Sapling",
-    unlockThreshold: 25,
-    parts: [
-      { id: "twig", name: "Twig", baseCost: 10_000, rate: 100 },
-      { id: "branch", name: "Branch", baseCost: 50_000, rate: 500 },
-      { id: "leaf", name: "Leaf", baseCost: 250_000, rate: 2_500 },
-    ],
-  },
-  {
-    id: "whisperleaf",
-    name: "Whisperleaf",
-    unlockThreshold: 50,
-    parts: [
-      { id: "softbough", name: "Soft Bough", baseCost: 100_000, rate: 5_000 },
-      { id: "quietleaf", name: "Quiet Leaf", baseCost: 500_000, rate: 25_000 },
-      { id: "faintvein", name: "Faint Vein", baseCost: 2_500_000, rate: 125_000 },
-    ],
-  },
-  {
-    id: "verdant-shoot",
-    name: "Verdant Shoot",
-    unlockThreshold: 100,
-    parts: [
-      { id: "greenshoot", name: "Greenshoot", baseCost: 1_000_000, rate: 250_000 },
-      { id: "lushbough",  name: "Lush Bough",  baseCost: 5_000_000, rate: 1_250_000 },
-      { id: "vividleaf",  name: "Vivid Leaf",  baseCost: 25_000_000, rate: 6_250_000 },
-      { id: "stalk",      name: "Stalk",       baseCost: 125_000_000, rate: 31_250_000 },
-    ],
-  },
+  { id: "tier1",  name: "Tiny Sprout",    unlockInspiPerSec: 0,           parts: [{ id: "u1",  name: "Cotyledon",  baseCost: 10,         rate: 0.1 }] },
+  { id: "tier2",  name: "Bud",            unlockInspiPerSec: 5,           parts: [{ id: "u2",  name: "Tendril",    baseCost: 50,         rate: 0.5 }] },
+  { id: "tier3",  name: "Leaflet",        unlockInspiPerSec: 50,          parts: [{ id: "u3",  name: "Vein",       baseCost: 250,        rate: 2.5 }] },
+  { id: "tier4",  name: "Sapling",        unlockInspiPerSec: 500,         parts: [{ id: "u4",  name: "Twig",       baseCost: 1_250,      rate: 12.5 }] },
+  { id: "tier5",  name: "Whisperleaf",    unlockInspiPerSec: 5_000,       parts: [{ id: "u5",  name: "Soft Bough", baseCost: 6_250,      rate: 62.5 }] },
+  { id: "tier6",  name: "Verdant Shoot",  unlockInspiPerSec: 50_000,      parts: [{ id: "u6",  name: "Greenshoot", baseCost: 31_250,     rate: 312.5 }] },
+  { id: "tier7",  name: "Young Tree",     unlockInspiPerSec: 500_000,     parts: [{ id: "u7",  name: "Limb",       baseCost: 156_250,    rate: 1_562.5 }] },
+  { id: "tier8",  name: "Broadleaf",      unlockInspiPerSec: 5_000_000,   parts: [{ id: "u8",  name: "Bough",      baseCost: 781_250,    rate: 7_812.5 }] },
+  { id: "tier9",  name: "Elderbough",     unlockInspiPerSec: 50_000_000,  parts: [{ id: "u9",  name: "Heartwood",  baseCost: 3_906_250,  rate: 39_062.5 }] },
+  { id: "tier10", name: "Great Oak",      unlockInspiPerSec: 500_000_000, parts: [{ id: "u10", name: "Crown",      baseCost: 19_531_250, rate: 195_312.5 }] },
 ];
