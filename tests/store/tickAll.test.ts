@@ -49,8 +49,11 @@ describe("tickAll orchestrator", () => {
     // Canvas: 1s = 0.2 chunks. No sale yet — partial chunk progress only,
     // and no chunk boundary crossed → no per-chunk gold credit either.
     expect(useGameStore.getState().gold.toNumber() - goldBefore).toBe(0);
-    // Progress: 9 + 0.2 = 9.2 (no chunk completes).
-    expect(useGameStore.getState().canvasProgress).toBeCloseTo(9.2, 5);
+    // Progress stays at integer 9 (no chunk completes); the 0.2-chunk partial
+    // advance (1s) is carried in the player's stroke clock under the discrete-
+    // event multi-painter model.
+    expect(useGameStore.getState().canvasProgress).toBe(9);
+    expect(useGameStore.getState().painterClocks.player).toBeCloseTo(1, 5);
   });
 
   it("tickAll(full canvas time) fires a sale and credits canvas gold", () => {

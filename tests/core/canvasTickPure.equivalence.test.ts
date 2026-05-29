@@ -50,7 +50,6 @@ function runSolo(totalSeconds: number, step: number, seed = 0xC0FFEE) {
   };
 }
 
-// Placeholder — replaced in Step 2 with the captured values.
 const FROZEN_SOLO_600_AT_0_1 = { gold: 1942.5, sales: 11, crits: 116, maxCombo: 1 };
 
 describe("canvasTickPure — solo characterization (frozen golden master)", () => {

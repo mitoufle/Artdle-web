@@ -13,6 +13,7 @@ function makeDraft(overrides: Partial<DraftState> = {}): DraftState {
     sellPriceLevel: 0, speedLevel: 0, critLevel: 0, comboLevel: 0,
     comboChain: 0,
     critChunks: {},
+    painterClocks: {},
     lastSale: null,
     gold: big(0),
     lifetimeGold: big(0),
@@ -52,13 +53,15 @@ describe("canvasTickPure (chunk-domain)", () => {
   it("advances canvasProgress by delta / chunkInterval", () => {
     const draft = makeDraft();
     canvasTickPure(draft, BASE_CHUNK_INTERVAL); // 1 chunk's worth at speed=1
-    expect(draft.canvasProgress).toBeCloseTo(1, 5);
+    expect(draft.canvasProgress).toBe(1);
+    expect(draft.painterClocks.player).toBeCloseTo(0, 5);
   });
 
-  it("partial chunk progress is preserved as fractional canvasProgress", () => {
+  it("partial chunk progress is carried in the player clock", () => {
     const draft = makeDraft();
     canvasTickPure(draft, BASE_CHUNK_INTERVAL / 2); // half a chunk
-    expect(draft.canvasProgress).toBeCloseTo(0.5, 5);
+    expect(draft.canvasProgress).toBe(0);
+    expect(draft.painterClocks.player).toBeCloseTo(BASE_CHUNK_INTERVAL / 2, 5);
   });
 
   it("fires a sale on the chunk that completes the canvas at T1 (10 chunks)", () => {
@@ -76,7 +79,7 @@ describe("canvasTickPure (chunk-domain)", () => {
     canvasTickPure(draft, BASE_CHUNK_INTERVAL * 5);
     expect(draft.gold.toNumber()).toBe(0);
     expect(draft.statsRun.canvasesSold).toBe(0);
-    expect(draft.canvasProgress).toBeCloseTo(5, 5);
+    expect(draft.canvasProgress).toBe(5);
   });
 
   it("credits full canvas gold once the canvas completes across two ticks", () => {

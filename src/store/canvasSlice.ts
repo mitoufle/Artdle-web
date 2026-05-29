@@ -122,6 +122,8 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
         canvasProgress: draft.canvasProgress,
         critChunks: draft.critChunks,
         comboChain: draft.comboChain,
+        painterClocks: draft.painterClocks,
+        roster: draft.roster,
         lastSale: draft.lastSale,
         gold: draft.gold,
         lifetimeGold: draft.lifetimeGold,
