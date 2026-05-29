@@ -232,3 +232,16 @@ export const getSchoolAffixMagnitudeMultiplier = (
 export const getSkillAffixMagnitudeMultiplier = (
   state: Pick<GameStore, "purchasedNodes">,
 ): number => 1 + countCapability(state, "affix_magnitude_pct") * 0.25;
+
+/**
+ * Multiplicative gold factor contributed by the worker roster:
+ * `∏ (1 + worker.stats.goldPct)`. 1.0 for an empty roster (solo play
+ * unaffected). Used ONLY by the canvas tick on sale — kept out of
+ * CanvasMultiplierInputs so the other canvas multipliers stay worker-free
+ * (the A2 structural guarantee). Tunable: multiplicative per spec §2.2.
+ */
+export const getWorkerGoldFactor = (state: Pick<GameStore, "roster">): number => {
+  let factor = 1;
+  for (const w of state.roster) factor *= 1 + w.stats.goldPct;
+  return factor;
+};

@@ -7,7 +7,9 @@ import {
   getCritChance,
   getCritChunks,
   getComboBaseChance,
+  getWorkerGoldFactor,
 } from "@/core/multipliers";
+import { createWorker } from "@/store/officeSlice";
 import type { CanvasMultiplierInputs } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
 import type { Item } from "@/store/workshopSlice";
@@ -551,5 +553,18 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
     };
     expect(getCanvasGoldMultiplier({ ...itemOnly, canvasTier: 1 } as never)).toBeCloseTo(1.20, 5);
     expect(getCanvasGoldMultiplier({ ...itemOnly, canvasTier: 3 } as never)).toBeCloseTo(1.20, 5);
+  });
+});
+
+describe("getWorkerGoldFactor", () => {
+  it("is 1.0 with an empty roster (solo player unaffected)", () => {
+    expect(getWorkerGoldFactor({ roster: [] } as GameStore)).toBe(1);
+  });
+
+  it("multiplies (1 + goldPct) across the roster", () => {
+    const a = { ...createWorker(), stats: { ...createWorker().stats, goldPct: 0.10 } };
+    const b = { ...createWorker(), stats: { ...createWorker().stats, goldPct: 0.25 } };
+    // (1.10) * (1.25) = 1.375
+    expect(getWorkerGoldFactor({ roster: [a, b] } as GameStore)).toBeCloseTo(1.375, 9);
   });
 });
