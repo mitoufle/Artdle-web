@@ -1,153 +1,98 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { initialOfficeState, getRosterCap, getQueueCap, getOfficeTierCap, getClassUnlocked, getHireCost } from "@/store/officeSlice";
 import { useGameStore } from "@/store";
+import {
+  initialOfficeState,
+  getRosterCap,
+  createWorker,
+  type Worker,
+} from "@/store/officeSlice";
+import { createBaseStats } from "@/core/workerModel";
 import { big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
 
-describe("officeSlice — initial state", () => {
-  it("level = 0, xp = big(0)", () => {
-    expect(initialOfficeState.officeLevel).toBe(0);
-    expect(initialOfficeState.officeXp.eq(big(0))).toBe(true);
+beforeEach(() => {
+  useGameStore.setState({
+    roster: [],
+    purchasedNodes: {},
   });
+});
 
-  it("queue + roster + trickleTimer empty/zero", () => {
-    expect(initialOfficeState.queue).toEqual([]);
+describe("initialOfficeState", () => {
+  it("starts with an empty roster and no legacy office fields", () => {
     expect(initialOfficeState.roster).toEqual([]);
-    expect(initialOfficeState.trickleTimer).toBe(0);
+    expect((initialOfficeState as Record<string, unknown>).officeLevel).toBeUndefined();
+    expect((initialOfficeState as Record<string, unknown>).queue).toBeUndefined();
+    expect((initialOfficeState as Record<string, unknown>).trickleTimer).toBeUndefined();
   });
 });
 
-describe("officeSlice — wired into GameStore", () => {
-  it("store has officeLevel + officeXp on first read", () => {
-    const s = useGameStore.getState();
-    expect(typeof s.officeLevel).toBe("number");
-    expect(s.officeXp).toBeDefined();
+describe("createWorker", () => {
+  it("spawns a fresh level-1 worker with base stats and zeroed run/meta fields", () => {
+    const w = createWorker();
+    expect(w.level).toBe(1);
+    expect(w.classId).toBe("base");
+    expect(w.xp.eq(big(0))).toBe(true);
+    expect(w.mastery).toBe(0);
+    expect(w.strokesThisRun).toBe(0);
+    expect(w.stats).toEqual(createBaseStats());
+    expect(typeof w.id).toBe("string");
+    expect(w.id.length).toBeGreaterThan(0);
+  });
+
+  it("gives every worker a distinct id", () => {
+    const a = createWorker();
+    const b = createWorker();
+    expect(a.id).not.toBe(b.id);
   });
 });
 
-describe("getRosterCap / getQueueCap — sum capability levels", () => {
-  it("returns 0 when no nodes with roster_slot are purchased", () => {
+describe("getRosterCap", () => {
+  it("returns 0 when no roster_slot nodes are purchased", () => {
     const state = { purchasedNodes: {} } as GameStore;
     expect(getRosterCap(state)).toBe(0);
-    expect(getQueueCap(state)).toBe(0);
-  });
-
-  // More integration tests added in Task 18 once SkillDesigner has the chips.
-});
-
-describe("getOfficeTierCap", () => {
-  it("returns common at L1", () => {
-    const state = { officeLevel: 1 } as GameStore;
-    expect(getOfficeTierCap(state)).toBe("common");
-  });
-  it("returns magic at L3", () => {
-    const state = { officeLevel: 3 } as GameStore;
-    expect(getOfficeTierCap(state)).toBe("magic");
-  });
-  it("returns legendary at L40+", () => {
-    const state = { officeLevel: 100 } as GameStore;
-    expect(getOfficeTierCap(state)).toBe("legendary");
   });
 });
 
-describe("getClassUnlocked", () => {
-  it("generalist always unlocked", () => {
-    const state = { purchasedNodes: {} } as GameStore;
-    expect(getClassUnlocked(state, "generalist")).toBe(true);
-  });
-  it("goldsmith requires class_goldsmith capability", () => {
-    const state = { purchasedNodes: {} } as GameStore;
-    expect(getClassUnlocked(state, "goldsmith")).toBe(false);
-  });
-});
-
-describe("tickOffice — trickle", () => {
-  beforeEach(() => {
-    useGameStore.setState({
-      queue: [],
-      trickleTimer: 0,
-    });
+describe("reconcileRoster", () => {
+  it("spawns level-1 workers up to the roster cap", () => {
+    useGameStore.setState({ purchasedNodes: { hire_manager: 2 } });
+    useGameStore.getState().reconcileRoster();
+    expect(useGameStore.getState().roster.length).toBe(2);
+    for (const w of useGameStore.getState().roster) {
+      expect(w.level).toBe(1);
+      expect(w.stats).toEqual(createBaseStats());
+    }
   });
 
-  it("at queue cap 0, no trickling occurs even when timer is overdue", () => {
-    useGameStore.setState({
-      purchasedNodes: {},
-      officeLevel: 5,
-      queue: [],
-      trickleTimer: 999,
-    });
-    useGameStore.getState().tickOffice(10);
-    expect(useGameStore.getState().queue.length).toBe(0);
+  it("is idempotent — calling twice does not over-spawn", () => {
+    useGameStore.setState({ purchasedNodes: { hire_manager: 2 } });
+    useGameStore.getState().reconcileRoster();
+    useGameStore.getState().reconcileRoster();
+    expect(useGameStore.getState().roster.length).toBe(2);
   });
-});
 
-describe("getHireCost", () => {
-  it("computes cost from tier, affix sum, and office level", () => {
-    const state = { officeLevel: 0, purchasedNodes: {} } as GameStore;
-    const candidate = {
-      id: "x", class: "generalist" as const, tier: "common" as const,
-      affixes: [{ kind: "+sell_price%" as const, magnitude: 5 }],
-    };
-    const cost = getHireCost(state, candidate);
-    // common min-roll → tierBase × 1 × 1.10^0 = 100 (no bookkeeper → ×1)
-    expect(cost.toNumber()).toBeCloseTo(100, 4);
+  it("never despawns when the roster already exceeds the cap", () => {
+    const existing: Worker[] = [createWorker(), createWorker(), createWorker()];
+    useGameStore.setState({ roster: existing, purchasedNodes: { hire_manager: 1 } });
+    useGameStore.getState().reconcileRoster();
+    expect(useGameStore.getState().roster.length).toBe(3);
   });
-});
 
-describe("hireFromQueue", () => {
-  it("returns false if no roster slots available", () => {
-    useGameStore.setState({
-      purchasedNodes: {},
-      queue: [{ id: "c1", class: "generalist" as const, tier: "common" as const, affixes: [{ kind: "+sell_price%" as const, magnitude: 10 }] }],
-    });
-    expect(useGameStore.getState().hireFromQueue("c1")).toBe(false);
+  it("does nothing when the cap is 0", () => {
+    useGameStore.getState().reconcileRoster();
     expect(useGameStore.getState().roster.length).toBe(0);
   });
 });
 
-describe("rejectFromQueue", () => {
-  it("removes the candidate from the queue", () => {
-    useGameStore.setState({
-      queue: [
-        { id: "c1", class: "generalist" as const, tier: "common" as const, affixes: [] },
-        { id: "c2", class: "generalist" as const, tier: "common" as const, affixes: [] },
-      ],
-    });
-    expect(useGameStore.getState().rejectFromQueue("c1")).toBe(true);
-    expect(useGameStore.getState().queue.length).toBe(1);
-    expect(useGameStore.getState().queue[0]!.id).toBe("c2");
-  });
-});
-
-describe("fireWorker", () => {
-  it("removes the worker from the roster", () => {
-    useGameStore.setState({
-      roster: [
-        { id: "w1", class: "generalist" as const, tier: "common" as const, level: 5, xp: big(0), affixes: [] },
-      ],
-    });
-    expect(useGameStore.getState().fireWorker("w1")).toBe(true);
-    expect(useGameStore.getState().roster.length).toBe(0);
-  });
-});
-
-describe("ascend integration — resetOffice wipes run-state, preserves meta", () => {
-  it("ascending wipes queue + roster but keeps office.level + office.xp", () => {
-    useGameStore.setState({
-      inspiration: big(10000),
-      officeLevel: 5,
-      officeXp: big(123),
-      queue: [{ id: "c1", class: "generalist" as const, tier: "common" as const, affixes: [] }],
-      roster: [{ id: "w1", class: "generalist" as const, tier: "common" as const, level: 3, xp: big(50), affixes: [] }],
-      trickleTimer: 10,
-    });
-    useGameStore.getState().performAscend();
-
-    const s = useGameStore.getState();
-    expect(s.officeLevel).toBe(5);
-    expect(s.officeXp.eq(big(123))).toBe(true);
-    expect(s.queue).toEqual([]);
-    expect(s.roster).toEqual([]);
-    expect(s.trickleTimer).toBe(0);
+describe("resetOffice (ascend) — workers persist, run contribution resets", () => {
+  it("keeps the roster and its levels/xp but zeroes strokesThisRun", () => {
+    const w: Worker = { ...createWorker(), level: 4, xp: big(99), strokesThisRun: 1234 };
+    useGameStore.setState({ roster: [w] });
+    useGameStore.getState().resetOffice();
+    const after = useGameStore.getState().roster;
+    expect(after.length).toBe(1);
+    expect(after[0]!.level).toBe(4);
+    expect(after[0]!.xp.eq(big(99))).toBe(true);
+    expect(after[0]!.strokesThisRun).toBe(0);
   });
 });

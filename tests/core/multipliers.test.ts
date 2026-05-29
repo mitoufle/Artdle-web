@@ -7,13 +7,11 @@ import {
   getCritChance,
   getCritChunks,
   getComboBaseChance,
-  getOfficeContribution,
 } from "@/core/multipliers";
 import type { CanvasMultiplierInputs } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
 import type { Item } from "@/store/workshopSlice";
-import { big } from "@/core/bigNumber";
-import { levelScale, CRIT_SOFT_CAP_CEILING, BASE_CRIT_CHUNKS } from "@/core/balance";
+import { CRIT_SOFT_CAP_CEILING, BASE_CRIT_CHUNKS } from "@/core/balance";
 
 describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
   // Helper: minimal state-shape stub. The selectors only read certain fields.
@@ -269,18 +267,6 @@ describe("getCritChunks", () => {
     expect(getCritChunks(state)).toBe(1);
   });
 
-  it("adds office +crit_chunks contributions scaled by levelScale", () => {
-    const state = {
-      equipped: {},
-      roster: [
-        { id: "w1", className: "critic", level: 0, xp: big(0), affixes: [{ kind: "+crit_chunks", magnitude: 2 }] },
-      ],
-      purchasedNodes: {},
-    } as unknown as GameStore;
-    // At level 0, levelScale = 1, so +2.
-    expect(getCritChunks(state)).toBe(1 + 2);
-  });
-
   it("returns at least 0; never NaN even with empty equipped/roster", () => {
     const state = { equipped: {}, roster: [], purchasedNodes: {} } as unknown as GameStore;
     expect(Number.isFinite(getCritChunks(state))).toBe(true);
@@ -346,40 +332,8 @@ describe("getComboBaseChance — equipped +combo_chance% contribution", () => {
   });
 });
 
-describe("getOfficeContribution — sums worker affix magnitudes × levelScale", () => {
-  it("returns 0 with empty roster", () => {
-    const state = { roster: [] } as unknown as GameStore;
-    expect(getOfficeContribution(state, "+sell_price%").eq(big(0))).toBe(true);
-  });
-
-  it("sums one worker's matching affixes (with level scale)", () => {
-    const state = {
-      roster: [
-        {
-          id: "w1", class: "generalist", tier: "common", level: 1, xp: big(0),
-          affixes: [{ kind: "+sell_price%", magnitude: 10 }],
-        },
-      ],
-    } as unknown as GameStore;
-    const expected = big(10 / 100).mul(levelScale(1));
-    expect(getOfficeContribution(state, "+sell_price%").toNumber()).toBeCloseTo(expected.toNumber(), 6);
-  });
-
-  it("returns 0 for kinds no worker has", () => {
-    const state = {
-      roster: [
-        {
-          id: "w1", class: "generalist", tier: "common", level: 1, xp: big(0),
-          affixes: [{ kind: "+sell_price%", magnitude: 10 }],
-        },
-      ],
-    } as unknown as GameStore;
-    expect(getOfficeContribution(state, "+speed%").eq(big(0))).toBe(true);
-  });
-});
-
-describe("multipliers — additive stacking across canvas + items + workers", () => {
-  it("getCanvasGoldMultiplier sums all three sources additively", () => {
+describe("multipliers — additive stacking across canvas + items", () => {
+  it("getCanvasGoldMultiplier sums canvas + item sources additively", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+sell_price%", magnitude: 10 }],
@@ -392,19 +346,13 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
       speedLevel: 0, critLevel: 0, comboLevel: 0,
       canvasTier: 1,
       completedResearches: {},
-      roster: [
-        {
-          id: "w1", class: "generalist", tier: "common", level: 1, xp: big(0),
-          affixes: [{ kind: "+sell_price%", magnitude: 20 }],
-        },
-      ],
     } as unknown as GameStore;
-    // Canvas: 0.15 × 5 = 0.75; Items: 10/100 = 0.10; Workers: (20/100) × 1.04 = 0.208
-    // Total bonus = 1.058 → multiplier = 2.058 (no rainbow, no color tree)
-    expect(getCanvasGoldMultiplier(state)).toBeCloseTo(2.058, 4);
+    // Canvas: 0.15 × 5 = 0.75; Items: 10/100 = 0.10
+    // Total bonus = 0.85 → multiplier = 1.85 (no rainbow, no color tree, no workers)
+    expect(getCanvasGoldMultiplier(state)).toBeCloseTo(1.85, 4);
   });
 
-  it("getCanvasSpeedMultiplier sums all three sources additively", () => {
+  it("getCanvasSpeedMultiplier sums canvas + item sources additively", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+speed%", magnitude: 10 }],
@@ -416,19 +364,13 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
       sellPriceLevel: 0, speedLevel: 4, critLevel: 0, comboLevel: 0,
       canvasTier: 1,
       completedResearches: {},
-      roster: [
-        {
-          id: "w1", class: "speedrunner", tier: "common", level: 1, xp: big(0),
-          affixes: [{ kind: "+speed%", magnitude: 15 }],
-        },
-      ],
     } as unknown as GameStore;
-    // Canvas: 0.15 × 4 = 0.60; Items: 0.10; Workers: 0.15 × 1.04 = 0.156
-    // Total bonus = 0.856 → multiplier = 1.856
-    expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.856, 4);
+    // Canvas: 0.15 × 4 = 0.60; Items: 0.10
+    // Total bonus = 0.70 → multiplier = 1.70 (no workers)
+    expect(getCanvasSpeedMultiplier(state)).toBeCloseTo(1.70, 4);
   });
 
-  it("getCritChance: only critLevel contributes (items + workers moved to getCritChunks)", () => {
+  it("getCritChance: only critLevel contributes (items moved to getCritChunks)", () => {
     const item: Item = {
       id: "i1", slot: "brush", tier: "magic",
       affixes: [{ kind: "+crit_chunks", magnitude: 5 }],
@@ -439,14 +381,8 @@ describe("multipliers — additive stacking across canvas + items + workers", ()
       equipped: { brush: item },
       sellPriceLevel: 0, speedLevel: 0, critLevel: 10, comboLevel: 0,
       canvasTier: 1,
-      roster: [
-        {
-          id: "w1", class: "speedrunner", tier: "common", level: 1, xp: big(0),
-          affixes: [{ kind: "+crit_chunks", magnitude: 5 }],
-        },
-      ],
     } as unknown as GameStore;
-    // BASE_CRIT_CHANCE (0.01) + CRIT_PER_LEVEL × 10 (0.10) = 0.11 — items + workers ignored
+    // BASE_CRIT_CHANCE (0.01) + CRIT_PER_LEVEL × 10 (0.10) = 0.11 — items ignored
     expect(getCritChance(state)).toBeCloseTo(0.11, 4);
   });
 });

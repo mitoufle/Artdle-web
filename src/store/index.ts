@@ -41,7 +41,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 26;
+const SAVE_VERSION = 27;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -124,6 +124,13 @@ const SAVE_KEY = "artdle-save";
  * field. Strip `+size%` from equipped items, inventory, and worker affixes.
  * Refund fame for the three removed size-related skill nodes (size_matters,
  * big_picture, expanding_horizon) and delete them from `purchasedNodes`.
+ *
+ * v26 → v27 (2026-05-29): Painter's Office autonomous-painter redesign (A2).
+ * The old worker schema (class/tier/affixes) and the Office Level / queue /
+ * trickle fields are removed. Drop officeLevel, officeXp, queue, and
+ * trickleTimer from persisted state, and reset roster to []. Fresh level-1
+ * workers respawn via reconcileRoster() for each currently-unlocked
+ * roster_slot. Worker XP/level and skill-node refunds are handled in Phase C.
  *
  * Exported for unit testing in `tests/store/persistence-integration.test.ts`.
  */
@@ -517,6 +524,20 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     state = { ...state, currentStage: 0, partLevels: wiped };
   }
 
+  if (fromVersion < 27) {
+    // v26 → v27 (2026-05-29): Painter's Office autonomous-painter redesign (A2).
+    // The old worker schema (class/tier/affixes) + Office Level/queue/trickle are
+    // gone. Drop every old office field and reset the roster to empty;
+    // reconcileRoster() (run post-hydration and after buyNode) spawns fresh
+    // level-1 workers for each currently-unlocked roster_slot. Worker XP/level
+    // and skill-node refunds are handled in Phase C.
+    const {
+      officeLevel: _ol, officeXp: _ox, queue: _q, trickleTimer: _tt, ...rest
+    } = state;
+    void _ol; void _ox; void _q; void _tt;
+    state = { ...rest, roster: [] };
+  }
+
   return state as unknown as GameStore;
 };
 
@@ -581,7 +602,6 @@ export const useGameStore = create<GameStore>()(
         s.canvasTick(deltaSeconds);
         s.skillTreeTick(deltaSeconds);
         s.workshopTick(deltaSeconds);
-        s.tickOffice(deltaSeconds);
         s.schoolTick(deltaSeconds);
         // Heartbeat: bound lastSeen staleness to 10s of simulated play.
         // Skip on idle frames (delta=0) to avoid spurious set() calls.

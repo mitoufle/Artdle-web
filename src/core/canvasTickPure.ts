@@ -9,7 +9,7 @@ import {
 } from "@/core/multipliers";
 import { rng } from "@/core/rng";
 import {
-  addCurrency, trackSaleGoldPure, awardOfficeXpPure,
+  addCurrency, trackSaleGoldPure,
   incrementStatPure, patchRunStatsPure, type DraftState,
 } from "@/core/pureMutations";
 
@@ -64,7 +64,6 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
     const gain = baseSaleGold.mul(comboBonusFactor(chain));
     addCurrency(draft, "gold", gain);
     trackSaleGoldPure(draft, gain);
-    awardOfficeXpPure(draft, gain);
     tickGoldTotal = tickGoldTotal.add(gain);
 
     lastSaleId += 1;

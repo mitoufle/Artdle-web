@@ -5,7 +5,6 @@ import { treeTickPure } from "@/core/treeTickPure";
 import { canvasTickPure } from "@/core/canvasTickPure";
 import { skillTreeTickPure } from "@/core/skillTreeTickPure";
 import { workshopTickPure } from "@/core/workshopTickPure";
-import { officeTickPure } from "@/core/officeTickPure";
 import { schoolTickPure } from "@/core/schoolTickPure";
 
 /**
@@ -69,7 +68,6 @@ export async function runCatchupSimulation(
       canvasTickPure(draft, step);
       skillTreeTickPure(draft, step);
       workshopTickPure(draft, step);
-      officeTickPure(draft, step);
       schoolTickPure(draft, step);
       simulated += step;
     }

@@ -10,7 +10,7 @@ import styles from "./CanvasStage.module.css";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { useGameStore } from "@/store";
 import { canvasGold, SELL_PRICE_PER_LEVEL, COMBO_PER_LINK, tierFactor } from "@/core/balance";
-import { getCanvasGoldMultiplier, getOfficeContribution } from "@/core/multipliers";
+import { getCanvasGoldMultiplier } from "@/core/multipliers";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import { getNodeLevel } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
@@ -80,12 +80,11 @@ function sellHoverBody(comboChain: number): JSX.Element {
   const state = useGameStore.getState();
   const goldMult = getCanvasGoldMultiplier(state);
   const itemBonus = getEquippedContribution(state, "+sell_price%");
-  const workerBonus = getOfficeContribution(state, "+sell_price%").toNumber();
   const rainbowLvl = getNodeLevel(state, "rainbow");
   const rainbowFactor = 1 + 0.50 * rainbowLvl;
   const sellPriceContribution = SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
   const additiveTotal = goldMult / rainbowFactor - 1;
-  const colorSum = additiveTotal - itemBonus - workerBonus - sellPriceContribution;
+  const colorSum = additiveTotal - itemBonus - sellPriceContribution;
   const tierMult = tierFactor(state.canvasTier);
   const baseGold = 10 * tierMult;
   const total = canvasGold(goldMult, state.canvasTier).mul(1 + COMBO_PER_LINK * comboChain);
@@ -95,7 +94,6 @@ function sellHoverBody(comboChain: number): JSX.Element {
       <div>───</div>
       <div>Sell Price (Lv {state.sellPriceLevel}): ×{(1 + sellPriceContribution).toFixed(2)}</div>
       <div>Items (sell):  ×{(1 + itemBonus).toFixed(2)}</div>
-      <div>Workers:       ×{(1 + workerBonus).toFixed(2)}</div>
       <div>Colors:        ×{(1 + colorSum).toFixed(2)}</div>
       <div>Rainbow:       ×{rainbowFactor.toFixed(2)}</div>
       {comboChain > 0 ? <div>Combo:        ×{(1 + COMBO_PER_LINK * comboChain).toFixed(2)}</div> : null}

@@ -1,10 +1,7 @@
-import { big, type Big } from "@/core/bigNumber";
+import { type Big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
 import type { CurrencyKey } from "@/store/currencySlice";
 import type { StatsLifetime, StatsRun } from "@/store/statsSlice";
-import { XP_GOLD_FRACTION } from "@/core/balance";
-import { getWorkerXpMultiplier } from "@/core/multipliers";
-import { applyWorkerLevelUps, applyOfficeLevelUps, type Worker } from "@/store/officeSlice";
 
 /** Mutable view of GameStore for draft mutations during simulation. */
 export type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -48,17 +45,4 @@ export function incrementStatPure(
 
 export function patchRunStatsPure(draft: DraftState, patch: Partial<StatsRun>): void {
   draft.statsRun = { ...draft.statsRun, ...patch };
-}
-
-export function awardOfficeXpPure(draft: DraftState, goldSold: Big): void {
-  const n = draft.roster.length;
-  if (n === 0) return;
-  const xpMult = getWorkerXpMultiplier(draft);
-  const pot = goldSold.mul(XP_GOLD_FRACTION).mul(xpMult);
-  if (pot.lte(big(0))) return;
-  const share = pot.div(n);
-  draft.roster = draft.roster.map((w: Worker) => applyWorkerLevelUps({ ...w, xp: w.xp.add(share) }));
-  const office = applyOfficeLevelUps(draft.officeLevel, draft.officeXp.add(pot));
-  draft.officeXp = office.xp;
-  draft.officeLevel = office.level;
 }

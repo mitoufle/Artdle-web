@@ -116,9 +116,6 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
         lastSale: draft.lastSale,
         gold: draft.gold,
         lifetimeGold: draft.lifetimeGold,
-        roster: draft.roster,
-        officeXp: draft.officeXp,
-        officeLevel: draft.officeLevel,
         statsLifetime: draft.statsLifetime,
         statsRun: draft.statsRun,
       };

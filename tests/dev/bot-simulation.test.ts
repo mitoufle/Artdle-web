@@ -34,7 +34,6 @@ import {
 } from "@/core/multipliers";
 import { canBuyNode, getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { canAscend } from "@/systems/ascend";
-import { getRosterCap, getHireCost } from "@/store/officeSlice";
 import { initialWorkshopState } from "@/store/workshopSlice";
 import { TREE_STAGES } from "@/config/treeStages";
 import type { SkillNodeId } from "@/store/skillTreeSlice";
@@ -253,19 +252,6 @@ function decideCraftAndEquip(): void {
   }
 }
 
-function decideHire(): void {
-  const state = useGameStore.getState();
-  const cap = getRosterCap(state);
-  if (state.roster.length >= cap) return;
-  for (const candidate of (state.hiringQueue ?? [])) {
-    const cost = getHireCost(state, candidate).toNumber();
-    if (state.gold.toNumber() >= cost) {
-      useGameStore.getState().hireFromQueue(candidate.id);
-      return;
-    }
-  }
-}
-
 // ─── Simulation ───────────────────────────────────────────────────────────────
 
 describe("bot-simulation", () => {
@@ -349,7 +335,6 @@ describe("bot-simulation", () => {
         decideSkillTree(t, milestones);
         decideCanvasUpgrades();
         decideCraftAndEquip();
-        decideHire();
 
         // Detect first-time track unlocks (size track removed)
         const s2 = useGameStore.getState();

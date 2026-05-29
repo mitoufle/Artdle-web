@@ -30,7 +30,6 @@ function makeDraft(overrides: Partial<DraftState> = {}): DraftState {
       canvasesSold: 0, critsLanded: 0,
       maxComboChain: 0,
     } as DraftState["statsLifetime"],
-    officeXp: big(0), officeLevel: 1,
     ...overrides,
   } as DraftState;
 }

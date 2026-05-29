@@ -37,7 +37,6 @@ export function PaintingRoute(): JSX.Element {
   const gold = useGameStore((s) => s.gold);
   const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
-  const roster = useGameStore((s) => s.roster);
   const canvasTier = useGameStore((s) => s.canvasTier);
   const completedResearches = useGameStore((s) => s.completedResearches);
   const completedAchievements = useGameStore((s) => s.completedAchievements);
@@ -47,7 +46,7 @@ export function PaintingRoute(): JSX.Element {
   const upgradeCombo = useGameStore((s) => s.upgradeCombo);
 
   const helperState: CanvasMultiplierInputs = {
-    equipped, purchasedNodes, roster, canvasTier,
+    equipped, purchasedNodes, canvasTier,
     sellPriceLevel, speedLevel, critLevel, comboLevel,
     completedResearches,
     completedAchievements,

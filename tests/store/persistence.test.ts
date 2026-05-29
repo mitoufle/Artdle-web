@@ -81,25 +81,6 @@ describe("save migration v23 → v24 (chunk-domain rework)", () => {
     expect(inventory[0]!.affixes.find((a) => a.kind === "+speed%")).toBeDefined();
   });
 
-  it("strips +size% from worker affixes in roster", () => {
-    const v23Save = {
-      roster: [
-        {
-          id: "w-1",
-          name: "Test Worker",
-          affixes: [
-            { kind: "+size%", magnitude: 8 },
-            { kind: "+sell_price%", magnitude: 3 },
-          ],
-        },
-      ],
-    };
-    const migrated = migrate(v23Save, OLD_VERSION) as unknown as Record<string, unknown>;
-    const roster = migrated.roster as Array<{ affixes: Array<{ kind: string; magnitude: number }> }>;
-    expect(roster[0]!.affixes.find((a) => a.kind === "+size%")).toBeUndefined();
-    expect(roster[0]!.affixes.find((a) => a.kind === "+sell_price%")).toBeDefined();
-  });
-
   it("refunds fame for purchased size_matters node and deletes from purchasedNodes", () => {
     const v23Save = {
       fame: big(0),

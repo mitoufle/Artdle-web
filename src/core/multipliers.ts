@@ -1,11 +1,7 @@
 /**
- * Canvas multipliers return JS `number`. Office contribution from
- * getOfficeContribution() is Big-valued and gets `.toNumber()`'d before
- * adding to the multiplier sum. This saturates at MAX_SAFE_INTEGER if a
- * single worker stacks magnitudes × levelScale beyond ~9e15 — which only
- * happens past office L~100 with deep worker leveling. A future refactor
- * can move the canvas multipliers to Big if this becomes a progression
- * blocker; for v1.x of the Office, the saturation point is "you've won."
+ * Canvas multipliers return JS `number`. Workers no longer feed these
+ * (the redesigned Office contributes via the canvas tick in Phase B), so the
+ * roster is intentionally absent from CanvasMultiplierInputs.
  */
 
 import type { GameStore } from "@/store";
@@ -14,9 +10,8 @@ import type { Item } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
-import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, levelScale, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
-import { big, type Big } from "@/core/bigNumber";
-import type { AffixKind, SlotKind } from "@/config/workshopAffixes";
+import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
+import type { SlotKind } from "@/config/workshopAffixes";
 
 /**
  * Set of GameStore fields read by canvas multipliers, their helpers, and the
@@ -30,7 +25,6 @@ import type { AffixKind, SlotKind } from "@/config/workshopAffixes";
  */
 export type CanvasMultiplierInputs = Pick<GameStore,
   | "equipped"
-  | "roster"
   | "purchasedNodes"
   | "sellPriceLevel"
   | "speedLevel"
@@ -40,24 +34,6 @@ export type CanvasMultiplierInputs = Pick<GameStore,
   | "completedResearches"
   | "completedAchievements"
 >;
-
-/**
- * Sum of (worker.affix.magnitude / 100) × levelScale(worker.level) for all
- * workers whose affix list contains the given kind. Returns Big — at high
- * levels this is genuinely large (levelScale grows geometrically).
- */
-export function getOfficeContribution(state: Pick<GameStore, "roster">, kind: AffixKind): Big {
-  let total: Big = big(0);
-  for (const worker of state.roster) {
-    const scale = levelScale(worker.level);
-    for (const affix of worker.affixes) {
-      if (affix.kind === kind) {
-        total = total.add(big(affix.magnitude / 100).mul(scale));
-      }
-    }
-  }
-  return total;
-}
 
 /**
  * Aggregate multiplier on inspiration accrual rate.
@@ -85,7 +61,6 @@ export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "co
 export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number => {
   let bonus = 0;
   bonus += getEquippedContribution(state, "+sell_price%");
-  bonus += getOfficeContribution(state, "+sell_price%").toNumber();
   for (const [id, perLevel] of Object.entries(COLOR_PER_LEVEL)) {
     bonus += getNodeLevel(state, id) * perLevel;
   }
@@ -112,7 +87,6 @@ export const getCanvasSpeedMultiplier = (state: CanvasMultiplierInputs): number 
   bonus += getNodeLevel(state, "muscle_memory") * MUSCLE_MEMORY_PER_LEVEL;
   bonus += SPEED_PER_LEVEL * state.speedLevel;
   bonus += getEquippedContribution(state, "+speed%"); // already fractional
-  bonus += getOfficeContribution(state, "+speed%").toNumber();
   bonus += getSchoolBonus(state, "speed_pct");
   bonus += getAchievementBonus(state, "speed_pct");
   return 1 + bonus;
@@ -177,7 +151,7 @@ export const getAffixMagnitudeBonus = (state: Pick<GameStore, "purchasedNodes" |
  *   - BASE_CRIT_CHANCE (1% floor)
  *   - CRIT_PER_LEVEL × min(critLevel, MAX_CRIT_LEVEL)
  *   - countCapability(state, "crit_chance") × 0.01  (skill-tree hook; 0 today)
- * Items + workers contribute to crit_chunks instead (separate stat).
+ * Items contribute to crit_chunks instead (separate stat).
  * Soft-cap formula unchanged: raw above CRIT_SOFT_CAP_THRESHOLD compresses
  * toward CRIT_SOFT_CAP_CEILING.
  */
@@ -197,7 +171,6 @@ export const getCritChance = (state: CanvasMultiplierInputs): number => {
  *   - Equipped items with +crit_chunks affix: magnitude is read as a PERCENT of the base
  *     (e.g. magnitude 85 → +85% → base × 1.85). Socks ×1.5 multiplier applies to the
  *     boots slot percentage. Additively stacked across all equipped items.
- *   - Worker affixes with +crit_chunks (scaled by levelScale(worker.level), flat add)
  */
 export const getCritChunks = (state: CanvasMultiplierInputs): number => {
   const hasSocks = getNodeLevel(state, "socks") > 0;
@@ -213,15 +186,7 @@ export const getCritChunks = (state: CanvasMultiplierInputs): number => {
       if (affix.kind === "+crit_chunks") itemPct += (affix.magnitude / 100) * slotMult;
     }
   }
-  let chunks = BASE_CRIT_CHUNKS * (1 + itemPct);
-
-  // Worker branch unchanged — flat add scaled by levelScale.
-  for (const worker of state.roster) {
-    const scale = levelScale(worker.level).toNumber();
-    for (const affix of worker.affixes) {
-      if (affix.kind === "+crit_chunks") chunks += affix.magnitude * scale;
-    }
-  }
+  const chunks = BASE_CRIT_CHUNKS * (1 + itemPct);
   return Math.max(0, Math.floor(chunks));
 };
 
@@ -233,7 +198,6 @@ export const getCritChunks = (state: CanvasMultiplierInputs): number => {
 export const getComboBaseChance = (state: CanvasMultiplierInputs): number => {
   let chance = COMBO_PER_LEVEL * state.comboLevel;
   chance += getEquippedContribution(state, "+combo_chance%");
-  chance += getOfficeContribution(state, "+combo_chance%").toNumber();
   return Math.min(1.0, chance);
 };
 

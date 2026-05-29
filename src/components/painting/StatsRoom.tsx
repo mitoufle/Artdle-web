@@ -6,7 +6,6 @@ import {
   getEquippedContribution,
 } from "@/store/workshopSlice";
 import {
-  getOfficeContribution,
   getColorTreeContribution,
   getRainbowMultiplier,
   getSkillTreeSpeedContribution,
@@ -32,7 +31,6 @@ import {
   chunkInterval,
   goldPerChunk,
   canvasGold,
-  levelScale,
 } from "@/core/balance";
 import { big } from "@/core/bigNumber";
 import { formatBig } from "@/core/formatter";
@@ -85,29 +83,16 @@ function critChunksFromItems(state: CanvasMultiplierInputs): number {
   return BASE_CRIT_CHUNKS * itemPct;
 }
 
-/** Same as above but for worker roster, scaled by `levelScale(worker.level)`. */
-function critChunksFromWorkers(state: CanvasMultiplierInputs): number {
-  let total = 0;
-  for (const worker of state.roster) {
-    const scale = levelScale(worker.level).toNumber();
-    for (const affix of worker.affixes) {
-      if (affix.kind === "+crit_chunks") total += affix.magnitude * scale;
-    }
-  }
-  return total;
-}
-
 function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
   const goldTotal = getCanvasGoldMultiplier(state);
   const speedTotal = getCanvasSpeedMultiplier(state);
   const critTotal = getCritChance(state);
   const comboTotal = getComboBaseChance(state);
   const chunksItems = critChunksFromItems(state);
-  const chunksWorkers = critChunksFromWorkers(state);
   // The chunk that triggers the crit is also painted by the crit, so it counts
-  // toward what the player sees advance per crit (Trigger + Base + Items + Workers).
+  // toward what the player sees advance per crit (Trigger + Base + Items).
   const TRIGGER_CHUNK = 1;
-  const chunksTotal = TRIGGER_CHUNK + BASE_CRIT_CHUNKS + chunksItems + chunksWorkers;
+  const chunksTotal = TRIGGER_CHUNK + BASE_CRIT_CHUNKS + chunksItems;
   const rainbowFactor = getRainbowMultiplier(state);
 
   // Size² multiplicative is gone with the chunk-domain rework — Rainbow is the
@@ -128,7 +113,6 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
         { source: "Canvas upgrade", value: SELL_PRICE_PER_LEVEL * state.sellPriceLevel },
         { source: "Skill tree (color)", value: getColorTreeContribution(state) },
         { source: "Items", value: getEquippedContribution(state, "+sell_price%") },
-        { source: "Workers", value: getOfficeContribution(state, "+sell_price%").toNumber() },
         { source: "School", value: getSchoolGoldContribution(state) },
         { source: "Achievements", value: getAchievementGoldContribution(state) },
       ]),
@@ -142,7 +126,6 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
         { source: "Canvas upgrade", value: SPEED_PER_LEVEL * state.speedLevel },
         { source: "Skill tree", value: getSkillTreeSpeedContribution(state) },
         { source: "Items", value: getEquippedContribution(state, "+speed%") },
-        { source: "Workers", value: getOfficeContribution(state, "+speed%").toNumber() },
         { source: "School", value: getSchoolSpeedContribution(state) },
         { source: "Achievements", value: getAchievementSpeedContribution(state) },
       ]),
@@ -166,7 +149,6 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
       lines: nonZero([
         { source: "Canvas upgrade", value: COMBO_PER_LEVEL * state.comboLevel },
         { source: "Items", value: getEquippedContribution(state, "+combo_chance%") },
-        { source: "Workers", value: getOfficeContribution(state, "+combo_chance%").toNumber() },
       ]),
     },
     {
@@ -181,7 +163,6 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
         // Items scale the base by a percent; show that % in the label, with the
         // resolved chunk contribution as the value (keeps the block a count stat).
         { source: chunksItems > 0 ? `Items (+${Math.round((chunksItems / BASE_CRIT_CHUNKS) * 100)}%)` : "Items", value: chunksItems },
-        { source: "Workers", value: chunksWorkers },
       ]),
     },
   ];
@@ -245,7 +226,6 @@ function CanvasBlock({ helperState, tier }: { helperState: CanvasMultiplierInput
 export function StatsRoom(): JSX.Element {
   const equipped = useGameStore((s) => s.equipped);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
-  const roster = useGameStore((s) => s.roster);
   const sellPriceLevel = useGameStore((s) => s.sellPriceLevel);
   const speedLevel = useGameStore((s) => s.speedLevel);
   const critLevel = useGameStore((s) => s.critLevel);
@@ -256,13 +236,13 @@ export function StatsRoom(): JSX.Element {
   const completedAchievements = useGameStore((s) => s.completedAchievements);
   const { blocks, helperState } = useMemo(() => {
     const helperState: CanvasMultiplierInputs = {
-      equipped, purchasedNodes, roster, canvasTier,
+      equipped, purchasedNodes, canvasTier,
       sellPriceLevel, speedLevel, critLevel, comboLevel,
       completedResearches,
       completedAchievements,
     };
     return { blocks: statBlocks(helperState), helperState };
-  }, [equipped, purchasedNodes, roster, canvasTier, sellPriceLevel, speedLevel, critLevel, comboLevel, completedResearches, completedAchievements]);
+  }, [equipped, purchasedNodes, canvasTier, sellPriceLevel, speedLevel, critLevel, comboLevel, completedResearches, completedAchievements]);
 
   // Hide entire blocks that have no contributors and no multiplicatives — keeps
   // locked mechanics (Crit/Combo before their skill nodes are bought) out of
