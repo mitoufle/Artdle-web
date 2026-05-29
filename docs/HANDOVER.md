@@ -77,10 +77,31 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
   > **A2 pulled one sliver of C forward:** `resetOffice()` already keeps the roster (workers persist
   > across ascend) — its body had to change since it referenced deleted fields. Phase C must NOT
   > re-implement worker persistence; it only renames the `ascend.ts` call site and adds the XP pass.
-- ⏭️ **B — Multi-painter canvas tick** (the big, risky one). Rewrite `src/core/canvasTickPure.ts`
-  single-painter time-budget loop → discrete-event scheduler over player + workers; wire
-  `workerGoldFactor`; per-worker crit/combo/strokesPerCrit; increment `strokesThisRun` (field exists,
-  nothing fills it yet). **Recommend an advisor call before committing to the scheduler design.**
+- ✅ **B — Multi-painter canvas tick** (DONE, reviewed, green). Plan
+  `2026-05-29-office-B-multi-painter-tick.md`. Commits `bb37bbc` (`getWorkerGoldFactor`), `af00d26`
+  (transient `painterClocks` state), `542c044` (frozen solo golden master + step-invariance net),
+  `e8fd0bd` (the discrete-event scheduler rewrite), `d5cc9c6` (hardened player-only crit-stats test),
+  `858cf3c` (store integration + skipped multi-painter step-invariance guard).
+  `canvasTickPure` is now a discrete-event scheduler over player + every worker on the shared canvas;
+  timing decoupled from fill (`canvasProgress` = integer completed-chunk count; per-painter cadence in
+  transient `painterClocks`, keyed `"player"` + worker ids). Sale gold = `canvasGold × workerGoldFactor
+  × comboBonusFactor(chain)`; combo chain rolled by the completing painter's combo base; per-worker
+  `strokesThisRun` accumulates. `canvasSlice.canvasTick` now persists `painterClocks` + `roster`.
+  **Solo equivalence is bit-exact** (frozen golden master `{gold 1942.5, sales 11, crits 116,
+  maxCombo 1}` reproduced by the rewrite; the unified path needed no empty-roster fast-path).
+  > **LOCKED in B (a C/D decision to revisit):** crit/combo STREAK stats (`currentCritStreak`,
+  > `maxCritStreak`, `critsLanded`, `maxComboChain`) are PLAYER-strokes-only — worker strokes don't
+  > perturb them (guarded by a real discriminator test, inversion-verified). `canvasesSold`/`goldEarned`
+  > count all painters. C/D: decide whether worker crits should feed those achievement stats.
+  > **KNOWN GAP deferred to C/D:** the MULTI-painter scheduler is NOT step-size invariant — per-event
+  > float drift in `painterClocks` flips near-simultaneous painters' tie-break between small (live ~16ms)
+  > and large (catch-up 10s/60s) steps, diverging RNG outcomes (~8% crits / 600s, measured). **Solo is
+  > bit-exact** (Phase B's actual bar). Workers aren't live until C/D merge, so it's latent. Guard:
+  > skipped test `canvasTickPure.equivalence.test.ts` → "multi-painter step-invariance (KNOWN GAP)"
+  > (un-skip to see it fail). **C/D owns the decision:** either rework to absolute next-stroke scheduling
+  > so multi-painter is step-exact, OR set an explicit catch-up-vs-live tolerance. A fix is incomplete
+  > unless ALL of {gold, crits, maxCombo, per-worker strokes} equalize across step sizes (an epsilon
+  > tie-break alone is not enough — empirically decide with a multi-painter probe before claiming fixed).
 - ⏭️ **C — Ascend XP + persistence.** `computeAscendXpPool(runGold)` + hybrid split + `applyAscendXp`
   (xp→levels→`applyStatLevelUp`); **`ascend.ts:44` still calls `state.resetOffice()`** — A2 already made
   that keep-roster/zero-strokes, so C just swaps in the XP/level-up pass (don't re-add persistence);
@@ -99,15 +120,17 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
   `QueueCard`, `FireConfirmModal`.
 
 ### Status
-- **1053 / 1053 tests passing** on the branch after A2 (count dropped from 1086: deleted
-  officeRoll/officeClasses/officeTickPure/officeSlice.xp test suites + adapted the rest); `npx vite
-  build` clean. HEAD = `60e2f55`.
-- `npx tsc -b --noEmit`: ~22 pre-existing baseline errors (NOT a gate — green bar is vitest + vite
-  build). A2 left the old office UI files deleted, so some prior baseline tsc errors in those files
-  are gone; no NEW tsc errors introduced.
+- **1066 passing + 1 skipped** on the branch after B (the 1 skipped is the deliberate multi-painter
+  step-invariance guard — see the B bullet); `npx vite build` clean. HEAD = `858cf3c`.
+- `npx tsc -b --noEmit`: ~25 pre-existing baseline errors in TEST files (NOT a gate — green bar is
+  vitest + `vite build`; prod deploy via `npx vercel --prod` is not gated on `tsc -b`). No new tsc
+  errors in non-test source from A2/B. A cleanup pass on the test-file tsc errors would be welcome
+  (out of scope for the office phases).
 - **Not merged to master.** Prod is still on the pre-office branch bundle (live game + crit + tree).
-  Per plan, merge `painter-office-redesign` → master only when the office is fully done (B→C→D).
-  A2 commits are dormant in prod terms (workers exist as data, contribute nothing yet).
+  Per plan, merge `painter-office-redesign` → master only when the office is fully done (B→C→D). A2+B
+  commits are dormant in prod terms: workers exist as data and now paint in the tick engine, but no
+  roster slot is reachable in the live game until the office UI/acquisition lands (C/D), and the office
+  isn't in prod regardless.
 - Memory corrected this session: the **v2.0 visual redesign is shelved** (user confirmed none planned);
   `project_v12_scope.md` updated — don't gate work behind a v2.
 
@@ -125,7 +148,10 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
 `2421029` tree unlock gate · `fce8a57` tree migration · `524f01d` tree UI · `7ab0428` tree hover fix ·
 `e07a3b0` office A1 plan · `c746e8a` office worker constants · `9d65373` office worker model ·
 `510f7a0` office A2 plan · `93d1bf6` office A2 slice rewrite + engine rewiring · `d6a4801` office A2
-delete orphans · `60e2f55` office A2 spawn wiring
+delete orphans · `60e2f55` office A2 spawn wiring ·
+`fa6050e` office B plan · `d2c75c5` office B plan fix · `bb37bbc` B workerGoldFactor · `af00d26` B
+painterClocks state · `542c044` B golden master · `e8fd0bd` B multi-painter scheduler · `d5cc9c6` B
+harden crit-stats test · `858cf3c` B store integration + step-invariance guard
 
 ---
 
