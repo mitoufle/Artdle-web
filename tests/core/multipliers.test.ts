@@ -568,3 +568,15 @@ describe("getWorkerGoldFactor", () => {
     expect(getWorkerGoldFactor({ roster: [a, b] } as GameStore)).toBeCloseTo(1.375, 9);
   });
 });
+
+import { getWorkerXpPoolMultiplier } from "@/core/multipliers";
+
+describe("getWorkerXpPoolMultiplier", () => {
+  it("is 1.0 with no accelerator nodes", () => {
+    expect(getWorkerXpPoolMultiplier({ purchasedNodes: {} } as GameStore)).toBe(1);
+  });
+  it("adds +10% per worker_xp_mult capability level", () => {
+    // accelerator carries `worker_xp_mult`; 3 levels → 1.30
+    expect(getWorkerXpPoolMultiplier({ purchasedNodes: { accelerator: 3 } } as GameStore)).toBeCloseTo(1.30, 9);
+  });
+});

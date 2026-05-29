@@ -10,7 +10,7 @@ import type { Item } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
-import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL } from "./balance";
+import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL, ACCELERATOR_XP_PER_LEVEL } from "./balance";
 import type { SlotKind } from "@/config/workshopAffixes";
 
 /**
@@ -232,6 +232,14 @@ export const getSchoolAffixMagnitudeMultiplier = (
 export const getSkillAffixMagnitudeMultiplier = (
   state: Pick<GameStore, "purchasedNodes">,
 ): number => 1 + countCapability(state, "affix_magnitude_pct") * 0.25;
+
+/**
+ * Multiplier on the worker ascend-XP pool from the Accelerator node
+ * (`worker_xp_mult` capability): `1 + ACCELERATOR_XP_PER_LEVEL × levels`.
+ * Replaces the old per-sale `getWorkerXpMultiplier` (deleted later in Phase C).
+ */
+export const getWorkerXpPoolMultiplier = (state: Pick<GameStore, "purchasedNodes">): number =>
+  1 + countCapability(state, "worker_xp_mult") * ACCELERATOR_XP_PER_LEVEL;
 
 /**
  * Multiplicative gold factor contributed by the worker roster:

@@ -409,6 +409,15 @@ export const WORKER_STROKES_PER_CRIT_INCREMENTS: ReadonlyArray<number> = [0, 1];
 /** Hard ceiling on a worker's crit chance. */
 export const WORKER_CRIT_CHANCE_CAP = 0.5;
 
+/** Ascend-XP pool split: this fraction is distributed EQUALLY across the roster
+ *  (the baseline floor — so a fresh / zero-stroke worker still climbs); the
+ *  remainder is distributed by each worker's strokesThisRun share. TUNABLE
+ *  (central knob per spec §4.1). */
+export const WORKER_BASELINE_XP_FRACTION = 0.5;
+
+/** Accelerator (worker_xp_mult capability): +10% to the worker ascend-XP pool per level. */
+export const ACCELERATOR_XP_PER_LEVEL = 0.10;
+
 interface HireCostInput {
   readonly tier: WorkerTier;
   readonly magnitudeSum: number;

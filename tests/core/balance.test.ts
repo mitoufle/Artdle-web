@@ -628,7 +628,18 @@ describe("constants", () => {
 // ============================================================================
 import {
   WORKER_BASE_STATS, WORKER_PCT_INCREMENTS, WORKER_STROKES_PER_CRIT_INCREMENTS, WORKER_CRIT_CHANCE_CAP,
+  WORKER_BASELINE_XP_FRACTION, ACCELERATOR_XP_PER_LEVEL,
 } from "@/core/balance";
+
+describe("ascend-xp constants", () => {
+  it("baseline split fraction is in (0,1)", () => {
+    expect(WORKER_BASELINE_XP_FRACTION).toBeGreaterThan(0);
+    expect(WORKER_BASELINE_XP_FRACTION).toBeLessThan(1);
+  });
+  it("accelerator boosts the ascend pool by +10% per level", () => {
+    expect(ACCELERATOR_XP_PER_LEVEL).toBe(0.10);
+  });
+});
 
 describe("worker stat model constants", () => {
   it("base stats match a fresh painter", () => {
