@@ -51,4 +51,22 @@ describe("UpgradeRow hover wiring", () => {
     fireEvent.mouseEnter(screen.getByTestId("upgrade-buy-tendril"));
     expect(String(useGameStore.getState().hoverFooter)).toMatch(/global inspi multiplier/);
   });
+
+  it("hover shows the real next milestone factor, not ×2, for levels where the next factor differs (Lv 60 → ×3 at Lv 100)", () => {
+    // PART_MILESTONES = [10,25,50,100,200,400,800,1000]
+    // PART_MILESTONE_FACTORS = [2,2,3,3,4,5,6,8]
+    // Level 60: milestones ≤60 are 10(×2), 25(×2), 50(×3) → cumulative 12.
+    // Next milestone is Lv 100 with factor ×3, NOT ×2.
+    render(
+      <UpgradeRow
+        partId="cotyledon" name="Cotyledon" level={60} rate={1.0}
+        cost="500" canAfford={true} onBuy={() => {}}
+      />,
+    );
+    fireEvent.mouseEnter(screen.getByTestId("upgrade-buy-cotyledon"));
+    const { container } = render(<>{useGameStore.getState().hoverBody}</>);
+    expect(container.textContent).toMatch(/Next milestone: Lv 100 \(×3\)/);
+    expect(container.textContent).not.toMatch(/Next milestone: Lv 100 \(×6\)/);
+    expect(container.textContent).not.toMatch(/Next milestone: Lv 100 \(×24\)/);
+  });
 });

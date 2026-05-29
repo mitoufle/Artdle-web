@@ -21,14 +21,15 @@ function rowHoverBody(level: number, rate: number, cost: string): JSX.Element {
   const milestoneMult = getPartMilestoneMultiplier(level);
   const contribution = level * rate * milestoneMult * inspiMult;
   const nextMilestone = getNextPartMilestone(level);
+  const nextFactor = nextMilestone !== null ? PART_MILESTONE_FACTORS[PART_MILESTONES.indexOf(nextMilestone)] : null;
   return (
     <>
       <div>Level: {level}</div>
       <div>Next cost: {cost} g</div>
       <div>───</div>
       <div>Contribution: +{contribution.toFixed(1)} inspi/sec</div>
-      {nextMilestone !== null && (
-        <div>Next milestone: Lv {nextMilestone} (×{milestoneMult * 2})</div>
+      {nextMilestone !== null && nextFactor != null && (
+        <div>Next milestone: Lv {nextMilestone} (×{nextFactor})</div>
       )}
     </>
   );
