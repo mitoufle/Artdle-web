@@ -67,22 +67,22 @@ function fmtMult(v: number, digits = 2): string {
 }
 
 /**
- * Sum +crit_chunks raw integer magnitudes across equipped items, with the
- * socks ×1.5 boost on the boots slot. Mirrors the items branch of
- * `getCritChunks` in multipliers.ts so the panel doesn't drift from the engine.
+ * Effective additional chunks contributed by equipped items: their +crit_chunks
+ * magnitudes are read as a PERCENT of BASE_CRIT_CHUNKS (socks x1.5 on boots).
+ * Mirrors the items branch of `getCritChunks` in multipliers.ts.
  */
 function critChunksFromItems(state: CanvasMultiplierInputs): number {
   const hasSocks = getNodeLevel(state, "socks") > 0;
-  let total = 0;
+  let itemPct = 0;
   for (const entry of Object.entries(state.equipped)) {
     const [slot, item] = entry as [SlotKind, { affixes: { kind: string; magnitude: number }[] } | undefined];
     if (!item) continue;
     const slotMult = hasSocks && slot === "boots" ? 1.5 : 1.0;
     for (const affix of item.affixes) {
-      if (affix.kind === "+crit_chunks") total += affix.magnitude * slotMult;
+      if (affix.kind === "+crit_chunks") itemPct += (affix.magnitude / 100) * slotMult;
     }
   }
-  return total;
+  return BASE_CRIT_CHUNKS * itemPct;
 }
 
 /** Same as above but for worker roster, scaled by `levelScale(worker.level)`. */
