@@ -20,6 +20,7 @@ export function cloneGameState(state: GameStore): DraftState {
     partLevels: { ...state.partLevels },
     purchasedNodes: { ...state.purchasedNodes },
     protectedTiers: { ...state.protectedTiers },
+    painterClocks: { ...state.painterClocks },
     completedResearches: { ...state.completedResearches },
     examsPassed: { ...state.examsPassed },
     completedAchievements: { ...state.completedAchievements },

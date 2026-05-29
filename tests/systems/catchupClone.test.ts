@@ -42,4 +42,11 @@ describe("cloneGameState", () => {
     expect(src.gold.toNumber()).toBe(100);
     expect(next.toNumber()).toBe(150);
   });
+
+  it("deep-copies painterClocks (mutating the clone doesn't touch the source)", () => {
+    const src = { ...useGameStore.getState(), painterClocks: { player: 2.5, w1: 1.0 } } as any;
+    const clone = cloneGameState(src);
+    clone.painterClocks.player = 999;
+    expect(src.painterClocks.player).toBe(2.5);
+  });
 });

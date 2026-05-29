@@ -44,6 +44,14 @@ export interface CanvasState {
    */
   critChunks: Record<number, true>;
   /**
+   * Per-painter stroke clock: seconds accumulated toward each painter's next
+   * stroke, keyed by painter id ("player" + worker ids). Carries each
+   * painter's cadence across ticks. RUN-state, TRANSIENT (stripped from
+   * `partialize` — rebuilt empty on load, costing at most <1 chunk of the
+   * in-flight canvas). Reset on canvas/ascend reset via initialCanvasState.
+   */
+  painterClocks: Record<string, number>;
+  /**
    * Most recent sale event for animation triggering. The `id` increments on
    * each sale; consumers (e.g. `<FloatingGoldText>`) use it as an
    * AnimatePresence/motion key so each sale starts a fresh animation.
@@ -65,6 +73,7 @@ export const initialCanvasState: CanvasState = Object.freeze({
   canvasTier: 1,
   comboChain: 0,
   critChunks: {},
+  painterClocks: {},
   lastSale: null,
 }) as CanvasState;
 

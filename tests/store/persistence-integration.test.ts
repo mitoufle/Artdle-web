@@ -69,6 +69,15 @@ describe("persistence integration", () => {
     expect("lastSale" in parsed.state).toBe(false);
   });
 
+  it("painterClocks transient is partialized OUT of the save", async () => {
+    useGameStore.setState({ painterClocks: { player: 3.3 } } as unknown as Parameters<typeof useGameStore.setState>[0]);
+    await persistedAdapter.flush();
+
+    const raw = await idbAdapter.getItem("artdle-save");
+    const parsed = JSON.parse(raw!);
+    expect("painterClocks" in parsed.state).toBe(false);
+  });
+
   it("rehydration reconstructs Bigs from {__big} markers", async () => {
     // Write a known state with a Big through the live store, then capture the
     // pre-rehydrate value (the store is a singleton across tests, so we can't
