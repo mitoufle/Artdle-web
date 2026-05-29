@@ -8,6 +8,7 @@ import {
 } from "@/store/officeSlice";
 import { createBaseStats } from "@/core/workerModel";
 import { big } from "@/core/bigNumber";
+import { migrate } from "@/store";
 import type { GameStore } from "@/store";
 
 beforeEach(() => {
@@ -94,5 +95,48 @@ describe("resetOffice (ascend) — workers persist, run contribution resets", ()
     expect(after[0]!.level).toBe(4);
     expect(after[0]!.xp.eq(big(99))).toBe(true);
     expect(after[0]!.strokesThisRun).toBe(0);
+  });
+});
+
+describe("buying a roster_slot node spawns a worker", () => {
+  it("reconciles the roster after a successful purchase", () => {
+    // hire_manager's parent is free_will (no roster_slot tag), so seeding it
+    // satisfies the prereq without inflating the roster cap.
+    useGameStore.setState({
+      roster: [],
+      purchasedNodes: { free_will: 1 },
+      devFreeNodes: true,
+    });
+    const ok = useGameStore.getState().buyNode("hire_manager");
+    expect(ok).toBe(true);
+    expect(useGameStore.getState().roster.length).toBe(getRosterCap(useGameStore.getState()));
+    expect(useGameStore.getState().roster.length).toBeGreaterThan(0);
+    useGameStore.setState({ devFreeNodes: false });
+  });
+});
+
+describe("v26 save → migrate drops legacy fields; reconcile fills roster", () => {
+  it("migrate strips officeLevel/officeXp/queue/trickleTimer and empties roster", () => {
+    const old = {
+      officeLevel: 5,
+      officeXp: big(123),
+      queue: [{ id: "c1" }],
+      trickleTimer: 9,
+      roster: [{ id: "legacy", class: "generalist", tier: "common", level: 3, xp: big(50), affixes: [] }],
+      purchasedNodes: { hire_manager: 2 },
+    };
+    const migrated = migrate(old, 26) as Record<string, unknown>;
+    expect(migrated.officeLevel).toBeUndefined();
+    expect(migrated.officeXp).toBeUndefined();
+    expect(migrated.queue).toBeUndefined();
+    expect(migrated.trickleTimer).toBeUndefined();
+    expect(migrated.roster).toEqual([]);
+  });
+
+  it("after migrate, reconcileRoster spawns level-1 workers for unlocked slots", () => {
+    useGameStore.setState({ roster: [], purchasedNodes: { hire_manager: 2 } });
+    useGameStore.getState().reconcileRoster();
+    expect(useGameStore.getState().roster.length).toBe(2);
+    expect(useGameStore.getState().roster.every((w) => w.level === 1)).toBe(true);
   });
 });

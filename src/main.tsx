@@ -157,6 +157,9 @@ export function Bootstrap(): JSX.Element {
     if (simAlreadyStarted.current) return;
     simAlreadyStarted.current = true;
     (async () => {
+      // Populate the roster for any slots unlocked in a save that predates the
+      // redesign (migration leaves roster empty; this fills it to cap).
+      useGameStore.getState().reconcileRoster();
       const lastSeen = useGameStore.getState().lastSeen;
       const elapsed = Math.max(0, (Date.now() - lastSeen) / 1000);
 

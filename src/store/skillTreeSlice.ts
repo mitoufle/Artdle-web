@@ -66,6 +66,9 @@ export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlic
     set((s) => ({
       purchasedNodes: { ...s.purchasedNodes, [id]: currentLevel + 1 },
     }));
+    // A purchased node may have unlocked a roster slot — spawn to fill it.
+    // reconcileRoster is a no-op for non-roster nodes (cap unchanged).
+    get().reconcileRoster();
     return true;
   },
 
