@@ -27,7 +27,7 @@
 
 ## Scope guard — NOT in Phase B (later phases):
 - Phase C: ascend-XP pool, level-up pass, skill-node migration/refund, deleting now-dead balance/multiplier helpers. (B only *accumulates* `strokesThisRun`; C consumes it.)
-- Phase D: post-ascend roll screen, on-canvas worker avatars + next-stroke indicators (the indicators will read `painterClocks` — B leaves it populated and readable).
+- Phase D: post-ascend roll screen, on-canvas worker avatars + next-stroke indicators (the indicators will read `painterClocks` — B leaves it populated and readable). **Caveat for D:** `painterClocks` is a fresh object every tick, so any component subscribing to it re-renders per frame by construction — Phase D should isolate the avatar/indicator subtree the way `BoundCanvasStage` isolates `canvasProgress`, not subscribe from a high-up component.
 - B does NOT change `multipliers.CanvasMultiplierInputs` to re-add `roster` (A2's structural guarantee stays). `workerGoldFactor` is a SEPARATE selector used only by the tick.
 
 ## Conscious decision to record (not a task): click-to-paint
@@ -436,15 +436,25 @@ describe("canvasTickPure — multi-painter", () => {
     expect(d.statsRun.critsLanded % 2).toBe(0);
   });
 
-  it("combo chain is rolled by the completing painter's combo base", () => {
-    // Worker has 100% combo, player has 0%. With rng below the worker's effective
-    // chance, a worker-completed sale should start a chain. Use a single fast
-    // worker so the worker reliably completes canvases.
+  it("the completing painter's combo base drives the chain (witnessed by combo gold)", () => {
+    // Worker has 100% combo base, player has 0%. A worker-completed sale advances
+    // the shared chain; subsequent sales then pay comboBonusFactor(chain) > 1.
+    // We CANNOT witness this via `comboChain` (a player completion legitimately
+    // resets it — interleave-dependent) nor via `maxComboChain` (LOCKED rule #1:
+    // player-only). The deterministic, interleave-proof witness is total gold:
+    // with NO combo every sale pays exactly CANVAS_GOLD_BASE (=10 at T1, and
+    // workerGoldFactor is 1 since goldPct=0), so `gold > canvasesSold × 10` iff
+    // at least one sale fired at chain > 0 — which only the worker's combo base
+    // can cause here. (After sale 1 advances the chain to 1, sale 2 is paid at
+    // chain ≥ 1 before any reset can intervene → guaranteed once ≥ 2 sales fire.)
     vi.restoreAllMocks();
-    vi.spyOn(rngModule, "rng").mockReturnValue(0.4); // no crit (<critChance? critChance 0 → no), combo: 0.4 < worker comboBase 1.0 → chain++
-    const d = makeDraft({ comboLevel: 0, roster: [worker({ speed: 5, comboChance: 1.0 })] }); // worker very fast
-    canvasTickPure(d, BASE_CHUNK_INTERVAL * 4);
-    expect(d.comboChain).toBeGreaterThan(0); // worker's combo chance drove the chain
+    // rng 0.4: no crit (0.4 < 0.01 critChance is false for player and worker);
+    // combo roll 0.4 < worker effChance (≈1.0, decaying 0.05/link) → chain grows.
+    vi.spyOn(rngModule, "rng").mockReturnValue(0.4);
+    const d = makeDraft({ critLevel: 0, comboLevel: 0, roster: [worker({ speed: 5, comboChance: 1.0 })] });
+    canvasTickPure(d, BASE_CHUNK_INTERVAL * 6); // worker (interval 1) completes several T1 canvases
+    expect(d.statsRun.canvasesSold).toBeGreaterThanOrEqual(2);
+    expect(d.gold.toNumber()).toBeGreaterThan(d.statsRun.canvasesSold * 10);
   });
 });
 ```
@@ -583,7 +593,16 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
     chain = rng() < effChance ? chain + 1 : 0;
   };
 
-  while (budget > 0 && sales < MAX_SALES_PER_TICK && strokes < MAX_STROKES_PER_TICK) {
+  // Terminate on the EVENT, not on `budget > 0`: a painter whose stroke falls at
+  // the exact end of the budget (chosenWait == budget — including the
+  // click-to-paint boundary `canvasTick(playerInterval)`) must still fire, and
+  // simultaneous painters (zero-wait after time advances) must all resolve before
+  // we stop. TIME_EPSILON absorbs float fuzz so `4.999… vs 5` can't mis-order at
+  // a boundary. (Solo: after the single painter strokes, its wait == interval >
+  // budget(0) → break, giving exactly one chunk per `canvasTick(interval)` and
+  // fractional-carry-equivalent partials — preserves the Task 3 golden master.)
+  const TIME_EPSILON = 1e-9;
+  while (sales < MAX_SALES_PER_TICK && strokes < MAX_STROKES_PER_TICK) {
     // Pick the painter whose next stroke comes soonest. Tie-break: player
     // first, then roster order — deterministic for catch-up reproducibility.
     let chosen = painters[0]!;
@@ -594,13 +613,15 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
       if (wait < chosenWait) { chosen = p; chosenWait = wait; }
     }
 
-    if (chosenWait > budget) {
+    // Next stroke is beyond the remaining budget → advance all clocks and stop.
+    if (chosenWait > budget + TIME_EPSILON) {
       for (const p of painters) clocks[p.id]! += budget;
-      budget = 0;
       break;
     }
 
-    // Advance time to the chosen painter's stroke.
+    // Advance time to the chosen painter's stroke. Resolves zero-wait
+    // simultaneity too (chosenWait == 0 leaves budget unchanged; each painter
+    // can be zero-wait at most once per instant since it resets to interval).
     for (const p of painters) clocks[p.id]! += chosenWait;
     budget -= chosenWait;
     clocks[chosen.id] = 0;
