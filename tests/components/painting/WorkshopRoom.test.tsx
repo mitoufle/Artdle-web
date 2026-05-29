@@ -122,20 +122,18 @@ describe("<WorkshopRoom />", () => {
     expect(useGameStore.getState().inventory).toEqual([]);
   });
 
-  it("+crit_chunks equipped chip renders as ⚡3 (no % suffix)", () => {
+  it("+crit_chunks equipped chip renders as ⚡3% (magnitude is now a percent)", () => {
     useGameStore.setState({ equipped: { brush: critChunksBrush } });
     render(<WorkshopRoom />);
     const btn = screen.getByTestId("slot-unequip-brush");
-    // Must contain the symbol + magnitude with no % appended
-    expect(btn.textContent).toContain("⚡3");
-    expect(btn.textContent).not.toContain("⚡3%");
+    // crit_chunks magnitude is now read as a percent, so the chip shows a % suffix.
+    expect(btn.textContent).toContain("⚡3%");
   });
 
-  it("+crit_chunks inventory chip renders as ⚡3 (no % suffix)", () => {
+  it("+crit_chunks inventory chip renders as ⚡3% (magnitude is now a percent)", () => {
     useGameStore.setState({ inventory: [critChunksBrush] });
     render(<WorkshopRoom />);
     const btn = screen.getByTestId(`inventory-equip-${critChunksBrush.id}`);
-    expect(btn.textContent).toContain("⚡3");
-    expect(btn.textContent).not.toContain("⚡3%");
+    expect(btn.textContent).toContain("⚡3%");
   });
 });

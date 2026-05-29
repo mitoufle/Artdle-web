@@ -178,7 +178,9 @@ function statBlocks(state: CanvasMultiplierInputs): StatBlock[] {
       lines: nonZero([
         { source: "Trigger", value: TRIGGER_CHUNK },
         { source: "Bonus (base)", value: BASE_CRIT_CHUNKS },
-        { source: "Items", value: chunksItems },
+        // Items scale the base by a percent; show that % in the label, with the
+        // resolved chunk contribution as the value (keeps the block a count stat).
+        { source: chunksItems > 0 ? `Items (+${Math.round((chunksItems / BASE_CRIT_CHUNKS) * 100)}%)` : "Items", value: chunksItems },
         { source: "Workers", value: chunksWorkers },
       ]),
     },

@@ -7,7 +7,7 @@ import type { ItemTier } from "@/core/workshopRoll";
  * canvas-derived multiplier:
  *   +sell_price%   → getCanvasGoldMultiplier
  *   +speed%        → getCanvasSpeedMultiplier
- *   +crit_chunks   → getCritChunks         (gated by unlock_canvas_crit; raw integer magnitude, NOT percent)
+ *   +crit_chunks   → getCritChunks         (gated by unlock_canvas_crit; magnitude read as a PERCENT scaling base crit chunks)
  *   +combo_chance% → getComboBaseChance    (gated by unlock_canvas_combo)
  */
 export type AffixKind =
@@ -54,7 +54,7 @@ export const AFFIX_SYMBOL_SCALE: Record<AffixKind, number> = {
  * so each gets its own range. Higher tiers always roll strictly higher bounds
  * than lower tiers, giving legendary items both more affixes AND stronger ones:
  *   - sell_price / speed / size: normal 15..25 → legendary 48..66
- *   - crit_chunks: normal 1..1 → legendary 3..5 (raw integer chunk counts, NOT percent)
+ *   - crit_chunks: normal 1..1 → legendary 3..5 (small magnitudes; consumed as a PERCENT scaling base crit chunks, e.g. magnitude 5 → +5%)
  *   - combo_chance: normal 5..20 → legendary 36..56 (wider pp; weaker per chance %)
  *
  * Craftsmanship skill-tree node still shifts BOTH bounds equally

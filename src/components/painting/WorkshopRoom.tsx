@@ -88,7 +88,7 @@ const SLOT_PLACEHOLDER: Record<SlotKind, JSX.Element> = {
 const AFFIX_LABEL: Record<AffixKind, (m: number) => string> = {
   "+sell_price%": (m) => `+${m}% sell price`,
   "+speed%": (m) => `+${m}% speed`,
-  "+crit_chunks": (m) => `+${m} crit strokes`,
+  "+crit_chunks": (m) => `+${m}% crit strokes`,
   "+combo_chance%": (m) => `+${m}% combo chance`,
 };
 
@@ -388,7 +388,7 @@ export function WorkshopRoom(): JSX.Element {
                     {item.affixes.map((a, i) => (
                       <span key={i} className={styles.affixChip}>
                         <span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
-                        {a.magnitude}{a.kind === "+crit_chunks" ? "" : "%"}
+                        {a.magnitude}%
                       </span>
                     ))}
                   </div>
@@ -435,7 +435,7 @@ export function WorkshopRoom(): JSX.Element {
                       {item.affixes.map((a, i) => (
                         <span key={i} className={styles.affixChip}>
                           <span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
-                          {a.magnitude}{a.kind === "+crit_chunks" ? "" : "%"}
+                          {a.magnitude}%
                         </span>
                       ))}
                     </div>
