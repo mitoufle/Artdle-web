@@ -1,5 +1,112 @@
 # Artdle Web — Handover
 
+## Balance review: crit + tree shipped, office redesign started (2026-05-29)
+
+Balance-review session covering three areas the user flagged: (1) office workers need a full
+redesign, (2) `+crit_chunks` item affix overpowered, (3) inspiration-tree upgrades feel flat /
+early upgrades die instantly. All work is on branch **`painter-office-redesign`** (NOT merged to
+master). **Production was deployed directly from this branch** via `npx vercel --prod` — current
+live bundle `index-C_GCe2x1.js` (= live game + crit fix + tree rework; office work is on the
+branch but NOT in that bundle).
+
+> **master is behind.** Prod = the branch up through the tree rework (`7ab0428`). The office A1
+> commits (`c746e8a`, `9d65373`) are additive/dormant (new files only, not wired in) and were not
+> deployed. When the office redesign is fully done, merge `painter-office-redesign` → master.
+
+### ✅ Shipped to production (reviewed + tested)
+
+**#2 Crit-chunks rebalance** (spec `docs/superpowers/specs/2026-05-29-crit-and-tree-rebalance-design.md` Part 1; plan `docs/superpowers/plans/2026-05-29-crit-chunks-percent-rebalance.md`):
+- `getCritChunks` (`src/core/multipliers.ts`) now reads each equipped `+crit_chunks` magnitude as a
+  **percent of the base** (`floor(BASE_CRIT_CHUNKS × (1 + Σ mag/100 × slotMult))`) instead of a flat
+  add. A maxed legendary (4 crit rolls ~85) drops from ~85 strokes/crit to ~2. No save migration,
+  no roll-path change. Commits `ebf2a25`, `1419caa`.
+- UI: Workshop chips + hover labels show `+N%`; StatsRoom "Strokes per crit" → "Items (+N%)" line.
+  Commit `8755505`. **Worker crit affixes intentionally still render as a count** (workers' branch
+  in `getCritChunks` left as flat — the office redesign owns that path).
+
+**#3 Inspiration-tree 10-tier rework** (spec Part 2; plan `2026-05-29-inspiration-tree-10-tier-rework.md`):
+- `PART_MILESTONES`/`PART_MILESTONE_FACTORS` (`balance.ts`) → escalating back-loaded schedule
+  `[10,25,50,100,200,400,800,1000]` × `[2,2,3,3,4,5,6,8]` (×34,560 at L1000). Commit `5c12e54`.
+- `treeStages.ts` → **10 single-upgrade tiers**, `rate`/`baseCost` ramp ×5, `unlockInspiPerSec`
+  ×10 ladder; dropped `unlockThreshold`. Part IDs `u1`..`u10`. Commit `32dbb8a`.
+- `treeSlice.ts` → new `getTreeInspiPerSec`; `canGrowSapling` gates on total inspi/sec (any upgrade
+  advances the unlock). Commit `2421029`.
+- Save migration v25→v26 (wipe + reseed tree; tree resets each ascend so it's self-healing). Commit
+  `fce8a57`.
+- UI: StagePanel shows inspi/sec unlock progress; UpgradeRow shows next-milestone hint. Commits
+  `524f01d`, `7ab0428` (hover-factor bug fix).
+
+### 🚧 In progress: Office painter redesign (#1)
+
+**Concept:** the old "idle Workshop clone" is replaced — workers become **autonomous mini-painters**
+on the shared canvas, each with their own stroke rhythm, leveling slowly across ascends. Spec:
+`docs/superpowers/specs/2026-05-29-office-painter-redesign-design.md` (read it first).
+
+**Locked design (from brainstorm):**
+- Each worker has 5 stats: **speed, crit chance (cap 50%), strokes-per-crit, combo chance** are
+  PERSONAL (used only when that worker paints); **gold per canvas** is a MULTIPLIER on the player's
+  gold (the one shared-aggregate stat). Resolution to "whose gold sets the sale price."
+- Shared canvas, discrete-event multi-painter tick: each painter strokes at its own
+  `chunkInterval(speed)`; crit/strokes-per-crit per painter; on sale, `workerGoldFactor` ×
+  player gold; combo chain is canvas-level, rolled by the completing painter's combo chance.
+- Workers level **only at ascend** via increment rolls (`applyStatLevelUp`); **persist** across
+  ascends. Ascend-XP pool scales with run gold, split contribution-weighted + baseline floor.
+- Post-ascend **roll screen** (hook into `AscendCinematicOverlay`) reveals each worker's level-ups.
+- Acquisition: worker slots unlocked via fame tree (`roster_slot`), spawn level-1; small cap; old
+  hire/reject/trickle-queue + Office Level all REMOVED.
+- Classes = stat-roll bias profile; mastery framework hook. **Class roster + unlock graph DEFERRED
+  to a separate content spec.**
+
+**Phase split (each its own plan, execute subagent-driven):**
+- ✅ **A1 — Worker model + roll engine** (DONE, reviewed, green). Plan `2026-05-29-office-A1-worker-model.md`.
+  New files only: `src/core/workerModel.ts` (`WorkerStats`, `createBaseStats`, `applyStatLevelUp`)
+  + `balance.ts` constants (`WORKER_BASE_STATS`, `WORKER_PCT_INCREMENTS`,
+  `WORKER_STROKES_PER_CRIT_INCREMENTS`, `WORKER_CRIT_CHANCE_CAP`). Commits `c746e8a`, `9d65373`.
+- ⏭️ **A2 — Office-slice rewrite + remove old wiring.** Rewrite `officeSlice.ts` to the new `Worker`
+  (`{id, classId, level, xp, stats: WorkerStats, mastery, strokesThisRun}`); spawn-to-cap on slot
+  unlock; **delete** `src/core/officeRoll.ts`, `src/core/officeTickPure.ts`,
+  `src/config/officeClasses.ts` + hire/queue/awardOfficeXp actions; **remove** the old additive
+  worker contributions from `multipliers.ts` (`getOfficeContribution`, the `getCritChunks` worker
+  branch, worker combo/speed) and `StatsRoom.tsx` (`critChunksFromWorkers` + Workers lines).
+  Expect wide test fallout (officeSlice/officeRoll/officeClasses/multipliers tests) — adapt to the
+  new model. End state: workers exist as data, contribute NOTHING yet, game compiles + green.
+- ⏭️ **B — Multi-painter canvas tick** (the big, risky one). Rewrite `src/core/canvasTickPure.ts`
+  single-painter time-budget loop → discrete-event scheduler over player + workers; wire
+  `workerGoldFactor`; per-worker crit/combo/strokesPerCrit; track `strokesThisRun`. **Recommend an
+  advisor call before committing to the scheduler design.**
+- ⏭️ **C — Ascend XP + persistence.** `computeAscendXpPool(runGold)` + hybrid split + `applyAscendXp`
+  (xp→levels→`applyStatLevelUp`); **remove `resetOffice()` from `ascend.ts:44`** (workers persist),
+  reset only run-contribution; save migration (drop old office fields, spawn level-1 workers for
+  unlocked slots); skill-node migration (`roster_slot`→spawn slot, `worker_xp_mult`→ascend-XP boost;
+  DELETE `queue_slot`/`hire_cost_reduction`/`class_goldsmith`/`class_speedrunner` + refund fame).
+- ⏭️ **D — UI.** Post-ascend roll screen in `AscendCinematicOverlay`; on-canvas worker avatars +
+  next-stroke indicators; office tab rework (roster + class switch). Rework/retire `WorkerCard`,
+  `QueueCard`, `FireConfirmModal`.
+
+### Status
+- **1086 / 1086 tests passing** on the branch; `npx vite build` clean.
+- `npx tsc -b --noEmit`: ~22 pre-existing baseline errors (unrelated files: officeSlice, statsSlice,
+  achievementSlice, StatsRoom cast, SortableCard, bot-simulation, catchup tests, SchoolDesignerRoute,
+  store/index.ts:508). No new errors from this session's shipped work.
+- Memory corrected this session: the **v2.0 visual redesign is shelved** (user confirmed none planned);
+  `project_v12_scope.md` updated — don't gate work behind a v2.
+
+### Notes & lessons
+- The whole balance review was brainstormed with the user before any code (office identity, crit %
+  model, tree generators). User prefers terse direction + me driving; gets overwhelmed by abstract
+  math/number-picking — keep tunables off their plate ("we'll feel-test in play").
+- Execution was subagent-driven (implementer → spec review → code-quality review per task). The
+  reviews caught real bugs (the UpgradeRow hover `×milestoneMult*2` was wrong under escalating
+  milestones — fixed in `7ab0428`).
+
+### Commits (branch `painter-office-redesign`, in order)
+`94182cd` specs · `bf3f86d` crit plan · `ebf2a25` crit engine · `1419caa` crit stats mirror ·
+`8755505` crit UI · `330e201` tree plan · `5c12e54` tree milestones · `32dbb8a` tree config ·
+`2421029` tree unlock gate · `fce8a57` tree migration · `524f01d` tree UI · `7ab0428` tree hover fix ·
+`e07a3b0` office A1 plan · `c746e8a` office worker constants · `9d65373` office worker model
+
+---
+
 ## Post-rework polish, regressions found, dev surface (2026-05-27)
 
 After the 2026-05-26 chunk-domain rework deployed, the user playtested and surfaced a series of fixes. All landed; production now on bundle `index-B56w_Qgb.js`.
