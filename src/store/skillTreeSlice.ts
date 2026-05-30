@@ -1,5 +1,7 @@
 import type { StateCreator } from "zustand";
 import { getSkillNodeConfig, type SkillNodeId } from "@/config/skillTreeNodes";
+import { SKILL_CLUSTERS, getClusterConfig, getClusterNodes } from "@/config/skillClusters";
+import type { SkillClusterId } from "@/config/skillClusters";
 import { big } from "@/core/bigNumber";
 import { skillTreeTickPure } from "@/core/skillTreeTickPure";
 import type { GameStore } from "@/store";
@@ -103,6 +105,21 @@ export const hasNode = (state: Pick<GameStore, "purchasedNodes">, id: SkillNodeI
   getNodeLevel(state, id) > 0;
 
 /**
+ * True iff every node in the cluster is at its maxLevel. Derived purely from
+ * purchasedNodes — completion is recomputed each render, never stored, so no
+ * save migration is involved. Unknown cluster id → false.
+ */
+export const clusterComplete = (
+  state: Pick<GameStore, "purchasedNodes">,
+  clusterId: SkillClusterId,
+): boolean => {
+  if (getClusterConfig(clusterId) === null) return false;
+  const nodes = getClusterNodes(clusterId);
+  if (nodes.length === 0) return false;
+  return nodes.every((n) => getNodeLevel(state, n.id) >= n.maxLevel);
+};
+
+/**
  * Cost of buying the NEXT level. Returns null if maxed, unknown, or
  * cost array is malformed.
  */
@@ -143,14 +160,20 @@ export type CanvasTrackId = "sell_price" | "speed" | "crit" | "combo";
 
 /**
  * Returns true if any purchased node (level ≥ 1) has `capability` in its
- * `unlocks` array. Node IDs are free-form — the engine reads capability tags,
- * not node IDs.
+ * `unlocks` array, OR if a completed cluster's completionBonus tag matches.
+ * Node IDs are free-form — the engine reads capability tags, not node IDs.
  */
 export const hasCapability = (state: Pick<GameStore, "purchasedNodes">, capability: string): boolean => {
   for (const [nodeId, level] of Object.entries(state.purchasedNodes)) {
     if ((level ?? 0) < 1) continue;
     const config = getSkillNodeConfig(nodeId);
     if (config && config.unlocks.includes(capability)) return true;
+  }
+  // Completed clusters grant their completionBonus tag as an active capability.
+  for (const cluster of SKILL_CLUSTERS) {
+    if (cluster.completionBonus === capability && clusterComplete(state, cluster.id)) {
+      return true;
+    }
   }
   return false;
 };

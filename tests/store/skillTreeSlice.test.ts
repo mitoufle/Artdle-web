@@ -278,3 +278,48 @@ describe("skill tree — crit per-chunk rework", () => {
     expect(countCapability(state, "crit_chance")).toBe(0);
   });
 });
+
+import { clusterComplete } from "@/store/skillTreeSlice";
+import { getClusterNodes, getClusterConfig } from "@/config/skillClusters";
+
+describe("clusterComplete", () => {
+  it("is false when a member node is below maxLevel", () => {
+    const state = { purchasedNodes: { unlock_school: 0 } };
+    expect(clusterComplete(state, "school")).toBe(false);
+  });
+
+  it("is true when every member node is at maxLevel", () => {
+    const maxed: Record<string, number> = {};
+    for (const n of getClusterNodes("crit")) maxed[n.id] = n.maxLevel;
+    expect(clusterComplete({ purchasedNodes: maxed }, "crit")).toBe(true);
+  });
+
+  it("is false for an unknown cluster id", () => {
+    expect(clusterComplete({ purchasedNodes: {} }, "nope")).toBe(false);
+  });
+
+  it("is false for a cluster with one maxed and one unmaxed node", () => {
+    const maxed: Record<string, number> = {};
+    const nodes = getClusterNodes("combo");
+    nodes.forEach((n, i) => { maxed[n.id] = i === 0 ? n.maxLevel : 0; });
+    expect(clusterComplete({ purchasedNodes: maxed }, "combo")).toBe(false);
+  });
+});
+
+describe("hasCapability honors completed-cluster bonus tags", () => {
+  it("resolves a cluster's completionBonus tag once the cluster is complete", () => {
+    const tag = getClusterConfig("crit")!.completionBonus;
+    const maxed: Record<string, number> = {};
+    for (const n of getClusterNodes("crit")) maxed[n.id] = n.maxLevel;
+    expect(hasCapability({ purchasedNodes: maxed }, tag)).toBe(true);
+  });
+
+  it("does NOT resolve the bonus tag while the cluster is incomplete", () => {
+    const tag = getClusterConfig("crit")!.completionBonus;
+    expect(hasCapability({ purchasedNodes: {} }, tag)).toBe(false);
+  });
+
+  it("still resolves ordinary node unlock tags", () => {
+    expect(hasCapability({ purchasedNodes: { genius_episode: 1 } }, "canvas_crit")).toBe(true);
+  });
+});
