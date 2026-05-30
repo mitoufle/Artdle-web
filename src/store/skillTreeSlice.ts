@@ -1,7 +1,6 @@
 import type { StateCreator } from "zustand";
 import { getSkillNodeConfig, type SkillNodeId } from "@/config/skillTreeNodes";
-import { SKILL_CLUSTERS, getClusterConfig, getClusterNodes } from "@/config/skillClusters";
-import type { SkillClusterId } from "@/config/skillClusters";
+import { SKILL_CLUSTERS, getClusterConfig, getClusterNodes, type SkillClusterId } from "@/config/skillClusters";
 import { big } from "@/core/bigNumber";
 import { skillTreeTickPure } from "@/core/skillTreeTickPure";
 import type { GameStore } from "@/store";
