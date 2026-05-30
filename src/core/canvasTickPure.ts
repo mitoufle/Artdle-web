@@ -19,7 +19,8 @@ const MAX_SALES_PER_TICK = 1000;
 /** Defensive cap on total strokes per tick (guards a degenerate interval→0). */
 const MAX_STROKES_PER_TICK = 1_000_000;
 
-const PLAYER_ID = "player";
+/** Reserved `painterClocks` key for the player painter (vs. worker uuids). */
+export const PLAYER_ID = "player";
 
 /** A painter participating in the shared-canvas tick (player or a worker). */
 interface Painter {
