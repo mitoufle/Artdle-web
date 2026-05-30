@@ -1,34 +1,48 @@
-/* Post-ascend worker level-up reveal, shown under the quote on the blackout.
-   Matches the cinematic aesthetic: gold serif on black, with the same
-   staggered translateY fade-in the gain/quote lines use. */
-
+/* Post-ascend worker cards on the cinematic blackout: avatar + name + level +
+ * a 5-stat sheet. Increased stats flip to teal with a "+#" chip as the shared
+ * step advances. Cards sit side by side. */
 .reveal {
-  list-style: none;
   margin: var(--s-5) 0 0 0;
-  padding: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--s-5);
+  max-width: 92vw;
+}
+
+.card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--s-3);
-  max-width: 520px;
+  gap: 4px;
+  padding: var(--s-3);
+  min-width: 168px;
 }
 
-.worker {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: var(--s-3);
-  flex-wrap: wrap;
-  text-align: center;
-  opacity: 0;
-  animation: rollFadeIn 800ms ease forwards;
+.avatar {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  object-position: bottom center;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.7));
+}
+
+.name {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-0);
 }
 
 .level {
   font-family: var(--serif);
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--gold);
   text-shadow: var(--gold-glow);
   white-space: nowrap;
@@ -36,26 +50,44 @@
 
 .arrow {
   color: var(--gold-d);
-  font-weight: 400;
   margin: 0 0.15em;
 }
 
-.deltas {
+.stats {
+  list-style: none;
+  margin: var(--s-2) 0 0 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.statRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
   font-family: var(--mono);
   font-size: 12px;
-  letter-spacing: 0.04em;
-  color: #8a7fae;
 }
 
-@keyframes rollFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+.statLabel {
+  color: var(--ink-2);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .worker {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
+.delta {
+  color: var(--teal);
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.statValue {
+  margin-left: auto;
+  color: #fff;
+  font-weight: 600;
+  transition: color 200ms ease;
+}
+
+.up {
+  color: var(--teal);
 }
