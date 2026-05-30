@@ -6,6 +6,7 @@ import { countCapability } from "@/store/skillTreeSlice";
 import { createBaseStats, type WorkerStats } from "@/core/workerModel";
 import { getWorkerXpPoolMultiplier } from "@/core/multipliers";
 import { splitAscendPool, applyAscendXpToWorker } from "@/core/workerAscend";
+import { WORKER_NAME_POOL } from "@/config/workerNames";
 
 /**
  * A redesigned autonomous-painter worker. See
@@ -28,6 +29,10 @@ export interface Worker {
   readonly mastery: number;
   /** Strokes this worker has landed in the current run (Phase B fills this; ascend resets it). */
   readonly strokesThisRun: number;
+  /** Random painter name from WORKER_NAME_POOL — cosmetic, assigned at spawn. */
+  readonly name: string;
+  /** Avatar index 1..4 → worker_{n}.png — cosmetic, assigned at spawn. */
+  readonly avatar: number;
 }
 
 /** Transient per-worker reveal data for the post-ascend roll screen (Phase D).
@@ -76,6 +81,12 @@ export interface OfficeSlice extends OfficeState {
 export const getRosterCap = (state: Pick<GameStore, "purchasedNodes">): number =>
   countCapability(state, "roster_slot");
 
+/** Cosmetic-only randomness (name/avatar). Deliberately NOT the seeded gameplay
+ *  rng — picking these must never perturb the canvas/catch-up RNG stream. */
+const randomName = (): string =>
+  WORKER_NAME_POOL[Math.floor(Math.random() * WORKER_NAME_POOL.length)]!;
+const randomAvatar = (): number => 1 + Math.floor(Math.random() * 4);
+
 /** Factory: a fresh level-1 worker of the given class (default neutral "base"). */
 export const createWorker = (classId = "base"): Worker => ({
   id: uuidv4(),
@@ -85,6 +96,8 @@ export const createWorker = (classId = "base"): Worker => ({
   stats: createBaseStats(),
   mastery: 0,
   strokesThisRun: 0,
+  name: randomName(),
+  avatar: randomAvatar(),
 });
 
 export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (set, get) => ({

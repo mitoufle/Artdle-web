@@ -7,6 +7,7 @@ import {
   type Worker,
 } from "@/store/officeSlice";
 import { createBaseStats } from "@/core/workerModel";
+import { WORKER_NAME_POOL } from "@/config/workerNames";
 import { setSeed } from "@/core/rng";
 import { big } from "@/core/bigNumber";
 import { migrate } from "@/store";
@@ -45,6 +46,14 @@ describe("createWorker", () => {
     const a = createWorker();
     const b = createWorker();
     expect(a.id).not.toBe(b.id);
+  });
+
+  it("assigns a name from the pool and an avatar in 1..4", () => {
+    const w = createWorker();
+    expect(WORKER_NAME_POOL).toContain(w.name);
+    expect(Number.isInteger(w.avatar)).toBe(true);
+    expect(w.avatar).toBeGreaterThanOrEqual(1);
+    expect(w.avatar).toBeLessThanOrEqual(4);
   });
 });
 
