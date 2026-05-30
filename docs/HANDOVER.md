@@ -4,14 +4,21 @@
 
 Balance-review session covering three areas the user flagged: (1) office workers need a full
 redesign, (2) `+crit_chunks` item affix overpowered, (3) inspiration-tree upgrades feel flat /
-early upgrades die instantly. All work is on branch **`painter-office-redesign`** (NOT merged to
-master). **Production was deployed directly from this branch** via `npx vercel --prod` — current
-live bundle `index-C_GCe2x1.js` (= live game + crit fix + tree rework; office work is on the
-branch but NOT in that bundle).
+early upgrades die instantly.
 
-> **master is behind.** Prod = the branch up through the tree rework (`7ab0428`). The office A1
-> commits (`c746e8a`, `9d65373`) are additive/dormant (new files only, not wired in) and were not
-> deployed. When the office redesign is fully done, merge `painter-office-redesign` → master.
+> **✅ SHIPPED (2026-05-30).** The Painter's Office redesign (A1→A2→B→C→D) is **complete, merged to
+> `master`, and deployed to production.** `master == origin/master == painter-office-redesign ==
+> `175ad34`. Live bundle **`index-DDhVCB9l.js`** at https://artdle-web.vercel.app (verified: office
+> strings present). Deployed via `npx vercel --prod` (Vercel builds local code, not from a GitHub
+> merge). The `painter-office-redesign` branch is kept for follow-up smoke fixes.
+>
+> **⏳ Parked (user deferred):** the manual visual smoke (full click-through/occlusion pass, ascend
+> roll-reveal visuals) and the `WORKER_XP_GROWTH` feel-test (veterans may flatline late-game —
+> shipped at the default 1.15). Two UI-integration regressions were already found+fixed in a partial
+> smoke (see "Post-merge fixes" below).
+>
+> **Repo note:** there is also a `main` branch (separate line) — CLAUDE.md designates `master` as the
+> main branch, so the office work merged into `master`.
 
 ### ✅ Shipped to production (reviewed + tested)
 
@@ -122,8 +129,11 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
   > (curve steepness), not just `WORKER_BASELINE_XP_FRACTION`, if veterans flatline.
   > **Correction applied:** the A2 "dead-code" list wrongly included `workerXpToNext`/`WORKER_XP_*` —
   > C resurrects them as the level curve, so they were KEPT (only the genuinely-dead office machinery deleted).
-  > Designer `skillTreeDesign.json` is now out of sync for the office branch (decoupled user spec — left as-is).
-- ✅ **D — UI (final phase)** (CODE DONE, reviewed, green; one MANUAL visual smoke pending — see below).
+  > **`skillTreeDesign.json` was left out of sync here — that was a BUG** (it broke the constellation; see
+  > "Post-merge fixes"). `src/components/constellation/nodeLayout.ts` imports that JSON for node POSITIONS +
+  > EDGES, so skill-node changes must update BOTH `skillTreeNodes.ts` (logic) AND `skillTreeDesign.json`
+  > (geometry). It is now synced (commit `4f33733`).
+- ✅ **D — UI (final phase)** (DONE, reviewed, green, **merged + deployed**; manual smoke parked).
   Plan `2026-05-29-office-D-ui.md`. Commits `23b9b79` (shared `workerStatDisplay` helpers), `9b376f8`
   (post-ascend `WorkerRollReveal` in the cinematic blackout + `clearAscendRoll` on dismiss/reduced-motion),
   `aa9f120`/`408f810` (on-canvas `WorkerAvatars` — self-subscribing isolated overlay, `pointer-events:none`,
@@ -133,7 +143,7 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
   **multi-painter catch-up step-invariance tolerance ACCEPTED** (idle-game offline sim — no scheduler rework).
   Pure UI, no engine change. The isolation guard was rebuilt to a falsifiable `chunksPerCanvas`-spy counter
   (the original Profiler version was vacuous — it wrapped the avatar subtree).
-  > **PENDING before merge — manual visual smoke (needs a human eye on the running app):** with ≥1 worker
+  > **PARKED (post-deploy) — manual visual smoke (needs a human eye on the running app):** with ≥1 worker
   > in the roster, confirm (1) avatars appear by the canvas + cooldown bars animate toward each next stroke;
   > (2) **clicking the easel still paints** (the `pointer-events:none` overlay doesn't eat clicks — render
   > tests can't prove this); (3) no occlusion of canvas art / progress bar / gold preview / tier+combo badges;
@@ -141,16 +151,30 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
   > with NO office → normal blackout, no reveal artifacts. Also eyeball the reveal's gold accent vs the
   > cinematic's teal/lavender (minor). `worker_1.png` is 703KB — candidate for a polish-pass downsize.
 
+### Post-merge fixes (2026-05-30, found in a partial smoke before parking the rest)
+- **`4f33733` — constellation skill-tree desync.** Phase C Task 5 collapsed the office skill branch in
+  `skillTreeNodes.ts` (logic) but NOT in `skillTreeDesign.json`, which `src/components/constellation/nodeLayout.ts`
+  imports for node **positions + edges**. Result: deleted nodes' stars vanished but their edges + the old parent
+  links (`free_will→hire_manager`) still drew → dangling edges + phantom deps. Fixed by syncing the JSON (delete
+  the 5 nodes, reparent `hire_manager`/`accelerator`→`entrepreneur`, `unlock_school`→`accelerator`, strip
+  `queue_slot`). JSON id-set now == TS id-set (44=44), 0 dangling edges. **Lesson:** skill-node changes update
+  BOTH files. Corrected the misleading `project-designer-json-decoupled` memory (the JSON IS in the runtime graph
+  for the constellation, contrary to what it claimed).
+- **`175ad34` — speed-card cadence fill dead (Phase B regression).** `BoundSpeedTrackCard` drove its next-stroke
+  fill from `canvasProgress`'s fractional part, but Phase B made `canvasProgress` an integer chunk-count (per-painter
+  sub-stroke timing moved to `painterClocks`). Fixed: drive `cycleProgressPct` from `painterClocks['player']/chunkInterval`;
+  exported `PLAYER_ID` from `canvasTickPure`. Swept all other `canvasProgress` consumers — only this one read the
+  fraction (`BoundCanvasStage` floors deliberately). 4 new tests lock it.
+
 ### Status
-- **1084 passing, 0 skipped** on the branch after D; `npx vite build` clean. HEAD = `30d00f8`. `SAVE_VERSION = 28`.
+- **1088 passing, 0 skipped** on `master` (1084 after D + 4 from the speed-card fix); `npx vite build` clean.
+  `master == origin/master == painter-office-redesign == 175ad34`. `SAVE_VERSION = 28`.
+- **Production:** live at https://artdle-web.vercel.app, bundle **`index-DDhVCB9l.js`** (verified office strings).
 - `npx tsc -b --noEmit`: ~25 pre-existing baseline errors in TEST files (NOT a gate — green bar is
   vitest + `vite build`; prod deploy via `npx vercel --prod` is not gated on `tsc -b`). No new tsc
-  errors in non-test source from A2/B/C/D. A cleanup pass on the test-file tsc errors would be welcome
-  (out of scope for the office phases).
-- **The office redesign is CODE-COMPLETE (A1→A2→B→C→D).** Remaining before merge: (1) the manual visual
-  smoke in the D bullet above; (2) optionally the `WORKER_XP_GROWTH` feel-test (veterans may flatline).
-  Then merge `painter-office-redesign` → master and `npx vercel --prod` (Vercel is not auto-deployed from push;
-  verify the new bundle after). Prod is still on the pre-office branch bundle (live game + crit + tree).
+  errors in non-test source from A2/B/C/D. A cleanup pass on the test-file tsc errors would be welcome.
+- **Next session:** finish the parked manual smoke (D bullet) + the `WORKER_XP_GROWTH` feel-test. Work on the
+  `painter-office-redesign` branch, re-deploy via `npx vercel --prod`, then fast-forward `master` again.
 - Memory corrected this session: the **v2.0 visual redesign is shelved** (user confirmed none planned);
   `project_v12_scope.md` updated — don't gate work behind a v2.
 
@@ -176,7 +200,8 @@ harden crit-stats test · `858cf3c` B store integration + step-invariance guard 
 C pure xp engine · `51f82a1`/`c29dcaf` C applyAscendXp+roll · `1d9f355` C ascend wiring (resetOffice removed) ·
 `795c78b` C tree collapse+v28 refund · `7062d30` C dead-code cleanup ·
 `d666737` office D plan · `46283c9` D plan fixes · `23b9b79` D stat helpers · `9b376f8` D roll reveal ·
-`aa9f120`/`408f810` D on-canvas avatars · `3a65611` D office tab cards · `30d00f8` D housekeeping (0 skipped)
+`aa9f120`/`408f810` D on-canvas avatars · `3a65611` D office tab cards · `30d00f8` D housekeeping (0 skipped) ·
+`4f33733` fix constellation JSON desync · `175ad34` fix speed-card cadence fill · **merged → master + deployed prod**
 
 ---
 
