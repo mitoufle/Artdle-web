@@ -172,6 +172,15 @@
   letter-spacing: 0.04em;
 }
 
+.cardAvatar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  object-fit: contain;
+  object-position: bottom center;
+  image-rendering: pixelated;
+}
+
 .cardLevel {
   margin-left: auto;
   font-family: var(--mono);

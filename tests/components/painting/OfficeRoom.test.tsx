@@ -3,6 +3,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { useGameStore } from "@/store";
 import { createWorker } from "@/store/officeSlice";
 import { OfficeRoom } from "@/components/painting/OfficeRoom";
+import { big } from "@/core/bigNumber";
 
 afterEach(cleanup);
 
@@ -26,5 +27,15 @@ describe("OfficeRoom", () => {
     // a base worker's gold reads +0%, speed ×1.00
     expect(screen.getByText("+0%")).toBeInTheDocument();
     expect(screen.getByText("×1.00")).toBeInTheDocument();
+  });
+
+  it("renders the worker's name, avatar, and an XP readout", () => {
+    const w = { ...createWorker(), name: "Vincent", level: 3, xp: big(1500) };
+    useGameStore.setState({ roster: [w], purchasedNodes: { hire_manager: 1, entrepreneur: 1 } });
+    render(<OfficeRoom />);
+    expect(screen.getByText("Vincent")).toBeInTheDocument();
+    expect(screen.getByTestId("worker-avatar-img")).toBeInTheDocument();
+    expect(screen.getByTestId("worker-xp-readout")).toHaveTextContent("/");
+    expect(screen.getByTestId("worker-xp-readout")).toHaveTextContent("10.83K");
   });
 });
