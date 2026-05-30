@@ -1,5 +1,62 @@
 # Artdle Web — Handover
 
+## Office UX + painting-view redesign + audio + ascend reveal wave (2026-05-30) — SHIPPED
+
+> **All items below are merged to `master` and deployed to production.** `master` HEAD = **`b63b678`**.
+> Live bundle **`index-oN6rSVhE.js`** at https://artdle-web.vercel.app (deploy: `npx vercel --prod`).
+> `SAVE_VERSION` is now **29**. Full suite green at **1122 tests**. Each feature ran the full
+> brainstorm → spec → plan → subagent-driven execution → final review → ff-merge → deploy loop;
+> specs in `docs/superpowers/specs/2026-05-30-*`, plans in `docs/superpowers/plans/2026-05-30-*`.
+
+**Bug-report button — wired live.** `/api/report-bug` (Vercel serverless fn) opens a GitHub issue. Needs
+the **`GITHUB_TOKEN`** env var in Vercel — it's a **Sensitive** var, so `vercel env pull` returns it blank
+by design. Feature works ONLY on the deployed site (plain `vite` 404s — it's a serverless function). The
+mute/volume etc. is unrelated. Commits `8f69c5a`…`c75dd09` + token set in Vercel + name fix.
+
+**Shell — hover info moved into the bottom bar** (`67cee2e`). Removed the standalone 72px `InfoPanel`
+strip; hover info now renders to the right of the currency chips in `BottomBar`.
+
+**Click-to-paint fix** (`0a910da`). Clicking the canvas ran the whole multi-painter sim forward
+(`canvasTick(playerInterval)`), making every worker's stroke bar leap. Added a **`playerOnly`** mode to
+`canvasTickPure` that advances only the player one stroke and merges worker clocks back unchanged.
+
+**Worker identity + XP visibility** (`2026-05-30-worker-names-avatars-xp`). XP curve steepened to
+**`3000 × 1.9^(level-1)`** (`balance.ts`); new persisted **`name` + `avatar`** on `Worker` (cosmetic
+`Math.random`, NOT the seeded rng); **save migration v28→v29**. Names + avatars are **normalized distinct
+per roster** in `reconcileRoster` (`distinctNames`/`distinctAvatars`, self-heal on load — no migration).
+SHAs `af7228f`, `bd84629`, `ba23e41`, `41ceb90`, `d32c688`.
+> **Windows gotcha:** a helper named `workerAvatars.ts` collided case-insensitively with the
+> `WorkerAvatars.tsx` component → imports resolved to the wrong file ("Element type is invalid").
+> Renamed to **`workerAvatarMap.ts`** (`96ea471`). Don't create case/extension-only filename twins.
+
+**Painting-view redesign** (`2026-05-30-painting-stage-redesign`). Canvas widened (upgrades row dropped);
+worker avatars now **flank the easel** (avatar 2&3 left, 1&4 right), larger, each with a **gold stroke-cycle
+ring**, **teal XP bar**, **teal `Lv N`**, name above, and a **shake+tilt on each stroke** (`WorkerAvatars`
+rewrite; proc = `painterClocks[id]` drop → remount-key replays the keyframe). Progress bar removed; sell
+price moved to the top under the tier button. SHAs `3957a9d`, `352b0e6`, `95d18fb`.
+
+**Upgrade panel redesign** (`2026-05-30-upgrade-panel-redesign`). `TrackCard` → compact frameless **pills**
+(icon · name · `L#` · cost; effect/rate on hover), 2-col `CanvasUpgradesStrip`, clear affordable vs
+unaffordable styling. The Speed card's stroke-cycle indicator became **`StrokeCycleBorder`** sweeping the
+panel — an **SVG `<path>` perimeter stroke** (`pathLength=1` + `stroke-dasharray`) so it advances uniformly
+and starts top-center (a conic-gradient looked non-linear on a rectangle). `BoundSpeedTrackCard` deleted.
+SHAs `f47745a`, `441ebeb`, `51a2f3d`, `c0d5f11`.
+
+**Canvas-sold sound** (`53b8207`…`237931e`). `CanvasSoldSfx` leaf in the App shell plays
+`src/assets/sounds/Canvas_sold.mp3` on each sale (`statsRun.canvasesSold` increment), via **Web Audio**
+(GainNode → can amplify a quiet clip above the 1.0 `<audio>` cap). Gain = `volume × 20` capped at 8, so the
+**music volume slider + mute button** both govern it (silent at 0). NOTE: fires on EVERY sale globally —
+frequent in late game (worker auto-sales); throttle / route-scope is an easy follow-up if it's too much.
+
+**Post-ascend worker level-up reveal** (`2026-05-30-post-ascend-reveal`). `WorkerRollReveal` rewritten:
+side-by-side **worker cards** (avatar + name looked up from the roster by `id`, `Lv a→b`, 5-stat sheet at
+before-values in white); a shared step walks the 5 stats `0→5` at **400 ms** in sync across cards, flipping
+each **increased** stat to its after value in **teal** with a **`+#`** chip. `AscendCinematicOverlay`: 1st
+blackout click **skips** to the end (hint "— click to skip —" → "— click to continue —"), 2nd **dismisses**;
+no level-ups / reduced-motion → jump straight to the end. SHAs `bfaba03`, `8e465a6`, `6743478`, `b63b678`.
+
+---
+
 ## Balance review: crit + tree shipped, office redesign started (2026-05-29)
 
 Balance-review session covering three areas the user flagged: (1) office workers need a full
