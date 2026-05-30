@@ -18,9 +18,49 @@ const RADIUS_INITIAL = 60;
 const RADIUS_STEP = 55;
 
 /**
+ * Constant margin added around the cluster sky so no node sits at coordinate 0.
+ * Baked into the layout (rather than applied as a separate offset downstream) so
+ * that computed positions, authored `position` overrides, the runtime canvas, and
+ * the skill designer all live in ONE coordinate space — a star dragged in the
+ * designer lands exactly where the game renders it.
+ */
+export const WORLD_PAD = 200;
+
+/**
+ * Total sky size in the shared coordinate space — bounds both the cluster regions
+ * and the actual node positions (a deep chain can fan a little past its region),
+ * plus a WORLD_PAD margin. Pass the positions from computeClusterLayout.
+ */
+export function constellationViewbox(
+  positions: Record<string, Position>,
+  clusters: ReadonlyArray<SkillClusterConfig>,
+): { width: number; height: number } {
+  const pts = Object.values(positions);
+  const maxRegionX = Math.max(...clusters.map((c) => WORLD_PAD + c.region.x + c.region.w));
+  const maxRegionY = Math.max(...clusters.map((c) => WORLD_PAD + c.region.y + c.region.h));
+  const maxNodeX = pts.length ? Math.max(...pts.map((p) => p.x)) : 0;
+  const maxNodeY = pts.length ? Math.max(...pts.map((p) => p.y)) : 0;
+  return {
+    width: Math.max(maxRegionX, maxNodeX) + WORLD_PAD,
+    height: Math.max(maxRegionY, maxNodeY) + WORLD_PAD,
+  };
+}
+
+/** A cluster's region shifted into the shared (WORLD_PAD-padded) coordinate space. */
+export function paddedRegion(region: {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}): { x: number; y: number; w: number; h: number } {
+  return { x: WORLD_PAD + region.x, y: WORLD_PAD + region.y, w: region.w, h: region.h };
+}
+
+/**
  * Lay out every node inside its cluster's region. Each cluster is an independent
- * radial-BFS tree rooted at its single root node, centered on the region center.
- * Hubless — there is no FAME node. Non-null authored positions override.
+ * radial-BFS tree rooted at its single root node, centered on the region center
+ * (shifted by WORLD_PAD). Hubless — there is no FAME node. Non-null authored
+ * positions override and are taken verbatim (already in the shared space).
  */
 export function computeClusterLayout(
   nodes: ReadonlyArray<LayoutNode>,
@@ -35,8 +75,8 @@ export function computeClusterLayout(
 
   for (const cluster of clusters) {
     const members = byCluster.get(cluster.id) ?? [];
-    const cx = cluster.region.x + cluster.region.w / 2;
-    const cy = cluster.region.y + cluster.region.h / 2;
+    const cx = WORLD_PAD + cluster.region.x + cluster.region.w / 2;
+    const cy = WORLD_PAD + cluster.region.y + cluster.region.h / 2;
 
     const childrenOf = new Map<string, string[]>();
     const roots: string[] = [];

@@ -1,11 +1,9 @@
 import type { JSX } from "react";
 import { useState, useRef } from "react";
 import type { DesignNode } from "./types";
-import {
-  computeAutoLayout,
-  CANVAS_WIDTH,
-  CANVAS_HEIGHT,
-} from "./autoLayout";
+import { computeClusterLayout } from "@/core/clusterLayout";
+import { VIEWBOX } from "@/components/constellation/nodeLayout";
+import { SKILL_CLUSTERS } from "@/config/skillClusters";
 import styles from "./DesignerCanvas.module.css";
 
 const DRAG_THRESHOLD_PX = 5;
@@ -43,11 +41,12 @@ interface ViewBox {
   h: number;
 }
 
+/** Frame the whole cluster sky, identical to the in-game constellation extent. */
 const INITIAL_VIEWBOX: ViewBox = {
   x: 0,
   y: 0,
-  w: CANVAS_WIDTH,
-  h: CANVAS_HEIGHT,
+  w: VIEWBOX.width,
+  h: VIEWBOX.height,
 };
 
 export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): JSX.Element {
@@ -56,7 +55,8 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
   const [pan, setPan] = useState<PanState | null>(null);
   const [viewBox, setViewBox] = useState<ViewBox>(INITIAL_VIEWBOX);
   const justDragged = useRef(false);
-  const positions = computeAutoLayout(nodes);
+  // Same layout the game uses, so designer positions match the constellation route.
+  const positions = computeClusterLayout(nodes, SKILL_CLUSTERS);
 
   function pointFor(id: string): { x: number; y: number } {
     return positions[id] ?? { x: 0, y: 0 };
@@ -205,10 +205,10 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
       >
         {/* Background — also catches pan events. Sized big enough that pan never reaches an edge. */}
         <rect
-          x={-CANVAS_WIDTH * 5}
-          y={-CANVAS_HEIGHT * 5}
-          width={CANVAS_WIDTH * 11}
-          height={CANVAS_HEIGHT * 11}
+          x={-VIEWBOX.width * 5}
+          y={-VIEWBOX.height * 5}
+          width={VIEWBOX.width * 11}
+          height={VIEWBOX.height * 11}
           fill="var(--bg-0)"
           onPointerDown={handleBackgroundPointerDown}
           onPointerMove={handleBackgroundPointerMove}
