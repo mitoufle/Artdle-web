@@ -12,7 +12,7 @@ export interface SkillNodeConfig {
   readonly description: string;
   /** Free-form effect text, e.g. "+10% gold per level". Player-facing. */
   readonly numericEffect: string;
-  /** Parent node IDs. Empty array = root (child of FAME hub). */
+  /** Parent node IDs. Empty array = the cluster's root (no prerequisite). */
   readonly parentIds: ReadonlyArray<SkillNodeId>;
   /** Per-level costs in fame. `costs.length === maxLevel`. */
   readonly costs: ReadonlyArray<number>;
