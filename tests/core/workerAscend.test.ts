@@ -44,7 +44,7 @@ describe("applyAscendXpToWorker", () => {
   beforeEach(() => setSeed(7));
 
   it("no level-up when the share is below the next-level cost", () => {
-    const w = createWorker(); // level 1, xp 0; workerXpToNext(1) ≈ 11.5
+    const w = createWorker(); // level 1, xp 0; workerXpToNext(1) === 3000
     const r = applyAscendXpToWorker(w, big(1));
     expect(r.levelAfter).toBe(1);
     expect(r.worker.xp.toNumber()).toBeCloseTo(1, 6);
@@ -53,7 +53,7 @@ describe("applyAscendXpToWorker", () => {
 
   it("levels up and rolls stat increments; mastery tracks levels", () => {
     const w = createWorker();
-    const r = applyAscendXpToWorker(w, big(500));
+    const r = applyAscendXpToWorker(w, big(20000));
     expect(r.levelAfter).toBeGreaterThan(r.levelBefore);
     expect(r.worker.level).toBe(r.levelAfter);
     expect(r.worker.mastery).toBe(w.mastery + (r.levelAfter - r.levelBefore));
@@ -83,11 +83,10 @@ describe("applyAscendXpToWorker", () => {
     const POOL = big(10_000);
     const freshGain = applyAscendXpToWorker(fresh, POOL).levelAfter - 1;
     const vetGain = applyAscendXpToWorker(veteran, POOL).levelAfter - 50;
-    // At default growth, a 10k pool gives ~34 levels to a fresh worker but 0 to a
-    // level-50 veteran (their next level alone costs ~10.8k > the whole pool) —
-    // so vetGain==0 here is INTENTIONAL (the curve flatlines veterans; see the
-    // plan's Phase D feel-test note on WORKER_XP_GROWTH). The rails below assert
-    // cap-safety (freshGain << LEVEL_UP_CAP) and the fresh>vet catch-up shape.
+    // At growth 1.9 a 10k pool gives a FRESH worker 2 levels (3000+5700 = 8700 ≤ 10k,
+    // the 3rd level costs 10830 > the 1300 remainder) and a level-50 veteran 0 (their
+    // next level alone dwarfs 10k). vetGain==0 is INTENTIONAL. Rails assert cap-safety
+    // (freshGain << LEVEL_UP_CAP) and the fresh>vet catch-up shape.
     expect(freshGain).toBeGreaterThan(vetGain);
     expect(freshGain).toBeLessThan(200);
     expect(vetGain).toBeLessThan(20);

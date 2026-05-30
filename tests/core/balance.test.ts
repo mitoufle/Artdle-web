@@ -28,6 +28,7 @@ import {
   TRACK_COST_GROWTH,
   workerXpToNext,
   WORKER_XP_BASE,
+  WORKER_XP_GROWTH,
   PART_MILESTONES,
   PART_MILESTONE_FACTORS,
   getPartMilestoneMultiplier,
@@ -287,13 +288,18 @@ describe("combo formulas", () => {
 // ============================================================================
 
 describe("workerXpToNext", () => {
-  it("equals WORKER_XP_BASE at L0", () => {
-    expect(workerXpToNext(0).eq(big(WORKER_XP_BASE))).toBe(true);
+  it("equals WORKER_XP_BASE for the first level-up (level 1 → 2)", () => {
+    expect(workerXpToNext(1).eq(big(WORKER_XP_BASE))).toBe(true);
   });
-  it("grows by 1.15 per level", () => {
-    const l0 = workerXpToNext(0);
+  it("grows by WORKER_XP_GROWTH per level", () => {
     const l1 = workerXpToNext(1);
-    expect(l1.div(l0).toNumber()).toBeCloseTo(1.15, 4);
+    const l2 = workerXpToNext(2);
+    expect(l2.div(l1).toNumber()).toBeCloseTo(WORKER_XP_GROWTH, 4);
+  });
+  it("matches the approved curve (3000, 5700, 10830)", () => {
+    expect(workerXpToNext(1).toNumber()).toBeCloseTo(3000, 6);
+    expect(workerXpToNext(2).toNumber()).toBeCloseTo(5700, 6);
+    expect(workerXpToNext(3).toNumber()).toBeCloseTo(10830, 6);
   });
 });
 
