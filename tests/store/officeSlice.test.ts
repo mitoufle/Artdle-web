@@ -107,6 +107,17 @@ describe("reconcileRoster", () => {
       expect(av).toBeLessThanOrEqual(4);
     }
   });
+
+  it("normalizes colliding names so each worker is uniquely named", () => {
+    const a = { ...createWorker(), name: "Vincent" };
+    const b = { ...createWorker(), name: "Vincent" };
+    const c = { ...createWorker(), name: "Vincent" };
+    useGameStore.setState({ roster: [a, b, c], purchasedNodes: { hire_manager: 3 } });
+    useGameStore.getState().reconcileRoster();
+    const names = useGameStore.getState().roster.map((w) => w.name);
+    expect(new Set(names).size).toBe(names.length); // all distinct
+    expect(names[0]).toBe("Vincent"); // first occurrence kept
+  });
 });
 
 describe("buying a roster_slot node spawns a worker", () => {

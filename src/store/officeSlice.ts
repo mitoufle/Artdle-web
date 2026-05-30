@@ -106,6 +106,32 @@ export function distinctAvatars(roster: ReadonlyArray<Worker>): Worker[] {
   });
 }
 
+/**
+ * Reassign names so every worker in the roster is unique. Keeps the first
+ * occurrence of a name; reassigns collisions (or empty names) to the first
+ * unused pool name. If the pool is exhausted (>20 workers) it appends an
+ * incrementing suffix to stay unique. Returns the SAME object ref for unchanged
+ * workers. Self-heals legacy saves where two workers rolled the same name.
+ */
+export function distinctNames(roster: ReadonlyArray<Worker>): Worker[] {
+  const used = new Set<string>();
+  return roster.map((w) => {
+    if (w.name && !used.has(w.name)) {
+      used.add(w.name);
+      return w;
+    }
+    let pick = WORKER_NAME_POOL.find((n) => !used.has(n)) as string | undefined;
+    if (pick === undefined) {
+      const base = w.name || WORKER_NAME_POOL[0]!;
+      let i = 2;
+      pick = base;
+      while (used.has(pick)) pick = `${base} ${i++}`;
+    }
+    used.add(pick);
+    return pick === w.name ? w : { ...w, name: pick };
+  });
+}
+
 /** Factory: a fresh level-1 worker of the given class (default neutral "base"). */
 export const createWorker = (classId = "base"): Worker => ({
   id: uuidv4(),
@@ -129,9 +155,9 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
     const spawned: Worker[] = [];
     for (let i = 0; i < missing; i++) spawned.push(createWorker());
     const combined = spawned.length > 0 ? [...state.roster, ...spawned] : state.roster;
-    // Normalize avatars so flanking portraits are always visually distinct
-    // (also self-heals legacy saves whose workers share an avatar).
-    const normalized = distinctAvatars(combined);
+    // Normalize avatars + names so every painter is visually and nominally
+    // distinct (also self-heals legacy saves whose workers share either).
+    const normalized = distinctNames(distinctAvatars(combined));
     const changed = spawned.length > 0 || normalized.some((w, i) => w !== state.roster[i]);
     if (changed) set({ roster: normalized });
   },
