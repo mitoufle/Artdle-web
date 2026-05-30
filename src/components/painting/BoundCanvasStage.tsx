@@ -10,7 +10,9 @@ interface Props {
   /** Static-ish — recomputed by PaintingRoute on low-freq state changes. */
   canvasTier: number;
   /** Seconds per chunk, derived from `chunkInterval(speedMultiplier)`. Click-to-paint
-   *  feeds this exact value into `canvasTick` to advance one chunk. */
+   *  feeds this exact value into `canvasTick(..., { playerOnly: true })` to advance
+   *  exactly one PLAYER stroke without advancing worker clocks (which would make
+   *  every worker's next-stroke bar leap on each click). */
   chunkInterval: number;
   baseGold: Big;
   chunkCount: number;
@@ -74,7 +76,7 @@ export function BoundCanvasStage({
         comboChain={comboChain}
         critChunks={critChunks}
         canvasNumber={canvasesSold}
-        onChunkClick={() => canvasTick(chunkInterval)}
+        onChunkClick={() => canvasTick(chunkInterval, { playerOnly: true })}
       />
       {lastSale && (
         <FloatingGoldText

@@ -84,7 +84,7 @@ export interface CanvasSlice extends CanvasState {
    * Leftover is carried forward only when `< paintTime`; otherwise clamped to 0.
    * No-ops on `delta <= 0` (avoids spurious persist writes on idle frames).
    */
-  canvasTick: (deltaSeconds: number) => void;
+  canvasTick: (deltaSeconds: number, opts?: { playerOnly?: boolean }) => void;
   /** Validate → spend → mutate sell-price upgrade. No-op if gold < cost. */
   upgradeSellPrice: () => void;
   /** Validate → spend → mutate speed upgrade. No-op if gold < cost. */
@@ -110,13 +110,13 @@ export interface CanvasSlice extends CanvasState {
 export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (set, get) => ({
   ...initialCanvasState,
 
-  canvasTick: (deltaSeconds) => {
+  canvasTick: (deltaSeconds, opts) => {
     if (deltaSeconds <= 0) return;
     let fired = false;
     set((state) => {
       const before = state.statsRun.canvasesSold;
       const draft = { ...state } as GameStore;
-      canvasTickPure(draft, deltaSeconds);
+      canvasTickPure(draft, deltaSeconds, opts);
       fired = draft.statsRun.canvasesSold !== before;
       return {
         canvasProgress: draft.canvasProgress,

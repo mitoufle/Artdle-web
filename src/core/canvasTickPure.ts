@@ -51,7 +51,11 @@ interface Painter {
  * strokes never perturb them. canvasesSold/goldEarned are canvas-level (counted
  * regardless of which painter lands the final chunk).
  */
-export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
+export function canvasTickPure(
+  draft: DraftState,
+  deltaSeconds: number,
+  opts?: { playerOnly?: boolean },
+): void {
   if (deltaSeconds <= 0) return;
 
   const chunkCount = chunksPerCanvas(draft.canvasTier);
@@ -65,15 +69,21 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
     critChunks: getCritChunks(draft),
     comboBase: getComboBaseChance(draft),
   }];
-  for (const w of draft.roster) {
-    const interval = chunkInterval(w.stats.speed);
-    if (interval <= 0) continue;
-    painters.push({
-      id: w.id, isPlayer: false, interval,
-      critChance: w.stats.critChance,
-      critChunks: w.stats.strokesPerCrit,
-      comboBase: w.stats.comboChance,
-    });
+  // Manual click-to-paint (`playerOnly`) advances ONLY the player by one stroke:
+  // workers are excluded from the painter list so their clocks never advance and
+  // they never stroke. Without this, `canvasTick(playerInterval)` fast-forwarded
+  // the whole sim, making every worker's next-stroke bar leap on each click.
+  if (!opts?.playerOnly) {
+    for (const w of draft.roster) {
+      const interval = chunkInterval(w.stats.speed);
+      if (interval <= 0) continue;
+      painters.push({
+        id: w.id, isPlayer: false, interval,
+        critChance: w.stats.critChance,
+        critChunks: w.stats.strokesPerCrit,
+        comboBase: w.stats.comboChance,
+      });
+    }
   }
 
   const goldMult = getCanvasGoldMultiplier(draft);
@@ -213,7 +223,11 @@ export function canvasTickPure(draft: DraftState, deltaSeconds: number): void {
   draft.canvasProgress = progress;
   draft.comboChain = chain;
   draft.critChunks = critChunks;
-  draft.painterClocks = clocks;
+  // playerOnly built `clocks` from the player alone; merge over prevClocks so the
+  // workers' accumulated sub-stroke timing is preserved (dropping it would reset
+  // their bars to 0 on the next real tick). Normal ticks replace wholesale so a
+  // worker removed from the roster mid-tick drops out as intended.
+  draft.painterClocks = opts?.playerOnly ? { ...prevClocks, ...clocks } : clocks;
   if (Object.keys(workerStrokes).length > 0) {
     draft.roster = draft.roster.map((w) =>
       workerStrokes[w.id]
