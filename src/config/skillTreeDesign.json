@@ -5,6 +5,7 @@
   "nodes": [
     {
       "id": "get_inspired",
+      "clusterId": "inspiration",
       "name": "Get Inspired",
       "description": "each level increase inspiration gain",
       "numericEffect": "50%",
@@ -24,12 +25,11 @@
     },
     {
       "id": "black_white",
+      "clusterId": "colors",
       "name": "Black & White",
       "description": "increases canvas sell price",
       "numericEffect": "50%",
-      "parentIds": [
-        "basic_technique"
-      ],
+      "parentIds": [],
       "stacking": "additive",
       "kind": "minor",
       "maxLevel": 1,
@@ -41,6 +41,7 @@
     },
     {
       "id": "magenta",
+      "clusterId": "colors",
       "name": "Magenta",
       "description": "increases canvas sell price",
       "numericEffect": "80%",
@@ -58,6 +59,7 @@
     },
     {
       "id": "cyan",
+      "clusterId": "colors",
       "name": "Cyan",
       "description": "increases canvas sell price",
       "numericEffect": "80%",
@@ -75,6 +77,7 @@
     },
     {
       "id": "yellow",
+      "clusterId": "colors",
       "name": "Yellow",
       "description": "increases canvas sell price",
       "numericEffect": "80%",
@@ -92,6 +95,7 @@
     },
     {
       "id": "red",
+      "clusterId": "colors",
       "name": "Red",
       "description": "increases canvas sell price",
       "numericEffect": "130%",
@@ -110,6 +114,7 @@
     },
     {
       "id": "green",
+      "clusterId": "colors",
       "name": "Green",
       "description": "increases canvas sell price",
       "numericEffect": "130%",
@@ -128,6 +133,7 @@
     },
     {
       "id": "blue",
+      "clusterId": "colors",
       "name": "Blue",
       "description": "increases canvas sell price",
       "numericEffect": "130%",
@@ -146,6 +152,7 @@
     },
     {
       "id": "purple",
+      "clusterId": "colors",
       "name": "Purple",
       "description": "increases canvas sell price",
       "numericEffect": "200%",
@@ -164,6 +171,7 @@
     },
     {
       "id": "brown",
+      "clusterId": "colors",
       "name": "Brown",
       "description": "increases canvas sell price",
       "numericEffect": "200%",
@@ -182,6 +190,7 @@
     },
     {
       "id": "orange",
+      "clusterId": "colors",
       "name": "Orange",
       "description": "increases canvas sell price",
       "numericEffect": "200%",
@@ -200,6 +209,7 @@
     },
     {
       "id": "rainbow",
+      "clusterId": "colors",
       "name": "Rainbow",
       "description": "increases canvas sell price",
       "numericEffect": "500%",
@@ -219,6 +229,7 @@
     },
     {
       "id": "poke_tree",
+      "clusterId": "inspiration",
       "name": "Poke the Tree",
       "description": "Get 100 inspiration every 10 secondes.\nEach level doubles it",
       "numericEffect": "100",
@@ -240,6 +251,7 @@
     },
     {
       "id": "basic_technique",
+      "clusterId": "workshop",
       "name": "Basic Technique",
       "description": "canvas completion time is faster.",
       "numericEffect": "5%",
@@ -259,6 +271,7 @@
     },
     {
       "id": "muscle_memory",
+      "clusterId": "workshop",
       "name": "Muscle Memory",
       "description": "canvas completion time is 5% faster.",
       "numericEffect": "5%",
@@ -280,6 +293,7 @@
     },
     {
       "id": "gear_up",
+      "clusterId": "workshop",
       "name": "Gear Up",
       "description": "Unlocks a second equipment slot for palette items.",
       "numericEffect": "+1 palette slot",
@@ -297,6 +311,7 @@
     },
     {
       "id": "Bargain",
+      "clusterId": "inspiration",
       "name": "Bargain",
       "description": "Each level decreases inspiration tree upgrade cost by 5%",
       "numericEffect": "5%",
@@ -318,6 +333,7 @@
     },
     {
       "id": "craftsmanship",
+      "clusterId": "workshop",
       "name": "Craftsmanship",
       "description": "Each level add %5 to min and max item rollable affix magnitude.",
       "numericEffect": "5%",
@@ -339,6 +355,7 @@
     },
     {
       "id": "wooden_chest",
+      "clusterId": "workshop",
       "name": "Wooden Chest",
       "description": "adds 2 item storage slots",
       "numericEffect": "2",
@@ -359,6 +376,7 @@
     },
     {
       "id": "shredder",
+      "clusterId": "workshop",
       "name": "shredder",
       "description": "you can craft when inventory is full, it will destroy the oldest crafted item inside.",
       "numericEffect": "1",
@@ -379,6 +397,7 @@
     },
     {
       "id": "taylorsim",
+      "clusterId": "workshop",
       "name": "Taylorism",
       "description": "Autocraft a free Item every 10s.",
       "numericEffect": "1",
@@ -399,6 +418,7 @@
     },
     {
       "id": "steel_chest",
+      "clusterId": "workshop",
       "name": "Steel Chest",
       "description": "adds 2 item storage slots",
       "numericEffect": "2",
@@ -419,6 +439,7 @@
     },
     {
       "id": "forget_pain",
+      "clusterId": "workshop",
       "name": "Forget your back pain",
       "description": "Unlock Easel item slot",
       "numericEffect": "1",
@@ -440,6 +461,7 @@
     },
     {
       "id": "painters_hat",
+      "clusterId": "workshop",
       "name": "Enjoyable Shade",
       "description": "Unlock the Hat equipment slot.",
       "numericEffect": "+1 hat slot",
@@ -460,6 +482,7 @@
     },
     {
       "id": "painters_apron",
+      "clusterId": "workshop",
       "name": "No More Stains",
       "description": "Unlock the Apron equipment slot.",
       "numericEffect": "+1 apron slot",
@@ -481,6 +504,7 @@
     },
     {
       "id": "monk_internship",
+      "clusterId": "workshop",
       "name": "Monk Internship",
       "description": "increases #% min/max affixes magnitude",
       "numericEffect": "10",
@@ -501,12 +525,11 @@
     },
     {
       "id": "entrepreneur",
+      "clusterId": "office",
       "name": "Entrepreneur",
       "description": "unlocks the Worker Office tab ",
       "numericEffect": "1",
-      "parentIds": [
-        "forget_pain"
-      ],
+      "parentIds": [],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
@@ -523,12 +546,11 @@
     },
     {
       "id": "genius_episode",
+      "clusterId": "crit",
       "name": "Genius Episode",
       "description": "unlocks Critical upgrade for your canvas (and associated affixes)",
       "numericEffect": "1",
-      "parentIds": [
-        "muscle_memory"
-      ],
+      "parentIds": [],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
@@ -542,6 +564,7 @@
     },
     {
       "id": "consistency",
+      "clusterId": "crit",
       "name": "Consistency",
       "description": "increases crit chance by 1%",
       "numericEffect": "1",
@@ -565,6 +588,7 @@
     },
     {
       "id": "fast_learner",
+      "clusterId": "crit",
       "name": "Fast Learner",
       "description": "each canvas upgrade is 2% more effective",
       "numericEffect": "2",
@@ -589,12 +613,11 @@
     },
     {
       "id": "unrelentless",
+      "clusterId": "combo",
       "name": "unrelentless",
       "description": "unlocks Combo upgrade for your canvas (and associated affixes)",
       "numericEffect": "1",
-      "parentIds": [
-        "fast_learner"
-      ],
+      "parentIds": [],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
@@ -611,6 +634,7 @@
     },
     {
       "id": "hire_manager",
+      "clusterId": "office",
       "name": "Hire Manager",
       "description": "Each level adds +1 roster slot for hired workers.",
       "numericEffect": "+1",
@@ -636,6 +660,7 @@
     },
     {
       "id": "accelerator",
+      "clusterId": "office",
       "name": "Accelerator Program",
       "description": "Each level boosts the worker ascend-XP pool by +10%.",
       "numericEffect": "10%",
@@ -662,6 +687,7 @@
     },
     {
       "id": "afterburner",
+      "clusterId": "combo",
       "name": "Afterburner",
       "description": "Each level reduces combo decay by 1 percentage point per chain link.",
       "numericEffect": "-1pp",
@@ -687,6 +713,7 @@
     },
     {
       "id": "enlightenment",
+      "clusterId": "inspiration",
       "name": "Enlightenment",
       "description": "Each level reduces the inspiration needed to ascend by 5%.",
       "numericEffect": "-5%",
@@ -709,6 +736,7 @@
     },
     {
       "id": "patron",
+      "clusterId": "inspiration",
       "name": "Patron",
       "description": "Each level boosts inspiration gain by +10% (stacks with Get Inspired).",
       "numericEffect": "10%",
@@ -732,6 +760,7 @@
     },
     {
       "id": "third_hand",
+      "clusterId": "workshop",
       "name": "Third Hand",
       "description": "reduces the time for autocraft by #% ",
       "numericEffect": "10",
@@ -756,6 +785,7 @@
     },
     {
       "id": "painters_boots",
+      "clusterId": "workshop",
       "name": "Warm Feet",
       "description": "unlocks the boot Item slot",
       "numericEffect": "+1 boots slot",
@@ -777,6 +807,7 @@
     },
     {
       "id": "better_scaling",
+      "clusterId": "workshop",
       "name": "Better Scaling",
       "description": "for each workshop level, give +# to min and max item affix magnitude ",
       "numericEffect": "1",
@@ -797,6 +828,7 @@
     },
     {
       "id": "socks",
+      "clusterId": "workshop",
       "name": "Socks",
       "description": "equiped boots get +#% efficency.",
       "numericEffect": "50",
@@ -817,12 +849,11 @@
     },
     {
       "id": "unlock_school",
+      "clusterId": "school",
       "name": "Painting School",
       "description": "Unlocks the Painting School — research permanent bonuses one at a time.",
       "numericEffect": "",
-      "parentIds": [
-        "accelerator"
-      ],
+      "parentIds": [],
       "stacking": "additive",
       "kind": "major",
       "maxLevel": 1,
@@ -839,6 +870,7 @@
     },
     {
       "id": "ma_specialist",
+      "clusterId": "workshop",
       "name": "M&A specialist",
       "description": "You can now merge epic and legendary items with other items of the same tier even if they don't share the same affixes type. Affixes outcome will be randomized.",
       "numericEffect": "",
@@ -859,6 +891,7 @@
     },
     {
       "id": "quantitative_easing",
+      "clusterId": "workshop",
       "name": "Quantitative easing",
       "description": "each levels halves the price of merging items.",
       "numericEffect": "100",
@@ -883,6 +916,7 @@
     },
     {
       "id": "expert_manufacture",
+      "clusterId": "workshop",
       "name": "Expert manufacture",
       "description": "each level increases the max item affix magnitude by 25%",
       "numericEffect": "25",

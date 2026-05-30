@@ -1,4 +1,5 @@
 // src/config/skillClusters.ts
+import { SKILL_NODES, type SkillNodeConfig } from "@/config/skillTreeNodes";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
 
 /** Cluster identifier. String — data-driven, matches SkillNodeId style. */
@@ -57,4 +58,11 @@ export const CLUSTER_IDS: ReadonlyArray<SkillClusterId> = SKILL_CLUSTERS.map(
 /** Lookup helper. Returns null if id unknown. */
 export function getClusterConfig(id: SkillClusterId): SkillClusterConfig | null {
   return SKILL_CLUSTERS.find((c) => c.id === id) ?? null;
+}
+
+/** All nodes whose clusterId === id, in table order. */
+export function getClusterNodes(
+  id: SkillClusterId,
+): ReadonlyArray<SkillNodeConfig> {
+  return SKILL_NODES.filter((n) => n.clusterId === id);
 }
