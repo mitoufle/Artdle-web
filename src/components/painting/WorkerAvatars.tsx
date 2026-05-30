@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
 import { chunkInterval } from "@/core/balance";
+import { WORKER_AVATARS } from "./workerAvatarMap";
 import styles from "./WorkerAvatars.module.css";
 
 /**
@@ -29,7 +30,11 @@ export function WorkerAvatars(): JSX.Element | null {
         const fillPct = interval > 0 ? Math.max(0, Math.min(1, clock / interval)) : 0;
         return (
           <div key={w.id} className={styles.avatar} data-testid="worker-avatar">
-            <div className={styles.portrait} />
+            <div
+              className={styles.portrait}
+              data-testid="worker-portrait"
+              style={{ backgroundImage: `url(${WORKER_AVATARS[w.avatar - 1]})` }}
+            />
             <div className={styles.cooldownTrack}>
               <div className={styles.cooldownFill} style={{ width: `${fillPct * 100}%` }} />
             </div>
