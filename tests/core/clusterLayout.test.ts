@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeClusterLayout } from "@/core/clusterLayout";
+import { computeClusterLayout as ccl2, constellationViewbox as cv2 } from "@/core/clusterLayout";
 import { SKILL_NODES } from "@/config/skillTreeNodes";
 import { SKILL_CLUSTERS, getClusterConfig } from "@/config/skillClusters";
 
@@ -30,5 +31,18 @@ describe("computeClusterLayout", () => {
     );
     const l = computeClusterLayout(overridden, SKILL_CLUSTERS);
     expect(l["get_inspired"]).toEqual({ x: 42, y: 99 });
+  });
+});
+
+describe("layout accepts a minimal {id, region} cluster (LayoutCluster)", () => {
+  const minimalClusters = [{ id: "a", region: { x: 0, y: 0, w: 600, h: 600 } }];
+  const nodes = [{ id: "n1", clusterId: "a", parentIds: [] as string[] }];
+  it("lays out a node from a minimal cluster shape", () => {
+    const pos = ccl2(nodes, minimalClusters);
+    expect(pos["n1"]).toBeDefined();
+  });
+  it("constellationViewbox accepts the minimal shape", () => {
+    const vb = cv2(ccl2(nodes, minimalClusters), minimalClusters);
+    expect(vb.width).toBeGreaterThan(0);
   });
 });

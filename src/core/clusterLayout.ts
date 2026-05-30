@@ -1,8 +1,12 @@
-import type { SkillClusterConfig } from "@/config/skillClusters";
-
 export interface Position {
   readonly x: number;
   readonly y: number;
+}
+
+/** Minimal cluster shape the layout needs — satisfied by SkillClusterConfig and DesignCluster. */
+export interface LayoutCluster {
+  readonly id: string;
+  readonly region: { x: number; y: number; w: number; h: number };
 }
 
 /** Minimal node shape this layout needs. Compatible with SkillNodeConfig and design JSON nodes. */
@@ -33,7 +37,7 @@ export const WORLD_PAD = 200;
  */
 export function constellationViewbox(
   positions: Record<string, Position>,
-  clusters: ReadonlyArray<SkillClusterConfig>,
+  clusters: ReadonlyArray<LayoutCluster>,
 ): { width: number; height: number } {
   const pts = Object.values(positions);
   const maxRegionX = Math.max(...clusters.map((c) => WORLD_PAD + c.region.x + c.region.w));
@@ -64,7 +68,7 @@ export function paddedRegion(region: {
  */
 export function computeClusterLayout(
   nodes: ReadonlyArray<LayoutNode>,
-  clusters: ReadonlyArray<SkillClusterConfig>,
+  clusters: ReadonlyArray<LayoutCluster>,
 ): Record<string, Position> {
   const positions: Record<string, Position> = {};
   const byCluster = new Map<string, LayoutNode[]>();

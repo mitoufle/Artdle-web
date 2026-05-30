@@ -20,11 +20,20 @@ export interface DesignNode {
   clusterId: string;
 }
 
+export interface DesignCluster {
+  id: string;
+  name: string;
+  theme: string;
+  rootNodeId: string;
+  region: { x: number; y: number; w: number; h: number };
+}
+
 export interface DesignFile {
   version: 1;
   title: string;
   designedAt: string;
   nodes: ReadonlyArray<DesignNode>;
+  clusters: ReadonlyArray<DesignCluster>;
 }
 
 export const EMPTY_DESIGN: DesignFile = {
@@ -32,4 +41,5 @@ export const EMPTY_DESIGN: DesignFile = {
   title: "Untitled draft",
   designedAt: "",
   nodes: [],
+  clusters: [],
 };
