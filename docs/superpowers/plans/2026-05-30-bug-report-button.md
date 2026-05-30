@@ -1,47 +1,36 @@
-# Bug Report Button — Implementation Plan
+# Bug Report Button Implementation Plan
 
-## Overview
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Add a **Bug** button to the TopBar that opens a modal. Submitting POSTs a JSON
-report to a new Vercel serverless function (`/api/report-bug`), which opens a
-**GitHub issue** in `mitoufle/Artdle-web`. Reports include the user's description
-plus auto-captured game/browser context. No screenshot.
+**Goal:** Add a Bug button to the TopBar that opens a modal whose submission creates a GitHub issue in `mitoufle/Artdle-web` via a Vercel serverless function, including auto-captured game/browser context.
+
+**Architecture:** Three isolated layers — a pure formatter (`src/core/bugReport.ts`), a modal UI (`BugReportModal`), and a serverless function (`api/report-bug.ts`) that holds the GitHub token. The browser POSTs `{ title, body }`; the function calls the GitHub REST API. No screenshot.
+
+**Tech Stack:** React 19 + TS strict, Zustand (read once via `getState`), Vitest + React Testing Library, Vercel Node serverless function, GitHub REST API via `fetch`.
 
 Design spec: `docs/superpowers/specs/2026-05-30-bug-report-button-design.md`.
 
-## Prerequisites
+---
 
-- Repo builds and tests pass (`npm test`, `npm run build`).
-- `SAVE_VERSION` is exported from the store (`@/store` re-exports it, or import
-  from its source module — confirm the exact path during Task 2 and use whichever
-  the codebase already exposes; `useGameStore` is in `@/store`).
-- `big`/`toStr`/`Big` are in `@/core/bigNumber`.
-- Node-style serverless functions are supported by the Vercel project (default).
+## Notes for the implementer (verified facts)
 
-## Conventions reminder
-
-- TDD: write the test, watch it fail, implement, watch it pass, commit.
-- `@/` is the alias for `src/`.
-- One commit per task step is fine; conventional commit prefixes.
-- End every commit message with the Co-Authored-By trailer:
+- `useGameStore` is exported from `@/store` (`src/store/index.ts`).
+- `SAVE_VERSION` is currently `const SAVE_VERSION = 28;` in `src/store/index.ts` and is **NOT exported** — Task 2 adds an `export` so the modal can read it.
+- jest-dom matchers (`toBeDisabled`, `toBeInTheDocument`, `toBeEmptyDOMElement`) are available in the Vitest environment (used across `tests/components/**`).
+- `vite.config.ts` already registers dev-only middleware for `/api/skill-design` and `/api/school-design`. Those are **dev-server** writers; our `api/report-bug.ts` is a real Vercel serverless function for production. Do not confuse the two — `/api/report-bug` is NOT added to `vite.config.ts`, so it will not work under plain `vite` (expected; see spec).
+- `@/` is the alias for `src/`. English only. Conventional commits.
+- End every commit message with:
   `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`
-- English only.
 
 ---
 
-## Tasks
-
-### Task 1: Pure bug-report core (`src/core/bugReport.ts`)
-
-**Goal:** A deterministic module that builds the report object and formats the
-GitHub issue title/body. No React, no DOM, no globals read inside — all inputs
-are passed in, so it is fully testable.
+## Task 1: Pure bug-report core
 
 **Files:**
-- `src/core/bugReport.ts` — new
-- `tests/core/bugReport.test.ts` — new
+- Create: `src/core/bugReport.ts`
+- Test: `tests/core/bugReport.test.ts`
 
-**Step 1: Write the test** — `tests/core/bugReport.test.ts`
+- [ ] **Step 1: Write the failing test** — `tests/core/bugReport.test.ts`
 
 ```ts
 import { describe, it, expect } from "vitest";
@@ -59,7 +48,7 @@ const ctx: BugReportContext = {
   viewport: { width: 1280, height: 720 },
   mode: "production",
   playerId: "11111111-1111-4111-8111-111111111111",
-  saveVersion: 5,
+  saveVersion: 28,
   gold: "1.23e45",
   inspiration: "0",
   fame: "42",
@@ -89,6 +78,11 @@ describe("issueTitle", () => {
     expect(title.length).toBeLessThanOrEqual("Bug report: ".length + 80);
     expect(title.endsWith("…")).toBe(true);
   });
+
+  it("falls back when the description is empty", () => {
+    const report = buildBugReport({ description: "   ", context: ctx });
+    expect(issueTitle(report)).toBe("Bug report: (no description)");
+  });
 });
 
 describe("issueBody", () => {
@@ -103,14 +97,12 @@ describe("issueBody", () => {
 });
 ```
 
-**Step 2: Run the test — verify it fails**
+- [ ] **Step 2: Run the test to verify it fails**
 
-```
-npm test -- bugReport
-```
-Expect: module-not-found / import errors.
+Run: `npm test -- bugReport`
+Expected: FAIL — cannot resolve `@/core/bugReport`.
 
-**Step 3: Implement** — `src/core/bugReport.ts`
+- [ ] **Step 3: Write the implementation** — `src/core/bugReport.ts`
 
 ```ts
 export interface BugReportContext {
@@ -167,44 +159,75 @@ export function issueBody(report: BugReport): string {
 }
 ```
 
-**Step 4: Run the test — verify it passes**
+- [ ] **Step 4: Run the test to verify it passes**
 
-```
-npm test -- bugReport
-```
+Run: `npm test -- bugReport`
+Expected: PASS (all cases).
 
-**Step 5: Commit**
+- [ ] **Step 5: Commit**
 
-```
-core: add pure bug-report builder and GitHub issue formatters
+```bash
+git add src/core/bugReport.ts tests/core/bugReport.test.ts
+git commit -m "core: add pure bug-report builder and GitHub issue formatters
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
 
-### Task 2: Bug report modal (`BugReportModal`)
-
-**Goal:** The modal UI. Collects the description, reads live game state once at
-submit time, builds the report, POSTs to `/api/report-bug`, and shows
-idle/submitting/success/error states.
+## Task 2: Export SAVE_VERSION from the store
 
 **Files:**
-- `src/components/shell/BugReportModal.tsx` — new
-- `src/components/shell/BugReportModal.module.css` — new
-- `tests/components/shell/BugReportModal.test.tsx` — new
+- Modify: `src/store/index.ts:44`
 
-**Step 1: Write the test** — `tests/components/shell/BugReportModal.test.tsx`
+This is a one-line change so the modal can stamp the save version into the report.
 
-Mock the store and `fetch`. Verify: nothing renders when `open=false`; submit is
-disabled while the textarea is empty; on submit, `fetch` is called against
-`/api/report-bug` with a JSON body containing the description; success state shows
-the returned issue URL.
+- [ ] **Step 1: Make the constant exported** — `src/store/index.ts`
+
+Change line 44 from:
 
 ```ts
+const SAVE_VERSION = 28;
+```
+
+to:
+
+```ts
+export const SAVE_VERSION = 28;
+```
+
+(Leave the existing `version: SAVE_VERSION` usage untouched.)
+
+- [ ] **Step 2: Verify the build still compiles**
+
+Run: `npm run build`
+Expected: PASS (no type errors; this is an additive export).
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/store/index.ts
+git commit -m "store: export SAVE_VERSION for use in bug reports
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+```
+
+---
+
+## Task 3: Bug report modal
+
+**Files:**
+- Create: `src/components/shell/BugReportModal.tsx`
+- Create: `src/components/shell/BugReportModal.module.css`
+- Test: `tests/components/shell/BugReportModal.test.tsx`
+
+- [ ] **Step 1: Write the failing test** — `tests/components/shell/BugReportModal.test.tsx`
+
+```tsx
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { BugReportModal } from "@/components/shell/BugReportModal";
 
-// Minimal store mock — getState() returns the fields the modal reads.
 vi.mock("@/store", () => ({
   useGameStore: {
     getState: () => ({
@@ -214,10 +237,10 @@ vi.mock("@/store", () => ({
       fame: { toString: () => "5" },
     }),
   },
-  SAVE_VERSION: 5,
+  SAVE_VERSION: 28,
 }));
 
-describe("BugReportModal", () => {
+describe("<BugReportModal />", () => {
   beforeEach(() => {
     vi.stubGlobal(
       "fetch",
@@ -256,165 +279,465 @@ describe("BugReportModal", () => {
     expect(String(opts.body)).toContain("broken");
     await screen.findByText(/issues\/1/);
   });
+
+  it("shows an error state and keeps the text when the request fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, json: async () => ({ ok: false, error: "nope" }) })),
+    );
+    render(<BugReportModal open onClose={() => {}} />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "broken" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    await screen.findByText(/couldn.t submit|error/i);
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("broken");
+  });
 });
 ```
 
-> Note: confirm the `@testing-library/jest-dom` matchers (`toBeDisabled`,
-> `toBeEmptyDOMElement`) are set up in the test environment. If they are not
-> globally imported, either add the import or fall back to plain assertions
-> (`expect((submit as HTMLButtonElement).disabled).toBe(true)` and
-> `expect(container.childElementCount).toBe(0)`).
+- [ ] **Step 2: Run the test to verify it fails**
 
-**Step 2: Run the test — verify it fails**
+Run: `npm test -- BugReportModal`
+Expected: FAIL — cannot resolve `@/components/shell/BugReportModal`.
 
-```
-npm test -- BugReportModal
-```
+- [ ] **Step 3: Write the implementation** — `src/components/shell/BugReportModal.tsx`
 
-**Step 3: Implement** — `src/components/shell/BugReportModal.tsx`
+```tsx
+import type { JSX } from "react";
+import { useEffect, useState } from "react";
+import { useGameStore, SAVE_VERSION } from "@/store";
+import {
+  buildBugReport,
+  issueBody,
+  issueTitle,
+  type BugReportContext,
+} from "@/core/bugReport";
+import styles from "./BugReportModal.module.css";
 
-- Return `null` when `!open` (ExportModal pattern).
-- Backdrop `div` with `role="dialog" aria-modal="true"`, close on backdrop click,
-  Cancel button, and Escape key.
-- `useState` for `description` and `status: "idle" | "submitting" | "success" | "error"`,
-  plus `resultUrl`/`errorMsg`.
-- On submit:
-  ```ts
+interface Props {
+  open: boolean;
+  onClose: () => void;
+}
+
+type Status = "idle" | "submitting" | "success" | "error";
+
+function captureContext(): BugReportContext {
   const s = useGameStore.getState();
-  const context: BugReportContext = {
+  return {
     timestamp: new Date().toISOString(),
     route: window.location.pathname,
     userAgent: navigator.userAgent,
     viewport: { width: window.innerWidth, height: window.innerHeight },
     mode: import.meta.env.MODE,
     playerId: s.playerId,
-    saveVersion: SAVE_VERSION,            // import alongside useGameStore from @/store
+    saveVersion: SAVE_VERSION,
     gold: s.gold.toString(),
     inspiration: s.inspiration.toString(),
     fame: s.fame.toString(),
   };
-  const report = buildBugReport({ description, context });
-  const res = await fetch("/api/report-bug", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title: issueTitle(report), body: issueBody(report) }),
-  });
-  ```
-  Set success (read `url` from JSON) / error from the response; on a thrown/network
-  error also go to the error state. Keep the typed text on error.
-- A collapsible `<details>` "What's included" rendering the context as read-only
-  pretty JSON so the user sees exactly what is sent.
-- New `.module.css` reusing existing tokens (`--bg-1`, `--gold`, `--mono`,
-  `--ink-*`, `--s-*`, `--r-*`); mirror `ExportModal.module.css` structure.
+}
 
-**Step 4: Run the test — verify it passes**
+export function BugReportModal({ open, onClose }: Props): JSX.Element | null {
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState<Status>("idle");
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  // Reset transient state whenever the modal is freshly opened.
+  useEffect(() => {
+    if (open) {
+      setStatus("idle");
+      setResultUrl(null);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const canSubmit = description.trim().length > 0 && status !== "submitting";
+
+  async function handleSubmit(): Promise<void> {
+    setStatus("submitting");
+    try {
+      const report = buildBugReport({ description, context: captureContext() });
+      const res = await fetch("/api/report-bug", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: issueTitle(report), body: issueBody(report) }),
+      });
+      const data = (await res.json()) as { ok?: boolean; url?: string };
+      if (res.ok && data.ok && data.url) {
+        setResultUrl(data.url);
+        setStatus("success");
+      } else {
+        setStatus("error");
+      }
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <div
+      className={styles.backdrop}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Report a bug"
+      onClick={onClose}
+    >
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <h3 className={styles.title}>Report a bug</h3>
+
+        {status === "success" ? (
+          <div className={styles.successBox}>
+            <p>Thanks! Your report was submitted.</p>
+            {resultUrl && (
+              <a href={resultUrl} target="_blank" rel="noreferrer" className={styles.link}>
+                {resultUrl}
+              </a>
+            )}
+            <div className={styles.footer}>
+              <button type="button" className={styles.secondaryBtn} onClick={onClose}>
+                Close
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <label className={styles.label}>
+              <span className={styles.labelText}>What went wrong?</span>
+              <textarea
+                className={styles.textarea}
+                rows={6}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe the bug and what you were doing…"
+                autoFocus
+              />
+            </label>
+
+            <details className={styles.details}>
+              <summary className={styles.summary}>What's included</summary>
+              <pre className={styles.context}>
+                {JSON.stringify(captureContext(), null, 2)}
+              </pre>
+            </details>
+
+            {status === "error" && (
+              <p className={styles.error}>Couldn&apos;t submit — please try again.</p>
+            )}
+
+            <div className={styles.footer}>
+              <button type="button" className={styles.secondaryBtn} onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                onClick={() => void handleSubmit()}
+                disabled={!canSubmit}
+              >
+                {status === "submitting" ? "Submitting…" : "Submit"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 ```
-npm test -- BugReportModal
+
+- [ ] **Step 4: Write the styles** — `src/components/shell/BugReportModal.module.css`
+
+```css
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  width: 520px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 2px solid var(--gold);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  box-shadow: var(--shadow-card);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--gold);
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.labelText {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.textarea {
+  font-family: var(--sans, inherit);
+  font-size: 13px;
+  width: 100%;
+  padding: var(--s-2);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-1);
+  resize: vertical;
+}
+
+.details {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.summary {
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.context {
+  margin: var(--s-2) 0 0;
+  padding: var(--s-2);
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #c44;
+}
+
+.successBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-1);
+}
+
+.link {
+  color: var(--gold);
+  word-break: break-all;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+.primaryBtn {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: var(--s-1) var(--s-3);
+  border: 1px solid var(--gold);
+  border-radius: var(--r-sm);
+  background: var(--gold);
+  color: var(--bg-1);
+  cursor: pointer;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: var(--s-1) var(--s-3);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-2);
+  cursor: pointer;
+}
 ```
 
-**Step 5: Commit**
+- [ ] **Step 5: Run the test to verify it passes**
 
-```
-ui: add BugReportModal (description + auto-captured context, POST to /api)
+Run: `npm test -- BugReportModal`
+Expected: PASS (all four cases).
+
+> If the success/error test can't find text because of how `fetch` is mocked,
+> double-check the mock returns an object with both `ok` and a `json()` resolving
+> to `{ ok, url }` — the component requires `res.ok && data.ok && data.url`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/components/shell/BugReportModal.tsx src/components/shell/BugReportModal.module.css tests/components/shell/BugReportModal.test.tsx
+git commit -m "ui: add BugReportModal (description + auto-captured context, POST to /api)
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
 
-### Task 3: Wire the Bug button into the TopBar
-
-**Goal:** A Bug button in the TopBar `meta` strip that opens the modal.
+## Task 4: Wire the Bug button into the TopBar
 
 **Files:**
-- `src/components/shell/TopBar.tsx` — edit
-- `src/components/shell/TopBar.module.css` — edit
+- Modify: `src/components/shell/TopBar.tsx`
+- Modify: `src/components/shell/TopBar.module.css`
 
-**Step 1 (verification approach):** TopBar has no dedicated unit test we extend
-here; verification is the existing suite (`tests/components/shell/TopBar.test.tsx`
-if present) still passing, plus the build, plus a manual smoke.
+- [ ] **Step 1: Add imports** — `src/components/shell/TopBar.tsx`
 
-**Step 2: Implement**
+After the existing imports, add:
 
-- Import `BugReportModal` and a `Bug` icon from `lucide-react` (`useState` is
-  already imported).
-- Add `const [bugOpen, setBugOpen] = useState(false);`.
-- In the `meta` strip (before the `↻ reset` button), add:
-  ```tsx
-  <button
-    type="button"
-    className={styles.bugBtn}
-    onClick={() => setBugOpen(true)}
-    title="Report a bug"
-    aria-label="Report a bug"
-  >
-    <Bug size={12} aria-hidden /> Bug
-  </button>
-  ```
-- After the `</header>` close (as a sibling, wrapped in a fragment), render:
-  ```tsx
-  <BugReportModal open={bugOpen} onClose={() => setBugOpen(false)} />
-  ```
-  (Returning a fragment `<>...</>` so the modal is a sibling of the header.)
-- Add `.bugBtn` to `TopBar.module.css`, styled like `.resetBtn` but neutral/gold
-  rather than red:
-  ```css
-  .bugBtn {
-    font-family: var(--mono);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 6px;
-    border: 1px solid var(--ink-line);
-    border-radius: var(--r-sm);
-    background: transparent;
-    color: var(--ink-2);
-    cursor: pointer;
-  }
-  .bugBtn:hover {
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-  ```
-
-**Step 3: Verify**
-
+```tsx
+import { Bug } from "lucide-react";
+import { BugReportModal } from "./BugReportModal";
 ```
-npm test
-npm run build
-```
-Both must pass (TypeScript strict + existing suite).
 
-**Step 4: Commit**
+- [ ] **Step 2: Add modal open state** — inside `TopBar`, near the other `useState`:
 
+```tsx
+const [bugOpen, setBugOpen] = useState(false);
 ```
-ui(topbar): add Bug button that opens the bug report modal
+
+- [ ] **Step 3: Add the button to the meta strip**
+
+In the `<div className={styles.meta}>` block, immediately before the
+`{confirming ? (` expression (i.e. before the reset/confirm controls), insert:
+
+```tsx
+<button
+  type="button"
+  className={styles.bugBtn}
+  onClick={() => setBugOpen(true)}
+  title="Report a bug"
+  aria-label="Report a bug"
+>
+  <Bug size={12} aria-hidden /> Bug
+</button>
+```
+
+- [ ] **Step 4: Render the modal as a sibling of the header**
+
+Wrap the returned `<header>…</header>` in a fragment and add the modal after it:
+
+```tsx
+return (
+  <>
+    <header className={styles.bar}>
+      {/* …unchanged header contents… */}
+    </header>
+    <BugReportModal open={bugOpen} onClose={() => setBugOpen(false)} />
+  </>
+);
+```
+
+- [ ] **Step 5: Add the button style** — append to `src/components/shell/TopBar.module.css`
+
+```css
+.bugBtn {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.bugBtn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+```
+
+- [ ] **Step 6: Verify the full suite and build**
+
+Run: `npm test`
+Expected: PASS (existing TopBar test, if any, still green).
+Run: `npm run build`
+Expected: PASS (TypeScript strict).
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/components/shell/TopBar.tsx src/components/shell/TopBar.module.css
+git commit -m "ui(topbar): add Bug button that opens the bug report modal
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
 
-### Task 4: Serverless function (`api/report-bug.ts`)
-
-**Goal:** Receive the POST and create a GitHub issue. Token never reaches the
-client.
+## Task 5: Serverless function (creates the GitHub issue)
 
 **Files:**
-- `api/report-bug.ts` — new
-- `.gitignore` — add `bug-reports/` (reserved local scratch folder)
+- Create: `api/report-bug.ts`
+- Modify: `.gitignore` (add `bug-reports/` scratch folder line)
+- Optional: `package.json` devDependency `@vercel/node` (for types)
 
-**Step 1: Implement** — `api/report-bug.ts`
+- [ ] **Step 1: Add `@vercel/node` for types (recommended)**
 
-Node serverless handler (Vercel `req`/`res` style):
+Run: `npm i -D @vercel/node`
+
+> If you prefer not to add a dep, skip this and in Step 2 type `req`/`res` as
+> `any` with a `// eslint-disable-next-line` comment and note it in the commit.
+
+- [ ] **Step 2: Write the function** — `api/report-bug.ts`
 
 ```ts
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const MAX_BODY = 30_000;
+const MAX_TITLE = 200;
 const DEFAULT_REPO = "mitoufle/Artdle-web";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
   if (req.method !== "POST") {
     res.status(405).json({ ok: false, error: "Method not allowed" });
     return;
@@ -431,7 +754,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(400).json({ ok: false, error: "Missing title or body" });
     return;
   }
-  if (body.length > MAX_BODY || title.length > 200) {
+  if (body.length > MAX_BODY || title.length > MAX_TITLE) {
     res.status(413).json({ ok: false, error: "Report too large" });
     return;
   }
@@ -457,62 +780,83 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 ```
 
-> If `@vercel/node` types are not installed, add it as a devDependency
-> (`npm i -D @vercel/node`) for type safety. If that's friction, type `req`/`res`
-> as `any` with a short comment and note it in the commit. `req.body` is parsed
-> automatically by the Node runtime for JSON content-type.
+- [ ] **Step 3: Add the scratch folder to `.gitignore`**
 
-**Step 2: Verify build**
+Append a line to `.gitignore`:
 
 ```
-npm run build
+bug-reports/
 ```
-TypeScript must compile. (The function has no Vitest test per the design — its
-pure formatting lives in `src/core/bugReport.ts`, which is tested.)
 
-**Step 3: Commit**
+- [ ] **Step 4: Verify the build compiles**
 
-```
-feat(api): add /api/report-bug serverless function (creates GitHub issue)
+Run: `npm run build`
+Expected: PASS. (The serverless function has no Vitest test by design — its pure
+formatting logic lives in `src/core/bugReport.ts`, which is tested. If `tsc -b`
+does not include `api/`, the file is still validated by Vercel at deploy; do a
+quick `npx tsc --noEmit api/report-bug.ts` if you want local assurance.)
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add api/report-bug.ts .gitignore package.json package-lock.json
+git commit -m "feat(api): add /api/report-bug serverless function (creates GitHub issue)
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
 
-### Task 5: Documentation + env var note
-
-**Goal:** Record the required env var and the dev-vs-prod behavior so the feature
-is operable.
+## Task 6: Document the env var and dev/prod behavior
 
 **Files:**
-- `docs/HANDOVER.md` — append a short note: the Bug button needs `GITHUB_TOKEN`
-  (fine-grained PAT, Issues: read & write on `mitoufle/Artdle-web`) set in Vercel;
-  optional `GITHUB_REPO` override; the button only creates issues on the deployed
-  site / `vercel dev`, not plain `vite`.
+- Modify: `docs/HANDOVER.md`
 
-**Step 1: Implement** — add the note.
+- [ ] **Step 1: Append a short operations note** to `docs/HANDOVER.md`
 
-**Step 2: Commit**
+```markdown
+## Bug Report button
 
+The TopBar "Bug" button opens a modal that POSTs to `/api/report-bug`, a Vercel
+serverless function that creates a GitHub issue in `mitoufle/Artdle-web`.
+
+- Requires env var **`GITHUB_TOKEN`** — a fine-grained PAT with *Issues: Read and
+  write* on `mitoufle/Artdle-web`. Set in Vercel (Production + Preview).
+- Optional **`GITHUB_REPO`** overrides the target repo (default
+  `mitoufle/Artdle-web`).
+- Works on the deployed site and under `vercel dev` only — plain `vite` does not
+  run `/api` functions, so the button shows its error state in local dev.
 ```
-docs(handover): document GITHUB_TOKEN env var for bug report button
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add docs/HANDOVER.md
+git commit -m "docs(handover): document GITHUB_TOKEN env var for bug report button
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
 
 ## Post-implementation (manual, by maintainer)
 
-1. Create a fine-grained GitHub PAT (Issues: read & write, repo
-   `mitoufle/Artdle-web`).
-2. `vercel env add GITHUB_TOKEN` (Production + Preview) — or via the dashboard.
-3. `npx vercel --prod`.
-4. Verify: open the deployed site → Bug button → submit a test report → confirm a
-   new issue appears in the repo, then close/delete the test issue.
+1. Create a fine-grained GitHub PAT (Issues: read & write on `mitoufle/Artdle-web`).
+2. Add it: `vercel env add GITHUB_TOKEN` (Production + Preview), or via the dashboard.
+3. Deploy: `npx vercel --prod`.
+4. Smoke test: open the deployed site → Bug button → submit a test report →
+   confirm a new issue appears in the repo, then close/delete the test issue.
 
-## Plan review checklist
+---
 
-- [x] Test-first where a test is meaningful (Tasks 1–2); UI wiring and the
-      serverless function rely on the existing suite + build + manual smoke
-      (Tasks 3–4), which is appropriate for those layers.
-- [x] Dependencies ordered: core → modal → wiring → API → docs.
-- [x] Exact file paths, signatures, commands, and commit messages given.
-- [x] Each task is small and independently reviewable.
+## Self-review
+
+- [x] **Spec coverage:** button (Task 4), modal with description + context + "what's
+      included" (Task 3), GitHub-issue delivery via serverless fn (Task 5),
+      `GITHUB_TOKEN`/`GITHUB_REPO` config + dev/prod note (Tasks 5–6), pure
+      tested formatter (Task 1). Screenshot intentionally omitted per spec.
+- [x] **Placeholder scan:** no TBD/TODO; every code step shows complete code.
+- [x] **Type consistency:** `BugReportContext`/`BugReport`, `buildBugReport`,
+      `issueTitle`, `issueBody` used identically across Tasks 1, 3; `SAVE_VERSION`
+      export (Task 2) consumed in Task 3; API contract `{ title, body }` →
+      `{ ok, url }` consistent between Task 3 (client) and Task 5 (server).
