@@ -157,18 +157,15 @@ describe("AscensionRoute cinematic overlay", () => {
     expect(ASCEND_QUOTES).toContain(quote.textContent ?? "");
   });
 
-  it("'click to continue' hint appears only after 4 seconds in the blackout phase", () => {
+  it("shows the 'click to continue' hint in the blackout when no workers leveled up", () => {
     useGameStore.setState({ inspiration: big(12_000) });
     const { container } = renderAscensionRoute();
     fireEvent.click(screen.getByRole("button", { name: /step through/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
     const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
     fireEvent.ended(video!);
-    expect(screen.queryByTestId("ascend-cinematic-hint")).not.toBeInTheDocument();
-    act(() => { vi.advanceTimersByTime(3999); });
-    expect(screen.queryByTestId("ascend-cinematic-hint")).not.toBeInTheDocument();
-    act(() => { vi.advanceTimersByTime(2); });
-    expect(screen.getByTestId("ascend-cinematic-hint")).toBeInTheDocument();
+    const hint = screen.getByTestId("ascend-cinematic-hint");
+    expect(hint.textContent).toMatch(/continue/i);
   });
 
   it("clicking the blackout overlay dismisses it", () => {

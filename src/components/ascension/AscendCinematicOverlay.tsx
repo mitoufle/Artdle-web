@@ -8,19 +8,11 @@ import styles from "./AscendCinematicOverlay.module.css";
 export type CinematicPhase = "opening" | "blackout";
 
 interface Props {
-  /**
-   * `"opening"` renders a transparent full-viewport click blocker so the gate
-   * video plays without the player navigating away. `"blackout"` fades the
-   * screen to black and shows the fame gain + quote, dismissible by click.
-   * `null` renders nothing.
-   */
   phase: CinematicPhase | null;
   fameGain: number;
   quote: string;
   onDismiss: () => void;
 }
-
-const HINT_DELAY_MS = 4000;
 
 export function AscendCinematicOverlay({
   phase,
@@ -28,15 +20,16 @@ export function AscendCinematicOverlay({
   quote,
   onDismiss,
 }: Props): JSX.Element | null {
-  const [hintVisible, setHintVisible] = useState(false);
+  const [skip, setSkip] = useState(false);
+  const [revealDone, setRevealDone] = useState(false);
 
+  // Reset before each blackout (during the opening / idle phases, when the
+  // reveal is not mounted, so the child's onComplete can't race the reset).
   useEffect(() => {
     if (phase !== "blackout") {
-      setHintVisible(false);
-      return;
+      setSkip(false);
+      setRevealDone(false);
     }
-    const t = window.setTimeout(() => setHintVisible(true), HINT_DELAY_MS);
-    return () => window.clearTimeout(t);
   }, [phase]);
 
   if (phase === null) return null;
@@ -44,8 +37,10 @@ export function AscendCinematicOverlay({
   const isBlackout = phase === "blackout";
   const className = `${styles.root} ${isBlackout ? styles.blackout : styles.opening}`;
 
-  const handleClick = () => {
-    if (isBlackout) onDismiss();
+  const handleClick = (): void => {
+    if (!isBlackout) return;
+    if (!revealDone) setSkip(true); // 1st click: skip the animation to the end
+    else onDismiss(); // 2nd click (or no level-ups): leave
   };
 
   const node = (
@@ -65,12 +60,10 @@ export function AscendCinematicOverlay({
           <p className={styles.quote} data-testid="ascend-cinematic-quote">
             {quote}
           </p>
-          <WorkerRollReveal />
-          {hintVisible && (
-            <p className={styles.hint} data-testid="ascend-cinematic-hint">
-              — click to continue —
-            </p>
-          )}
+          <WorkerRollReveal skip={skip} onComplete={() => setRevealDone(true)} />
+          <p className={styles.hint} data-testid="ascend-cinematic-hint">
+            {revealDone ? "— click to continue —" : "— click to skip —"}
+          </p>
         </>
       )}
     </div>
