@@ -28,6 +28,14 @@ export function formatWorkerStatAbsolute(key: WorkerStatKey, value: number): str
   }
 }
 
+/** Compact level-up delta for a chip beside the (already-labeled) stat: "+3%", "+1".
+ *  Null when unchanged. Fractional stats roll in whole percentage points. */
+export function formatWorkerStatDeltaShort(key: WorkerStatKey, before: number, after: number): string | null {
+  if (after === before) return null;
+  if (key === "strokesPerCrit") return `+${after - before}`;
+  return `+${Math.round((after - before) * 100)}%`;
+}
+
 /** A level-up increment for one stat: e.g. "+3% gold", "+1 stroke/crit".
  *  Returns null when the stat did not change. */
 export function formatWorkerStatDelta(key: WorkerStatKey, before: number, after: number): string | null {

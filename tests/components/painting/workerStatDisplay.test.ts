@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatWorkerStatAbsolute, formatWorkerStatDelta, WORKER_STAT_KEYS } from "@/components/painting/workerStatDisplay";
+import { formatWorkerStatAbsolute, formatWorkerStatDelta, formatWorkerStatDeltaShort, WORKER_STAT_KEYS } from "@/components/painting/workerStatDisplay";
 import { createBaseStats } from "@/core/workerModel";
 
 describe("formatWorkerStatAbsolute", () => {
@@ -39,5 +39,18 @@ describe("formatWorkerStatDelta", () => {
 
   it("WORKER_STAT_KEYS lists all five stats in display order", () => {
     expect(WORKER_STAT_KEYS).toEqual(["goldPct", "speed", "critChance", "strokesPerCrit", "comboChance"]);
+  });
+});
+
+describe("formatWorkerStatDeltaShort", () => {
+  it("formats fractional-stat increments as whole percent points", () => {
+    expect(formatWorkerStatDeltaShort("goldPct", 0.05, 0.08)).toBe("+3%");
+    expect(formatWorkerStatDeltaShort("speed", 1, 1.05)).toBe("+5%");
+  });
+  it("formats strokesPerCrit as a plain integer delta", () => {
+    expect(formatWorkerStatDeltaShort("strokesPerCrit", 1, 3)).toBe("+2");
+  });
+  it("returns null when the stat did not change", () => {
+    expect(formatWorkerStatDeltaShort("comboChance", 0.02, 0.02)).toBeNull();
   });
 });
