@@ -1,0 +1,136 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  width: 520px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 2px solid var(--gold);
+  border-radius: var(--r-md);
+  background: var(--bg-1);
+  box-shadow: var(--shadow-card);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--gold);
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.labelText {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.textarea {
+  font-family: var(--sans, inherit);
+  font-size: 13px;
+  width: 100%;
+  padding: var(--s-2);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-1);
+  resize: vertical;
+}
+
+.details {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.summary {
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.context {
+  margin: var(--s-2) 0 0;
+  padding: var(--s-2);
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #c44;
+}
+
+.successBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-1);
+}
+
+.link {
+  color: var(--gold);
+  word-break: break-all;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+.primaryBtn {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: var(--s-1) var(--s-3);
+  border: 1px solid var(--gold);
+  border-radius: var(--r-sm);
+  background: var(--gold);
+  color: var(--bg-1);
+  cursor: pointer;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: var(--s-1) var(--s-3);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--ink-2);
+  cursor: pointer;
+}
