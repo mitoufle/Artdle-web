@@ -4,24 +4,34 @@
   gap: var(--s-2);
   width: 100%;
   padding: var(--s-2) var(--s-3);
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--ink-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
   font-family: var(--mono);
   font-size: 11px;
+  color: var(--ink-2);
+  cursor: not-allowed;
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+}
+
+/* Affordable + buyable (not locked / not maxed / enough gold) → clearly clickable:
+ * gold rim, warm fill, gold cost, pointer cursor. */
+.pill:not(:disabled) {
+  border-color: var(--gold-d);
+  background: rgba(230, 182, 103, 0.10);
   color: var(--ink-1);
   cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
 }
 
-.pill:hover:not(:disabled) {
-  background: rgba(230, 182, 103, 0.12);
-  border-color: var(--gold-d);
+.pill:not(:disabled):hover {
+  border-color: var(--gold);
+  background: rgba(230, 182, 103, 0.20);
+  box-shadow: 0 0 0 1px var(--gold-d), 0 0 10px rgba(230, 182, 103, 0.35);
 }
 
+/* Can't act (unaffordable / locked / maxed) → muted, not clickable. */
 .pill:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
 .symbol {
@@ -54,10 +64,10 @@
   align-items: center;
   gap: 3px;
   font-weight: 600;
-  color: var(--gold);
+  color: var(--ink-3); /* muted by default; only affordable pills get gold */
   white-space: nowrap;
 }
 
-.locked .cost {
-  color: var(--ink-3);
+.pill:not(:disabled) .cost {
+  color: var(--gold);
 }

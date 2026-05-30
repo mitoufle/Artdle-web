@@ -23,7 +23,7 @@
   max-width: calc(100% - 220px);
   background: rgba(10, 8, 14, 0.62);
   border: var(--border-subtle);
-  border-radius: var(--r-md);
+  border-radius: 10px; /* matches StrokeCycleBorder CORNER_RADIUS so the sweep hugs the panel */
   padding: var(--s-2);
   backdrop-filter: blur(2px);
 }
