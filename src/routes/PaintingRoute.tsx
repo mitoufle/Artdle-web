@@ -79,54 +79,53 @@ export function PaintingRoute(): JSX.Element {
           chunkCount={chunkCount}
         />
         <WorkerAvatars />
-      </div>
-
-      <div className={styles.upgradesArea}>
-        <CanvasUpgradesStrip>
-          <TrackCard
-            trackId="sell_price"
-            label="Sell Price"
-            affixKind="+sell_price%"
-            level={sellPriceLevel}
-            effectLine={`+${fmtPct(SELL_PRICE_PER_LEVEL, 0)} gold/level`}
-            costLabel={`${formatBig(sellCost)}`}
-            canAfford={gold.gte(sellCost)}
-            locked={false}
-            onUpgrade={upgradeSellPrice}
-          />
-          <BoundSpeedTrackCard
-            level={speedLevel}
-            effectLine={`+${fmtPct(SPEED_PER_LEVEL, 0)} speed/level`}
-            chunkInterval={interval}
-            costLabel={`${formatBig(speedCost)}`}
-            canAfford={gold.gte(speedCost)}
-            onUpgrade={upgradeSpeed}
-          />
-          <TrackCard
-            trackId="crit"
-            label="Crit Chance"
-            iconOverride="✦"
-            colorOverride="#e85c5c"
-            level={critLevel}
-            maxLevel={MAX_CRIT_LEVEL}
-            effectLine={critLocked ? "—" : `+${fmtPct(CRIT_PER_LEVEL, 0)} crit chance/level (max L${MAX_CRIT_LEVEL})`}
-            costLabel={critLocked ? "—" : `${formatBig(critCost)}`}
-            canAfford={gold.gte(critCost)}
-            locked={critLocked}
-            onUpgrade={upgradeCrit}
-          />
-          <TrackCard
-            trackId="combo"
-            label="Combo"
-            affixKind="+combo_chance%"
-            level={comboLevel}
-            effectLine={comboLocked ? "—" : `+${fmtPct(COMBO_PER_LEVEL, 0)} chain chance/level`}
-            costLabel={comboLocked ? "—" : `${formatBig(comboCost)}`}
-            canAfford={gold.gte(comboCost)}
-            locked={comboLocked}
-            onUpgrade={upgradeCombo}
-          />
-        </CanvasUpgradesStrip>
+        <div className={styles.upgradesOverlay}>
+          <CanvasUpgradesStrip>
+            <TrackCard
+              trackId="sell_price"
+              label="Sell Price"
+              affixKind="+sell_price%"
+              level={sellPriceLevel}
+              effectLine={`+${fmtPct(SELL_PRICE_PER_LEVEL, 0)} gold/level`}
+              costLabel={`${formatBig(sellCost)}`}
+              canAfford={gold.gte(sellCost)}
+              locked={false}
+              onUpgrade={upgradeSellPrice}
+            />
+            <BoundSpeedTrackCard
+              level={speedLevel}
+              effectLine={`+${fmtPct(SPEED_PER_LEVEL, 0)} speed/level`}
+              chunkInterval={interval}
+              costLabel={`${formatBig(speedCost)}`}
+              canAfford={gold.gte(speedCost)}
+              onUpgrade={upgradeSpeed}
+            />
+            <TrackCard
+              trackId="crit"
+              label="Crit Chance"
+              iconOverride="✦"
+              colorOverride="#e85c5c"
+              level={critLevel}
+              maxLevel={MAX_CRIT_LEVEL}
+              effectLine={critLocked ? "—" : `+${fmtPct(CRIT_PER_LEVEL, 0)} crit chance/level (max L${MAX_CRIT_LEVEL})`}
+              costLabel={critLocked ? "—" : `${formatBig(critCost)}`}
+              canAfford={gold.gte(critCost)}
+              locked={critLocked}
+              onUpgrade={upgradeCrit}
+            />
+            <TrackCard
+              trackId="combo"
+              label="Combo"
+              affixKind="+combo_chance%"
+              level={comboLevel}
+              effectLine={comboLocked ? "—" : `+${fmtPct(COMBO_PER_LEVEL, 0)} chain chance/level`}
+              costLabel={comboLocked ? "—" : `${formatBig(comboCost)}`}
+              canAfford={gold.gte(comboCost)}
+              locked={comboLocked}
+              onUpgrade={upgradeCombo}
+            />
+          </CanvasUpgradesStrip>
+        </div>
       </div>
 
       <aside className={styles.roomArea}>

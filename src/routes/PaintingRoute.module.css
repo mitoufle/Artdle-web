@@ -1,10 +1,8 @@
 .layout {
   display: grid;
   grid-template-columns: 1fr 368px 64px;
-  grid-template-rows: 1fr auto;
-  grid-template-areas:
-    "stage room rail"
-    "upgrades room rail";
+  grid-template-rows: 1fr;
+  grid-template-areas: "stage room rail";
   gap: var(--s-4);
   height: 100%;
   padding: var(--s-4);
@@ -16,8 +14,18 @@
   min-height: 320px;
 }
 
-.upgradesArea {
-  grid-area: upgrades;
+.upgradesOverlay {
+  position: absolute;
+  left: 50%;
+  bottom: var(--s-3);
+  transform: translateX(-50%);
+  z-index: 4;
+  max-width: calc(100% - 220px);
+  background: rgba(10, 8, 14, 0.62);
+  border: var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: var(--s-2);
+  backdrop-filter: blur(2px);
 }
 
 .roomArea {
