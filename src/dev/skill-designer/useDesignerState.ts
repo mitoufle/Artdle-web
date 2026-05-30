@@ -149,6 +149,9 @@ export function useDesignerState(): DesignerState {
   }, []);
 
   const addCluster = useCallback(() => {
+    // Id is computed from the current snapshot so we can select the new cluster
+    // synchronously. Trade-off: two addCluster calls batched before a re-render
+    // would collide on the id — fine for a dev tool driven by single clicks.
     const id = uniqueClusterId(design.clusters);
     const cluster: DesignCluster = {
       id, name: "New Cluster", theme: "", rootNodeId: "",
