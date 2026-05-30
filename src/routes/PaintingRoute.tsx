@@ -19,7 +19,7 @@ import { formatBig } from "@/core/formatter";
 import { BoundCanvasStage } from "@/components/painting/BoundCanvasStage";
 import { WorkerAvatars } from "@/components/painting/WorkerAvatars";
 import { TrackCard } from "@/components/painting/TrackCard";
-import { BoundSpeedTrackCard } from "@/components/painting/BoundSpeedTrackCard";
+import { StrokeCycleBorder } from "@/components/painting/StrokeCycleBorder";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
 import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
 import { WorkshopRoom } from "@/components/painting/WorkshopRoom";
@@ -80,6 +80,7 @@ export function PaintingRoute(): JSX.Element {
         />
         <WorkerAvatars />
         <div className={styles.upgradesOverlay}>
+          <StrokeCycleBorder interval={interval} />
           <CanvasUpgradesStrip>
             <TrackCard
               trackId="sell_price"
@@ -92,12 +93,16 @@ export function PaintingRoute(): JSX.Element {
               locked={false}
               onUpgrade={upgradeSellPrice}
             />
-            <BoundSpeedTrackCard
+            <TrackCard
+              trackId="speed"
+              label="Speed"
+              affixKind="+speed%"
               level={speedLevel}
               effectLine={`+${fmtPct(SPEED_PER_LEVEL, 0)} speed/level`}
-              chunkInterval={interval}
+              rateLine={`${(interval > 0 ? 1 / interval : 0).toFixed(2)} strokes/s`}
               costLabel={`${formatBig(speedCost)}`}
               canAfford={gold.gte(speedCost)}
+              locked={false}
               onUpgrade={upgradeSpeed}
             />
             <TrackCard
