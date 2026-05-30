@@ -39,4 +39,11 @@ describe("<MiniMap />", () => {
     const total = SKILL_NODES.length;
     expect(screen.getByText(new RegExp(`2 / ${total} owned`, "i"))).toBeInTheDocument();
   });
+
+  it("has no fame-hub circle (fill var(--fame) dot was removed)", () => {
+    const { container } = render(
+      <MiniMap ownedById={ALL_LOCKED} selectedId={null} viewport={DEFAULT_VIEWPORT} onJump={() => {}} />,
+    );
+    expect(container.querySelector('circle[fill="var(--fame)"]')).toBeNull();
+  });
 });

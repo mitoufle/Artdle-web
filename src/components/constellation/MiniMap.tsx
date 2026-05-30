@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { useRef } from "react";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
 import { SKILL_NODES } from "@/config/skillTreeNodes";
-import { FAME_HUB, NODE_POSITIONS, VIEWBOX } from "./nodeLayout";
+import { NODE_POSITIONS, VIEWBOX } from "./nodeLayout";
 import type { ViewportState } from "./viewport";
 import styles from "./MiniMap.module.css";
 
@@ -44,8 +44,7 @@ export function MiniMap({ ownedById, selectedId, viewport, onJump }: Props): JSX
         style={{ cursor: "pointer" }}
       >
         <rect width={VIEWBOX.width} height={VIEWBOX.height} fill="var(--bg-stone-d)" />
-        <circle cx={FAME_HUB.x} cy={FAME_HUB.y} r="8" fill="var(--fame)" opacity="0.8" />
-        {(Object.keys(NODE_POSITIONS) as SkillNodeId[]).map((id) => {
+{(Object.keys(NODE_POSITIONS) as SkillNodeId[]).map((id) => {
           const pos = NODE_POSITIONS[id];
           if (!pos) return null;
           const owned = ownedById[id];
