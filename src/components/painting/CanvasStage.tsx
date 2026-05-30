@@ -160,7 +160,6 @@ export function CanvasStage({
   onChunkClick,
 }: Props): JSX.Element {
   const stageName = STAGE_NAMES[canvasTier] ?? `Tier ${canvasTier}`;
-  const barWidth = `${Math.max(0, Math.min(100, progressPct * 100))}%`;
 
   // Chunk-domain cell layout: non-square grid varies by tier (T1=2×5,
   // T7+=20×32 capped at 640 cells). chunksPerCell > 1 at T8+ where the
@@ -281,6 +280,18 @@ export function CanvasStage({
       )}
 
       <TierUpgradeCard stageName={stageName} />
+
+      {/* Current-canvas sell price, top-center just below the tier button. */}
+      <div className={styles.topSell}>
+        <Hoverable
+          title="Sell Canvas"
+          body={() => sellHoverBody(comboChain ?? 0)}
+          footer="Auto-sells when paint progress reaches 100%."
+        >
+          <span className={styles.goldPreview} data-testid="canvas-sell-preview">+{nextSaleGold}g on next sale</span>
+        </Hoverable>
+      </div>
+
       <div className={styles.frame}>
         <div
           className={`${styles.imageContainer}${onChunkClick ? ` ${styles.imageContainerClickable}` : ""}`}
@@ -356,29 +367,11 @@ export function CanvasStage({
         </div>
       </div>
 
-      {/* Thin gold progress bar */}
-      <div
-        className={styles.progress}
-        role="progressbar"
-        aria-valuenow={Math.round(progressPct * 100)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <div key={`bar-${canvasNumber}`} className={styles.progressFill} style={{ width: barWidth }} />
-      </div>
-
       {/* Bottom info row */}
       <div className={styles.bottomRow}>
         <span className={styles.painting}>
           Painting · {timeElapsed} / {timeTotal} strokes
         </span>
-        <Hoverable
-          title="Sell Canvas"
-          body={() => sellHoverBody(comboChain ?? 0)}
-          footer="Auto-sells when paint progress reaches 100%."
-        >
-          <span className={styles.goldPreview} data-testid="canvas-sell-preview">+{nextSaleGold}g on next sale</span>
-        </Hoverable>
         <span className={styles.tierBadge}>Tier {canvasTier}</span>
       </div>
     </section>

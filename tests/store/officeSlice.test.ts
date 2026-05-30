@@ -93,6 +93,20 @@ describe("reconcileRoster", () => {
     useGameStore.getState().reconcileRoster();
     expect(useGameStore.getState().roster.length).toBe(0);
   });
+
+  it("normalizes colliding avatars so each worker is visually distinct", () => {
+    const a = { ...createWorker(), avatar: 2 };
+    const b = { ...createWorker(), avatar: 2 };
+    const c = { ...createWorker(), avatar: 2 };
+    useGameStore.setState({ roster: [a, b, c], purchasedNodes: { hire_manager: 3 } });
+    useGameStore.getState().reconcileRoster();
+    const avatars = useGameStore.getState().roster.map((w) => w.avatar);
+    expect(new Set(avatars).size).toBe(avatars.length); // all distinct
+    for (const av of avatars) {
+      expect(av).toBeGreaterThanOrEqual(1);
+      expect(av).toBeLessThanOrEqual(4);
+    }
+  });
 });
 
 describe("buying a roster_slot node spawns a worker", () => {

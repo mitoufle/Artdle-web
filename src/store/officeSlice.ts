@@ -87,6 +87,25 @@ const randomName = (): string =>
   WORKER_NAME_POOL[Math.floor(Math.random() * WORKER_NAME_POOL.length)]!;
 const randomAvatar = (): number => 1 + Math.floor(Math.random() * 4);
 
+/**
+ * Reassign avatars so each worker is visually distinct (1..4), in groups of 4.
+ * Keeps a worker's existing avatar when it's still free in its group; otherwise
+ * assigns the first free slot. Rosters larger than 4 necessarily repeat, but
+ * never within a run of 4 consecutive workers. Returns the SAME object ref for
+ * unchanged workers so callers can diff cheaply. Self-heals legacy saves where
+ * two workers rolled the same avatar.
+ */
+export function distinctAvatars(roster: ReadonlyArray<Worker>): Worker[] {
+  const used = new Set<number>();
+  return roster.map((w) => {
+    if (used.size === 4) used.clear();
+    const keep = w.avatar >= 1 && w.avatar <= 4 && !used.has(w.avatar);
+    const pick = keep ? w.avatar : [1, 2, 3, 4].find((a) => !used.has(a))!;
+    used.add(pick);
+    return pick === w.avatar ? w : { ...w, avatar: pick };
+  });
+}
+
 /** Factory: a fresh level-1 worker of the given class (default neutral "base"). */
 export const createWorker = (classId = "base"): Worker => ({
   id: uuidv4(),
@@ -107,10 +126,14 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
     const state = get();
     const cap = getRosterCap(state);
     const missing = cap - state.roster.length;
-    if (missing <= 0) return;
     const spawned: Worker[] = [];
     for (let i = 0; i < missing; i++) spawned.push(createWorker());
-    set({ roster: [...state.roster, ...spawned] });
+    const combined = spawned.length > 0 ? [...state.roster, ...spawned] : state.roster;
+    // Normalize avatars so flanking portraits are always visually distinct
+    // (also self-heals legacy saves whose workers share an avatar).
+    const normalized = distinctAvatars(combined);
+    const changed = spawned.length > 0 || normalized.some((w, i) => w !== state.roster[i]);
+    if (changed) set({ roster: normalized });
   },
 
   applyAscendXp: (poolMagnitude) => {
