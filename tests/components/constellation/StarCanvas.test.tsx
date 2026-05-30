@@ -21,37 +21,36 @@ function makeStates(overrides: Record<string, Partial<NodeState>> = {}): Record<
 describe("<StarCanvas /> (designer-driven)", () => {
   it("renders an SVG", () => {
     const { container } = render(
-      <StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} />,
+      <StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} completedClusterIds={new Set()} />,
     );
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
-  it("renders the FAME hub", () => {
-    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} />);
-    expect(screen.getByTestId("fame-hub")).toBeInTheDocument();
-    expect(screen.getByText("FAME")).toBeInTheDocument();
+  it("renders no fame hub", () => {
+    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} completedClusterIds={new Set()} />);
+    expect(screen.queryByTestId("fame-hub")).toBeNull();
+  });
+
+  it("renders no cluster-art layer while no asset/cluster is complete", () => {
+    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} completedClusterIds={new Set()} />);
+    expect(document.querySelectorAll('[data-testid^="cluster-art-"]').length).toBe(0);
   });
 
   it("renders nodes from the designer JSON (e.g. get_inspired, rainbow)", () => {
-    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} />);
+    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} completedClusterIds={new Set()} />);
     expect(screen.getByTestId("node-get_inspired")).toBeInTheDocument();
     expect(screen.getByTestId("node-rainbow")).toBeInTheDocument();
   });
 
-  it("renders an edge from FAME to root nodes (e.g. get_inspired)", () => {
-    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} />);
-    expect(screen.getByTestId("edge-fame-get_inspired")).toBeInTheDocument();
-  });
-
   it("renders a multi-parent node's edges from each parent (red has parents magenta, yellow)", () => {
-    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} />);
+    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} completedClusterIds={new Set()} />);
     expect(screen.getByTestId("edge-magenta-red")).toBeInTheDocument();
     expect(screen.getByTestId("edge-yellow-red")).toBeInTheDocument();
   });
 
   it("clicking a node calls onSelect with that id", () => {
     const onSelect = vi.fn();
-    render(<StarCanvas selectedId={null} onSelect={onSelect} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} />);
+    render(<StarCanvas selectedId={null} onSelect={onSelect} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} completedClusterIds={new Set()} />);
     fireEvent.click(screen.getByTestId("node-get_inspired"));
     expect(onSelect).toHaveBeenCalledWith("get_inspired");
   });
@@ -62,7 +61,7 @@ describe("<StarCanvas /> (designer-driven)", () => {
       poke_tree: { level: 3, maxLevel: 5, available: true, affordable: true },
       gear_up: { level: 1, maxLevel: 1, available: true, affordable: false },
     });
-    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={states} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} />);
+    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={states} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} completedClusterIds={new Set()} />);
     expect(screen.getByTestId("node-get_inspired")).toHaveAttribute("data-state", "available");
     expect(screen.getByTestId("node-poke_tree")).toHaveAttribute("data-state", "owned");
     expect(screen.getByTestId("node-gear_up")).toHaveAttribute("data-state", "maxed");
@@ -72,7 +71,7 @@ describe("<StarCanvas /> (designer-driven)", () => {
     const states = makeStates({
       poke_tree: { level: 3, maxLevel: 5, available: true, affordable: true },
     });
-    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={states} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} />);
+    render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={states} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} completedClusterIds={new Set()} />);
     expect(screen.getByText(/3\/5/)).toBeInTheDocument();
   });
 });

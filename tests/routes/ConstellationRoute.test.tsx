@@ -26,9 +26,9 @@ describe("ConstellationRoute (v2 visual)", () => {
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
-  it("renders the FAME hub", () => {
+  it("renders no FAME hub", () => {
     renderConstellationRoute();
-    expect(screen.getByTestId("fame-hub")).toBeInTheDocument();
+    expect(screen.queryByTestId("fame-hub")).toBeNull();
   });
 
   it("renders skill nodes in the canvas", () => {

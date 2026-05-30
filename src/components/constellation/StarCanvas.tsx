@@ -2,10 +2,7 @@ import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
 import { getSkillNodeConfig } from "@/config/skillTreeNodes";
-import { useGameStore } from "@/store";
-import { big } from "@/core/bigNumber";
-import { formatBig } from "@/core/formatter";
-import { EDGES, FAME_HUB, NODE_POSITIONS, VIEWBOX, type EdgeFrom } from "./nodeLayout";
+import { EDGES, NODE_POSITIONS, VIEWBOX, CLUSTER_REGIONS, type EdgeFrom } from "./nodeLayout";
 import {
   DEFAULT_VIEWPORT,
   clampPan,
@@ -32,19 +29,6 @@ function screenToSvg(svg: SVGSVGElement, clientX: number, clientY: number): { x:
   return { x: out.x, y: out.y };
 }
 
-function fameHubBody(): JSX.Element {
-  const s = useGameStore.getState();
-  const pastTotal = s.pastRuns.reduce((acc, r) => acc + r.fame, 0);
-  const lifetime = s.fame.add(pastTotal);
-  return (
-    <>
-      <div>To spend: {formatBig(s.fame)}</div>
-      <div>Lifetime earned: {formatBig(lifetime)}</div>
-      <div>Ascends: {s.ascendCount}</div>
-    </>
-  );
-}
-
 export interface NodeState {
   level: number;
   maxLevel: number;
@@ -60,6 +44,8 @@ interface Props {
   nodeStates: Record<SkillNodeId, NodeState>;
   viewport: ViewportState;
   onViewportChange: (v: ViewportState) => void;
+  /** cluster ids that are fully complete (drives background art). */
+  completedClusterIds: ReadonlySet<string>;
 }
 
 const TWINKLES: ReadonlyArray<{ x: number; y: number; r: number; dur: string }> = [
@@ -80,13 +66,10 @@ function nodeStateName(state: NodeState): "owned" | "maxed" | "available" | "loc
 }
 
 function pointFor(id: EdgeFrom): { x: number; y: number } {
-  if (id === "fame") return FAME_HUB;
-  return NODE_POSITIONS[id] ?? FAME_HUB;
+  return NODE_POSITIONS[id] ?? { x: 0, y: 0 };
 }
 
-export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewportChange }: Props): JSX.Element {
-  const pushHoverInfo = useGameStore((s) => s.pushHoverInfo);
-  const clearHoverInfo = useGameStore((s) => s.clearHoverInfo);
+export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewportChange, completedClusterIds }: Props): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null);
   const dragStart = useRef<{ screenX: number; screenY: number; viewport: ViewportState } | null>(null);
   const dragMoved = useRef(false);
@@ -180,6 +163,24 @@ export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewp
         <rect width={VIEWBOX.width} height={VIEWBOX.height} fill="url(#cs-warm)" />
         <rect width={VIEWBOX.width} height={VIEWBOX.height} fill="url(#cs-grid)" />
 
+        <g aria-hidden="true">
+          {CLUSTER_REGIONS.map((c) =>
+            c.completionArtPath && completedClusterIds.has(c.id) ? (
+              <image
+                key={c.id}
+                data-testid={`cluster-art-${c.id}`}
+                href={c.completionArtPath}
+                x={c.region.x}
+                y={c.region.y}
+                width={c.region.w}
+                height={c.region.h}
+                opacity={0.85}
+                preserveAspectRatio="xMidYMid meet"
+              />
+            ) : null,
+          )}
+        </g>
+
         <g>
           {TWINKLES.map((t, idx) => (
             <circle key={idx} cx={t.x} cy={t.y} r={t.r} fill="#9b6cd6">
@@ -197,7 +198,7 @@ export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewp
           {EDGES.map(({ from, to }) => {
             const a = pointFor(from);
             const b = pointFor(to);
-            const fromOwned = from === "fame" ? true : (nodeStates[from]?.level ?? 0) > 0;
+            const fromOwned = (nodeStates[from]?.level ?? 0) > 0;
             return (
               <line
                 key={`${from}-${to}`}
@@ -213,28 +214,6 @@ export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewp
               />
             );
           })}
-        </g>
-
-        <g
-          data-testid="fame-hub"
-          onMouseEnter={() => pushHoverInfo("FAME", fameHubBody(), "Permanent currency. Spent in the constellation.")}
-          onMouseLeave={() => clearHoverInfo()}
-        >
-          <circle cx={FAME_HUB.x} cy={FAME_HUB.y} r="32" fill="rgba(255,216,106,0.12)" />
-          <circle cx={FAME_HUB.x} cy={FAME_HUB.y} r="20" fill="var(--fame)" />
-          <text
-            x={FAME_HUB.x}
-            y={FAME_HUB.y + 50}
-            textAnchor="middle"
-            fontFamily="serif"
-            fontSize="14"
-            fontWeight="700"
-            letterSpacing="0.18em"
-            fill="var(--fame)"
-            style={{ filter: "drop-shadow(0 0 6px rgba(255,216,106,0.6))" }}
-          >
-            FAME
-          </text>
         </g>
 
         <g>
