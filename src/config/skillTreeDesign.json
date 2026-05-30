@@ -514,58 +514,11 @@
         700
       ],
       "unlocks": [
-        "roster_slot",
-        "queue_slot"
+        "roster_slot"
       ],
       "position": {
         "x": 310.846862222222,
         "y": -109.9229827387802
-      }
-    },
-    {
-      "id": "education",
-      "name": "Education",
-      "description": "increase by #% workers affixes magnitude",
-      "numericEffect": "1",
-      "parentIds": [
-        "entrepreneur"
-      ],
-      "stacking": "additive",
-      "kind": "minor",
-      "maxLevel": 5,
-      "costs": [
-        1200,
-        2000,
-        3000,
-        4500,
-        6500
-      ],
-      "unlocks": [],
-      "position": {
-        "x": 214.846862222222,
-        "y": -119.86544533947063
-      }
-    },
-    {
-      "id": "free_will",
-      "name": "Free will",
-      "description": "unlocks Speedrunner worker class",
-      "numericEffect": "1",
-      "parentIds": [
-        "education"
-      ],
-      "stacking": "additive",
-      "kind": "major",
-      "maxLevel": 1,
-      "costs": [
-        3500
-      ],
-      "unlocks": [
-        "class_speedrunner"
-      ],
-      "position": {
-        "x": 132.92686222222198,
-        "y": -128.81366168009203
       }
     },
     {
@@ -657,59 +610,12 @@
       }
     },
     {
-      "id": "gold_diggers",
-      "name": "Gold diggers",
-      "description": "Unlocks the Goldsmith worker class.",
-      "numericEffect": "1",
-      "parentIds": [
-        "accelerator",
-        "hire_manager"
-      ],
-      "stacking": "additive",
-      "kind": "major",
-      "maxLevel": 1,
-      "costs": [
-        10000
-      ],
-      "unlocks": [
-        "class_goldsmith"
-      ],
-      "position": {
-        "x": -19.39313777777801,
-        "y": -165.6007733026467
-      }
-    },
-    {
-      "id": "recruiter",
-      "name": "Recruiter",
-      "description": "Each level adds +1 queue slot in the Office.",
-      "numericEffect": "+1",
-      "parentIds": [
-        "hire_manager"
-      ],
-      "stacking": "additive",
-      "kind": "minor",
-      "maxLevel": 3,
-      "costs": [
-        7000,
-        8500,
-        10000
-      ],
-      "unlocks": [
-        "queue_slot"
-      ],
-      "position": {
-        "x": 72.76686222222202,
-        "y": -53.250945914844635
-      }
-    },
-    {
       "id": "hire_manager",
       "name": "Hire Manager",
       "description": "Each level adds +1 roster slot for hired workers.",
       "numericEffect": "+1",
       "parentIds": [
-        "free_will"
+        "entrepreneur"
       ],
       "stacking": "additive",
       "kind": "minor",
@@ -731,10 +637,10 @@
     {
       "id": "accelerator",
       "name": "Accelerator Program",
-      "description": "Each level boosts the XP workers earn per canvas sale by +10%.",
+      "description": "Each level boosts the worker ascend-XP pool by +10%.",
       "numericEffect": "10%",
       "parentIds": [
-        "free_will"
+        "entrepreneur"
       ],
       "stacking": "additive",
       "kind": "minor",
@@ -752,31 +658,6 @@
       "position": {
         "x": 56.126862222222,
         "y": -171.566250863061
-      }
-    },
-    {
-      "id": "bookkeeper",
-      "name": "Bookkeeper",
-      "description": "Each level reduces hire cost by 10% (floored at 10% of base).",
-      "numericEffect": "-10%",
-      "parentIds": [
-        "hire_manager"
-      ],
-      "stacking": "additive",
-      "kind": "minor",
-      "maxLevel": 4,
-      "costs": [
-        7000,
-        8000,
-        9000,
-        10000
-      ],
-      "unlocks": [
-        "hire_cost_reduction"
-      ],
-      "position": {
-        "x": -15.553137777778005,
-        "y": -82.08408745684693
       }
     },
     {
@@ -940,7 +821,7 @@
       "description": "Unlocks the Painting School — research permanent bonuses one at a time.",
       "numericEffect": "",
       "parentIds": [
-        "gold_diggers"
+        "accelerator"
       ],
       "stacking": "additive",
       "kind": "major",
