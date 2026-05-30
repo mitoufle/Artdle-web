@@ -200,5 +200,7 @@ export function TopBar(): JSX.Element {
         <span>Saved</span>
       </div>
     </header>
+    <BugReportModal open={bugOpen} onClose={() => setBugOpen(false)} />
+    </>
   );
 }
