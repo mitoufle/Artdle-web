@@ -40,7 +40,7 @@ describe("ConstellationRoute (v2 visual)", () => {
   it("renders the right-rail Mini-map and ClusterList", () => {
     renderConstellationRoute();
     expect(screen.getByText(/Mini-map/i)).toBeInTheDocument();
-    expect(screen.getByText(/Starters/i)).toBeInTheDocument();
+    expect(screen.getByText(/Constellations/i)).toBeInTheDocument();
   });
 
   it("clicking a skill node opens the NodeCard with that node's name", () => {

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useGameStore } from "@/store";
 import { SKILL_NODES, type SkillNodeId } from "@/config/skillTreeNodes";
 import { canBuyNode, getNodeLevel, getNextCost, clusterComplete } from "@/store/skillTreeSlice";
-import { SKILL_CLUSTERS } from "@/config/skillClusters";
+import { SKILL_CLUSTERS, getClusterNodes } from "@/config/skillClusters";
 import { big } from "@/core/bigNumber";
 import { formatBig } from "@/core/formatter";
 import { StarCanvas, type NodeState } from "@/components/constellation/StarCanvas";
@@ -57,11 +57,21 @@ export function ConstellationRoute(): JSX.Element {
     {} as Record<SkillNodeId, boolean>,
   );
 
-  const ownedCount = Object.values(ownedById).filter(Boolean).length;
-
   const completedClusterIds = new Set(
     SKILL_CLUSTERS.filter((c) => clusterComplete({ purchasedNodes }, c.id)).map((c) => c.id),
   );
+
+  const clusterRows = SKILL_CLUSTERS.map((c) => {
+    const members = getClusterNodes(c.id);
+    const owned = members.filter((n) => (purchasedNodes[n.id] ?? 0) > 0).length;
+    return {
+      id: c.id,
+      name: c.name,
+      owned,
+      total: members.length,
+      complete: completedClusterIds.has(c.id),
+    };
+  });
 
   const selectedNode = selectedId !== null
     ? SKILL_NODES.find((n) => n.id === selectedId) ?? null
@@ -109,7 +119,7 @@ export function ConstellationRoute(): JSX.Element {
           <div className={styles.fameValue}>{formatBig(fame)}</div>
         </section>
         <MiniMap ownedById={ownedById} selectedId={selectedId} viewport={viewport} onJump={jumpTo} />
-        <ClusterList ownedCount={ownedCount} totalCount={SKILL_NODES.length} />
+        <ClusterList rows={clusterRows} />
         <button
           type="button"
           className={`${styles.devToggle}${devFreeNodes ? ` ${styles.devToggleOn}` : ""}`}
