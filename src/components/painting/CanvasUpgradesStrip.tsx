@@ -6,12 +6,10 @@ interface Props {
 }
 
 /**
- * Always-visible horizontal strip beneath the canvas.
- * 5-column CSS grid. Each cell holds one TrackCard; remaining cells
- * stay empty until unlocked (no fake placeholders per the v2.0 "pure adapt" rule).
- *
- * Children are placed in the first cells in document order; remaining
- * cells stay empty.
+ * Frameless 2-column grid that holds the four upgrade pills (Sell Price, Speed,
+ * Crit Chance, Combo). All four always render — locked tracks show as disabled
+ * "Locked" pills. The surrounding `.upgradesOverlay` panel (PaintingRoute.module.css)
+ * is the only frame, and carries the sweeping StrokeCycleBorder.
  */
 export function CanvasUpgradesStrip({ children }: Props): JSX.Element {
   return (
