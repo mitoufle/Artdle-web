@@ -17,7 +17,7 @@
 .upgradesOverlay {
   position: absolute;
   left: 50%;
-  bottom: var(--s-3);
+  bottom: 9%;
   transform: translateX(-50%);
   z-index: 4;
   max-width: calc(100% - 220px);
