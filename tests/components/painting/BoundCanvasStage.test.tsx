@@ -3,6 +3,7 @@ import { Profiler, type ProfilerOnRenderCallback } from "react";
 import { render, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { useGameStore } from "@/store";
+import { createWorker } from "@/store/officeSlice";
 import { PaintingRoute } from "@/routes/PaintingRoute";
 
 /**
@@ -73,6 +74,44 @@ describe("PaintingRoute subscription isolation (BoundCanvasStage regression guar
     // behavior was ~30 actual commits = ~60 Profiler callbacks, so this
     // bound is loose enough for legit React behavior but still catches the
     // regression by an order of magnitude.
+    expect(renderCount - baseline).toBeLessThanOrEqual(3);
+  });
+
+  it("does not re-render PaintingRoute body when only painterClocks changes", () => {
+    // WorkerAvatars self-subscribes to `roster` + `painterClocks` and is
+    // mounted as a leaf sibling of BoundCanvasStage inside the stageArea. Its
+    // per-tick `painterClocks` updates must stay contained in that subtree —
+    // they must NOT leak a subscription into PaintingRoute's body. This mirrors
+    // the canvasProgress guard above for the multi-painter clock stream.
+    const worker = createWorker();
+    useGameStore.setState({ roster: [worker], painterClocks: {} });
+
+    let renderCount = 0;
+    const onRender: ProfilerOnRenderCallback = (id) => {
+      if (id === "PaintingRouteBody") renderCount += 1;
+    };
+
+    render(
+      <MemoryRouter>
+        <Profiler id="PaintingRouteBody" onRender={onRender}>
+          <PaintingRoute />
+        </Profiler>
+      </MemoryRouter>,
+    );
+
+    const baseline = renderCount;
+
+    // Simulate the tick loop firing 30 painterClocks updates back-to-back (the
+    // per-worker clocks advancing toward each next stroke). The avatar overlay
+    // subscribes to these; PaintingRoute's body must not.
+    act(() => {
+      for (let i = 0; i < 30; i++) {
+        useGameStore.setState({ painterClocks: { [worker.id]: i * 0.1 } });
+      }
+    });
+
+    // Same tolerance as the canvasProgress case (StrictMode double-invoke +
+    // React 19 batching slack). Pre-isolation this would be ~30 commits.
     expect(renderCount - baseline).toBeLessThanOrEqual(3);
   });
 

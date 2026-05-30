@@ -1,0 +1,76 @@
+/**
+ * On-canvas worker avatar overlay. Painters line up along the bottom edge of
+ * the stage, each lit by a thin gold cooldown bar that fills toward its next
+ * stroke. The layer is purely decorative and MUST stay click-through so the
+ * easel underneath keeps receiving click-to-paint (the component also sets
+ * pointer-events:none inline — this rule is the belt-and-braces fallback).
+ *
+ * Kept lightweight: this subtree re-renders every tick. No JS-driven filters,
+ * no per-frame box-shadow animation — just a width transition on the fill.
+ */
+.layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  /* a faint gilded floor so the painters read as standing on a ledge */
+  background: linear-gradient(
+    to top,
+    rgba(10, 8, 20, 0.55) 0%,
+    rgba(10, 8, 20, 0.18) 55%,
+    transparent 100%
+  );
+}
+
+.avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 56px;
+}
+
+.portrait {
+  width: 48px;
+  height: 48px;
+  background-image: url("../../assets/images/Workers/worker_1.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  image-rendering: pixelated;
+  /* gentle warm rim so figures separate from the dark canvas */
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+}
+
+.cooldownTrack {
+  width: 44px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(58, 46, 90, 0.7); /* --ink-line tint, recessed */
+  box-shadow: inset 0 0 0 1px rgba(168, 127, 58, 0.25); /* --gold-d hairline */
+  overflow: hidden;
+}
+
+.cooldownFill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold-d), var(--gold));
+  box-shadow: var(--gold-glow);
+  transition: width 80ms linear;
+}
+
+.level {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  font-variant-numeric: tabular-nums;
+}

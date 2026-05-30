@@ -17,6 +17,7 @@ import {
 import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { formatBig } from "@/core/formatter";
 import { BoundCanvasStage } from "@/components/painting/BoundCanvasStage";
+import { WorkerAvatars } from "@/components/painting/WorkerAvatars";
 import { TrackCard } from "@/components/painting/TrackCard";
 import { BoundSpeedTrackCard } from "@/components/painting/BoundSpeedTrackCard";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
@@ -77,6 +78,7 @@ export function PaintingRoute(): JSX.Element {
           baseGold={baseGold}
           chunkCount={chunkCount}
         />
+        <WorkerAvatars />
       </div>
 
       <div className={styles.upgradesArea}>
