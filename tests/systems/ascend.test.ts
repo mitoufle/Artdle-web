@@ -237,13 +237,14 @@ describe("systems/ascend", () => {
     it("with a roster: workers gain XP from the fame pool and strokesThisRun resets", () => {
       const w = { ...createWorker(), strokesThisRun: 100 };
       // Pin purchasedNodes so a leaked accelerator from another test can't alter the pool.
-      useGameStore.setState({ inspiration: big(1_000_000), roster: [w], purchasedNodes: {}, lastAscendRoll: null });
+      useGameStore.setState({ inspiration: big(1_000_000_000), roster: [w], purchasedNodes: {}, lastAscendRoll: null });
       performAscendOrchestrator(useGameStore.getState);
       const after = useGameStore.getState();
       expect(after.roster[0]!.strokesThisRun).toBe(0);
-      // fameGain at 1e6 inspi = floor((6-4)^5 × 3.2) = 102 → pool ≈ 102 → several levels
-      // for a fresh worker. MUST be `> 1`: a worker starts at level 1 and level only
-      // increases, so `>= 1` would pass even if applyAscendXp did nothing.
+      // fameGain at 1e9 inspi = floor((9-4)^5 × 3.2) = 10000 → pool ≈ 10000 → ~2 levels
+      // for a fresh worker (first level costs 3000 under the 3000×1.9^(L-1) curve).
+      // MUST be `> 1`: a worker starts at level 1 and level only increases, so `>= 1`
+      // would pass even if applyAscendXp did nothing.
       expect(after.roster[0]!.level).toBeGreaterThan(1);
     });
   });

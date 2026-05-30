@@ -487,7 +487,7 @@ In `src/components/painting/OfficeRoom.tsx`, add imports (with existing ones):
 ```ts
 import { workerXpToNext } from "@/core/balance";
 import { formatBig } from "@/core/formatter";
-import { WORKER_AVATARS } from "./workerAvatars";
+import { WORKER_AVATARS } from "./workerAvatarMap";
 ```
 
 Replace the `WorkerStatCard` function body (lines ~7–25) with:
@@ -599,7 +599,7 @@ Expected: FAIL — no `worker-portrait` test id; background is the CSS-baked sin
 In `src/components/painting/WorkerAvatars.tsx`, add the import:
 
 ```ts
-import { WORKER_AVATARS } from "./workerAvatars";
+import { WORKER_AVATARS } from "./workerAvatarMap";
 ```
 
 Replace the portrait div (currently `<div className={styles.portrait} />`) with:
