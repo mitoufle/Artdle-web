@@ -67,6 +67,7 @@ export function WorkerAvatars(): JSX.Element | null {
             style={{ width: `${xpFrac * 100}%` }}
           />
         </div>
+        <div className={styles.level} data-testid="worker-level">Lv {w.level}</div>
       </div>
     );
   };
