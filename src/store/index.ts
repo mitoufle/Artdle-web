@@ -15,6 +15,7 @@ import { createStatsSlice, type StatsSlice } from "./statsSlice";
 import { createAchievementSlice, type AchievementSlice } from "./achievementSlice";
 import { big, isBig } from "@/core/bigNumber";
 import { TREE_STAGES } from "@/config/treeStages";
+import { WORKER_NAME_POOL } from "@/config/workerNames";
 
 export interface GameTick {
   /**
@@ -41,7 +42,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-export const SAVE_VERSION = 28;
+export const SAVE_VERSION = 29;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -579,6 +580,25 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
       }
       state = next as Record<string, unknown>;
     }
+  }
+
+  if (fromVersion < 29) {
+    // v28 → v29 (2026-05-30): workers gain a persistent cosmetic name + avatar.
+    // Backfill only missing fields (idempotent for partially-migrated saves).
+    const roster = Array.isArray(state.roster) ? state.roster : [];
+    state = {
+      ...state,
+      roster: roster.map((entry) => {
+        const w = entry as Record<string, unknown>;
+        return {
+          ...w,
+          name: typeof w.name === "string"
+            ? w.name
+            : WORKER_NAME_POOL[Math.floor(Math.random() * WORKER_NAME_POOL.length)],
+          avatar: typeof w.avatar === "number" ? w.avatar : 1 + Math.floor(Math.random() * 4),
+        };
+      }),
+    };
   }
 
   return state as unknown as GameStore;
