@@ -1,8 +1,10 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, within, cleanup } from "@testing-library/react";
 import { useGameStore } from "@/store";
 import { createWorker } from "@/store/officeSlice";
 import { WorkerAvatars } from "@/components/painting/WorkerAvatars";
+import { big } from "@/core/bigNumber";
+import { workerXpToNext } from "@/core/balance";
 
 afterEach(cleanup);
 
@@ -38,5 +40,29 @@ describe("WorkerAvatars", () => {
     expect(portraits).toHaveLength(2);
     expect(portraits[0]!.style.backgroundImage).toMatch(/worker_2/);
     expect(portraits[1]!.style.backgroundImage).toMatch(/worker_4/);
+  });
+
+  it("splits avatars 2 & 3 to the left column and 1 & 4 to the right", () => {
+    const w1 = { ...createWorker(), avatar: 1 };
+    const w2 = { ...createWorker(), avatar: 2 };
+    const w3 = { ...createWorker(), avatar: 3 };
+    const w4 = { ...createWorker(), avatar: 4 };
+    useGameStore.setState({ roster: [w1, w2, w3, w4], painterClocks: {} });
+    render(<WorkerAvatars />);
+    const left = within(screen.getByTestId("worker-column-left")).getAllByTestId("worker-portrait");
+    const right = within(screen.getByTestId("worker-column-right")).getAllByTestId("worker-portrait");
+    expect(left.map((p) => p.style.backgroundImage).join()).toMatch(/worker_2/);
+    expect(left.map((p) => p.style.backgroundImage).join()).toMatch(/worker_3/);
+    expect(right.map((p) => p.style.backgroundImage).join()).toMatch(/worker_1/);
+    expect(right.map((p) => p.style.backgroundImage).join()).toMatch(/worker_4/);
+  });
+
+  it("drives the XP bar from xp / workerXpToNext(level)", () => {
+    const lvl = 1;
+    const half = workerXpToNext(lvl).div(2); // 1500 at level 1 (cost 3000)
+    const w = { ...createWorker(), avatar: 1, level: lvl, xp: half };
+    useGameStore.setState({ roster: [w], painterClocks: {} });
+    render(<WorkerAvatars />);
+    expect(screen.getByTestId("worker-xp-fill").style.width).toBe("50%");
   });
 });
