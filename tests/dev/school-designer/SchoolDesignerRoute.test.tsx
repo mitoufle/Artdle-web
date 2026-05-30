@@ -87,7 +87,7 @@ describe("<SchoolDesignerRoute />", () => {
 
   it("selecting 'custom…' in the effect kind select reveals a text input", () => {
     renderWithRouter();
-    const select = screen.getAllByTestId("effect-kind-select")[0];
+    const select = screen.getAllByTestId("effect-kind-select")[0]!;
     fireEvent.change(select, { target: { value: "__custom__" } });
     expect(screen.getByTestId("effect-kind-custom-input")).toBeInTheDocument();
   });

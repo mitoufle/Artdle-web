@@ -191,7 +191,7 @@ describe("save migration v27 → v28 (office dead-branch collapse)", () => {
         gold_diggers: 1, // 10000
       },
     };
-    const migrated = migrate(persisted, 27) as Record<string, unknown>;
+    const migrated = migrate(persisted, 27) as unknown as Record<string, unknown>;
     const nodes = migrated.purchasedNodes as Record<string, number>;
     expect(nodes.education).toBeUndefined();
     expect(nodes.free_will).toBeUndefined();

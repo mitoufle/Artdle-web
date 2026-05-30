@@ -535,14 +535,14 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
 
 describe("getWorkerGoldFactor", () => {
   it("is 1.0 with an empty roster (solo player unaffected)", () => {
-    expect(getWorkerGoldFactor({ roster: [] } as GameStore)).toBe(1);
+    expect(getWorkerGoldFactor({ roster: [] } as unknown as GameStore)).toBe(1);
   });
 
   it("multiplies (1 + goldPct) across the roster", () => {
     const a = { ...createWorker(), stats: { ...createWorker().stats, goldPct: 0.10 } };
     const b = { ...createWorker(), stats: { ...createWorker().stats, goldPct: 0.25 } };
     // (1.10) * (1.25) = 1.375
-    expect(getWorkerGoldFactor({ roster: [a, b] } as GameStore)).toBeCloseTo(1.375, 9);
+    expect(getWorkerGoldFactor({ roster: [a, b] } as unknown as GameStore)).toBeCloseTo(1.375, 9);
   });
 });
 
@@ -554,6 +554,6 @@ describe("getWorkerXpPoolMultiplier", () => {
   });
   it("adds +10% per worker_xp_mult capability level", () => {
     // accelerator carries `worker_xp_mult`; 3 levels → 1.30
-    expect(getWorkerXpPoolMultiplier({ purchasedNodes: { accelerator: 3 } } as GameStore)).toBeCloseTo(1.30, 9);
+    expect(getWorkerXpPoolMultiplier({ purchasedNodes: { accelerator: 3 } } as unknown as GameStore)).toBeCloseTo(1.30, 9);
   });
 });

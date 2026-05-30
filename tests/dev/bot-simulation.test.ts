@@ -36,7 +36,7 @@ import { canBuyNode, getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
 import { canAscend } from "@/systems/ascend";
 import { initialWorkshopState } from "@/store/workshopSlice";
 import { TREE_STAGES } from "@/config/treeStages";
-import type { SkillNodeId } from "@/store/skillTreeSlice";
+import type { SkillNodeId } from "@/config/skillTreeNodes";
 
 // ─── Simulation constants ─────────────────────────────────────────────────────
 
@@ -217,7 +217,7 @@ function decideCanvasUpgrades(): void {
 
   if (candidates.length === 0) return;
   candidates.sort((a, b) => b.roi - a.roi);
-  candidates[0].fn();
+  candidates[0]!.fn();
 }
 
 /** Craft when we can afford 2× cost; equip anything usable; discard only duplicates. */
@@ -386,10 +386,10 @@ describe("bot-simulation", () => {
         console.log(`  T${r.from}→T${r.to}: ${fmtTime(r.intervalS)} (G/s at up: ${fmtN(r.gpsAtUp)})`);
       }
       for (let i = 1; i < tierIntervals.length; i++) {
-        const prev = tierIntervals[i - 1].intervalS;
-        const cur = tierIntervals[i].intervalS;
+        const prev = tierIntervals[i - 1]!.intervalS;
+        const cur = tierIntervals[i]!.intervalS;
         const ratio = prev > 0 ? cur / prev : 0;
-        console.log(`  ratio T${tierIntervals[i - 1].to}→T${tierIntervals[i].to} vs prev: ×${ratio.toFixed(2)}`);
+        console.log(`  ratio T${tierIntervals[i - 1]!.to}→T${tierIntervals[i]!.to} vs prev: ×${ratio.toFixed(2)}`);
       }
     }
 

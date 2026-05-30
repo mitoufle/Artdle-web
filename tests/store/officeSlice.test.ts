@@ -22,9 +22,9 @@ beforeEach(() => {
 describe("initialOfficeState", () => {
   it("starts with an empty roster and no legacy office fields", () => {
     expect(initialOfficeState.roster).toEqual([]);
-    expect((initialOfficeState as Record<string, unknown>).officeLevel).toBeUndefined();
-    expect((initialOfficeState as Record<string, unknown>).queue).toBeUndefined();
-    expect((initialOfficeState as Record<string, unknown>).trickleTimer).toBeUndefined();
+    expect((initialOfficeState as unknown as Record<string, unknown>).officeLevel).toBeUndefined();
+    expect((initialOfficeState as unknown as Record<string, unknown>).queue).toBeUndefined();
+    expect((initialOfficeState as unknown as Record<string, unknown>).trickleTimer).toBeUndefined();
   });
 });
 
@@ -112,7 +112,7 @@ describe("v26 save → migrate drops legacy fields; reconcile fills roster", () 
       roster: [{ id: "legacy", class: "generalist", tier: "common", level: 3, xp: big(50), affixes: [] }],
       purchasedNodes: { hire_manager: 2 },
     };
-    const migrated = migrate(old, 26) as Record<string, unknown>;
+    const migrated = migrate(old, 26) as unknown as Record<string, unknown>;
     expect(migrated.officeLevel).toBeUndefined();
     expect(migrated.officeXp).toBeUndefined();
     expect(migrated.queue).toBeUndefined();

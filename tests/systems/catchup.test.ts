@@ -41,7 +41,7 @@ describe("runCatchupSimulation", () => {
     await runCatchupSimulation(3600, (p) => pcts.push(p));
     expect(pcts.length).toBeGreaterThan(0);
     for (let i = 1; i < pcts.length; i++) {
-      expect(pcts[i]).toBeGreaterThanOrEqual(pcts[i - 1]);
+      expect(pcts[i]).toBeGreaterThanOrEqual(pcts[i - 1]!);
     }
     expect(pcts[pcts.length - 1]).toBeCloseTo(1, 2);
   });

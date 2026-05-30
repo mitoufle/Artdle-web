@@ -24,7 +24,7 @@ describe("cloneGameState", () => {
       inventory: [{ id: "i1", slot: "brush", tier: "normal", affixes: [{ kind: "$", magnitude: 10 }], fuseCount: 0 }],
     } as any;
     const clone = cloneGameState(src);
-    clone.inventory[0].affixes[0].magnitude = 999;
+    (clone.inventory[0] as any).affixes[0].magnitude = 999;
     expect((src.inventory[0] as any).affixes[0].magnitude).toBe(10);
   });
 
