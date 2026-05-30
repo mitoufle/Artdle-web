@@ -59,4 +59,31 @@ describe("WorkerRollReveal", () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
+
+  it("skip mid-animation jumps to the final state and completes", () => {
+    vi.useFakeTimers();
+    const w = { ...createWorker(), name: "Vincent", avatar: 1 };
+    const before = createBaseStats();
+    const after = { ...before, goldPct: 0.03 };
+    useGameStore.setState({
+      roster: [w],
+      lastAscendRoll: [{ id: w.id, levelBefore: 1, levelAfter: 2, statsBefore: before, statsAfter: after }],
+    });
+    const onComplete = vi.fn();
+    const { rerender } = render(<WorkerRollReveal skip={false} onComplete={onComplete} />);
+    act(() => { vi.advanceTimersByTime(2 * 400 + 10); }); // 2 of 5 ticks
+    expect(onComplete).not.toHaveBeenCalled();
+    act(() => { rerender(<WorkerRollReveal skip onComplete={onComplete} />); });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("worker-roll-value-goldPct").getAttribute("data-up")).toBe("true");
+    vi.useRealTimers();
+  });
+
+  it("renders nothing and completes when the roll is an empty array", () => {
+    const onComplete = vi.fn();
+    useGameStore.setState({ lastAscendRoll: [], roster: [] });
+    const { container } = render(<WorkerRollReveal skip={false} onComplete={onComplete} />);
+    expect(container.firstChild).toBeNull();
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
 });
