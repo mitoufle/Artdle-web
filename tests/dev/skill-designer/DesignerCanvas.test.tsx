@@ -28,9 +28,12 @@ describe("<DesignerCanvas />", () => {
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
-  it("renders the FAME hub", () => {
-    render(<DesignerCanvas nodes={[]} selectedId={null} onSelect={() => {}} onMove={() => {}} />);
-    expect(screen.getByTestId("fame-hub")).toBeInTheDocument();
+  it("renders no fame hub and no fame-sourced edges", () => {
+    const { queryByTestId, container } = render(
+      <DesignerCanvas nodes={[n("a"), n("b", "a")]} selectedId={null} onSelect={() => {}} onMove={() => {}} />,
+    );
+    expect(queryByTestId("fame-hub")).toBeNull();
+    expect(container.querySelector('[data-testid^="designer-edge-fame-"]')).toBeNull();
   });
 
   it("renders one node circle per design node", () => {
@@ -39,9 +42,9 @@ describe("<DesignerCanvas />", () => {
     expect(screen.getByTestId("designer-node-b")).toBeInTheDocument();
   });
 
-  it("renders edges from parent to child (and from FAME to roots)", () => {
+  it("renders edge from parent to child (no fame edges for roots)", () => {
     render(<DesignerCanvas nodes={[n("a"), n("b", "a")]} selectedId={null} onSelect={() => {}} onMove={() => {}} />);
-    expect(screen.getByTestId("designer-edge-fame-a")).toBeInTheDocument();
+    expect(screen.queryByTestId("designer-edge-fame-a")).toBeNull();
     expect(screen.getByTestId("designer-edge-a-b")).toBeInTheDocument();
   });
 

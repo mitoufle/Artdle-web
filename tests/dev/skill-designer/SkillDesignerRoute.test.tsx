@@ -24,7 +24,7 @@ describe("<SkillDesignerRoute />", () => {
   it("renders all 3 panes (list, canvas, form placeholder)", () => {
     renderWithRouter();
     expect(screen.getByRole("button", { name: /add node/i })).toBeInTheDocument();
-    expect(screen.getByTestId("fame-hub")).toBeInTheDocument();
+    expect(screen.queryByTestId("fame-hub")).toBeNull();
     expect(screen.getByText(/select a node/i)).toBeInTheDocument();
   });
 

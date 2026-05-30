@@ -3,8 +3,6 @@ import { useState, useRef } from "react";
 import type { DesignNode } from "./types";
 import {
   computeAutoLayout,
-  FAME_HUB_X,
-  FAME_HUB_Y,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
 } from "./autoLayout";
@@ -60,9 +58,8 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
   const justDragged = useRef(false);
   const positions = computeAutoLayout(nodes);
 
-  function pointFor(id: string | "fame"): { x: number; y: number } {
-    if (id === "fame") return { x: FAME_HUB_X, y: FAME_HUB_Y };
-    return positions[id] ?? { x: FAME_HUB_X, y: FAME_HUB_Y };
+  function pointFor(id: string): { x: number; y: number } {
+    return positions[id] ?? { x: 0, y: 0 };
   }
 
   /** Convert client (screen) pixels to SVG-space coordinates, honoring pan + zoom. */
@@ -221,10 +218,8 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
         <g>
           {nodes.flatMap((node) => {
             const b = pointFor(node.id);
-            const parentKeys: ReadonlyArray<string> =
-              node.parentIds.length === 0 ? ["fame"] : node.parentIds;
-            return parentKeys.map((fromKey) => {
-              const a = fromKey === "fame" ? pointFor("fame") : pointFor(fromKey);
+            return node.parentIds.map((fromKey) => {
+              const a = pointFor(fromKey);
               return (
                 <line
                   key={`${fromKey}-${node.id}`}
@@ -240,21 +235,6 @@ export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): 
               );
             });
           })}
-        </g>
-
-        <g data-testid="fame-hub">
-          <circle cx={FAME_HUB_X} cy={FAME_HUB_Y} r={20} fill="var(--fame)" />
-          <text
-            x={FAME_HUB_X}
-            y={FAME_HUB_Y + 40}
-            textAnchor="middle"
-            fontFamily="serif"
-            fontSize="12"
-            fontWeight="700"
-            fill="var(--fame)"
-          >
-            FAME
-          </text>
         </g>
 
         <g onPointerMove={handleNodePointerMove} onPointerUp={handleNodePointerUp}>
