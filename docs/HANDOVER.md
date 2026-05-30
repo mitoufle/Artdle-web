@@ -123,25 +123,34 @@ on the shared canvas, each with their own stroke rhythm, leveling slowly across 
   > **Correction applied:** the A2 "dead-code" list wrongly included `workerXpToNext`/`WORKER_XP_*` —
   > C resurrects them as the level curve, so they were KEPT (only the genuinely-dead office machinery deleted).
   > Designer `skillTreeDesign.json` is now out of sync for the office branch (decoupled user spec — left as-is).
-- ⏭️ **D — UI (final phase).** Post-ascend roll screen in `AscendCinematicOverlay` reading `lastAscendRoll`
-  (per-worker before/after; diff to show "Level X→Y, +N% gold, +1 stroke/crit"); call `clearAscendRoll()`
-  on dismiss. On-canvas worker avatars + next-stroke indicators reading `painterClocks` (ISOLATE that
-  subtree — it changes every tick). Office tab rework (roster + class switch). Then revisit the two C/D
-  decisions below (worker-crit achievements; multi-painter step-invariance). When D lands → merge to master
-  + `npx vercel --prod`. Note: old office UI (`WorkerCard`/`QueueCard`/`FireConfirmModal`/`OfficeLevelHeader`)
-  was already deleted in A2; the office tab is the minimal read-only `OfficeRoom` from A2.
+- ✅ **D — UI (final phase)** (CODE DONE, reviewed, green; one MANUAL visual smoke pending — see below).
+  Plan `2026-05-29-office-D-ui.md`. Commits `23b9b79` (shared `workerStatDisplay` helpers), `9b376f8`
+  (post-ascend `WorkerRollReveal` in the cinematic blackout + `clearAscendRoll` on dismiss/reduced-motion),
+  `aa9f120`/`408f810` (on-canvas `WorkerAvatars` — self-subscribing isolated overlay, `pointer-events:none`,
+  right-edge rail to avoid the bottom HUD, next-stroke fill from `painterClocks`/`chunkInterval`),
+  `3a65611` (office tab → per-worker stat-sheet cards), `30d00f8` (housekeeping: deleted the accepted-tolerance
+  skipped test, 0 skipped now). Both deferred decisions resolved won't-fix: **worker crits stay player-only**;
+  **multi-painter catch-up step-invariance tolerance ACCEPTED** (idle-game offline sim — no scheduler rework).
+  Pure UI, no engine change. The isolation guard was rebuilt to a falsifiable `chunksPerCanvas`-spy counter
+  (the original Profiler version was vacuous — it wrapped the avatar subtree).
+  > **PENDING before merge — manual visual smoke (needs a human eye on the running app):** with ≥1 worker
+  > in the roster, confirm (1) avatars appear by the canvas + cooldown bars animate toward each next stroke;
+  > (2) **clicking the easel still paints** (the `pointer-events:none` overlay doesn't eat clicks — render
+  > tests can't prove this); (3) no occlusion of canvas art / progress bar / gold preview / tier+combo badges;
+  > (4) ascend with an office → blackout shows the worker `Lv X→Y` + increments, dismiss clears; (5) ascend
+  > with NO office → normal blackout, no reveal artifacts. Also eyeball the reveal's gold accent vs the
+  > cinematic's teal/lavender (minor). `worker_1.png` is 703KB — candidate for a polish-pass downsize.
 
 ### Status
-- **1068 passing + 1 skipped** on the branch after C (the 1 skipped is the deliberate multi-painter
-  step-invariance guard — see the B bullet); `npx vite build` clean. HEAD = `7062d30`. `SAVE_VERSION = 28`.
+- **1084 passing, 0 skipped** on the branch after D; `npx vite build` clean. HEAD = `30d00f8`. `SAVE_VERSION = 28`.
 - `npx tsc -b --noEmit`: ~25 pre-existing baseline errors in TEST files (NOT a gate — green bar is
   vitest + `vite build`; prod deploy via `npx vercel --prod` is not gated on `tsc -b`). No new tsc
-  errors in non-test source from A2/B/C. A cleanup pass on the test-file tsc errors would be welcome
+  errors in non-test source from A2/B/C/D. A cleanup pass on the test-file tsc errors would be welcome
   (out of scope for the office phases).
-- **Not merged to master.** Prod is still on the pre-office branch bundle (live game + crit + tree).
-  Per plan, merge `painter-office-redesign` → master only when the office is fully done (after D). A2+B+C
-  commits are dormant in prod terms: the engine + ascend XP + tree migration are all in place, but the
-  office tab is a minimal read-only panel and the full UI/roll-screen lands in D. Only D remains before merge.
+- **The office redesign is CODE-COMPLETE (A1→A2→B→C→D).** Remaining before merge: (1) the manual visual
+  smoke in the D bullet above; (2) optionally the `WORKER_XP_GROWTH` feel-test (veterans may flatline).
+  Then merge `painter-office-redesign` → master and `npx vercel --prod` (Vercel is not auto-deployed from push;
+  verify the new bundle after). Prod is still on the pre-office branch bundle (live game + crit + tree).
 - Memory corrected this session: the **v2.0 visual redesign is shelved** (user confirmed none planned);
   `project_v12_scope.md` updated — don't gate work behind a v2.
 
@@ -165,7 +174,9 @@ painterClocks state · `542c044` B golden master · `e8fd0bd` B multi-painter sc
 harden crit-stats test · `858cf3c` B store integration + step-invariance guard ·
 `bf47637` office C plan · `e5a8f7e` C plan fixes · `363cdec` C constants+selector · `7541d8c`/`1634df7`
 C pure xp engine · `51f82a1`/`c29dcaf` C applyAscendXp+roll · `1d9f355` C ascend wiring (resetOffice removed) ·
-`795c78b` C tree collapse+v28 refund · `7062d30` C dead-code cleanup
+`795c78b` C tree collapse+v28 refund · `7062d30` C dead-code cleanup ·
+`d666737` office D plan · `46283c9` D plan fixes · `23b9b79` D stat helpers · `9b376f8` D roll reveal ·
+`aa9f120`/`408f810` D on-canvas avatars · `3a65611` D office tab cards · `30d00f8` D housekeeping (0 skipped)
 
 ---
 
