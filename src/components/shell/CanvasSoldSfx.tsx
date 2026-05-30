@@ -2,10 +2,11 @@ import { useEffect, useRef } from "react";
 import { useGameStore } from "@/store";
 import soldSfx from "@/assets/sounds/Canvas_sold.mp3";
 
-// Reuse the music settings — there is no separate SFX control, so the existing
-// mute/volume toggle governs this sound too.
-const KEY_VOL = "artdle-music-volume";
+// The mute toggle is shared with the music; the SFX has its own loud base
+// volume (decoupled from the music slider) so the short sale cue cuts through
+// the continuous ambient track instead of sitting at the same level.
 const KEY_MUTED = "artdle-music-muted";
+const SFX_VOLUME = 1;
 
 /**
  * Plays the canvas-sold sound whenever a canvas sells (`statsRun.canvasesSold`
@@ -36,8 +37,7 @@ export function CanvasSoldSfx(): null {
     if (localStorage.getItem(KEY_MUTED) === "true") return;
     const audio = audioRef.current;
     if (!audio) return;
-    const v = parseFloat(localStorage.getItem(KEY_VOL) ?? "0.2");
-    audio.volume = Number.isNaN(v) ? 0.2 : Math.max(0, Math.min(1, v));
+    audio.volume = SFX_VOLUME;
     try {
       audio.currentTime = 0;
     } catch {
