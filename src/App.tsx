@@ -5,6 +5,7 @@ import { resumeTickLoop } from "@/core/tickLoop";
 import { TopBar } from "@/components/shell/TopBar";
 import { BottomBar } from "@/components/shell/BottomBar";
 import { AchievementToast } from "@/components/shell/AchievementToast";
+import { CanvasSoldSfx } from "@/components/shell/CanvasSoldSfx";
 import { TreeRoute } from "@/routes/TreeRoute";
 import { PaintingRoute } from "@/routes/PaintingRoute";
 import { AscensionRoute } from "@/routes/AscensionRoute";
@@ -54,6 +55,7 @@ export function App(): JSX.Element {
       </main>
       <BottomBar />
       <AchievementToast />
+      <CanvasSoldSfx />
     </div>
   );
 }
