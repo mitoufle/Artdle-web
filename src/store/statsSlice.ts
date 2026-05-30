@@ -64,10 +64,10 @@ export const createStatsSlice: StateCreator<GameStore, [], [], StatsSlice> = (se
   incrementStat: (namespace, key, by = 1) => {
     const state = get();
     if (namespace === "lifetime") {
-      const prev = (state.statsLifetime as Record<string, number>)[key] ?? 0;
+      const prev = (state.statsLifetime as unknown as Record<string, number>)[key] ?? 0;
       set({ statsLifetime: { ...state.statsLifetime, [key]: prev + by } });
     } else {
-      const prev = (state.statsRun as Record<string, unknown>)[key] ?? 0;
+      const prev = (state.statsRun as unknown as Record<string, unknown>)[key] ?? 0;
       set({ statsRun: { ...state.statsRun, [key]: (prev as number) + by } });
     }
   },

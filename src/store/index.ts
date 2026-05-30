@@ -519,7 +519,7 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
     const hasInspiThreshold = inspiration.gte(10_000);
     next.unlockedAscension = ascendCount > 0 || hasInspiThreshold || next.unlockedAscension === true;
     next.unlockedConstellation = ascendCount > 0 || fame.gte(1) || next.unlockedConstellation === true;
-    state = next as unknown as GameStore;
+    state = next;
   }
 
   if (fromVersion < 26) {

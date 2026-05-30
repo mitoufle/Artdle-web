@@ -73,7 +73,7 @@ function critChunksFromItems(state: CanvasMultiplierInputs): number {
   const hasSocks = getNodeLevel(state, "socks") > 0;
   let itemPct = 0;
   for (const entry of Object.entries(state.equipped)) {
-    const [slot, item] = entry as [SlotKind, { affixes: { kind: string; magnitude: number }[] } | undefined];
+    const [slot, item] = entry as [SlotKind, { affixes: readonly { kind: string; magnitude: number }[] } | undefined];
     if (!item) continue;
     const slotMult = hasSocks && slot === "boots" ? 1.5 : 1.0;
     for (const affix of item.affixes) {

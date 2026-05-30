@@ -148,7 +148,7 @@ export function SortableCard({
 
         <div className={styles.effects}>
           {ach.effects.map((effect) => {
-            const isCustomKind = !KNOWN_EFFECT_KINDS.includes(effect.kind);
+            const isCustomKind = !(KNOWN_EFFECT_KINDS as readonly string[]).includes(effect.kind);
             return (
               <div key={effect.id} className={styles.effectRow}>
                 <select

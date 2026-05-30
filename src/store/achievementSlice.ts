@@ -51,11 +51,11 @@ function resolveStatValue(state: GameStore, stat: string): number {
   if (stat === "tree.tier") return state.currentStage + 1;
   if (stat.startsWith("lifetime.")) {
     const key = stat.slice("lifetime.".length);
-    return (state.statsLifetime as Record<string, number>)[key] ?? 0;
+    return (state.statsLifetime as unknown as Record<string, number>)[key] ?? 0;
   }
   if (stat.startsWith("run.")) {
     const key = stat.slice("run.".length);
-    const val = (state.statsRun as Record<string, unknown>)[key] ?? 0;
+    const val = (state.statsRun as unknown as Record<string, unknown>)[key] ?? 0;
     if (typeof val === "number") return val;
     // Big value (e.g. goldEarned)
     return (val as { toNumber(): number }).toNumber();
@@ -111,7 +111,7 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
     const state = get();
     if (state.notificationQueue.length === 0) return;
     const [next, ...rest] = state.notificationQueue;
-    set({ activeNotification: next, notificationQueue: rest });
+    set({ activeNotification: next!, notificationQueue: rest });
     if (_notifTimer !== null) clearTimeout(_notifTimer);
     _notifTimer = setTimeout(() => {
       _notifTimer = null;
