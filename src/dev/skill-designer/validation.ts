@@ -1,11 +1,15 @@
-import type { DesignNode } from "./types";
+import type { DesignNode, DesignCluster } from "./types";
 
 export type ValidationIssueType =
   | "duplicate_id"
   | "missing_parent"
   | "cycle"
   | "orphan"
-  | "costs_length_mismatch";
+  | "costs_length_mismatch"
+  | "cluster_empty"
+  | "cluster_root_has_parent"
+  | "cluster_root_count"
+  | "unknown_cluster";
 
 export interface ValidationIssue {
   type: ValidationIssueType;
@@ -40,6 +44,7 @@ function hasCycleFrom(
 
 export function validateDesign(
   nodes: ReadonlyArray<DesignNode>,
+  clusters: ReadonlyArray<DesignCluster> = [],
 ): ReadonlyArray<ValidationIssue> {
   const issues: ValidationIssue[] = [];
   const seen = new Set<string>();
@@ -100,6 +105,40 @@ export function validateDesign(
         nodeId: node.id,
         message: `Node "${node.id}" has no parents and no children`,
       });
+    }
+  }
+
+  if (clusters.length > 0) {
+    const clusterIds = new Set(clusters.map((c) => c.id));
+
+    for (const node of nodes) {
+      if (!clusterIds.has(node.clusterId)) {
+        issues.push({
+          type: "unknown_cluster",
+          nodeId: node.id,
+          message: `Node "${node.id}" references unknown cluster "${node.clusterId}"`,
+        });
+      }
+    }
+
+    for (const cluster of clusters) {
+      const members = nodes.filter((n) => n.clusterId === cluster.id);
+      if (members.length === 0) {
+        issues.push({ type: "cluster_empty", nodeId: cluster.id, message: `Cluster "${cluster.id}" has no nodes` });
+        continue;
+      }
+      const root = members.find((n) => n.id === cluster.rootNodeId);
+      const parentless = members.filter((n) => n.parentIds.length === 0).map((n) => n.id).sort();
+      if (root && root.parentIds.length > 0) {
+        issues.push({ type: "cluster_root_has_parent", nodeId: cluster.id, message: `Root "${cluster.rootNodeId}" of cluster "${cluster.id}" has a parent` });
+      }
+      if (parentless.length !== 1 || parentless[0] !== cluster.rootNodeId) {
+        issues.push({
+          type: "cluster_root_count",
+          nodeId: cluster.id,
+          message: `Cluster "${cluster.id}" must have exactly one root (its parentless node) equal to "${cluster.rootNodeId}"; found [${parentless.join(", ")}]`,
+        });
+      }
     }
   }
 
