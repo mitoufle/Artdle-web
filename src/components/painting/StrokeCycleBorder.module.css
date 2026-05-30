@@ -1,0 +1,15 @@
+/* Conic-gradient masked to a thin border ring; --fill (0..1) set inline per tick.
+ * Sweeps clockwise from 12 o'clock over a faint static track, snapping to 0 on
+ * each player stroke. Click-through so the pills underneath stay interactive. */
+.border {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-md);
+  pointer-events: none;
+  padding: 2px;
+  background: conic-gradient(var(--gold) calc(var(--fill, 0) * 1turn), rgba(168, 127, 58, 0.18) 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  filter: drop-shadow(0 0 3px rgba(232, 176, 58, 0.4));
+}
