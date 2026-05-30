@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, within, cleanup } from "@testing-library/react";
+import { render, screen, within, cleanup, act } from "@testing-library/react";
 import { useGameStore } from "@/store";
 import { createWorker } from "@/store/officeSlice";
 import { WorkerAvatars } from "@/components/painting/WorkerAvatars";
@@ -64,5 +64,18 @@ describe("WorkerAvatars", () => {
     useGameStore.setState({ roster: [w], painterClocks: {} });
     render(<WorkerAvatars />);
     expect(screen.getByTestId("worker-xp-fill").style.width).toBe("50%");
+  });
+
+  it("increments the stroke-proc counter when a worker's clock drops", async () => {
+    const w = { ...createWorker(), avatar: 1 };
+    useGameStore.setState({ roster: [w], painterClocks: { [w.id]: 4 } });
+    render(<WorkerAvatars />);
+    expect(screen.getByTestId("worker-ringwrap").getAttribute("data-proc")).toBe("0");
+    // clock drops (worker just strokes) → proc fires once
+    await act(async () => { useGameStore.setState({ painterClocks: { [w.id]: 0.1 } }); });
+    expect(screen.getByTestId("worker-ringwrap").getAttribute("data-proc")).toBe("1");
+    // clock keeps climbing → no new proc
+    await act(async () => { useGameStore.setState({ painterClocks: { [w.id]: 0.2 } }); });
+    expect(screen.getByTestId("worker-ringwrap").getAttribute("data-proc")).toBe("1");
   });
 });

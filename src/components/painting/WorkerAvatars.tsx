@@ -1,4 +1,5 @@
 import type { JSX, CSSProperties } from "react";
+import { useRef } from "react";
 import { useGameStore } from "@/store";
 import { chunkInterval, workerXpToNext } from "@/core/balance";
 import type { Worker } from "@/store/officeSlice";
@@ -18,6 +19,13 @@ const LEFT_AVATARS = new Set([2, 3]);
 export function WorkerAvatars(): JSX.Element | null {
   const roster = useGameStore((s) => s.roster);
   const painterClocks = useGameStore((s) => s.painterClocks);
+
+  // Per-worker previous clock + a monotonic "stroke happened" nonce. A worker
+  // strokes exactly when its clock DROPS (resets toward 0). Updating prev within
+  // the same render makes this idempotent under StrictMode's double-invoke.
+  const prevClocks = useRef<Record<string, number>>({});
+  const procNonce = useRef<Record<string, number>>({});
+
   if (roster.length === 0) return null;
 
   const left = roster.filter((w) => LEFT_AVATARS.has(w.avatar));
@@ -26,12 +34,21 @@ export function WorkerAvatars(): JSX.Element | null {
   const renderAvatar = (w: Worker): JSX.Element => {
     const interval = chunkInterval(w.stats.speed);
     const clock = painterClocks[w.id] ?? 0;
+    const prev = prevClocks.current[w.id] ?? 0;
+    if (clock < prev) procNonce.current[w.id] = (procNonce.current[w.id] ?? 0) + 1;
+    prevClocks.current[w.id] = clock;
+    const nonce = procNonce.current[w.id] ?? 0;
     const fillPct = interval > 0 ? Math.max(0, Math.min(1, clock / interval)) : 0;
     const xpToNext = workerXpToNext(w.level);
     const xpFrac = Math.max(0, Math.min(1, w.xp.div(xpToNext).toNumber()));
     return (
       <div key={w.id} className={styles.avatar} data-testid="worker-avatar">
-        <div className={styles.ringWrap} data-testid="worker-ringwrap">
+        <div
+          key={`rw-${nonce}`}
+          className={styles.ringWrap}
+          data-testid="worker-ringwrap"
+          data-proc={nonce}
+        >
           <div className={styles.ring} style={{ "--fill": fillPct } as CSSProperties} />
           <div
             className={styles.portrait}

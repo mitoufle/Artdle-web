@@ -36,6 +36,7 @@
   width: 80px;
   height: 80px;
   transform-origin: center bottom;
+  animation: strokeProc 360ms ease-out;
 }
 
 .portrait {
@@ -73,4 +74,12 @@
   height: 100%;
   background: var(--teal);
   transition: width 200ms ease;
+}
+
+@keyframes strokeProc {
+  0%   { transform: rotate(0deg) translateX(0); }
+  20%  { transform: rotate(-6deg) translateX(-2px); }
+  45%  { transform: rotate(5deg) translateX(2px); }
+  70%  { transform: rotate(-3deg) translateX(-1px); }
+  100% { transform: rotate(0deg) translateX(0); }
 }
