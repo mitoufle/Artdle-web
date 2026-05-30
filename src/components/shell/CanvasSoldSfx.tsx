@@ -2,31 +2,56 @@ import { useEffect, useRef } from "react";
 import { useGameStore } from "@/store";
 import soldSfx from "@/assets/sounds/Canvas_sold.mp3";
 
-// The mute toggle is shared with the music; the SFX has its own loud base
-// volume (decoupled from the music slider) so the short sale cue cuts through
-// the continuous ambient track instead of sitting at the same level.
+// Shared with the music mute toggle (no separate SFX control).
 const KEY_MUTED = "artdle-music-muted";
-const SFX_VOLUME = 1;
+// Web Audio gain — can exceed 1.0 to amplify a quietly-recorded clip above the
+// HTMLAudioElement ceiling so the short sale cue cuts through the music.
+const SFX_GAIN = 4;
+
+type AudioCtor = typeof AudioContext;
 
 /**
  * Plays the canvas-sold sound whenever a canvas sells (`statsRun.canvasesSold`
- * increments). Renders nothing. One play per tick-batch; the single Audio
- * element restarts on rapid sales rather than overlapping. Respects the music
- * mute + volume. Self-subscribes to the sale counter so only this leaf
- * re-renders on a sale, not the whole app shell.
+ * increments), amplified through a Web Audio GainNode (gain > 1) so it's clearly
+ * audible over the ambient track. Renders nothing. Respects the music mute.
+ * Self-subscribes to the sale counter so only this leaf re-renders on a sale.
  */
 export function CanvasSoldSfx(): null {
   const canvasesSold = useGameStore((s) => s.statsRun.canvasesSold);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
+  const bufferRef = useRef<AudioBuffer | null>(null);
   const prevRef = useRef(canvasesSold);
 
   useEffect(() => {
-    const audio = new Audio(soldSfx);
-    audio.preload = "auto";
-    audioRef.current = audio;
+    const Ctor: AudioCtor | undefined =
+      window.AudioContext ?? (window as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext;
+    if (!Ctor) return; // no Web Audio (e.g. jsdom) — silently no-op
+    const ctx = new Ctor();
+    ctxRef.current = ctx;
+
+    // Browsers start the context suspended until a user gesture; resume on the
+    // first interaction so it's running by the time a sale fires.
+    const resume = (): void => {
+      void ctx.resume();
+    };
+    document.addEventListener("click", resume);
+    document.addEventListener("keydown", resume);
+
+    let cancelled = false;
+    fetch(soldSfx)
+      .then((r) => r.arrayBuffer())
+      .then((buf) => ctx.decodeAudioData(buf))
+      .then((decoded) => {
+        if (!cancelled) bufferRef.current = decoded;
+      })
+      .catch(() => {});
+
     return () => {
-      audio.pause();
-      audioRef.current = null;
+      cancelled = true;
+      document.removeEventListener("click", resume);
+      document.removeEventListener("keydown", resume);
+      void ctx.close();
+      ctxRef.current = null;
     };
   }, []);
 
@@ -35,15 +60,16 @@ export function CanvasSoldSfx(): null {
     prevRef.current = canvasesSold;
     if (canvasesSold <= prev) return; // no new sale (or reset to 0 on ascend)
     if (localStorage.getItem(KEY_MUTED) === "true") return;
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.volume = SFX_VOLUME;
-    try {
-      audio.currentTime = 0;
-    } catch {
-      /* currentTime can throw before the clip is seekable; ignore */
-    }
-    void audio.play().catch(() => {});
+    const ctx = ctxRef.current;
+    const buffer = bufferRef.current;
+    if (!ctx || !buffer) return;
+    if (ctx.state === "suspended") void ctx.resume();
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const gain = ctx.createGain();
+    gain.gain.value = SFX_GAIN;
+    src.connect(gain).connect(ctx.destination);
+    src.start();
   }, [canvasesSold]);
 
   return null;
