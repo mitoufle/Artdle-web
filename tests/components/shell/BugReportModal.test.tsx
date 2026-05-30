@@ -49,8 +49,10 @@ describe("<BugReportModal />", () => {
         expect.objectContaining({ method: "POST" }),
       ),
     );
-    const [, opts] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(String(opts.body)).toContain("broken");
+    const call = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call).toBeDefined();
+    const opts = call?.[1] as { body?: unknown } | undefined;
+    expect(String(opts?.body)).toContain("broken");
     await screen.findByText(/issues\/1/);
   });
 
