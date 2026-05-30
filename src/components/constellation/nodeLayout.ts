@@ -1,9 +1,6 @@
 import design from "@/config/skillTreeDesign.json";
-import {
-  computeAutoLayout,
-  FAME_HUB_X,
-  FAME_HUB_Y,
-} from "@/dev/skill-designer/autoLayout";
+import { computeClusterLayout, type LayoutNode } from "@/core/clusterLayout";
+import { SKILL_CLUSTERS, type SkillClusterConfig } from "@/config/skillClusters";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
 
 export interface Point {
@@ -11,31 +8,24 @@ export interface Point {
   readonly y: number;
 }
 
-export type EdgeFrom = SkillNodeId | "fame";
+/** No more FAME hub: edges run parent→child between real nodes only. */
+export type EdgeFrom = SkillNodeId;
 
-const rawPositions = computeAutoLayout(
-  design.nodes as Parameters<typeof computeAutoLayout>[0],
-);
+const designNodes = design.nodes as ReadonlyArray<LayoutNode>;
 
-const PADDING = 80;
-const FUTURE_GROWTH = 800;
-const TOTAL_MARGIN = PADDING + FUTURE_GROWTH;
+const rawPositions = computeClusterLayout(designNodes, SKILL_CLUSTERS);
 
-const allRawPoints: ReadonlyArray<Point> = [
-  { x: FAME_HUB_X, y: FAME_HUB_Y },
-  ...Object.values(rawPositions),
-];
-const xs = allRawPoints.map((p) => p.x);
-const ys = allRawPoints.map((p) => p.y);
-const minX = Math.min(...xs);
-const minY = Math.min(...ys);
-const maxX = Math.max(...xs);
-const maxY = Math.max(...ys);
+const PADDING = 120;
 
-const offsetX = TOTAL_MARGIN - minX;
-const offsetY = TOTAL_MARGIN - minY;
+const xs = Object.values(rawPositions).map((p) => p.x);
+const ys = Object.values(rawPositions).map((p) => p.y);
+const regionMaxX = Math.max(...SKILL_CLUSTERS.map((c) => c.region.x + c.region.w));
+const regionMaxY = Math.max(...SKILL_CLUSTERS.map((c) => c.region.y + c.region.h));
+const minX = Math.min(...xs, 0);
+const minY = Math.min(...ys, 0);
 
-export const FAME_HUB: Point = { x: FAME_HUB_X + offsetX, y: FAME_HUB_Y + offsetY };
+const offsetX = PADDING - minX;
+const offsetY = PADDING - minY;
 
 export const NODE_POSITIONS: Record<string, Point> = Object.fromEntries(
   Object.entries(rawPositions).map(([id, p]) => [
@@ -45,15 +35,31 @@ export const NODE_POSITIONS: Record<string, Point> = Object.fromEntries(
 );
 
 export const VIEWBOX = {
-  width: (maxX - minX) + 2 * TOTAL_MARGIN,
-  height: (maxY - minY) + 2 * TOTAL_MARGIN,
+  width: Math.max(...xs, regionMaxX) + offsetX + PADDING,
+  height: Math.max(...ys, regionMaxY) + offsetY + PADDING,
 };
 
-export const EDGES: ReadonlyArray<{ from: EdgeFrom; to: SkillNodeId }> = (
-  design.nodes as Parameters<typeof computeAutoLayout>[0]
-).flatMap((node) => {
-  if (node.parentIds.length === 0) {
-    return [{ from: "fame" as EdgeFrom, to: node.id }];
-  }
-  return node.parentIds.map((parentId) => ({ from: parentId as EdgeFrom, to: node.id }));
-});
+/** Per-cluster region (offset to match NODE_POSITIONS) + its completion art. */
+export interface ClusterRegion {
+  readonly id: string;
+  readonly region: { x: number; y: number; w: number; h: number };
+  readonly completionArtPath: string | null;
+}
+
+export const CLUSTER_REGIONS: ReadonlyArray<ClusterRegion> = SKILL_CLUSTERS.map(
+  (c: SkillClusterConfig) => ({
+    id: c.id,
+    region: {
+      x: c.region.x + offsetX,
+      y: c.region.y + offsetY,
+      w: c.region.w,
+      h: c.region.h,
+    },
+    completionArtPath: c.completionArtPath,
+  }),
+);
+
+export const EDGES: ReadonlyArray<{ from: EdgeFrom; to: SkillNodeId }> =
+  designNodes.flatMap((node) =>
+    node.parentIds.map((parentId) => ({ from: parentId, to: node.id })),
+  );
