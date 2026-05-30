@@ -369,10 +369,7 @@
         50
       ],
       "unlocks": [],
-      "position": {
-        "x": 441.37710639620025,
-        "y": 28.23823126815205
-      }
+      "position": null
     },
     {
       "id": "shredder",
@@ -390,10 +387,7 @@
         50
       ],
       "unlocks": [],
-      "position": {
-        "x": 339.90651816090605,
-        "y": 22.7209898888417
-      }
+      "position": null
     },
     {
       "id": "taylorsim",
@@ -411,10 +405,7 @@
         120
       ],
       "unlocks": [],
-      "position": {
-        "x": 355.7888711020825,
-        "y": -41.41694114564106
-      }
+      "position": null
     },
     {
       "id": "steel_chest",
@@ -432,10 +423,7 @@
         120
       ],
       "unlocks": [],
-      "position": {
-        "x": 430.81327387436494,
-        "y": -36.31394281254421
-      }
+      "position": null
     },
     {
       "id": "forget_pain",
@@ -454,10 +442,7 @@
         300
       ],
       "unlocks": [],
-      "position": {
-        "x": 400.3722044354159,
-        "y": -96.28284152878287
-      }
+      "position": null
     },
     {
       "id": "painters_hat",
@@ -475,10 +460,7 @@
         10000
       ],
       "unlocks": [],
-      "position": {
-        "x": 465.26627009052766,
-        "y": -474.7861373077408
-      }
+      "position": null
     },
     {
       "id": "painters_apron",
@@ -497,10 +479,7 @@
         6000
       ],
       "unlocks": [],
-      "position": {
-        "x": 452.17701355457996,
-        "y": -383.39623735031205
-      }
+      "position": null
     },
     {
       "id": "monk_internship",
@@ -518,10 +497,7 @@
         700
       ],
       "unlocks": [],
-      "position": {
-        "x": 353.02553876180144,
-        "y": -180.77441192469578
-      }
+      "position": null
     },
     {
       "id": "entrepreneur",
@@ -539,10 +515,7 @@
       "unlocks": [
         "roster_slot"
       ],
-      "position": {
-        "x": 310.846862222222,
-        "y": -109.9229827387802
-      }
+      "position": null
     },
     {
       "id": "genius_episode",
@@ -606,10 +579,7 @@
         600
       ],
       "unlocks": [],
-      "position": {
-        "x": 510.12609099350044,
-        "y": 158.17309704641337
-      }
+      "position": null
     },
     {
       "id": "unrelentless",
@@ -627,10 +597,7 @@
       "unlocks": [
         "canvas_combo"
       ],
-      "position": {
-        "x": 553.2033426183845,
-        "y": 121.51898734177215
-      }
+      "position": null
     },
     {
       "id": "hire_manager",
@@ -653,10 +620,7 @@
       "unlocks": [
         "roster_slot"
       ],
-      "position": {
-        "x": 49.726862222221996,
-        "y": -119.86544533947063
-      }
+      "position": null
     },
     {
       "id": "accelerator",
@@ -680,10 +644,7 @@
       "unlocks": [
         "worker_xp_mult"
       ],
-      "position": {
-        "x": 56.126862222222,
-        "y": -171.566250863061
-      }
+      "position": null
     },
     {
       "id": "afterburner",
@@ -706,10 +667,7 @@
       "unlocks": [
         "combo_decay_reduction"
       ],
-      "position": {
-        "x": 589.9721448467967,
-        "y": 77.33026467203683
-      }
+      "position": null
     },
     {
       "id": "enlightenment",
@@ -778,10 +736,7 @@
         3000
       ],
       "unlocks": [],
-      "position": {
-        "x": 468.7505624223442,
-        "y": -165.94351336530917
-      }
+      "position": null
     },
     {
       "id": "painters_boots",
@@ -800,10 +755,7 @@
         1500
       ],
       "unlocks": [],
-      "position": {
-        "x": 423.6555821820308,
-        "y": -230.77226800165258
-      }
+      "position": null
     },
     {
       "id": "better_scaling",
@@ -821,10 +773,7 @@
         3500
       ],
       "unlocks": [],
-      "position": {
-        "x": 508.83726222222225,
-        "y": -296.61326582278485
-      }
+      "position": null
     },
     {
       "id": "socks",
@@ -842,10 +791,7 @@
         3500
       ],
       "unlocks": [],
-      "position": {
-        "x": 368.0372622222222,
-        "y": -321.469422324511
-      }
+      "position": null
     },
     {
       "id": "unlock_school",
@@ -863,10 +809,7 @@
       "unlocks": [
         "school_access"
       ],
-      "position": {
-        "x": -65.07370023935039,
-        "y": -239.85695648804403
-      }
+      "position": null
     },
     {
       "id": "ma_specialist",
@@ -884,10 +827,7 @@
         10000
       ],
       "unlocks": [],
-      "position": {
-        "x": 560.5148095876749,
-        "y": -229.95585494933442
-      }
+      "position": null
     },
     {
       "id": "quantitative_easing",
@@ -909,10 +849,7 @@
         35000
       ],
       "unlocks": [],
-      "position": {
-        "x": 617.3857473778328,
-        "y": -285.7105343599278
-      }
+      "position": null
     },
     {
       "id": "expert_manufacture",
@@ -934,10 +871,7 @@
         20000
       ],
       "unlocks": [],
-      "position": {
-        "x": 611.543266051045,
-        "y": -177.609146204162
-      }
+      "position": null
     }
   ]
 }
