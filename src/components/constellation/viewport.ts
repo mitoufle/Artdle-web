@@ -1,4 +1,4 @@
-import { VIEWBOX } from "./nodeLayout";
+import { VIEWBOX, CLUSTER_REGIONS } from "./nodeLayout";
 
 export interface ViewportState {
   readonly zoom: number;
@@ -6,14 +6,27 @@ export interface ViewportState {
   readonly panY: number;
 }
 
-export const DEFAULT_VIEWPORT: ViewportState = Object.freeze({
-  zoom: 1,
-  panX: 0,
-  panY: 0,
-});
-
 export const MIN_ZOOM = 1;
 export const MAX_ZOOM = 4;
+
+/**
+ * First-open zoom. The cluster sky spans the full VIEWBOX (~4× the old single
+ * tree), so at zoom 1 the nodes render as tiny scattered dots. Frame the starter
+ * (Inspiration) cluster instead so the player lands on a legible entry point and
+ * pans out to discover the other constellations.
+ */
+const DEFAULT_ZOOM = 2.2;
+
+function framedStart(): ViewportState {
+  const start = CLUSTER_REGIONS.find((c) => c.id === "inspiration")?.region;
+  const cx = start ? start.x + start.w / 2 : VIEWBOX.width / 2;
+  const cy = start ? start.y + start.h / 2 : VIEWBOX.height / 2;
+  const w = VIEWBOX.width / DEFAULT_ZOOM;
+  const h = VIEWBOX.height / DEFAULT_ZOOM;
+  return { zoom: DEFAULT_ZOOM, panX: cx - w / 2, panY: cy - h / 2 };
+}
+
+export const DEFAULT_VIEWPORT: ViewportState = Object.freeze(framedStart());
 const PAN_BLEED = 1;
 
 export function clampZoom(zoom: number): number {

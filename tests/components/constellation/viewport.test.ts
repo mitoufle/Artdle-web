@@ -50,7 +50,10 @@ describe("viewport — clampPan", () => {
 describe("viewport — zoomAt", () => {
   it("keeps cursor SVG point stationary across zoom-in", () => {
     const cursor = { x: 200, y: 150 };
-    const after = zoomAt(DEFAULT_VIEWPORT, cursor.x, cursor.y, 2);
+    // Start from an explicit zoom-1 origin so the math is independent of the
+    // framed DEFAULT_VIEWPORT (which now opens zoomed in on a starter cluster).
+    const origin = { zoom: 1, panX: 0, panY: 0 };
+    const after = zoomAt(origin, cursor.x, cursor.y, 2);
     // The cursor's mapping into viewBox should be the same point before/after.
     // Before zoom (default): cursor svg coords are themselves at (200, 150).
     // After zoom 2x centered on cursor: the cursor must map to the same SVG point.
