@@ -8,6 +8,7 @@ const sample: DesignFile = {
   title: "x",
   designedAt: "",
   nodes: [],
+  clusters: [],
 };
 
 describe("<ExportModal />", () => {

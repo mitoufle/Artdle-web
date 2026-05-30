@@ -873,5 +873,14 @@
       "unlocks": [],
       "position": null
     }
+  ],
+  "clusters": [
+    { "id": "inspiration", "name": "Inspiration", "theme": "Grow and harvest the inspiration tree.", "rootNodeId": "get_inspired", "region": { "x": 0, "y": 0, "w": 600, "h": 600 } },
+    { "id": "colors", "name": "Colors", "theme": "Master the color wheel to raise canvas value.", "rootNodeId": "black_white", "region": { "x": 700, "y": 0, "w": 760, "h": 760 } },
+    { "id": "workshop", "name": "Workshop", "theme": "Craft, store, and equip items; paint faster.", "rootNodeId": "basic_technique", "region": { "x": 1560, "y": 0, "w": 960, "h": 960 } },
+    { "id": "crit", "name": "Crit", "theme": "Land critical strokes on the canvas.", "rootNodeId": "genius_episode", "region": { "x": 0, "y": 700, "w": 520, "h": 520 } },
+    { "id": "combo", "name": "Combo", "theme": "Chain strokes into escalating combos.", "rootNodeId": "unrelentless", "region": { "x": 620, "y": 860, "w": 420, "h": 420 } },
+    { "id": "office", "name": "Office", "theme": "Hire and grow a studio of workers.", "rootNodeId": "entrepreneur", "region": { "x": 1140, "y": 1060, "w": 520, "h": 420 } },
+    { "id": "school", "name": "School", "theme": "Open the Painting School for permanent research.", "rootNodeId": "unlock_school", "region": { "x": 1760, "y": 1060, "w": 420, "h": 420 } }
   ]
 }

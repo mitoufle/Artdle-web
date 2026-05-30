@@ -22,6 +22,7 @@ const sample: DesignFile = {
       clusterId: "inspiration",
     },
   ],
+  clusters: [],
 };
 
 describe("skill-designer storage", () => {

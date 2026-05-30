@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { DesignFile, DesignNode, NodeKind, StackingMode } from "./types";
+import type { DesignFile, DesignNode, NodeKind, StackingMode, DesignCluster } from "./types";
 import { EMPTY_DESIGN } from "./types";
 import { loadDraft, saveDraft, clearDraft } from "./storage";
 import designJson from "@/config/skillTreeDesign.json";
@@ -51,6 +51,7 @@ function loadFileBaseline(): DesignFile {
       position: n.position,
       clusterId: ((n as { clusterId?: string }).clusterId ?? "inspiration") as string,
     })),
+    clusters: ((designJson as { clusters?: DesignCluster[] }).clusters ?? []) as ReadonlyArray<DesignCluster>,
   };
 }
 

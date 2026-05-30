@@ -1,4 +1,7 @@
-import type { DesignFile, DesignNode } from "./types";
+import type { DesignFile, DesignNode, DesignCluster } from "./types";
+import designJson from "@/config/skillTreeDesign.json";
+
+const SEED_CLUSTERS = (designJson as { clusters: DesignCluster[] }).clusters as ReadonlyArray<DesignCluster>;
 
 export const STORAGE_KEY = "artdle:skill-design:draft";
 
@@ -56,6 +59,9 @@ export function loadDraft(): DesignFile | null {
       return {
         ...parsed,
         nodes: parsed.nodes.map(migrateNode),
+        clusters: Array.isArray(parsed.clusters)
+          ? (parsed.clusters as ReadonlyArray<DesignCluster>)
+          : SEED_CLUSTERS,
       } as DesignFile;
     }
     return null;
