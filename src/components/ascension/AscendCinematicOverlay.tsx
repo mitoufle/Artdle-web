@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatShort } from "@/core/formatter";
+import { WorkerRollReveal } from "./WorkerRollReveal";
 import styles from "./AscendCinematicOverlay.module.css";
 
 export type CinematicPhase = "opening" | "blackout";
@@ -64,6 +65,7 @@ export function AscendCinematicOverlay({
           <p className={styles.quote} data-testid="ascend-cinematic-quote">
             {quote}
           </p>
+          <WorkerRollReveal />
           {hintVisible && (
             <p className={styles.hint} data-testid="ascend-cinematic-hint">
               — click to continue —

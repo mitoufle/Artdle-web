@@ -1,0 +1,61 @@
+/* Post-ascend worker level-up reveal, shown under the quote on the blackout.
+   Matches the cinematic aesthetic: gold serif on black, with the same
+   staggered translateY fade-in the gain/quote lines use. */
+
+.reveal {
+  list-style: none;
+  margin: var(--s-5) 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  max-width: 520px;
+}
+
+.worker {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  text-align: center;
+  opacity: 0;
+  animation: rollFadeIn 800ms ease forwards;
+}
+
+.level {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  text-shadow: var(--gold-glow);
+  white-space: nowrap;
+}
+
+.arrow {
+  color: var(--gold-d);
+  font-weight: 400;
+  margin: 0 0.15em;
+}
+
+.deltas {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #8a7fae;
+}
+
+@keyframes rollFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .worker {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

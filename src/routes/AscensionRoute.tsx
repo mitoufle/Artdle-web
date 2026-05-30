@@ -43,6 +43,7 @@ export function AscensionRoute(): JSX.Element {
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const pastRuns = useGameStore((s) => s.pastRuns);
   const performAscend = useGameStore((s) => s.performAscend);
+  const clearAscendRoll = useGameStore((s) => s.clearAscendRoll);
   const navigate = useNavigate();
 
   const canDo = canAscend({ inspiration, purchasedNodes });
@@ -72,6 +73,9 @@ export function AscensionRoute(): JSX.Element {
       && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
     ) {
       performAscend();
+      // Reduced-motion users skip the cinematic, so they get the levels but
+      // not the reveal — clear so no stale roll lingers into a later ascend.
+      clearAscendRoll();
       return;
     }
     setCavernPhase("opening");
@@ -89,6 +93,7 @@ export function AscensionRoute(): JSX.Element {
   const onCinematicDismiss = () => {
     setCinematicPhase(null);
     setCavernPhase("idle");
+    clearAscendRoll();
     navigate("/constellation");
   };
 

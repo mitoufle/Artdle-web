@@ -204,6 +204,29 @@ describe("AscensionRoute cinematic overlay", () => {
     expect(screen.getByTestId("constellation-stub")).toBeInTheDocument();
   });
 
+  it("dismissing the blackout clears lastAscendRoll (no stale reveal next ascend)", () => {
+    useGameStore.setState({ inspiration: big(12_000) });
+    const { container } = renderAscensionRoute();
+    fireEvent.click(screen.getByRole("button", { name: /step through/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ascend/i }));
+    const video = container.querySelector<HTMLVideoElement>('[data-testid="cavern-video"]');
+    fireEvent.ended(video!);
+    // Simulate a populated roll surviving into the blackout, then dismiss.
+    act(() => {
+      useGameStore.setState({
+        lastAscendRoll: [{
+          id: "w-test",
+          levelBefore: 1,
+          levelAfter: 2,
+          statsBefore: { goldPct: 0, speed: 1, critChance: 0.01, strokesPerCrit: 1, comboChance: 0 },
+          statsAfter: { goldPct: 0.03, speed: 1, critChance: 0.01, strokesPerCrit: 1, comboChance: 0 },
+        }],
+      });
+    });
+    fireEvent.click(screen.getByTestId("ascend-cinematic-overlay"));
+    expect(useGameStore.getState().lastAscendRoll).toBeNull();
+  });
+
   it("step-through is gated through both opening and blackout phases", () => {
     useGameStore.setState({ inspiration: big(12_000) });
     const { container } = renderAscensionRoute();
