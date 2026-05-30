@@ -19,9 +19,10 @@ describe("<TrackCard>", () => {
       />,
     );
     expect(screen.getByText(/Sell Price/i)).toBeInTheDocument();
-    expect(screen.getByText(/Level 3/i)).toBeInTheDocument();
-    expect(screen.getByText(/\+30% gold per sale/i)).toBeInTheDocument();
+    expect(screen.getByText("L3")).toBeInTheDocument();
     expect(screen.getByText(/150g/)).toBeInTheDocument();
+    // effect text is no longer always-visible — it moved to the hover breakdown
+    expect(screen.queryByText(/\+30% gold per sale/i)).toBeNull();
   });
 
   it("renders 'Locked' state when locked=true (no upgrade button or disabled)", () => {
