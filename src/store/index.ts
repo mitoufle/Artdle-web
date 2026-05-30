@@ -41,7 +41,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-const SAVE_VERSION = 28;
+export const SAVE_VERSION = 28;
 const SAVE_KEY = "artdle-save";
 
 /**
