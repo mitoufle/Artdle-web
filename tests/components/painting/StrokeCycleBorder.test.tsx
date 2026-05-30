@@ -7,21 +7,23 @@ import { StrokeCycleBorder } from "@/components/painting/StrokeCycleBorder";
 afterEach(cleanup);
 
 describe("StrokeCycleBorder", () => {
-  it("sets --fill to the player's clock / interval", () => {
+  it("fills the perimeter to the player's clock / interval", () => {
     useGameStore.setState({ painterClocks: { [PLAYER_ID]: 2.5 } });
     const { getByTestId } = render(<StrokeCycleBorder interval={5} />);
-    expect(getByTestId("stroke-cycle-border").style.getPropertyValue("--fill")).toBe("0.5");
+    const fill = getByTestId("stroke-cycle-fill");
+    expect(fill.getAttribute("data-fill")).toBe("0.5");
+    expect(fill.style.strokeDasharray).toBe("0.5 1"); // fill fraction of the perimeter
   });
 
-  it("clamps to 1 when the clock exceeds the interval", () => {
+  it("clamps to a full perimeter when the clock exceeds the interval", () => {
     useGameStore.setState({ painterClocks: { [PLAYER_ID]: 9 } });
     const { getByTestId } = render(<StrokeCycleBorder interval={5} />);
-    expect(getByTestId("stroke-cycle-border").style.getPropertyValue("--fill")).toBe("1");
+    expect(getByTestId("stroke-cycle-fill").getAttribute("data-fill")).toBe("1");
   });
 
-  it("is 0 when interval is 0 (no divide-by-zero)", () => {
+  it("is empty when interval is 0 (no divide-by-zero)", () => {
     useGameStore.setState({ painterClocks: { [PLAYER_ID]: 3 } });
     const { getByTestId } = render(<StrokeCycleBorder interval={0} />);
-    expect(getByTestId("stroke-cycle-border").style.getPropertyValue("--fill")).toBe("0");
+    expect(getByTestId("stroke-cycle-fill").getAttribute("data-fill")).toBe("0");
   });
 });
