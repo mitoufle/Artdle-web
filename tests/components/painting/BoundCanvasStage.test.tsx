@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Profiler, type ProfilerOnRenderCallback } from "react";
 import { render, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { useGameStore } from "@/store";
 import { createWorker } from "@/store/officeSlice";
+import * as balance from "@/core/balance";
 import { PaintingRoute } from "@/routes/PaintingRoute";
 
 /**
@@ -81,38 +82,46 @@ describe("PaintingRoute subscription isolation (BoundCanvasStage regression guar
     // WorkerAvatars self-subscribes to `roster` + `painterClocks` and is
     // mounted as a leaf sibling of BoundCanvasStage inside the stageArea. Its
     // per-tick `painterClocks` updates must stay contained in that subtree —
-    // they must NOT leak a subscription into PaintingRoute's body. This mirrors
-    // the canvasProgress guard above for the multi-painter clock stream.
+    // they must NOT leak a subscription into PaintingRoute's body. This is the
+    // multi-painter analogue of the canvasProgress guard above.
+    //
+    // We CANNOT count this with a Profiler at the route boundary: that boundary
+    // wraps WorkerAvatars too, so it fires on the avatar overlay's (correct,
+    // expected) per-tick commits and can't tell a leaked body re-render from an
+    // isolated child re-render. Instead we spy on `chunksPerCanvas`, which is
+    // called exactly once in PaintingRoute's body and NOWHERE in the rendered
+    // child subtree (WorkerAvatars calls only chunkInterval; BoundCanvasStage
+    // calls neither; StatsRoom — the only other caller — isn't mounted under
+    // the default "workshop" room). So spy-call deltas count the ROUTE BODY's
+    // own re-executions specifically. Updates are flushed in their own act() so
+    // a real leak produces one body render per update (verified non-vacuous:
+    // adding `useGameStore((s) => s.painterClocks)` to the body makes the delta
+    // jump to ~30 and the test goes red).
     const worker = createWorker();
     useGameStore.setState({ roster: [worker], painterClocks: {} });
 
-    let renderCount = 0;
-    const onRender: ProfilerOnRenderCallback = (id) => {
-      if (id === "PaintingRouteBody") renderCount += 1;
-    };
+    const spy = vi.spyOn(balance, "chunksPerCanvas");
 
     render(
       <MemoryRouter>
-        <Profiler id="PaintingRouteBody" onRender={onRender}>
-          <PaintingRoute />
-        </Profiler>
+        <PaintingRoute />
       </MemoryRouter>,
     );
 
-    const baseline = renderCount;
+    const baseline = spy.mock.calls.length;
 
-    // Simulate the tick loop firing 30 painterClocks updates back-to-back (the
-    // per-worker clocks advancing toward each next stroke). The avatar overlay
-    // subscribes to these; PaintingRoute's body must not.
-    act(() => {
-      for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 30; i++) {
+      act(() => {
         useGameStore.setState({ painterClocks: { [worker.id]: i * 0.1 } });
-      }
-    });
+      });
+    }
 
-    // Same tolerance as the canvasProgress case (StrictMode double-invoke +
-    // React 19 batching slack). Pre-isolation this would be ~30 commits.
-    expect(renderCount - baseline).toBeLessThanOrEqual(3);
+    // The route body must not re-execute on painterClocks changes: expected
+    // delta is 0. Tolerate 1 for StrictMode double-invoke slack. A leaked
+    // subscription would re-run the body per update → ~30.
+    expect(spy.mock.calls.length - baseline).toBeLessThanOrEqual(1);
+
+    spy.mockRestore();
   });
 
   it("still updates the visible progress display when canvasProgress changes", () => {

@@ -1,32 +1,30 @@
 /**
- * On-canvas worker avatar overlay. Painters line up along the bottom edge of
- * the stage, each lit by a thin gold cooldown bar that fills toward its next
- * stroke. The layer is purely decorative and MUST stay click-through so the
- * easel underneath keeps receiving click-to-paint (the component also sets
- * pointer-events:none inline — this rule is the belt-and-braces fallback).
+ * On-canvas worker avatar overlay. Painters stack along the RIGHT edge of the
+ * stage — deliberately NOT the bottom, where CanvasStage anchors its progress
+ * bar, sale/gold preview and tier badge (see CanvasStage.module.css .progress
+ * / .bottomRow). Each painter is lit by a thin gold cooldown bar that fills
+ * toward its next stroke. The layer is purely decorative and MUST stay
+ * click-through so the easel underneath keeps receiving click-to-paint (the
+ * component also sets pointer-events:none inline — this rule is the
+ * belt-and-braces fallback).
  *
  * Kept lightweight: this subtree re-renders every tick. No JS-driven filters,
  * no per-frame box-shadow animation — just a width transition on the fill.
  */
 .layer {
   position: absolute;
-  left: 0;
+  top: 0;
   right: 0;
   bottom: 0;
   pointer-events: none;
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
+  align-content: flex-start;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--s-3);
-  padding: var(--s-2) var(--s-3);
-  /* a faint gilded floor so the painters read as standing on a ledge */
-  background: linear-gradient(
-    to top,
-    rgba(10, 8, 20, 0.55) 0%,
-    rgba(10, 8, 20, 0.18) 55%,
-    transparent 100%
-  );
+  padding: var(--s-3) var(--s-2);
 }
 
 .avatar {
