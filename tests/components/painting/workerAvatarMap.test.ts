@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { WORKER_AVATARS } from "@/components/painting/workerAvatars";
+import { WORKER_AVATARS } from "@/components/painting/workerAvatarMap";
 
 describe("WORKER_AVATARS", () => {
   it("exposes 4 resolved image paths", () => {
