@@ -5,6 +5,8 @@ import { useGameStore } from "@/store";
 import { persistedAdapter } from "@/systems/persistence";
 import { useMusic } from "@/ui/hooks/useMusic";
 import { MusicControls } from "./MusicControls";
+import { BugReportModal } from "./BugReportModal";
+import { Bug } from "lucide-react";
 import { pauseTickLoop } from "@/core/tickLoop";
 import { canAscend } from "@/systems/ascend";
 import treeIcon from "@/assets/bar_icons/tree.png";
@@ -62,6 +64,7 @@ async function wipeAndReload(): Promise<void> {
 export function TopBar(): JSX.Element {
   const { pathname } = useLocation();
   const [confirming, setConfirming] = useState(false);
+  const [bugOpen, setBugOpen] = useState(false);
   const music = useMusic();
 
   // Sticky unlocks — flip false→true once the threshold is FIRST crossed,
@@ -100,6 +103,7 @@ export function TopBar(): JSX.Element {
   };
 
   return (
+    <>
     <header className={styles.bar}>
       <img src="/artdle_logo.png" alt="Artdle" className={styles.brand} />
       <nav className={styles.nav} aria-label="Primary">
@@ -168,6 +172,15 @@ export function TopBar(): JSX.Element {
       </nav>
       <div className={styles.meta} aria-label="Autosave status">
         <MusicControls controls={music} />
+        <button
+          type="button"
+          className={styles.bugBtn}
+          onClick={() => setBugOpen(true)}
+          title="Report a bug"
+          aria-label="Report a bug"
+        >
+          <Bug size={12} aria-hidden /> Bug
+        </button>
         {confirming ? (
           <>
             <span className={styles.confirmPrompt}>Wipe all progress?</span>
