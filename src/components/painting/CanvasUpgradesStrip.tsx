@@ -19,7 +19,7 @@ export function CanvasUpgradesStrip({ children }: Props): JSX.Element {
       className={styles.strip}
       role="group"
       aria-label="Canvas upgrades"
-      data-cells="5"
+      data-cols="2"
     >
       {children}
     </section>

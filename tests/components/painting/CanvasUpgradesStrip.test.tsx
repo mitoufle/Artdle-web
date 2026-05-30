@@ -21,9 +21,9 @@ describe("<CanvasUpgradesStrip />", () => {
     expect(screen.getByTestId("tier-tile")).toBeInTheDocument();
   });
 
-  it("uses a 5-column grid layout (CSS), confirmed via class on container", () => {
+  it("uses a 2-column grid layout (CSS), confirmed via attribute on container", () => {
     const { container } = render(<CanvasUpgradesStrip />);
     const strip = container.firstChild as HTMLElement;
-    expect(strip).toHaveAttribute("data-cells", "5");
+    expect(strip).toHaveAttribute("data-cols", "2");
   });
 });

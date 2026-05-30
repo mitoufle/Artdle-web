@@ -1,9 +1,7 @@
+/* Frameless — the .upgradesOverlay panel is the only frame (and carries the
+ * sweeping StrokeCycleBorder). Two compact pill columns. */
 .strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--s-3);
-  padding: var(--s-3);
-  background: var(--bg-1);
-  border: var(--border-subtle);
-  border-radius: var(--r-md);
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--s-2);
 }
