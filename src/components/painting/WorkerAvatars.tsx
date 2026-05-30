@@ -23,6 +23,10 @@ export function WorkerAvatars(): JSX.Element | null {
   // Per-worker previous clock + a monotonic "stroke happened" nonce. A worker
   // strokes exactly when its clock DROPS (resets toward 0). Updating prev within
   // the same render makes this idempotent under StrictMode's double-invoke.
+  // NOTE: refs are mutated during render on purpose. Do NOT "fix" this into a
+  // useEffect — this subtree re-renders every tick by design, so an effect would
+  // fire every tick. Worst case under a discarded concurrent render is one
+  // missed/doubled shake, which self-corrects on the next tick (purely cosmetic).
   const prevClocks = useRef<Record<string, number>>({});
   const procNonce = useRef<Record<string, number>>({});
 
