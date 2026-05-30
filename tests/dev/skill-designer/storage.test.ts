@@ -19,6 +19,7 @@ const sample: DesignFile = {
       costs: [1],
       unlocks: [],
       position: null,
+      clusterId: "inspiration",
     },
   ],
 };

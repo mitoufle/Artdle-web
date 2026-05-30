@@ -25,6 +25,7 @@ function n(
     costs: [1],
     unlocks: [],
     position,
+    clusterId: "inspiration",
   };
 }
 

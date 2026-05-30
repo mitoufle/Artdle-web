@@ -43,6 +43,7 @@ function migrateNode(raw: LegacyDesignNode): DesignNode {
     costs: raw.costs,
     unlocks: raw.unlocks ?? [],
     position: raw.position,
+    clusterId: (raw as { clusterId?: string }).clusterId ?? "inspiration",
   };
 }
 

@@ -15,6 +15,7 @@ const baseNode: DesignNode = {
   costs: [10, 25],
   unlocks: [],
   position: null,
+  clusterId: "inspiration",
 };
 
 const otherNode: DesignNode = {
@@ -29,6 +30,7 @@ const otherNode: DesignNode = {
   costs: [1],
   unlocks: [],
   position: null,
+  clusterId: "inspiration",
 };
 
 describe("<NodeForm />", () => {

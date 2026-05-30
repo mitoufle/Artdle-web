@@ -15,6 +15,7 @@ function n(id: string, parentId: string | null = null, maxLevel = 1, costs: numb
     costs,
     unlocks: [],
     position: null,
+    clusterId: "inspiration",
   };
 }
 

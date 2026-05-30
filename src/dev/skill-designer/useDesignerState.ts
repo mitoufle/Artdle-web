@@ -49,6 +49,7 @@ function loadFileBaseline(): DesignFile {
       costs: n.costs,
       unlocks: ((n as { unlocks?: string[] }).unlocks ?? []) as string[],
       position: n.position,
+      clusterId: ((n as { clusterId?: string }).clusterId ?? "inspiration") as string,
     })),
   };
 }
@@ -85,6 +86,7 @@ export function useDesignerState(): DesignerState {
         costs: [0],
         unlocks: [],
         position: null,
+        clusterId: "inspiration",
       };
       return { ...d, nodes: [...d.nodes, newNode] };
     });

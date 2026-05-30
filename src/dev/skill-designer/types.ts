@@ -16,6 +16,8 @@ export interface DesignNode {
   /** Capability tags granted when this node is purchased (level ≥ 1). */
   unlocks: ReadonlyArray<string>;
   position: { x: number; y: number } | null;
+  /** Which constellation cluster this node belongs to. */
+  clusterId: string;
 }
 
 export interface DesignFile {

@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import type { DesignNode, NodeKind, StackingMode } from "./types";
+import { SKILL_CLUSTERS } from "@/config/skillClusters";
 import styles from "./NodeForm.module.css";
 
 interface Props {
@@ -62,6 +63,22 @@ export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Ele
         />
       </label>
 
+      <label className={styles.field}>
+        <span className={styles.label}>Cluster</span>
+        <select
+          className={styles.input}
+          aria-label="Cluster"
+          value={node.clusterId}
+          onChange={(e) => patch({ clusterId: e.target.value })}
+        >
+          {SKILL_CLUSTERS.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <div className={styles.field}>
         <span className={styles.label}>Parents (multi-select)</span>
         <div className={styles.parentList}>
@@ -89,7 +106,7 @@ export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Ele
             })}
         </div>
         {node.parentIds.length === 0 && (
-          <span className={styles.subLabel}>No parents — this node is a root (child of FAME).</span>
+          <span className={styles.subLabel}>No parents — this node is its cluster's root.</span>
         )}
       </div>
 

@@ -16,6 +16,7 @@ function n(id: string, parentId: string | null = null, position: { x: number; y:
     costs: [1],
     unlocks: [],
     position,
+    clusterId: "inspiration",
   };
 }
 

@@ -16,6 +16,7 @@ function n(id: string, name = id, maxLevel = 1): DesignNode {
     costs: Array(maxLevel).fill(1),
     unlocks: [],
     position: null,
+    clusterId: "inspiration",
   };
 }
 
