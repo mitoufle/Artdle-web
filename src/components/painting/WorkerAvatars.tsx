@@ -47,6 +47,7 @@ export function WorkerAvatars(): JSX.Element | null {
     const xpFrac = Math.max(0, Math.min(1, w.xp.div(xpToNext).toNumber()));
     return (
       <div key={w.id} className={styles.avatar} data-testid="worker-avatar">
+        <div className={styles.name} data-testid="worker-name">{w.name}</div>
         <div
           key={`rw-${nonce}`}
           className={styles.ringWrap}
