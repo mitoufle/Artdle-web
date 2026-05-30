@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import type { DesignFile, DesignNode, NodeKind, StackingMode, DesignCluster } from "./types";
 import { EMPTY_DESIGN } from "./types";
 import { loadDraft, saveDraft, clearDraft } from "./storage";
+import { nextClusterRegion } from "./clusterRegion";
 import designJson from "@/config/skillTreeDesign.json";
 
 const SAVE_DEBOUNCE_MS = 500;
@@ -13,11 +14,16 @@ export interface DesignerActions {
   selectNode: (id: string | null) => void;
   resetAll: () => void;
   importDesign: (design: DesignFile) => void;
+  addCluster: () => void;
+  updateCluster: (id: string, patch: Partial<DesignCluster>) => void;
+  deleteCluster: (id: string) => void;
+  selectCluster: (id: string | null) => void;
 }
 
 export interface DesignerState {
   design: DesignFile;
   selectedId: string | null;
+  selectedClusterId: string | null;
   actions: DesignerActions;
 }
 
@@ -26,6 +32,12 @@ function uniqueId(existing: ReadonlyArray<DesignNode>, base: string): string {
   let i = 2;
   while (existing.some((n) => n.id === `${base}_${i}`)) i += 1;
   return `${base}_${i}`;
+}
+
+function uniqueClusterId(existing: ReadonlyArray<DesignCluster>): string {
+  let i = existing.length + 1;
+  while (existing.some((c) => c.id === `cluster_${i}`)) i += 1;
+  return `cluster_${i}`;
 }
 
 /**
@@ -60,6 +72,7 @@ export function useDesignerState(): DesignerState {
     () => loadDraft() ?? loadFileBaseline(),
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -119,23 +132,64 @@ export function useDesignerState(): DesignerState {
 
   const selectNode = useCallback((id: string | null) => {
     setSelectedId(id);
+    if (id !== null) setSelectedClusterId(null);
   }, []);
 
   const resetAll = useCallback(() => {
     clearDraft();
     setDesign({ ...loadFileBaseline() });
     setSelectedId(null);
+    setSelectedClusterId(null);
   }, []);
 
   const importDesign = useCallback((d: DesignFile) => {
     setDesign(d);
     setSelectedId(null);
+    setSelectedClusterId(null);
+  }, []);
+
+  const addCluster = useCallback(() => {
+    const id = uniqueClusterId(design.clusters);
+    const cluster: DesignCluster = {
+      id, name: "New Cluster", theme: "", rootNodeId: "",
+      region: nextClusterRegion(design.clusters),
+    };
+    setDesign((d) => ({ ...d, clusters: [...d.clusters, cluster] }));
+    setSelectedClusterId(id);
+    setSelectedId(null);
+  }, [design.clusters]);
+
+  const updateCluster = useCallback((id: string, patch: Partial<DesignCluster>) => {
+    setDesign((d) => ({
+      ...d,
+      clusters: d.clusters.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+  }, []);
+
+  const deleteCluster = useCallback((id: string) => {
+    setDesign((d) => {
+      const remaining = d.clusters.filter((c) => c.id !== id);
+      const fallback = remaining[0]?.id ?? "inspiration";
+      return {
+        ...d,
+        clusters: remaining,
+        nodes: d.nodes.map((n) => (n.clusterId === id ? { ...n, clusterId: fallback } : n)),
+      };
+    });
+    setSelectedClusterId((cur) => (cur === id ? null : cur));
+  }, []);
+
+  const selectCluster = useCallback((id: string | null) => {
+    setSelectedClusterId(id);
+    if (id !== null) setSelectedId(null);
   }, []);
 
   return {
     design,
     selectedId,
-    actions: { addNode, updateNode, deleteNode, selectNode, resetAll, importDesign },
+    selectedClusterId,
+    actions: { addNode, updateNode, deleteNode, selectNode, resetAll, importDesign,
+               addCluster, updateCluster, deleteCluster, selectCluster },
   };
 }
 
