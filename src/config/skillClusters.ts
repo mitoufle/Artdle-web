@@ -1,6 +1,5 @@
 // src/config/skillClusters.ts
-import { SKILL_NODES, type SkillNodeConfig } from "@/config/skillTreeNodes";
-import type { SkillNodeId } from "@/config/skillTreeNodes";
+import { SKILL_NODES, type SkillNodeConfig, type SkillNodeId } from "@/config/skillTreeNodes";
 
 /** Cluster identifier. String — data-driven, matches SkillNodeId style. */
 export type SkillClusterId = string;
