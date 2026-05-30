@@ -44,7 +44,7 @@ export function MiniMap({ ownedById, selectedId, viewport, onJump }: Props): JSX
         style={{ cursor: "pointer" }}
       >
         <rect width={VIEWBOX.width} height={VIEWBOX.height} fill="var(--bg-stone-d)" />
-{(Object.keys(NODE_POSITIONS) as SkillNodeId[]).map((id) => {
+        {(Object.keys(NODE_POSITIONS) as SkillNodeId[]).map((id) => {
           const pos = NODE_POSITIONS[id];
           if (!pos) return null;
           const owned = ownedById[id];
