@@ -160,6 +160,65 @@
   font-weight: 700;
 }
 
+/* ============================================================================
+   Worker stat-sheet card elements
+   ========================================================================= */
+
+.cardName {
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-0);
+  letter-spacing: 0.04em;
+}
+
+.cardLevel {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cardClass {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: capitalize;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+  padding-bottom: var(--s-1);
+  border-bottom: 1px solid var(--ink-line);
+}
+
+.statList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.statLabel {
+  color: var(--ink-3);
+}
+
+.statValue {
+  color: var(--ink-1);
+  font-weight: 600;
+}
+
 /* Worker-card XP bar shares the same strip shape as the level header */
 .workerXpStrip {
   display: flex;
