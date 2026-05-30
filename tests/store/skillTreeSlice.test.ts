@@ -52,6 +52,23 @@ describe("skillTreeSlice (multi-level + DAG)", () => {
     expect(useGameStore.getState().buyNode("red")).toBe(true);
   });
 
+  it("cut cluster roots are buyable from scratch (no former parent required)", () => {
+    // After the cross-cluster link cuts, these five nodes have parentIds: [] and
+    // must be purchasable with only fame, with no prerequisite node owned.
+    const cutRoots: ReadonlyArray<[SkillNodeId, number]> = [
+      ["black_white", 3],
+      ["genius_episode", 10],
+      ["unrelentless", 150],
+      ["entrepreneur", 700],
+      ["unlock_school", 25000],
+    ];
+    for (const [id, cost] of cutRoots) {
+      useGameStore.setState({ purchasedNodes: {}, fame: big(cost) });
+      expect(useGameStore.getState().buyNode(id)).toBe(true);
+      expect(getNodeLevel(useGameStore.getState(), id)).toBe(1);
+    }
+  });
+
   it("hasNode returns true iff level > 0", () => {
     expect(hasNode(useGameStore.getState(), "get_inspired")).toBe(false);
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
