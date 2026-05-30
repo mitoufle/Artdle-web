@@ -2,11 +2,15 @@ import { useEffect, useRef } from "react";
 import { useGameStore } from "@/store";
 import soldSfx from "@/assets/sounds/Canvas_sold.mp3";
 
-// Shared with the music mute toggle (no separate SFX control).
+// Shared with the music controls (no separate SFX control), so the volume
+// slider AND the mute button both govern this sound.
+const KEY_VOL = "artdle-music-volume";
 const KEY_MUTED = "artdle-music-muted";
-// Web Audio gain — can exceed 1.0 to amplify a quietly-recorded clip above the
-// HTMLAudioElement ceiling so the short sale cue cuts through the music.
-const SFX_GAIN = 4;
+// The clip is quiet, so it's amplified well above the slider value (gain can
+// exceed 1.0 in Web Audio): gain = volume × BOOST, capped. At the default slider
+// (0.2) that's ~4; the slider still scales it down to silence at 0.
+const SFX_BOOST = 20;
+const SFX_MAX_GAIN = 8;
 
 type AudioCtor = typeof AudioContext;
 
@@ -59,7 +63,10 @@ export function CanvasSoldSfx(): null {
     const prev = prevRef.current;
     prevRef.current = canvasesSold;
     if (canvasesSold <= prev) return; // no new sale (or reset to 0 on ascend)
-    if (localStorage.getItem(KEY_MUTED) === "true") return;
+    if (localStorage.getItem(KEY_MUTED) === "true") return; // mute button
+    const raw = parseFloat(localStorage.getItem(KEY_VOL) ?? "0.2");
+    const volume = Number.isNaN(raw) ? 0.2 : Math.max(0, Math.min(1, raw));
+    if (volume <= 0) return; // volume slider at zero → silent
     const ctx = ctxRef.current;
     const buffer = bufferRef.current;
     if (!ctx || !buffer) return;
@@ -67,7 +74,7 @@ export function CanvasSoldSfx(): null {
     const src = ctx.createBufferSource();
     src.buffer = buffer;
     const gain = ctx.createGain();
-    gain.gain.value = SFX_GAIN;
+    gain.gain.value = Math.min(SFX_MAX_GAIN, volume * SFX_BOOST);
     src.connect(gain).connect(ctx.destination);
     src.start();
   }, [canvasesSold]);

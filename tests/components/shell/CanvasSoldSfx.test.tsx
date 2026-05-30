@@ -4,6 +4,7 @@ import { useGameStore } from "@/store";
 import { CanvasSoldSfx } from "@/components/shell/CanvasSoldSfx";
 
 const started = { count: 0 };
+let lastGain: { value: number } | null = null;
 
 class FakeAudioContext {
   state = "running";
@@ -11,7 +12,8 @@ class FakeAudioContext {
   resume = vi.fn();
   close = vi.fn();
   createGain() {
-    return { gain: { value: 0 }, connect: (n: unknown) => n } as unknown as GainNode;
+    lastGain = { value: 0 };
+    return { gain: lastGain, connect: (n: unknown) => n } as unknown as GainNode;
   }
   createBufferSource() {
     return {
@@ -42,6 +44,7 @@ describe("CanvasSoldSfx", () => {
   beforeEach(() => {
     localStorage.clear();
     started.count = 0;
+    lastGain = null;
     vi.stubGlobal("AudioContext", FakeAudioContext as unknown as typeof AudioContext);
     vi.stubGlobal(
       "fetch",
@@ -56,11 +59,13 @@ describe("CanvasSoldSfx", () => {
     vi.restoreAllMocks();
   });
 
-  it("plays the sound once when a canvas sells", async () => {
+  it("plays once when a canvas sells, amplified by the volume slider (× boost)", async () => {
+    localStorage.setItem("artdle-music-volume", "0.2");
     render(<CanvasSoldSfx />);
     await flushDecode();
     act(() => setSold(1));
     expect(started.count).toBe(1);
+    expect(lastGain?.value).toBeCloseTo(4); // 0.2 × 20 boost
   });
 
   it("does not play when the count is unchanged or drops (ascend reset)", async () => {
@@ -72,8 +77,16 @@ describe("CanvasSoldSfx", () => {
     expect(started.count).toBe(0);
   });
 
-  it("does not play when music is muted", async () => {
+  it("is silenced by the mute button", async () => {
     localStorage.setItem("artdle-music-muted", "true");
+    render(<CanvasSoldSfx />);
+    await flushDecode();
+    act(() => setSold(1));
+    expect(started.count).toBe(0);
+  });
+
+  it("is silenced when the volume slider is at zero", async () => {
+    localStorage.setItem("artdle-music-volume", "0");
     render(<CanvasSoldSfx />);
     await flushDecode();
     act(() => setSold(1));
