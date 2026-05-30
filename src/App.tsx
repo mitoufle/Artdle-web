@@ -4,7 +4,6 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { resumeTickLoop } from "@/core/tickLoop";
 import { TopBar } from "@/components/shell/TopBar";
 import { BottomBar } from "@/components/shell/BottomBar";
-import { InfoPanel } from "@/components/shell/InfoPanel";
 import { AchievementToast } from "@/components/shell/AchievementToast";
 import { TreeRoute } from "@/routes/TreeRoute";
 import { PaintingRoute } from "@/routes/PaintingRoute";
@@ -53,7 +52,6 @@ export function App(): JSX.Element {
           <Route path="*" element={<Navigate to="/tree" replace />} />
         </Routes>
       </main>
-      <InfoPanel />
       <BottomBar />
       <AchievementToast />
     </div>
