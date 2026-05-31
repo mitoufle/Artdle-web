@@ -111,7 +111,11 @@ export function SchoolRoom(): JSX.Element {
               <div
                 className={done ? styles.cardDone : isActive ? styles.cardActive : styles.cardAvailable}
                 onClick={() => {
-                  if (!done && !isActive && !activeResearch) startResearch(research.id);
+                  if (done || isActive) return;
+                  // Clicking another research stops the ongoing one (banking its
+                  // progress) and starts/resumes the clicked one.
+                  if (activeResearch) pauseResearch();
+                  startResearch(research.id);
                 }}
               >
                 <div className={styles.cardName}>

@@ -78,6 +78,16 @@ describe("schoolSlice", () => {
     expect(useGameStore.getState().researchProgress["color_theory_basics"]).toBeUndefined();
   });
 
+  it("switching: pausing the active research then starting another keeps the first's banked progress", () => {
+    useGameStore.getState().startResearch("color_theory_basics"); // 18000s
+    useGameStore.getState().schoolTick(5000); // 13000s remaining
+    // The School room does this on a click: pause the active one, start the clicked one.
+    useGameStore.getState().pauseResearch();
+    expect(useGameStore.getState().startResearch("brushwork_basics")).toBe(true);
+    expect(useGameStore.getState().activeResearch?.id).toBe("brushwork_basics");
+    expect(useGameStore.getState().researchProgress["color_theory_basics"]).toBeCloseTo(13000, 1);
+  });
+
   it("banked research progress is unaffected by an ascend (school is never reset on ascend)", () => {
     useGameStore.getState().startResearch("color_theory_basics");
     useGameStore.getState().schoolTick(5000);
