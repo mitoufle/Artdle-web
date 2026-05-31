@@ -22,7 +22,7 @@ describe("migrate v29 → v30 (aggregate item affixes)", () => {
     ]);
   });
 
-  it("caps duplicate crit/combo on equipped items to the single largest value", () => {
+  it("sums duplicate crit/combo on equipped items (value-preserving — never strips earned magnitude)", () => {
     const result = migrate(
       { equipped: { brush: item([
         { kind: "+combo_chance%", magnitude: 40 },
@@ -33,8 +33,8 @@ describe("migrate v29 → v30 (aggregate item affixes)", () => {
       29,
     );
     const affixes = result.equipped.brush!.affixes;
-    expect(affixes).toContainEqual({ kind: "+crit_chunks", magnitude: 30 });
-    expect(affixes).toContainEqual({ kind: "+combo_chance%", magnitude: 52 });
+    expect(affixes).toContainEqual({ kind: "+crit_chunks", magnitude: 48 });
+    expect(affixes).toContainEqual({ kind: "+combo_chance%", magnitude: 92 });
     expect(affixes).toHaveLength(2);
   });
 

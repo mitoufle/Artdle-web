@@ -70,24 +70,20 @@ export const SINGLE_ROLL_AFFIX_KINDS: ReadonlySet<AffixKind> = new Set<AffixKind
 ]);
 
 /**
- * Collapse an affix list to at most one entry per kind, so the same stat is
- * shown (and stored) as a single aggregated value. Uncapped kinds (sell-price,
- * speed) SUM their magnitudes — gameplay-neutral, since every multiplier sums
- * per kind anyway. Single-roll kinds (crit, combo) keep their largest single
- * magnitude, enforcing the max-one rule even on legacy multi-roll items.
- * Output order follows AFFIX_KINDS for stable display.
+ * Collapse an affix list to one entry per kind by SUMMING magnitudes — so the
+ * same stat is shown (and stored) as a single aggregated value. Summing is
+ * gameplay-neutral: every canvas multiplier already sums per kind, so this only
+ * changes presentation/storage, never effect. Output order follows AFFIX_KINDS.
+ *
+ * The one-roll cap on crit/combo is enforced at ROLL time (pool removal, via
+ * `SINGLE_ROLL_AFFIX_KINDS`), NOT here — so aggregation stays value-preserving
+ * for legacy items that were rolled before that cap existed (it must not strip
+ * magnitude a player already earned by fusing).
  */
 export function aggregateAffixes(affixes: ReadonlyArray<Affix>): Affix[] {
   const byKind = new Map<AffixKind, number>();
   for (const a of affixes) {
-    const prev = byKind.get(a.kind);
-    if (prev === undefined) {
-      byKind.set(a.kind, a.magnitude);
-    } else if (SINGLE_ROLL_AFFIX_KINDS.has(a.kind)) {
-      byKind.set(a.kind, Math.max(prev, a.magnitude));
-    } else {
-      byKind.set(a.kind, prev + a.magnitude);
-    }
+    byKind.set(a.kind, (byKind.get(a.kind) ?? 0) + a.magnitude);
   }
   return AFFIX_KINDS.filter((k) => byKind.has(k)).map((k) => ({ kind: k, magnitude: byKind.get(k)! }));
 }
