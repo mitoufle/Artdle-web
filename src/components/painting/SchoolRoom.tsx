@@ -21,9 +21,10 @@ export function SchoolRoom(): JSX.Element {
   const completedResearches = useGameStore((s) => s.completedResearches);
   const currentTier = useGameStore((s) => s.currentTier);
   const activeResearch = useGameStore((s) => s.activeResearch);
+  const researchProgress = useGameStore((s) => s.researchProgress);
   const fame = useGameStore((s) => s.fame);
   const startResearch = useGameStore((s) => s.startResearch);
-  const cancelResearch = useGameStore((s) => s.cancelResearch);
+  const pauseResearch = useGameStore((s) => s.pauseResearch);
   const passExam = useGameStore((s) => s.passExam);
 
   const tierDef = SCHOOL_TIERS.find((t) => t.tier === currentTier);
@@ -77,8 +78,8 @@ export function SchoolRoom(): JSX.Element {
               style={{ width: `${activeProgress * 100}%` }}
             />
           </div>
-          <button className={styles.cancelBtn} onClick={cancelResearch} type="button">
-            Cancel
+          <button className={styles.cancelBtn} onClick={pauseResearch} type="button">
+            Pause
           </button>
         </div>
       )}
@@ -87,6 +88,8 @@ export function SchoolRoom(): JSX.Element {
         {tierDef.researches.map((research) => {
           const done = !!completedResearches[research.id];
           const isActive = activeResearch?.id === research.id;
+          const banked = researchProgress[research.id];
+          const isPaused = !done && !isActive && banked !== undefined;
           const summary = effectSummary(research.effects);
 
           return (
@@ -100,6 +103,8 @@ export function SchoolRoom(): JSX.Element {
                   ? "Completed"
                   : isActive
                   ? `${formatDuration(Math.max(0, activeResearch!.remainingSeconds))} remaining`
+                  : isPaused
+                  ? `Paused — ${formatDuration(banked)} left (click to resume)`
                   : `${formatDuration(research.durationSeconds)} to complete`
               }
             >
@@ -110,12 +115,14 @@ export function SchoolRoom(): JSX.Element {
                 }}
               >
                 <div className={styles.cardName}>
-                  {done ? "✓ " : isActive ? "⏳ " : "○ "}
+                  {done ? "✓ " : isActive ? "⏳ " : isPaused ? "⏸ " : "○ "}
                   {research.name}
                 </div>
                 <div className={styles.cardEffect}>{summary}</div>
                 {!done && !isActive && (
-                  <div className={styles.cardDuration}>{formatDuration(research.durationSeconds)}</div>
+                  <div className={styles.cardDuration}>
+                    {isPaused ? `⏸ ${formatDuration(banked)} left` : formatDuration(research.durationSeconds)}
+                  </div>
                 )}
               </div>
             </Hoverable>

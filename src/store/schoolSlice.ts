@@ -10,6 +10,13 @@ export interface SchoolState {
   currentTier: number;
   activeResearch: { id: string; remainingSeconds: number } | null;
   examsPassed: Record<number, true>;
+  /**
+   * Banked remaining seconds for researches that were paused mid-progress.
+   * Lets a paused research resume where it left off instead of starting over.
+   * Persisted (survives ascend + reload); cleared for an id when it resumes
+   * (moves back into activeResearch) or completes.
+   */
+  researchProgress: Record<string, number>;
 }
 
 export const initialSchoolState: SchoolState = Object.freeze({
@@ -17,11 +24,13 @@ export const initialSchoolState: SchoolState = Object.freeze({
   currentTier: 1,
   activeResearch: null,
   examsPassed: Object.freeze({}) as Record<number, true>,
+  researchProgress: Object.freeze({}) as Record<string, number>,
 }) as SchoolState;
 
 export interface SchoolSlice extends SchoolState {
   startResearch: (id: string) => boolean;
-  cancelResearch: () => void;
+  /** Stop the active research and BANK its remaining time so it can resume later. */
+  pauseResearch: () => void;
   schoolTick: (delta: number) => void;
   passExam: () => boolean;
   resetSchool: () => void;
@@ -38,14 +47,26 @@ export const createSchoolSlice: StateCreator<GameStore, [], [], SchoolSlice> = (
     if (!tierDef) return false;
     const research = tierDef.researches.find((r) => r.id === id);
     if (!research) return false;
+    const banked = state.researchProgress[id];
+    if (banked !== undefined) {
+      // Resume a previously-paused research from where it left off.
+      const { [id]: _resumed, ...rest } = state.researchProgress;
+      set({ activeResearch: { id, remainingSeconds: banked }, researchProgress: rest });
+      return true;
+    }
     const reductionSeconds = getSchoolBonus(state, "School Research flat reduction (mnt)") * 60;
     const remainingSeconds = Math.max(60, research.durationSeconds - reductionSeconds);
     set({ activeResearch: { id, remainingSeconds } });
     return true;
   },
 
-  cancelResearch: () => {
-    set({ activeResearch: null });
+  pauseResearch: () => {
+    const active = get().activeResearch;
+    if (!active) return;
+    set((state) => ({
+      activeResearch: null,
+      researchProgress: { ...state.researchProgress, [active.id]: active.remainingSeconds },
+    }));
   },
 
   schoolTick: (delta) => {

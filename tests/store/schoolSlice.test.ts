@@ -60,10 +60,33 @@ describe("schoolSlice", () => {
     expect(useGameStore.getState().startResearch("composition")).toBe(false);
   });
 
-  it("cancelResearch clears activeResearch", () => {
-    useGameStore.getState().startResearch("color_theory_basics");
-    useGameStore.getState().cancelResearch();
+  it("pauseResearch clears activeResearch and banks its remaining time", () => {
+    useGameStore.getState().startResearch("color_theory_basics"); // 18000s
+    useGameStore.getState().schoolTick(5000); // 13000s remaining
+    useGameStore.getState().pauseResearch();
     expect(useGameStore.getState().activeResearch).toBeNull();
+    expect(useGameStore.getState().researchProgress["color_theory_basics"]).toBeCloseTo(13000, 1);
+  });
+
+  it("startResearch resumes a paused research from its banked time (not the full duration)", () => {
+    useGameStore.getState().startResearch("color_theory_basics"); // 18000s
+    useGameStore.getState().schoolTick(5000); // 13000s remaining
+    useGameStore.getState().pauseResearch();
+    expect(useGameStore.getState().startResearch("color_theory_basics")).toBe(true);
+    expect(useGameStore.getState().activeResearch?.remainingSeconds).toBeCloseTo(13000, 1);
+    // the banked entry is consumed on resume
+    expect(useGameStore.getState().researchProgress["color_theory_basics"]).toBeUndefined();
+  });
+
+  it("banked research progress is unaffected by an ascend (school is never reset on ascend)", () => {
+    useGameStore.getState().startResearch("color_theory_basics");
+    useGameStore.getState().schoolTick(5000);
+    useGameStore.getState().pauseResearch();
+    const banked = useGameStore.getState().researchProgress["color_theory_basics"];
+    // performAscend resets run state but not school; the banked value must survive.
+    useGameStore.getState().resetTree?.();
+    useGameStore.getState().resetCanvas?.();
+    expect(useGameStore.getState().researchProgress["color_theory_basics"]).toBe(banked);
   });
 
   it("schoolTick decrements remainingSeconds", () => {
