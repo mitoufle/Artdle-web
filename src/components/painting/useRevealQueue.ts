@@ -10,11 +10,15 @@ export interface InFlightCell {
   isCrit: boolean;
 }
 
+/** Canvas identity — any value that changes when the rendered canvas changes.
+ *  CanvasStage passes `${tier}-${canvasNumber}` so a tier-up resets too. */
+type CanvasId = number | string;
+
 interface QueueState {
   inFlight: InFlightCell[];
   settled: number[];
   lastTargetRevealed: number;
-  canvasNumber: number;
+  canvasNumber: CanvasId;
 }
 
 type Action =
@@ -22,12 +26,12 @@ type Action =
       type: "advance-target";
       targetRevealed: number;
       cellOrder: number[];
-      canvasNumber: number;
+      canvasNumber: CanvasId;
       critCells: Record<number, true>;
       now: number;
     }
   | { type: "tick"; now: number }
-  | { type: "reset"; canvasNumber: number };
+  | { type: "reset"; canvasNumber: CanvasId };
 
 const INITIAL: QueueState = {
   inFlight: [],
@@ -91,8 +95,9 @@ interface UseRevealQueueArgs {
   targetRevealed: number;
   /** Permutation of [0..totalCells) — the order cells should reveal in for this canvas. */
   cellOrder: number[];
-  /** Increments on each canvas sale — drives the per-canvas reset. */
-  canvasNumber: number;
+  /** Canvas identity — changes on each canvas sale AND on tier-up; drives the
+   *  per-canvas reset. CanvasStage passes `${tier}-${canvasNumber}`. */
+  canvasNumber: CanvasId;
   /** Map of LAYOUT cellIndex -> true for cells whose pop-in should use the
    *  longer crit animation duration. CanvasStage builds this by translating
    *  engine chunk indices through cellOrder. */

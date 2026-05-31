@@ -166,6 +166,12 @@ export function CanvasStage({
   // engine fires more chunks than we render cells.
   const { rows, cols, cellsRendered, chunksPerCell } = getCanvasCellLayout(canvasTier);
 
+  // Canvas identity = (tier, canvasNumber). canvasNumber alone is unchanged on a
+  // tier-up (it tracks canvasesSold), so a reset keyed on it would leave the
+  // previous tier's settled pixels overlaid on the first canvas of the new tier
+  // (issue #3). Folding the tier in forces a clean reset on tier-up too.
+  const canvasUid = `${canvasTier}-${canvasNumber}`;
+
   // Sketch + reveal-order are stable for a given canvasNumber so re-renders
   // (every frame's progress update) don't reshuffle the chunks.
   const sketchUrl = useMemo(
@@ -211,7 +217,7 @@ export function CanvasStage({
   const { inFlight, settled } = useRevealQueue({
     targetRevealed: cellsRevealed,
     cellOrder,
-    canvasNumber,
+    canvasNumber: canvasUid,
     critCells,
   });
 
@@ -249,7 +255,7 @@ export function CanvasStage({
       ctx?.clearRect(0, 0, canvas.width, canvas.height);
     }
     committedRef.current = new Set();
-  }, [canvasNumber]);
+  }, [canvasUid]);
 
   // When a canvas sells (canvasNumber increments), briefly hold the previous
   // sketch as a fading overlay so the player sees what they painted before
@@ -313,7 +319,7 @@ export function CanvasStage({
             <>
               <canvas
                 ref={settledCanvasRef}
-                key={`settled-${canvasNumber}`}
+                key={`settled-${canvasUid}`}
                 className={styles.sketchOverlaySettled}
                 width={400}
                 height={400}
@@ -321,7 +327,7 @@ export function CanvasStage({
                 aria-hidden="true"
               />
               <div
-                key={`in-flight-${canvasNumber}`}
+                key={`in-flight-${canvasUid}`}
                 className={styles.sketchOverlayInFlight}
                 data-testid="sketch-overlay-in-flight"
                 aria-hidden="true"

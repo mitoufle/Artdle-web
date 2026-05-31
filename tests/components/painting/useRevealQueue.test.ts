@@ -130,4 +130,30 @@ describe("useRevealQueue", () => {
     expect(result.current.settled).toEqual([]);
     vi.useRealTimers();
   });
+
+  // Issue #3: on tier-up canvasNumber (canvasesSold) is unchanged, so CanvasStage
+  // passes a composite `${tier}-${canvasNumber}` identity. A change in that
+  // identity must reset the queue even when targetRevealed drops back to 0.
+  it("resets when the composite tier identity changes (tier-up, same canvasNumber)", () => {
+    vi.useFakeTimers();
+    const { result, rerender } = renderHook(
+      ({ target, canvas }) =>
+        useRevealQueue({
+          targetRevealed: target,
+          cellOrder: [0, 1, 2, 3],
+          canvasNumber: canvas,
+          critCells: {},
+        }),
+      { initialProps: { target: 4, canvas: "1-7" } },
+    );
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(result.current.settled.length).toBeGreaterThan(0);
+    // tier-up: tier 1→2, canvasNumber still 7, progress reset to 0.
+    rerender({ target: 0, canvas: "2-7" });
+    expect(result.current.inFlight).toEqual([]);
+    expect(result.current.settled).toEqual([]);
+    vi.useRealTimers();
+  });
 });
