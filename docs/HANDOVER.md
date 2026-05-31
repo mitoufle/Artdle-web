@@ -17,8 +17,18 @@ content targets the live game directly, no v2 dependency. Starting prompt for a 
   fuse, or discard + craft). A blanket fix would need a v31 one-time clamp, but the "correct" ceiling is
   magnitude-multiplier-dependent — discuss before building.
 - **Equipped-items flank tuning.** Position/size are CSS knobs in `EquippedItemsOverlay.module.css`
-  (`--disc-size`, `bottom`, `left`/`right`). The icon badge sits on a black disc with a small margin; for
-  edge-to-edge framing, crop the sprite cell tighter in `itemSprites.ts`.
+  (`--disc-size` now **72px**, `bottom`, `left`/`right`). The icon badge sits on a black disc with a small margin;
+  for edge-to-edge framing, crop the sprite cell tighter in `itemSprites.ts`. Locks are now the shared `PixelLock`
+  widget (silver shackle) everywhere.
+
+**Open follow-ups from the 2026-06-01 wave.**
+- **8 inert placeholder skill nodes await crafting.** `new_node`, `new_node_2…7`, and `technical_implementation`
+  (all in the **school** cluster now) render + are buyable but grant nothing. When the user crafts them in
+  `/dev/skill-designer` and re-saves, wire them like the others. **Designer default gotcha:** new nodes are created
+  with `clusterId: "inspiration"` — if they're parented into another cluster's tree, reassign their `clusterId` (in
+  BOTH `skillTreeNodes.ts` and `skillTreeDesign.json`) or the constellation layout piles them at the cluster center.
+- **Muse Burst ×7 covers the tree accrual rate only, not `poke_tree`'s flat grants** (those bypass `getInspiMultiplier`).
+  Decide if that's intended; if not, also scale the poke grant in `skillTreeTickPure`.
 
 **Repo housekeeping (do soon).**
 - **Imported-but-untracked assets — fresh clone would fail to build.** `workerAvatarMap.ts` imports
@@ -26,6 +36,82 @@ content targets the live game directly, no v2 dependency. Starting prompt for a 
   are **untracked in git** (show as `??`). Deploys only work because `npx vercel --prod` uploads the local
   working dir, not git. Commit them (also `assets/images/achievment icons/`).
 - **Stale untracked plan files** in `docs/superpowers/plans/` (2026-05-17/23/25) — commit or delete.
+
+---
+
+## Designer tooling + craft→wire submissions + School-tree expansion (2026-06-01) — SHIPPED
+
+> **All on `master`, deployed to production.** `master` HEAD = **`5c02b4d`**. Live bundle **`index-BlNi1aWw.js`**
+> at https://artdle-web.vercel.app (deploy `npx vercel --prod` after **every** push — Vercel builds local code,
+> not from git). Full suite green at **1278 tests**; `npx tsc -b` clean. **`SAVE_VERSION` unchanged at 30** — every
+> new state field this wave is either **transient** (excluded from `partialize`) or **additive with a `?? 0` read**,
+> so no migration. Mostly the **craft→wire designer pipeline**: the user crafts node/achievement shells in the dev
+> designers + saves the JSON, the agent wires effects/capabilities/synthetic stats into the **hand-coded runtime**;
+> small UI tweaks were direct (no brainstorm/spec loop).
+
+**Skill designer dev tool — linking, drag fix, snap-to-grid (`3047c76`).** (1) **Ctrl+click** another node while one
+is active toggles a **parent link** (clicked→active; deletes an existing link in either direction — never stacks a
+cycle). (2) **Node-drag fix:** dragging used a manual rect-fraction mapping that ignored the SVG's default
+`preserveAspectRatio="xMidYMid meet"` letterboxing → nodes drifted off the cursor at the wrong rate. Replaced with
+**`getScreenCTM().inverse()`** (the proven `StarCanvas.screenToSvg` approach) so a dragged node tracks the cursor
+1:1; fixed the identical latent bug in wheel-zoom anchoring too. (3) **Snap-to-grid:** toggle-able reference grid
+(`<pattern>` + non-scaling-stroke) + live size input; dragged nodes snap to `round(v/size)*size`. `snapToGrid` is its
+own module so `DesignerCanvas` stays Fast-Refresh-friendly.
+
+**Skill-tree craft→wire — 4 Inspiration nodes (`80e68f9`, `371dd22`, `07bdbff`).** Added Zion, Babylon King, Muse
+Burst, Royalties + synced structure (Colors → single-parent chains; Patron/Enlightenment reparented to
+`get_inspired`). Effects via capability tags: **Zion** `zion_tree_milestone` (+10% inspiration per tree upgrade at
+level ≥100, reads `partLevels`); **Babylon King** `babylon_inspi_bonus` (+100%/level, additive); **Royalties**
+`ascend_fame_bonus` (+70%/level fame on ascend) — consolidated the ascend-fame math into one **`computeAscendFameGain(state)`**
+shared by the orchestrator AND the AscensionRoute preview/hover (also fixed a pre-existing drift where the preview
+ignored the school fame bonus); **Muse Burst** — every 100 canvas sales arms a **×7 inspiration buff for 42s** via a
+transient `museBurstTimer` (`canvasTick` arms on a crossed 100-sale milestone, `skillTreeTickPure` counts down,
+`getInspiMultiplier` applies ×7). Buff indicator pill in the BottomBar (`07bdbff`).
+
+**Achievements craft→wire (`8dd34f7`, `6976643`).** New **Ascension tab**: **Portaled** (first ascend → one-time
+**+10 fame** via a new `fame_flat_gain` reward credited in `evaluateAchievements`); **Spotlight** (spend 1000 fame →
++10% fame on ascend, `ascend_fame_pct` folded into `getAscendFameMultiplier`). Two **secrets** with real event
+triggers replacing the JSON placeholder conditions: **Random Clicker** (click the top-left logo → +15% canvas gold)
+and **Pay Respect** (press **F** → +10% inspiration) — global keydown listener `useSecretKeyAchievements` guarded
+against text inputs/modifiers/dev routes; logo `onClick` on the TopBar brand. **Materialist** (`6976643`): equip your
+first legendary item → base canvas gold **10 → 12** (`Base_canvas_gold_price` folded as `(BASE+bonus)/BASE` into
+`getCanvasGoldMultiplier` so the effective base lands identically in the engine sale AND every UI preview; new
+`equipped.hasLegendary` resolver; `equipItem` re-evaluates). New synthetic lifetime stats
+`fameSpent`/`logoClicks`/`fPresses` (added via `incrementStat`, `?? 0`-safe → no migration).
+
+**School-tree expansion — 13 nodes (`5c02b4d`).** **5 fully wired:** **Invest in brain** (+10%/level canvas sell
+price × completed-research count), **Feedback Loop** (+10% worker-XP pool × research count), **Mentorship** (all
+completed-research numeric effects ×1.30 — applied at the `getSchoolBonus` chokepoint), **Sponsoring** (each canvas
+sold −1s research) + **Collaborative Research #1** (every 10 worker-#1 strokes −1s, carry-over accumulator). The two
+timer hooks live in `canvasTickPure` (already tracks `workerStrokes`/`salesThisTick`) and are **DECREMENT-ONLY** —
+`schoolTick` (runs the same frame, right after `canvasTick`) handles completion, so research-count-dependent gold
+stays big-tick≡small-tick equivalence-safe. 8 nodes (`new_node*`, `technical_implementation`) are **inert
+placeholders** (added so they render + the JSON↔runtime agreement test passes).
+> **Designer gotcha:** the skill designer defaults new nodes to `clusterId: "inspiration"`. The user parented 9 of
+> these into the **School** tree without changing the cluster → **cross-cluster edges**, which break the constellation
+> layout (`computeClusterLayout` lays out each cluster independently from its root, so cross-cluster-parented nodes are
+> unreachable and **pile at the cluster center**). Fixed by reassigning all 9 to `school` in **both** runtime and JSON;
+> **school region enlarged 420²→960²** to hold the 14-node branch. Node-count pin **48→61**.
+
+**Painting UI — School research book + lock consistency (`de3dd8a`, `030be89`, `bdb26e8`, `41c8e66`).** New
+**`SchoolResearchBook`** overlay top-right of the canvas (open-book sprite `assets/images/Book.png`): hidden until the
+School unlocks (`hasCapability(school_access)`); shows the active research name on a dark plaque (bold purple
+`--ink-1`) + a worker-XP-style purple progress bar (driven by `remainingSeconds`, **split into a child** so the book
+image doesn't re-render per tick — fixed a flicker); **floats** with a breathing **purple glow aura** behind it that
+pulses when no research is assigned. **`PixelLock`** (`030be89`): extracted the TopBar pixel-padlock SVG into a shared
+widget and replaced the **🔒 emoji** on equipped-item slots + Workshop locked rows — one lock everywhere; shackle
+recolored dark→silver `#c8ccd4` (`bdb26e8`); equipped-slot discs reduced **104→72px**.
+
+**Lessons / gotchas.**
+- **Decrement-only in the hot tick** (advisor): completing research *inside* `canvasTickPure` would break its big/small-tick
+  gold equivalence because `completedResearchCount` feeds `invest_brain`/`mentorship` gold (`baseSaleGold` is computed
+  once per call). Decrement only; let `schoolTick` complete.
+- **Pick fan-out** caught by `tsc -b`: `getSchoolBonus` gained `purchasedNodes` (Mentorship), `getWorkerXpPoolMultiplier`
+  gained `completedResearches` (Feedback Loop), the ascend-fame Picks gained `completedAchievements` (Spotlight). Guard
+  partial test states (`?? {}`, truthy `purchasedNodes`) so cast `as GameStore` stubs don't crash.
+- **The JSON↔runtime agreement test** (`skillClusters.test.ts`) requires *every* `skillTreeDesign.json` node in
+  `SKILL_NODES` with matching `parentIds`+`clusterId` (+ the `clusterGuard` test enforces runtime⇄JSON cluster regions)
+  → inert placeholders must be added to the runtime, and both the count pin and JSON cluster region updated.
 
 ---
 
