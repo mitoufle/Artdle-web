@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { TopBar } from "@/components/shell/TopBar";
 import { useGameStore } from "@/store";
@@ -28,6 +28,16 @@ describe("<TopBar />", () => {
   it("renders the Artdle brand logo", () => {
     renderAt("/tree");
     expect(screen.getByAltText("Artdle")).toBeInTheDocument();
+  });
+
+  it("clicking the brand logo unlocks the secret Random Clicker achievement", () => {
+    useGameStore.setState((s) => ({
+      completedAchievements: {},
+      statsLifetime: { ...s.statsLifetime, logoClicks: 0 },
+    }));
+    renderAt("/tree");
+    fireEvent.click(screen.getByAltText("Artdle"));
+    expect(useGameStore.getState().completedAchievements.Random_clicker).toBe(true);
   });
 
   it("renders all 5 nav items", () => {

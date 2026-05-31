@@ -78,6 +78,12 @@ export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlic
     // A purchased node may have unlocked a roster slot — spawn to fill it.
     // reconcileRoster is a no-op for non-roster nodes (cap unchanged).
     get().reconcileRoster();
+    // Track fame actually spent (dev-free purchases don't count) for the
+    // Spotlight achievement, then re-evaluate so it can unlock immediately.
+    if (!state.devFreeNodes) {
+      get().incrementStat("lifetime", "fameSpent", cost);
+      get().evaluateAchievements();
+    }
     return true;
   },
 

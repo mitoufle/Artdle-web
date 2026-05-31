@@ -40,3 +40,33 @@ describe("tree-tier achievement ladder", () => {
     }
   });
 });
+
+describe("2026-05-31 submission — ascension tab + secrets", () => {
+  it("Portaled: ascension, first ascend, one-time +10 fame", () => {
+    const a = byId.get("Portaled");
+    expect(a?.category).toBe("ascension");
+    expect(a?.condition).toEqual({ stat: "lifetime.ascend", op: ">=", value: 1 });
+    expect(a?.effects).toContainEqual({ kind: "fame_flat_gain", value: 10 });
+  });
+
+  it("Spotlight: ascension, 1000 fame spent, +10% ascend fame", () => {
+    const a = byId.get("Spotlight");
+    expect(a?.category).toBe("ascension");
+    expect(a?.condition).toEqual({ stat: "lifetime.fameSpent", op: ">=", value: 1000 });
+    expect(a?.effects).toContainEqual({ kind: "ascend_fame_pct", value: 0.1 });
+  });
+
+  it("Random Clicker: secret, logo clicks, +15% canvas gold", () => {
+    const a = byId.get("Random_clicker");
+    expect(a?.category).toBe("secret");
+    expect(a?.condition).toEqual({ stat: "lifetime.logoClicks", op: ">=", value: 1 });
+    expect(a?.effects).toContainEqual({ kind: "canvas_gold_pct", value: 0.15 });
+  });
+
+  it("Pay Respect: secret, F presses, +10% inspiration", () => {
+    const a = byId.get("Pay_respect");
+    expect(a?.category).toBe("secret");
+    expect(a?.condition).toEqual({ stat: "lifetime.fPresses", op: ">=", value: 1 });
+    expect(a?.effects).toContainEqual({ kind: "inspi_pct", value: 0.1 });
+  });
+});

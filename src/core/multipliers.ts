@@ -82,12 +82,15 @@ export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "co
 };
 
 /**
- * Multiplier on fame gained per ascend from the Royalties node
- * (`ascend_fame_bonus`): `1 + 0.70 × levels`. Applied on top of the base
- * fame curve and the school "+% Fame gain" bonus — see computeAscendFameGain.
+ * Multiplier on fame gained per ascend. Stacks additively:
+ *   - Royalties node (`ascend_fame_bonus`): +0.70 per level.
+ *   - Spotlight achievement (`ascend_fame_pct`): +0.10.
+ * Applied on top of the base fame curve and the school "+% Fame gain" bonus —
+ * see computeAscendFameGain.
  */
-export const getAscendFameMultiplier = (state: Pick<GameStore, "purchasedNodes">): number =>
-  1 + countCapability(state, "ascend_fame_bonus") * ROYALTIES_FAME_PER_LEVEL;
+export const getAscendFameMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedAchievements">): number =>
+  1 + countCapability(state, "ascend_fame_bonus") * ROYALTIES_FAME_PER_LEVEL
+    + getAchievementBonus(state, "ascend_fame_pct");
 
 /**
  * Aggregate multiplier on gold credited per canvas sale.

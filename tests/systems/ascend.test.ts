@@ -253,7 +253,13 @@ describe("systems/ascend", () => {
   describe("Royalties — +% fame on ascend", () => {
     beforeEach(() => {
       useGameStore.getState().resetRunCurrencies();
-      useGameStore.setState({ purchasedNodes: {}, ascendCount: 0, fame: big(0) });
+      useGameStore.setState({ purchasedNodes: {}, ascendCount: 0, fame: big(0), completedAchievements: {}, completedResearches: {} });
+    });
+
+    it("computeAscendFameGain includes the Spotlight achievement fame bonus", () => {
+      // 102 base × (1 + 0.10) = 112.2 → floor 112.
+      useGameStore.setState({ inspiration: big(1_000_000), purchasedNodes: {}, completedAchievements: { Spotlight: true } });
+      expect(computeAscendFameGain(useGameStore.getState())).toBe(112);
     });
 
     it("computeAscendFameGain applies +70% per Royalties level on top of the base curve", () => {
@@ -269,9 +275,19 @@ describe("systems/ascend", () => {
     });
 
     it("performAscendOrchestrator credits the Royalties-boosted fame", () => {
-      useGameStore.setState({ inspiration: big(1_000_000), purchasedNodes: { royalties: 2 }, fame: big(0) });
+      // Pre-complete Portaled so its one-time +10 fame (first-ascend reward)
+      // doesn't add on top — this test isolates the Royalties multiplier.
+      useGameStore.setState({ inspiration: big(1_000_000), purchasedNodes: { royalties: 2 }, fame: big(0), completedAchievements: { Portaled: true } });
       performAscendOrchestrator(useGameStore.getState);
       expect(useGameStore.getState().fame.toNumber()).toBe(244);
+    });
+
+    it("first ascend also unlocks Portaled for a +10 fame bonus on top", () => {
+      useGameStore.setState({ inspiration: big(1_000_000), purchasedNodes: {}, fame: big(0), completedAchievements: {} });
+      performAscendOrchestrator(useGameStore.getState);
+      // base fame 102 + Portaled's one-time +10.
+      expect(useGameStore.getState().fame.toNumber()).toBe(112);
+      expect(useGameStore.getState().completedAchievements.Portaled).toBe(true);
     });
   });
 });

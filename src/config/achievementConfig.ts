@@ -229,4 +229,45 @@ export const ACHIEVEMENTS: ReadonlyArray<Achievement> = [
     condition: { stat: "lifetime.canvasesSold", op: ">=", value: 1000 },
     effects: [{ kind: "speed_pct", value: 0.2 }],
   },
+  // ── Ascension tab (2026-05-31 designer submission) ──────────────────────
+  {
+    id: "Portaled",
+    name: "Portaled",
+    description: "Gain 10 Fame upon performing the first ascend.",
+    icon: "🚪",
+    category: "ascension",
+    // `lifetime.ascend` resolves to ascendCount (see achievementSlice resolver).
+    condition: { stat: "lifetime.ascend", op: ">=", value: 1 },
+    // One-time reward: fame_flat_gain is credited once on unlock, not a passive multiplier.
+    effects: [{ kind: "fame_flat_gain", value: 10 }],
+  },
+  {
+    id: "Spotlight",
+    name: "Spotlight",
+    description: "+10% Fame gained on ascend, after spending 1000 Fame.",
+    icon: "🔦",
+    category: "ascension",
+    condition: { stat: "lifetime.fameSpent", op: ">=", value: 1000 },
+    // ascend_fame_pct stacks additively with the Royalties node in getAscendFameMultiplier.
+    effects: [{ kind: "ascend_fame_pct", value: 0.1 }],
+  },
+  // ── Secret triggers (synthetic stats incremented by event handlers) ─────
+  {
+    id: "Random_clicker",
+    name: "Random Clicker",
+    description: "Increases gold gain — found by clicking the top-left Artdle logo.",
+    icon: "👆",
+    category: "secret",
+    condition: { stat: "lifetime.logoClicks", op: ">=", value: 1 },
+    effects: [{ kind: "canvas_gold_pct", value: 0.15 }],
+  },
+  {
+    id: "Pay_respect",
+    name: "Pay Respect",
+    description: "Increases inspiration gain — found by pressing F.",
+    icon: "⭐",
+    category: "secret",
+    condition: { stat: "lifetime.fPresses", op: ">=", value: 1 },
+    effects: [{ kind: "inspi_pct", value: 0.1 }],
+  },
 ];

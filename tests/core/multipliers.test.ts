@@ -49,6 +49,7 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
       sellPriceLevel: 0,
       speedLevel: 0,
       museBurstTimer: 0,
+      completedAchievements: {},
     });
   });
 
@@ -121,6 +122,14 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     useGameStore.setState({ purchasedNodes: { royalties: 3 } });
     // 1 + 3 * 0.70 = 3.10
     expect(getAscendFameMultiplier(useGameStore.getState())).toBeCloseTo(3.10, 5);
+  });
+
+  it("getAscendFameMultiplier: Spotlight achievement adds +10%, stacking with Royalties", () => {
+    useGameStore.setState({ purchasedNodes: {}, completedAchievements: { Spotlight: true } });
+    expect(getAscendFameMultiplier(useGameStore.getState())).toBeCloseTo(1.10, 5);
+    useGameStore.setState({ purchasedNodes: { royalties: 1 }, completedAchievements: { Spotlight: true } });
+    // 1 + 0.70 + 0.10 = 1.80
+    expect(getAscendFameMultiplier(useGameStore.getState())).toBeCloseTo(1.80, 5);
   });
 
   it("getCanvasGoldMultiplier returns 1.0 with no nodes and no items", () => {

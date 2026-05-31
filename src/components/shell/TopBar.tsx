@@ -105,7 +105,17 @@ export function TopBar(): JSX.Element {
   return (
     <>
     <header className={styles.bar}>
-      <img src="/artdle_logo.png" alt="Artdle" className={styles.brand} />
+      <img
+        src="/artdle_logo.png"
+        alt="Artdle"
+        className={styles.brand}
+        onClick={() => {
+          // Secret: clicking the logo unlocks the Random Clicker achievement.
+          const s = useGameStore.getState();
+          s.incrementStat("lifetime", "logoClicks", 1);
+          s.evaluateAchievements();
+        }}
+      />
       <nav className={styles.nav} aria-label="Primary">
         {NAV_ITEMS.map(({ to, label, icon, locked: baseLocked }) => {
           const locked = dynamicLock(to, baseLocked);

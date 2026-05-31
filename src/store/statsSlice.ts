@@ -11,6 +11,12 @@ export interface StatsLifetime {
   schoolResearchesCompleted: number;
   schoolTiersPassed: number;
   officeWorkersHired: number;
+  /** Cumulative fame spent on skill-tree nodes. Gates the Spotlight achievement. */
+  fameSpent: number;
+  /** Top-left logo clicks. Gates the secret Random Clicker achievement. */
+  logoClicks: number;
+  /** "F" key presses. Gates the secret Pay Respect achievement. */
+  fPresses: number;
 }
 
 export interface StatsRun {
@@ -44,6 +50,9 @@ export const initialStatsLifetime: StatsLifetime = Object.freeze({
   schoolResearchesCompleted: 0,
   schoolTiersPassed: 0,
   officeWorkersHired: 0,
+  fameSpent: 0,
+  logoClicks: 0,
+  fPresses: 0,
 });
 
 export const initialStatsRun: StatsRun = Object.freeze({

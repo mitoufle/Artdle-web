@@ -1,5 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { GameStore } from "@/store";
+import { big } from "@/core/bigNumber";
 import { ACHIEVEMENTS, type AchievementEffect, type AchievementCategory } from "@/config/achievementConfig";
 
 export interface AchievementNotification {
@@ -47,6 +48,7 @@ function resolveStatValue(state: GameStore, stat: string): number {
   if (stat === "lifetime.goldgain") return state.lifetimeGold.toNumber();
   if (stat === "lifetime.inspirationgain") return state.lifetimeInspiration.toNumber();
   if (stat === "lifetime.ascensions") return state.ascendCount;
+  if (stat === "lifetime.ascend") return state.ascendCount;
   // Tree tier displayed in the UI is 1-indexed (Tier 1 = Tiny Sprout = stage 0).
   if (stat === "tree.tier") return state.currentStage + 1;
   if (stat.startsWith("lifetime.")) {
@@ -94,11 +96,26 @@ export const createAchievementSlice: StateCreator<GameStore, [], [], Achievement
 
     if (newly.length === 0) return;
 
+    // One-time rewards: sum any `fame_flat_gain` effects across the newly
+    // unlocked achievements and credit them once. Passive multiplier effects
+    // (canvas_gold_pct, inspi_pct, …) are NOT applied here — they are read
+    // continuously via getAchievementBonus.
+    let fameReward = 0;
+    for (const n of newly) {
+      for (const e of n.effects) {
+        if (e.kind === "fame_flat_gain") fameReward += e.value;
+      }
+    }
+
     set((s) => {
       const updated: Record<string, true> = { ...s.completedAchievements };
       for (const n of newly) updated[n.id] = true;
       const combinedQueue = [...s.notificationQueue, ...newly];
-      return { completedAchievements: updated, notificationQueue: combinedQueue };
+      return {
+        completedAchievements: updated,
+        notificationQueue: combinedQueue,
+        ...(fameReward > 0 ? { fame: s.fame.add(big(fameReward)) } : {}),
+      };
     });
 
     // Drain queue into activeNotification if idle.

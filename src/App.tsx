@@ -6,6 +6,7 @@ import { TopBar } from "@/components/shell/TopBar";
 import { BottomBar } from "@/components/shell/BottomBar";
 import { AchievementToast } from "@/components/shell/AchievementToast";
 import { CanvasSoldSfx } from "@/components/shell/CanvasSoldSfx";
+import { useSecretKeyAchievements } from "@/components/shell/useSecretKeyAchievements";
 import { TreeRoute } from "@/routes/TreeRoute";
 import { PaintingRoute } from "@/routes/PaintingRoute";
 import { AscensionRoute } from "@/routes/AscensionRoute";
@@ -28,6 +29,9 @@ export function App(): JSX.Element {
   useEffect(() => {
     resumeTickLoop();
   }, [location.pathname]);
+
+  // Secret "press F" achievement — disabled on /dev/* so designer inputs are safe.
+  useSecretKeyAchievements(!isDev);
 
   if (isDev) {
     return (

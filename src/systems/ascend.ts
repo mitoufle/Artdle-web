@@ -23,7 +23,7 @@ export const canAscend = (state: Pick<GameStore, "inspiration" | "purchasedNodes
  * `floor( fameOnAscend(inspi, thresholdReduction) × (1 + school "+% Fame gain") × Royalties )`.
  */
 export const computeAscendFameGain = (
-  state: Pick<GameStore, "inspiration" | "purchasedNodes" | "completedResearches">,
+  state: Pick<GameStore, "inspiration" | "purchasedNodes" | "completedResearches" | "completedAchievements">,
 ): number => {
   const raw = fameOnAscend(state.inspiration, getAscendThresholdReduction(state));
   return Math.floor(raw * (1 + getSchoolBonus(state, "+% Fame gain")) * getAscendFameMultiplier(state));

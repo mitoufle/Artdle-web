@@ -43,6 +43,7 @@ export function AscensionRoute(): JSX.Element {
   const ascendCount = useGameStore((s) => s.ascendCount);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const completedResearches = useGameStore((s) => s.completedResearches);
+  const completedAchievements = useGameStore((s) => s.completedAchievements);
   const roster = useGameStore((s) => s.roster);
   const pastRuns = useGameStore((s) => s.pastRuns);
   const performAscend = useGameStore((s) => s.performAscend);
@@ -51,7 +52,7 @@ export function AscensionRoute(): JSX.Element {
 
   const canDo = canAscend({ inspiration, purchasedNodes });
   // Shared with performAscendOrchestrator so preview == awarded (incl. Royalties).
-  const fameGain = computeAscendFameGain({ inspiration, purchasedNodes, completedResearches });
+  const fameGain = computeAscendFameGain({ inspiration, purchasedNodes, completedResearches, completedAchievements });
 
   // Preview how many levels the worker roster would gain from this ascend's XP
   // pool (= fameGain × pool multiplier), mirroring performAscendOrchestrator's

@@ -77,8 +77,17 @@
     "description": "Increases gold gain when player reaches 1T lifetime gold acquired",
     "icon": "💵",
     "category": "canvas",
-    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 0.3 }]
+    "condition": {
+      "stat": "lifetime.goldgain",
+      "op": ">=",
+      "value": 1000000000000
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 0.3
+      }
+    ]
   },
   {
     "id": "Quadrillionaire",
@@ -86,8 +95,17 @@
     "description": "Increases gold gain when player reaches 1Qa lifetime gold acquired",
     "icon": "💴",
     "category": "canvas",
-    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 0.35 }]
+    "condition": {
+      "stat": "lifetime.goldgain",
+      "op": ">=",
+      "value": 1000000000000000
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 0.35
+      }
+    ]
   },
   {
     "id": "Quintillionaire",
@@ -95,8 +113,17 @@
     "description": "Increases gold gain when player reaches 1Qi lifetime gold acquired",
     "icon": "💶",
     "category": "canvas",
-    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000000 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 0.4 }]
+    "condition": {
+      "stat": "lifetime.goldgain",
+      "op": ">=",
+      "value": 1000000000000000000
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 0.4
+      }
+    ]
   },
   {
     "id": "Sextillionaire",
@@ -104,8 +131,17 @@
     "description": "Increases gold gain when player reaches 1Sx lifetime gold acquired",
     "icon": "💷",
     "category": "canvas",
-    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000000000 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 0.45 }]
+    "condition": {
+      "stat": "lifetime.goldgain",
+      "op": ">=",
+      "value": 1e+21
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 0.45
+      }
+    ]
   },
   {
     "id": "Septillionaire",
@@ -113,8 +149,17 @@
     "description": "Increases gold gain when player reaches 1Sp lifetime gold acquired",
     "icon": "🪙",
     "category": "canvas",
-    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000000000000 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 0.5 }]
+    "condition": {
+      "stat": "lifetime.goldgain",
+      "op": ">=",
+      "value": 1e+24
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 0.5
+      }
+    ]
   },
   {
     "id": "Octillionaire",
@@ -122,8 +167,17 @@
     "description": "Increases gold gain when player reaches 1Oc lifetime gold acquired",
     "icon": "🏦",
     "category": "canvas",
-    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000000000000000 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 0.55 }]
+    "condition": {
+      "stat": "lifetime.goldgain",
+      "op": ">=",
+      "value": 1e+27
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 0.55
+      }
+    ]
   },
   {
     "id": "Psychedelic_enjoyer",
@@ -203,8 +257,17 @@
     "description": "increases gold gain upon reaching Tier 5 Tree",
     "icon": "5️⃣",
     "category": "inspiration",
-    "condition": { "stat": "tree.tier", "op": ">=", "value": 5 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+    "condition": {
+      "stat": "tree.tier",
+      "op": ">=",
+      "value": 5
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 1
+      }
+    ]
   },
   {
     "id": "T6",
@@ -212,8 +275,17 @@
     "description": "increases gold gain upon reaching Tier 6 Tree",
     "icon": "6️⃣",
     "category": "inspiration",
-    "condition": { "stat": "tree.tier", "op": ">=", "value": 6 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+    "condition": {
+      "stat": "tree.tier",
+      "op": ">=",
+      "value": 6
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 1
+      }
+    ]
   },
   {
     "id": "T7",
@@ -221,8 +293,17 @@
     "description": "increases gold gain upon reaching Tier 7 Tree",
     "icon": "7️⃣",
     "category": "inspiration",
-    "condition": { "stat": "tree.tier", "op": ">=", "value": 7 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+    "condition": {
+      "stat": "tree.tier",
+      "op": ">=",
+      "value": 7
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 1
+      }
+    ]
   },
   {
     "id": "T8",
@@ -230,8 +311,17 @@
     "description": "increases gold gain upon reaching Tier 8 Tree",
     "icon": "8️⃣",
     "category": "inspiration",
-    "condition": { "stat": "tree.tier", "op": ">=", "value": 8 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+    "condition": {
+      "stat": "tree.tier",
+      "op": ">=",
+      "value": 8
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 1
+      }
+    ]
   },
   {
     "id": "T9",
@@ -239,8 +329,17 @@
     "description": "increases gold gain upon reaching Tier 9 Tree",
     "icon": "9️⃣",
     "category": "inspiration",
-    "condition": { "stat": "tree.tier", "op": ">=", "value": 9 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+    "condition": {
+      "stat": "tree.tier",
+      "op": ">=",
+      "value": 9
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 1
+      }
+    ]
   },
   {
     "id": "T10",
@@ -248,8 +347,17 @@
     "description": "increases gold gain upon reaching Tier 10 Tree",
     "icon": "🔟",
     "category": "inspiration",
-    "condition": { "stat": "tree.tier", "op": ">=", "value": 10 },
-    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+    "condition": {
+      "stat": "tree.tier",
+      "op": ">=",
+      "value": 10
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 1
+      }
+    ]
   },
   {
     "id": "Rising_star",
@@ -266,6 +374,78 @@
       {
         "kind": "speed_pct",
         "value": 0.2
+      }
+    ]
+  },
+  {
+    "id": "Portaled",
+    "name": "Portaled",
+    "description": "Gain 10 Fame upon performing the first ascend",
+    "icon": "🚪",
+    "category": "ascension",
+    "condition": {
+      "stat": "lifetime.ascend",
+      "op": ">=",
+      "value": 1
+    },
+    "effects": [
+      {
+        "kind": "fame_flat_gain",
+        "value": 10
+      }
+    ]
+  },
+  {
+    "id": "Spotlight",
+    "name": "Spotlight",
+    "description": "Gain %fame generation upon spending the first 1000 fame",
+    "icon": "🔦",
+    "category": "ascension",
+    "condition": {
+      "stat": "lifetime.famespent",
+      "op": ">=",
+      "value": 1000
+    },
+    "effects": [
+      {
+        "kind": "fame%perinspiration",
+        "value": 0.1
+      }
+    ]
+  },
+  {
+    "id": "Random_clicker",
+    "name": "Random Clicker",
+    "description": "Increases gold gain while clicking on the top left Artdle logo",
+    "icon": "👆",
+    "category": "secret",
+    "condition": {
+      "stat": "lifetime.canvasesSold",
+      "op": ">=",
+      "value": 1
+    },
+    "effects": [
+      {
+        "kind": "canvas_gold_pct",
+        "value": 0.15
+      }
+    ]
+  },
+  {
+    "id": "Pay_respect",
+    "name": "Pay Respect",
+    "description": "increases inspiration gain when F pressed",
+    "icon": "🔤",
+    "category": "secret",
+    "condition": {
+      "stat": "lifetime.canvasesSold",
+      "op": ">=",
+      "value": 1
+    },
+    "effects": [
+      {
+        "kind": "inspi_pct",
+        "value": 0.1
       }
     ]
   }
