@@ -1,16 +1,16 @@
 import type { JSX } from "react";
-import type { DesignNode, NodeKind, StackingMode } from "./types";
-import { SKILL_CLUSTERS } from "@/config/skillClusters";
+import type { DesignNode, DesignCluster, NodeKind, StackingMode } from "./types";
 import styles from "./NodeForm.module.css";
 
 interface Props {
   node: DesignNode | null;
   allNodes: ReadonlyArray<DesignNode>;
+  clusters: ReadonlyArray<DesignCluster>;
   onChange: (id: string, patch: Partial<DesignNode>) => void;
   onDelete: (id: string) => void;
 }
 
-export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Element {
+export function NodeForm({ node, allNodes, clusters, onChange, onDelete }: Props): JSX.Element {
   if (node === null) {
     return (
       <aside className={styles.form} aria-label="Node form">
@@ -71,10 +71,8 @@ export function NodeForm({ node, allNodes, onChange, onDelete }: Props): JSX.Ele
           value={node.clusterId}
           onChange={(e) => patch({ clusterId: e.target.value })}
         >
-          {SKILL_CLUSTERS.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
+          {clusters.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
       </label>

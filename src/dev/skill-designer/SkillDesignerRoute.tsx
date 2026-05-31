@@ -93,6 +93,7 @@ export function SkillDesignerRoute(): JSX.Element {
         />
         <DesignerCanvas
           nodes={design.nodes}
+          clusters={design.clusters}
           selectedId={selectedId}
           onSelect={actions.selectNode}
           onMove={handleMove}
@@ -100,6 +101,7 @@ export function SkillDesignerRoute(): JSX.Element {
         <NodeForm
           node={selectedNode}
           allNodes={design.nodes}
+          clusters={design.clusters}
           onChange={wrapAction(actions.updateNode)}
           onDelete={wrapAction(actions.deleteNode)}
         />

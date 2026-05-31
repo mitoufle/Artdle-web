@@ -9,11 +9,16 @@ const node: DesignNode = {
   maxLevel: 1, costs: [0], unlocks: [], position: null, clusterId: "colors",
 };
 
+const clusters = [
+  { id: "colors", name: "Colors", theme: "", rootNodeId: "", region: { x: 0, y: 0, w: 1, h: 1 } },
+  { id: "workshop", name: "Workshop", theme: "", rootNodeId: "", region: { x: 0, y: 0, w: 1, h: 1 } },
+];
+
 describe("NodeForm cluster picker", () => {
   it("shows the current clusterId and emits a patch on change", () => {
     const onChange = vi.fn();
     const { getByLabelText } = render(
-      <NodeForm node={node} allNodes={[node]} onChange={onChange} onDelete={() => {}} />,
+      <NodeForm node={node} allNodes={[node]} clusters={clusters} onChange={onChange} onDelete={() => {}} />,
     );
     const select = getByLabelText(/cluster/i) as HTMLSelectElement;
     expect(select.value).toBe("colors");

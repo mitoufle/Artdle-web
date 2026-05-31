@@ -1,9 +1,8 @@
 import type { JSX } from "react";
 import { useState, useRef } from "react";
-import type { DesignNode } from "./types";
+import type { DesignNode, DesignCluster } from "./types";
 import { computeClusterLayout } from "@/core/clusterLayout";
 import { VIEWBOX } from "@/components/constellation/nodeLayout";
-import { SKILL_CLUSTERS } from "@/config/skillClusters";
 import styles from "./DesignerCanvas.module.css";
 
 const DRAG_THRESHOLD_PX = 5;
@@ -15,6 +14,7 @@ const MAX_VIEW_W = 4000;
 
 interface Props {
   nodes: ReadonlyArray<DesignNode>;
+  clusters: ReadonlyArray<DesignCluster>;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onMove: (id: string, position: { x: number; y: number }) => void;
@@ -49,14 +49,14 @@ const INITIAL_VIEWBOX: ViewBox = {
   h: VIEWBOX.height,
 };
 
-export function DesignerCanvas({ nodes, selectedId, onSelect, onMove }: Props): JSX.Element {
+export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }: Props): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<NodeDragState | null>(null);
   const [pan, setPan] = useState<PanState | null>(null);
   const [viewBox, setViewBox] = useState<ViewBox>(INITIAL_VIEWBOX);
   const justDragged = useRef(false);
   // Same layout the game uses, so designer positions match the constellation route.
-  const positions = computeClusterLayout(nodes, SKILL_CLUSTERS);
+  const positions = computeClusterLayout(nodes, clusters);
 
   function pointFor(id: string): { x: number; y: number } {
     return positions[id] ?? { x: 0, y: 0 };
