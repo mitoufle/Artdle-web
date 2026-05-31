@@ -11,6 +11,14 @@ export interface DesignerActions {
   addNode: () => void;
   updateNode: (id: string, patch: Partial<DesignNode>) => void;
   deleteNode: (id: string) => void;
+  /**
+   * Toggle a parent link between the active node and the clicked one. Creating
+   * makes `clickedId` a parent of `activeId` (clicked → active). If a link
+   * already exists in EITHER direction, it is removed instead — so a repeated
+   * toggle deletes, and we never stack a link on top of its own reverse (which
+   * would be an instant cycle).
+   */
+  toggleLink: (activeId: string, clickedId: string) => void;
   selectNode: (id: string | null) => void;
   resetAll: () => void;
   importDesign: (design: DesignFile) => void;
@@ -130,6 +138,35 @@ export function useDesignerState(): DesignerState {
     setSelectedId((cur) => (cur === id ? null : cur));
   }, []);
 
+  const toggleLink = useCallback((activeId: string, clickedId: string) => {
+    if (activeId === clickedId) return;
+    setDesign((d) => {
+      const active = d.nodes.find((n) => n.id === activeId);
+      const clicked = d.nodes.find((n) => n.id === clickedId);
+      if (!active || !clicked) return d;
+      const clickedIsParentOfActive = active.parentIds.includes(clickedId);
+      const activeIsParentOfClicked = clicked.parentIds.includes(activeId);
+      return {
+        ...d,
+        nodes: d.nodes.map((n) => {
+          if (clickedIsParentOfActive && n.id === activeId) {
+            // Delete the existing clicked → active link.
+            return { ...n, parentIds: n.parentIds.filter((p) => p !== clickedId) };
+          }
+          if (activeIsParentOfClicked && n.id === clickedId) {
+            // Delete the existing reverse link instead of creating a cycle.
+            return { ...n, parentIds: n.parentIds.filter((p) => p !== activeId) };
+          }
+          if (!clickedIsParentOfActive && !activeIsParentOfClicked && n.id === activeId) {
+            // Create: clicked becomes a parent of active.
+            return { ...n, parentIds: [...n.parentIds, clickedId] };
+          }
+          return n;
+        }),
+      };
+    });
+  }, []);
+
   const selectNode = useCallback((id: string | null) => {
     setSelectedId(id);
     if (id !== null) setSelectedClusterId(null);
@@ -191,7 +228,7 @@ export function useDesignerState(): DesignerState {
     design,
     selectedId,
     selectedClusterId,
-    actions: { addNode, updateNode, deleteNode, selectNode, resetAll, importDesign,
+    actions: { addNode, updateNode, deleteNode, toggleLink, selectNode, resetAll, importDesign,
                addCluster, updateCluster, deleteCluster, selectCluster },
   };
 }

@@ -47,6 +47,15 @@ export function SkillDesignerRoute(): JSX.Element {
     [actions],
   );
 
+  const handleToggleLink = useCallback(
+    (clickedId: string) => {
+      if (selectedId === null) return;
+      actions.toggleLink(selectedId, clickedId);
+      setStatus("dirty");
+    },
+    [selectedId, actions],
+  );
+
   const wrapAction = useCallback(<T extends (...args: never[]) => unknown>(fn: T): T => {
     return ((...args: Parameters<T>) => {
       setStatus("dirty");
@@ -112,6 +121,7 @@ export function SkillDesignerRoute(): JSX.Element {
           selectedId={selectedId}
           onSelect={actions.selectNode}
           onMove={handleMove}
+          onToggleLink={handleToggleLink}
         />
         {selectedClusterId !== null ? (
           <ClusterForm

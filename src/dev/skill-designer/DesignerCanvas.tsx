@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useState, useRef } from "react";
 import type { DesignNode, DesignCluster } from "./types";
 import { computeClusterLayout, constellationViewbox } from "@/core/clusterLayout";
+import { snapToGrid } from "./gridSnap";
 import styles from "./DesignerCanvas.module.css";
 
 const DRAG_THRESHOLD_PX = 5;
@@ -10,6 +11,9 @@ const NODE_R_MAJOR = 18;
 const ZOOM_FACTOR = 1.2;
 const MIN_VIEW_W = 100;
 const MAX_VIEW_W = 4000;
+const DEFAULT_GRID_SIZE = 50;
+const MIN_GRID_SIZE = 5;
+const MAX_GRID_SIZE = 500;
 
 interface Props {
   nodes: ReadonlyArray<DesignNode>;
@@ -17,6 +21,8 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onMove: (id: string, position: { x: number; y: number }) => void;
+  /** Ctrl+click a node while another is active → toggle a parent link to it. */
+  onToggleLink: (clickedId: string) => void;
 }
 
 interface NodeDragState {
@@ -40,11 +46,15 @@ interface ViewBox {
   h: number;
 }
 
-export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }: Props): JSX.Element {
+export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove, onToggleLink }: Props): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<NodeDragState | null>(null);
   const [pan, setPan] = useState<PanState | null>(null);
   const justDragged = useRef(false);
+  // Grid is a view-only preference (not part of the design file). When on, the
+  // canvas draws a reference grid and dragged nodes snap to its intersections.
+  const [gridEnabled, setGridEnabled] = useState(true);
+  const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE);
   // Same layout the game uses, so designer positions match the constellation route.
   const positions = computeClusterLayout(nodes, clusters);
   // Frame THIS designer's clusters (including newly-authored ones), not the game's
@@ -57,29 +67,30 @@ export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }
     return positions[id] ?? { x: 0, y: 0 };
   }
 
-  /** Convert client (screen) pixels to SVG-space coordinates, honoring pan + zoom. */
+  /**
+   * Convert client (screen) pixels to SVG user-space coordinates via the
+   * browser's own screen CTM. This honors pan, zoom, AND the SVG's default
+   * `preserveAspectRatio="xMidYMid meet"` letterboxing — a manual rect-fraction
+   * mapping silently breaks the moment the pane aspect ratio differs from the
+   * viewBox, making dragged nodes drift away from the cursor. Mirrors the proven
+   * `screenToSvg` in components/constellation/StarCanvas.tsx.
+   */
   function clientToSvg(clientX: number, clientY: number): { x: number; y: number } {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
-    const rect = svg.getBoundingClientRect();
-    const fracX = (clientX - rect.left) / rect.width;
-    const fracY = (clientY - rect.top) / rect.height;
-    return {
-      x: viewBox.x + fracX * viewBox.w,
-      y: viewBox.y + fracY * viewBox.h,
-    };
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const out = pt.matrixTransform(ctm.inverse());
+    return { x: out.x, y: out.y };
   }
 
   function handleWheel(e: React.WheelEvent) {
     if (!svgRef.current) return;
-    const svg = svgRef.current;
-    const rect = svg.getBoundingClientRect();
-    const fracX = (e.clientX - rect.left) / rect.width;
-    const fracY = (e.clientY - rect.top) / rect.height;
-    const cursorSvg = {
-      x: viewBox.x + fracX * viewBox.w,
-      y: viewBox.y + fracY * viewBox.h,
-    };
+    // Anchor the zoom on the cursor's true SVG position (CTM-based, see clientToSvg).
+    const cursorSvg = clientToSvg(e.clientX, e.clientY);
     const factor = e.deltaY > 0 ? ZOOM_FACTOR : 1 / ZOOM_FACTOR;
     const newW = Math.max(MIN_VIEW_W, Math.min(MAX_VIEW_W, viewBox.w * factor));
     const newH = (newW / viewBox.w) * viewBox.h;
@@ -146,7 +157,10 @@ export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }
     const dx = Math.abs(e.clientX - drag.startClientX);
     const dy = Math.abs(e.clientY - drag.startClientY);
     if (!drag.moved && dx < DRAG_THRESHOLD_PX && dy < DRAG_THRESHOLD_PX) return;
-    const svgPoint = clientToSvg(e.clientX, e.clientY);
+    const raw = clientToSvg(e.clientX, e.clientY);
+    const svgPoint = gridEnabled
+      ? { x: snapToGrid(raw.x, gridSize), y: snapToGrid(raw.y, gridSize) }
+      : raw;
     onMove(drag.nodeId, svgPoint);
     if (!drag.moved) setDrag({ ...drag, moved: true });
   }
@@ -169,8 +183,14 @@ export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }
     setDrag(null);
   }
 
-  function handleNodeClick(node: DesignNode) {
+  function handleNodeClick(e: React.MouseEvent, node: DesignNode) {
     if (justDragged.current) return;
+    // Ctrl+click another node while one is active → toggle a parent link
+    // instead of changing the selection.
+    if (e.ctrlKey && selectedId !== null && selectedId !== node.id) {
+      onToggleLink(node.id);
+      return;
+    }
     onSelect(node.id);
   }
 
@@ -182,14 +202,47 @@ export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }
 
   return (
     <div className={styles.canvas}>
-      <button
-        type="button"
-        className={styles.resetViewBtn}
-        onClick={handleResetView}
-        title="Reset pan + zoom"
-      >
-        ⟲ Reset view
-      </button>
+      {selectedId !== null && (
+        <div className={styles.linkHint}>Ctrl+click another node to toggle a parent link</div>
+      )}
+      <div className={styles.controls}>
+        <button
+          type="button"
+          className={styles.ctrlBtn}
+          onClick={handleResetView}
+          title="Reset pan + zoom"
+        >
+          ⟲ Reset view
+        </button>
+        <button
+          type="button"
+          className={`${styles.ctrlBtn} ${gridEnabled ? styles.ctrlBtnActive : ""}`}
+          onClick={() => setGridEnabled((g) => !g)}
+          aria-pressed={gridEnabled}
+          title="Toggle grid + snap-to-grid"
+        >
+          # Grid {gridEnabled ? "on" : "off"}
+        </button>
+        {gridEnabled && (
+          <label className={styles.gridSizeRow}>
+            Size
+            <input
+              className={styles.gridSizeInput}
+              type="number"
+              min={MIN_GRID_SIZE}
+              max={MAX_GRID_SIZE}
+              step={5}
+              value={gridSize}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (Number.isFinite(v)) {
+                  setGridSize(Math.max(MIN_GRID_SIZE, Math.min(MAX_GRID_SIZE, v)));
+                }
+              }}
+            />
+          </label>
+        )}
+      </div>
       <svg
         ref={svgRef}
         className={styles.svg}
@@ -209,6 +262,37 @@ export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }
           onPointerMove={handleBackgroundPointerMove}
           onPointerUp={handleBackgroundPointerUp}
         />
+
+        {/* Reference grid. pointer-events:none so pan still hits the background below. */}
+        {gridEnabled && (
+          <>
+            <defs>
+              <pattern
+                id="designer-grid"
+                width={gridSize}
+                height={gridSize}
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
+                  fill="none"
+                  stroke="var(--ink-line)"
+                  strokeWidth={1}
+                  vectorEffect="non-scaling-stroke"
+                  opacity={0.3}
+                />
+              </pattern>
+            </defs>
+            <rect
+              x={-full.width * 5}
+              y={-full.height * 5}
+              width={full.width * 11}
+              height={full.height * 11}
+              fill="url(#designer-grid)"
+              pointerEvents="none"
+            />
+          </>
+        )}
 
         <g>
           {nodes.flatMap((node) => {
@@ -248,7 +332,7 @@ export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }
                 data-kind={node.kind}
                 style={{ cursor: "grab" }}
                 onPointerDown={(e) => handleNodePointerDown(e, node)}
-                onClick={() => handleNodeClick(node)}
+                onClick={(e) => handleNodeClick(e, node)}
               >
                 {isMajor && (
                   <circle cx={pos.x} cy={pos.y} r={r + 8} fill="rgba(255,216,106,0.20)" />

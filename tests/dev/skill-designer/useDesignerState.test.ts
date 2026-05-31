@@ -48,6 +48,54 @@ describe("useDesignerState", () => {
     expect(result.current.design.nodes[0]!.parentIds).toEqual([]);
   });
 
+  it("toggleLink creates a parent link (clicked becomes parent of active)", () => {
+    const { result } = renderHook(() => useDesignerState());
+    act(() => result.current.actions.importDesign(EMPTY_DESIGN));
+    act(() => result.current.actions.addNode());
+    const aId = result.current.design.nodes[0]!.id;
+    act(() => result.current.actions.addNode());
+    const bId = result.current.design.nodes[1]!.id;
+    // active = a, ctrl+click b → b becomes a parent of a
+    act(() => result.current.actions.toggleLink(aId, bId));
+    expect(result.current.design.nodes[0]!.parentIds).toEqual([bId]);
+  });
+
+  it("toggleLink removes an existing link (second toggle deletes it)", () => {
+    const { result } = renderHook(() => useDesignerState());
+    act(() => result.current.actions.importDesign(EMPTY_DESIGN));
+    act(() => result.current.actions.addNode());
+    const aId = result.current.design.nodes[0]!.id;
+    act(() => result.current.actions.addNode());
+    const bId = result.current.design.nodes[1]!.id;
+    act(() => result.current.actions.toggleLink(aId, bId));
+    act(() => result.current.actions.toggleLink(aId, bId));
+    expect(result.current.design.nodes[0]!.parentIds).toEqual([]);
+  });
+
+  it("toggleLink deletes a reverse link instead of creating a cycle", () => {
+    const { result } = renderHook(() => useDesignerState());
+    act(() => result.current.actions.importDesign(EMPTY_DESIGN));
+    act(() => result.current.actions.addNode());
+    const aId = result.current.design.nodes[0]!.id;
+    act(() => result.current.actions.addNode());
+    const bId = result.current.design.nodes[1]!.id;
+    // a is already a parent of b
+    act(() => result.current.actions.updateNode(bId, { parentIds: [aId] }));
+    // active = a, ctrl+click b → existing a→b link is removed, not duplicated
+    act(() => result.current.actions.toggleLink(aId, bId));
+    expect(result.current.design.nodes[0]!.parentIds).toEqual([]);
+    expect(result.current.design.nodes[1]!.parentIds).toEqual([]);
+  });
+
+  it("toggleLink is a no-op when active and clicked are the same node", () => {
+    const { result } = renderHook(() => useDesignerState());
+    act(() => result.current.actions.importDesign(EMPTY_DESIGN));
+    act(() => result.current.actions.addNode());
+    const aId = result.current.design.nodes[0]!.id;
+    act(() => result.current.actions.toggleLink(aId, aId));
+    expect(result.current.design.nodes[0]!.parentIds).toEqual([]);
+  });
+
   it("selectNode sets selectedId", () => {
     const { result } = renderHook(() => useDesignerState());
     act(() => result.current.actions.selectNode("anything"));
