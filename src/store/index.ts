@@ -16,6 +16,7 @@ import { createAchievementSlice, type AchievementSlice } from "./achievementSlic
 import { big, isBig } from "@/core/bigNumber";
 import { TREE_STAGES } from "@/config/treeStages";
 import { WORKER_NAME_POOL } from "@/config/workerNames";
+import { aggregateAffixes, type Affix } from "@/core/workshopRoll";
 
 export interface GameTick {
   /**
@@ -42,7 +43,7 @@ export type GameStore =
   & AchievementSlice
   & GameTick;
 
-export const SAVE_VERSION = 29;
+export const SAVE_VERSION = 30;
 const SAVE_KEY = "artdle-save";
 
 /**
@@ -599,6 +600,27 @@ export const migrate = (persisted: unknown, fromVersion: number): GameStore => {
         };
       }),
     };
+  }
+
+  if (fromVersion < 30) {
+    // v29 → v30 (2026-05-31): items show one aggregated value per affix kind,
+    // and crit/combo are capped at one affix each. Collapse legacy items'
+    // duplicate-kind affixes (sum sell/speed; keep the largest single crit/combo).
+    const isAffix = (v: unknown): v is Affix =>
+      typeof v === "object" && v !== null && "kind" in v && "magnitude" in v;
+    const fixItem = (item: unknown): unknown => {
+      if (typeof item !== "object" || item === null) return item;
+      const it = item as Record<string, unknown>;
+      if (!Array.isArray(it.affixes)) return item;
+      return { ...it, affixes: aggregateAffixes(it.affixes.filter(isAffix)) };
+    };
+    const inventory = Array.isArray(state.inventory) ? state.inventory.map(fixItem) : state.inventory;
+    const equippedIn = (state.equipped ?? {}) as Record<string, unknown>;
+    const equipped: Record<string, unknown> = {};
+    for (const [slot, item] of Object.entries(equippedIn)) {
+      equipped[slot] = item == null ? item : fixItem(item);
+    }
+    state = { ...state, inventory, equipped };
   }
 
   return state as unknown as GameStore;

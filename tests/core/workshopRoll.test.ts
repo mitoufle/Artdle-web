@@ -7,6 +7,8 @@ import {
   computeTierProbabilities,
   rollTier,
   rollAffixes,
+  aggregateAffixes,
+  SINGLE_ROLL_AFFIX_KINDS,
 } from "@/core/workshopRoll";
 import { AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
 import { setSeed } from "@/core/rng";
@@ -107,36 +109,87 @@ describe("workshopRoll — rollAffixes", () => {
     setSeed(42);
   });
 
-  it("returns the correct count per tier", () => {
-    const s = baseStub();
-    expect(rollAffixes("normal", s).length).toBe(1);
-    expect(rollAffixes("magic", s).length).toBe(2);
-    expect(rollAffixes("rare", s).length).toBe(3);
-    expect(rollAffixes("epic", s).length).toBe(4);
-    expect(rollAffixes("legendary", s).length).toBe(5);
-  });
-
-  it("each affix has a kind from AFFIX_KINDS and magnitude within that tier's range", () => {
-    const affixes = rollAffixes("legendary", baseStub());
-    for (const a of affixes) {
-      expect(["+sell_price%", "+speed%", "+crit_chunks", "+combo_chance%"]).toContain(a.kind);
-      const range = AFFIX_MAGNITUDE_RANGE["legendary"][a.kind];
-      expect(a.magnitude).toBeGreaterThanOrEqual(range.min);
-      expect(a.magnitude).toBeLessThanOrEqual(range.max);
-    }
-  });
-
-  it("duplicates of the same kind are allowed across rolls", () => {
-    setSeed(1);
-    const s = baseStub({ purchasedNodes: { size_matters: 1, genius_episode: 1, unrelentless: 1 } });
-    let foundDuplicate = false;
-    for (let i = 0; i < 200 && !foundDuplicate; i++) {
-      const affixes = rollAffixes("rare", s);
+  it("aggregates to at most one affix per kind (≤ tier roll count, never more than the kind pool)", () => {
+    const s = baseStub(); // only sell_price + speed available → pool of 2 kinds
+    for (const [tier, cnt] of [["normal", 1], ["magic", 2], ["rare", 3], ["epic", 4], ["legendary", 5]] as const) {
+      const affixes = rollAffixes(tier, s);
       const kinds = affixes.map((a) => a.kind);
-      const uniques = new Set(kinds);
-      if (uniques.size < kinds.length) foundDuplicate = true;
+      expect(new Set(kinds).size).toBe(kinds.length); // no duplicate kinds
+      expect(affixes.length).toBeGreaterThanOrEqual(1);
+      expect(affixes.length).toBeLessThanOrEqual(Math.min(cnt, 2));
     }
-    expect(foundDuplicate).toBe(true);
+    expect(rollAffixes("normal", s).length).toBe(1);
+  });
+
+  it("each aggregated affix has a valid kind; magnitude >= tier min, and crit/combo stay within the single-roll max", () => {
+    setSeed(1);
+    const s = baseStub({ purchasedNodes: { genius_episode: 1, unrelentless: 1 } });
+    for (let i = 0; i < 100; i++) {
+      const affixes = rollAffixes("legendary", s);
+      for (const a of affixes) {
+        expect(["+sell_price%", "+speed%", "+crit_chunks", "+combo_chance%"]).toContain(a.kind);
+        const range = AFFIX_MAGNITUDE_RANGE["legendary"][a.kind];
+        expect(a.magnitude).toBeGreaterThanOrEqual(range.min);
+        if (SINGLE_ROLL_AFFIX_KINDS.has(a.kind)) {
+          // capped at one roll, so never exceeds the single-roll max
+          expect(a.magnitude).toBeLessThanOrEqual(range.max);
+        }
+      }
+    }
+  });
+
+  it("never returns duplicate kinds — same-kind rolls are aggregated into one", () => {
+    setSeed(1);
+    const s = baseStub({ purchasedNodes: { genius_episode: 1, unrelentless: 1 } });
+    for (let i = 0; i < 200; i++) {
+      const affixes = rollAffixes("legendary", s);
+      const kinds = affixes.map((a) => a.kind);
+      expect(new Set(kinds).size).toBe(kinds.length);
+    }
+  });
+
+  it("rolls at most one crit and one combo affix, even on a 5-roll legendary", () => {
+    setSeed(3);
+    const s = baseStub({ purchasedNodes: { genius_episode: 1, unrelentless: 1 } });
+    for (let i = 0; i < 300; i++) {
+      const affixes = rollAffixes("legendary", s);
+      expect(affixes.filter((a) => a.kind === "+crit_chunks").length).toBeLessThanOrEqual(1);
+      expect(affixes.filter((a) => a.kind === "+combo_chance%").length).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+describe("aggregateAffixes", () => {
+  it("sums sell_price/speed duplicates into one entry", () => {
+    const out = aggregateAffixes([
+      { kind: "+sell_price%", magnitude: 50 },
+      { kind: "+sell_price%", magnitude: 55 },
+      { kind: "+speed%", magnitude: 20 },
+    ]);
+    expect(out).toEqual([
+      { kind: "+sell_price%", magnitude: 105 },
+      { kind: "+speed%", magnitude: 20 },
+    ]);
+  });
+
+  it("keeps the largest single magnitude for crit/combo (never sums them)", () => {
+    const out = aggregateAffixes([
+      { kind: "+combo_chance%", magnitude: 40 },
+      { kind: "+combo_chance%", magnitude: 52 },
+      { kind: "+crit_chunks", magnitude: 30 },
+      { kind: "+crit_chunks", magnitude: 18 },
+    ]);
+    expect(out).toContainEqual({ kind: "+crit_chunks", magnitude: 30 });
+    expect(out).toContainEqual({ kind: "+combo_chance%", magnitude: 52 });
+    expect(out).toHaveLength(2);
+  });
+
+  it("emits kinds in AFFIX_KINDS order", () => {
+    const out = aggregateAffixes([
+      { kind: "+combo_chance%", magnitude: 10 },
+      { kind: "+sell_price%", magnitude: 10 },
+    ]);
+    expect(out.map((a) => a.kind)).toEqual(["+sell_price%", "+combo_chance%"]);
   });
 });
 

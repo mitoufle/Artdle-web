@@ -11,7 +11,7 @@ vi.mock("@/store", () => ({
       fame: { toString: () => "5" },
     }),
   },
-  SAVE_VERSION: 29,
+  SAVE_VERSION: 30,
 }));
 
 describe("<BugReportModal />", () => {

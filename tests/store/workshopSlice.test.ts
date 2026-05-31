@@ -9,6 +9,7 @@ import {
 } from "@/store/workshopSlice";
 import { setSeed } from "@/core/rng";
 import { big } from "@/core/bigNumber";
+import { AFFIX_MAGNITUDE_RANGE } from "@/config/workshopAffixes";
 import type { Item } from "@/store/workshopSlice";
 
 function freshState() {
@@ -756,15 +757,21 @@ describe("fusion — fuseItem action", () => {
 
     const fused = useGameStore.getState().equipped.brush!;
     expect(fused.tier).toBe("epic");
-    // Reroll produces TIER_AFFIX_COUNT[epic] = 4 affixes.
-    expect(fused.affixes.length).toBe(4);
+    // Reroll produces up to TIER_AFFIX_COUNT[epic] = 4 rolls, aggregated to one
+    // entry per kind (≤ 4) with no duplicate kinds.
+    expect(fused.affixes.length).toBeGreaterThanOrEqual(1);
+    expect(fused.affixes.length).toBeLessThanOrEqual(4);
+    const kinds = fused.affixes.map((a) => a.kind);
+    expect(new Set(kinds).size).toBe(kinds.length);
     expect(fused.fuseCount).toBe(1);
-    // Each affix is freshly rolled within its epic per-kind range — no carry-over
-    // from drop or eq magnitudes.
+    // Freshly rolled (no carry-over): each kind is >= its epic min; crit/combo
+    // are single-roll so stay <= max, while sell/speed may be summed across rolls.
     for (const a of fused.affixes) {
-      // Epic min across all kinds is 2 (crit_chunks [2,4]). Epic max is 50 (sell/speed/size [35,50]).
-      expect(a.magnitude).toBeGreaterThanOrEqual(2);
-      expect(a.magnitude).toBeLessThanOrEqual(50);
+      const range = AFFIX_MAGNITUDE_RANGE.epic[a.kind];
+      expect(a.magnitude).toBeGreaterThanOrEqual(range.min);
+      if (a.kind === "+crit_chunks" || a.kind === "+combo_chance%") {
+        expect(a.magnitude).toBeLessThanOrEqual(range.max);
+      }
     }
   });
 
