@@ -9,13 +9,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Gently float to make the book feel like it's levitating. */
+  animation: bookFloat 4.5s ease-in-out infinite;
+}
+
+/* Glowing purple light behind the book — the levitation aura. */
+.book::before {
+  content: "";
+  position: absolute;
+  inset: -32%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(155, 108, 214, 0.75),
+    rgba(155, 108, 214, 0.5) 45%,
+    rgba(155, 108, 214, 0.2) 68%,
+    rgba(155, 108, 214, 0) 100%
+  );
+  filter: blur(18px);
+  pointer-events: none;
 }
 
 .bookImg {
   width: 100%;
   height: auto;
   display: block;
-  image-rendering: pixelated;
 }
 
 /* Ink text sitting on the open pages, just above the spine. */
@@ -59,21 +78,26 @@
   transition: width 200ms ease;
 }
 
-/* No research assigned → breathe the whole book to draw the eye. drop-shadow
-   follows the sprite's alpha shape, so it glows around the book, not a box. */
-.idle .bookImg {
-  animation: bookBreathe 2.4s ease-in-out infinite;
+/* No research assigned → pulse the purple aura to draw the eye. */
+.idle::before {
+  animation: bookGlowPulse 2.4s ease-in-out infinite;
 }
 
 .idle .text {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
-@keyframes bookBreathe {
-  0%, 100% { filter: drop-shadow(0 0 1px rgba(230, 182, 103, 0.25)); }
-  50%      { filter: drop-shadow(0 0 7px rgba(230, 182, 103, 0.95)); }
+@keyframes bookFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+
+@keyframes bookGlowPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.95); }
+  50%      { opacity: 1;   transform: scale(1.08); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .idle .bookImg { animation: none; }
+  .book { animation: none; }
+  .idle::before { animation: none; }
 }
