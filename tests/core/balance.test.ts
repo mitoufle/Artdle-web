@@ -296,10 +296,10 @@ describe("workerXpToNext", () => {
     const l2 = workerXpToNext(2);
     expect(l2.div(l1).toNumber()).toBeCloseTo(WORKER_XP_GROWTH, 4);
   });
-  it("matches the approved curve (3000, 5700, 10830)", () => {
-    expect(workerXpToNext(1).toNumber()).toBeCloseTo(3000, 6);
-    expect(workerXpToNext(2).toNumber()).toBeCloseTo(5700, 6);
-    expect(workerXpToNext(3).toNumber()).toBeCloseTo(10830, 6);
+  it("matches the approved curve (1000, 1500, 2250)", () => {
+    expect(workerXpToNext(1).toNumber()).toBeCloseTo(1000, 6);
+    expect(workerXpToNext(2).toNumber()).toBeCloseTo(1500, 6);
+    expect(workerXpToNext(3).toNumber()).toBeCloseTo(2250, 6);
   });
 });
 

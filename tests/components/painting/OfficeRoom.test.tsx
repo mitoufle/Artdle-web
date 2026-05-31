@@ -36,6 +36,6 @@ describe("OfficeRoom", () => {
     expect(screen.getByText("Vincent")).toBeInTheDocument();
     expect(screen.getByTestId("worker-avatar-img")).toBeInTheDocument();
     expect(screen.getByTestId("worker-xp-readout")).toHaveTextContent("/");
-    expect(screen.getByTestId("worker-xp-readout")).toHaveTextContent("10.83K");
+    expect(screen.getByTestId("worker-xp-readout")).toHaveTextContent("2.25K");
   });
 });

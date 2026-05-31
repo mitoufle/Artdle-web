@@ -59,7 +59,7 @@ describe("WorkerAvatars", () => {
 
   it("drives the XP bar from xp / workerXpToNext(level)", () => {
     const lvl = 1;
-    const half = workerXpToNext(lvl).div(2); // 1500 at level 1 (cost 3000)
+    const half = workerXpToNext(lvl).div(2); // 500 at level 1 (cost 1000)
     const w = { ...createWorker(), avatar: 1, level: lvl, xp: half };
     useGameStore.setState({ roster: [w], painterClocks: {} });
     render(<WorkerAvatars />);

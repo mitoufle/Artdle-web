@@ -44,7 +44,7 @@ describe("applyAscendXpToWorker", () => {
   beforeEach(() => setSeed(7));
 
   it("no level-up when the share is below the next-level cost", () => {
-    const w = createWorker(); // level 1, xp 0; workerXpToNext(1) === 3000
+    const w = createWorker(); // level 1, xp 0; workerXpToNext(1) === 1000
     const r = applyAscendXpToWorker(w, big(1));
     expect(r.levelAfter).toBe(1);
     expect(r.worker.xp.toNumber()).toBeCloseTo(1, 6);
@@ -68,7 +68,7 @@ describe("applyAscendXpToWorker", () => {
 
   it("carries leftover XP toward the next level", () => {
     const w = createWorker();
-    const cost1 = workerXpToNext(1).toNumber(); // ≈ 11.5
+    const cost1 = workerXpToNext(1).toNumber(); // === 1000
     const r = applyAscendXpToWorker(w, big(cost1 + 3));
     expect(r.levelAfter).toBe(2);
     expect(r.worker.xp.toNumber()).toBeCloseTo(3, 4);

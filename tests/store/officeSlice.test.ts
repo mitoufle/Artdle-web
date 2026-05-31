@@ -199,14 +199,17 @@ describe("applyAscendXp", () => {
   });
 
   it("accelerator nodes boost the pool (more levels)", () => {
+    // Pool 2000 straddles a level boundary on the 1000×1.5 curve: a lone worker
+    // reaches L2 (cost 1000) with 1000 to spare, while a +50% pool (3000) also
+    // clears L3 (cumulative 2500). Re-tuned with the eased curve (issue #4).
     const base = { ...createWorker(), strokesThisRun: 10 };
     useGameStore.setState({ roster: [base], purchasedNodes: {} });
-    useGameStore.getState().applyAscendXp(big(2500));
+    useGameStore.getState().applyAscendXp(big(2000));
     const noBoost = useGameStore.getState().roster[0]!.level;
 
     const base2 = { ...createWorker(), strokesThisRun: 10 };
     useGameStore.setState({ roster: [base2], purchasedNodes: { accelerator: 5 } });
-    useGameStore.getState().applyAscendXp(big(2500));
+    useGameStore.getState().applyAscendXp(big(2000));
     const boosted = useGameStore.getState().roster[0]!.level;
     // Strict: a +50% pool (accelerator ×5) must produce a strictly higher level —
     // `>=` would pass even if getWorkerXpPoolMultiplier were broken to return 1.

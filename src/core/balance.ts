@@ -314,12 +314,13 @@ export const BETTER_SCALING_PER_WORKSHOP_LEVEL = 1;
 // Painter's Office formulas
 // ============================================================================
 
-export const WORKER_XP_BASE = 3000;
-export const WORKER_XP_GROWTH = 1.9;
+export const WORKER_XP_BASE = 1000;
+export const WORKER_XP_GROWTH = 1.5;
 
 /** Cost (xp = ascend fame) to go from `level` → `level + 1`. Worker.level starts
- *  at 1, so the first level-up uses level=1 → BASE. Approved curve: 3000 × 1.9^(level-1)
- *  → 3000, 5700, 10830, 20577, … (see 2026-05-30 worker XP spec). */
+ *  at 1, so the first level-up uses level=1 → BASE. Curve: 1000 × 1.5^(level-1)
+ *  → 1000, 1500, 2250, 3375, … (eased from 3000 × 1.9 — XP was too punishing
+ *  relative to the per-ascend fame pool; see GitHub issue #4). */
 export const workerXpToNext = (level: number): Big =>
   big(WORKER_XP_BASE).mul(big(WORKER_XP_GROWTH).pow(level - 1));
 
