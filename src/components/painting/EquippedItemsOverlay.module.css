@@ -10,7 +10,7 @@
   grid-auto-rows: var(--disc-size);
   gap: var(--s-2);
   pointer-events: none; /* purely informational — don't eat canvas clicks */
-  --disc-size: 104px;
+  --disc-size: 72px;
 }
 
 .flankLeft  { left: var(--s-4); }
