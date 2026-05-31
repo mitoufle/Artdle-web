@@ -381,13 +381,13 @@ export function WorkshopRoom(): JSX.Element {
                 >
                   <span className={styles.itemRowIcon}>{SLOT_PLACEHOLDER[slot]}</span>
                   <div className={styles.itemRowMeta}>
-                    <span className={styles.tierBadge}>{TIER_LABEL[item.tier]}</span>
+                    <span className={styles.tierBadge}>{TIER_LABEL[item.tier]}{item.fuseCount > 0 ? ` +${item.fuseCount}` : ""}</span>
                     <span className={styles.slotName}>{slot}</span>
                   </div>
                   <div className={styles.itemRowAffixes}>
                     {item.affixes.map((a, i) => (
                       <span key={i} className={styles.affixChip}>
-                        <span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
+                        <span className={styles.affixSymbol} style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
                         {a.magnitude}%
                       </span>
                     ))}
@@ -428,7 +428,7 @@ export function WorkshopRoom(): JSX.Element {
                   >
                     <span className={styles.itemRowIcon}>{SLOT_PLACEHOLDER[item.slot]}</span>
                     <div className={styles.itemRowMeta}>
-                      <span className={styles.tierBadge}>{TIER_LABEL[item.tier]}</span>
+                      <span className={styles.tierBadge}>{TIER_LABEL[item.tier]}{item.fuseCount > 0 ? ` +${item.fuseCount}` : ""}</span>
                       <span className={styles.slotName}>{item.slot}</span>
                     </div>
                     <div className={styles.itemRowAffixes}>
