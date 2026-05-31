@@ -10,7 +10,7 @@
   grid-auto-rows: var(--disc-size);
   gap: var(--s-2);
   pointer-events: none; /* purely informational — don't eat canvas clicks */
-  --disc-size: 76px;
+  --disc-size: 104px;
 }
 
 .flankLeft  { left: var(--s-4); }
@@ -47,7 +47,7 @@
 }
 
 .lock {
-  font-size: 28px;
+  font-size: 38px;
   opacity: 0.6;
   filter: grayscale(1);
 }
