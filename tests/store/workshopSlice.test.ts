@@ -683,10 +683,10 @@ describe("fusion — fuseItem action", () => {
     expect(state.inventory.find(i => i.id === "drop-1")).toBeUndefined();
     // Equipped item's fuseCount incremented
     expect(state.equipped.brush!.fuseCount).toBe(1);
-    // Magnitude increased (absorbed 5%–50% of drop's 20 → added 1–10 to eq's 12)
+    // Magnitude increased (magic tier absorbs 15%–30% of drop's 20 → +3..6 to eq's 12)
     const newMag = state.equipped.brush!.affixes[0]!.magnitude;
-    expect(newMag).toBeGreaterThan(12);
-    expect(newMag).toBeLessThanOrEqual(22); // 12 + 50% of 20
+    expect(newMag).toBeGreaterThanOrEqual(15); // 12 + round(20 × 0.15)
+    expect(newMag).toBeLessThanOrEqual(18);    // 12 + round(20 × 0.30)
     // Gold spent: craftCost(1) * 2^0 = 100
     expect(state.gold.toNumber()).toBeLessThan(10_000);
     expect(state.gold.toNumber()).toBeCloseTo(9_900, 0);
@@ -768,7 +768,7 @@ describe("fusion — fuseItem action", () => {
     }
   });
 
-  it("absorbed gain per affix stays in [5%, 50%] of drop magnitude across many rolls", () => {
+  it("absorbed gain per affix stays in the tier band (magic: 15%–30%) of drop magnitude across many rolls", () => {
     const DROP_MAG = 100; // large magnitude so rounding doesn't obscure fractions
     const drop = (): Item => ({
       id: "drop-x", slot: "brush", tier: "magic",
@@ -791,10 +791,32 @@ describe("fusion — fuseItem action", () => {
       minGain = Math.min(minGain, gain);
       maxGain = Math.max(maxGain, gain);
     }
-    // gain = round(100 * pct), pct ∈ [0.05, 0.50); round can produce up to 50
-    expect(minGain).toBeGreaterThanOrEqual(5);
-    expect(maxGain).toBeLessThanOrEqual(50);
+    // gain = round(100 * pct), pct ∈ [0.15, 0.30) for magic tier → [15, 30]
+    expect(minGain).toBeGreaterThanOrEqual(15);
+    expect(maxGain).toBeLessThanOrEqual(30);
     // Verify the range is actually spanned (not degenerate)
-    expect(maxGain - minGain).toBeGreaterThan(20);
+    expect(maxGain - minGain).toBeGreaterThan(8);
+  });
+
+  it("legendary fuse transfers a meaningful slice of a high-magnitude drop (30%–45%)", () => {
+    // Regression for the 'fusing feels weak' report: a 200-magnitude legendary
+    // drop must add +60..90 (not the old +10 floor) to a 200-magnitude target.
+    const mk = (id: string, mag: number): Item => ({
+      id, slot: "brush", tier: "legendary",
+      affixes: [{ kind: "+sell_price%", magnitude: mag }],
+      fuseCount: 0,
+    });
+    let minGain = Infinity;
+    let maxGain = -Infinity;
+    for (let seed = 0; seed < 200; seed++) {
+      setSeed(seed);
+      useGameStore.setState({ inventory: [mk("drop-l", 200)], equipped: { brush: mk("eq-l", 200) }, gold: big(1_000_000_000), workshopLevel: 1 });
+      useGameStore.getState().fuseItem("drop-l");
+      const gain = useGameStore.getState().equipped.brush!.affixes[0]!.magnitude - 200;
+      minGain = Math.min(minGain, gain);
+      maxGain = Math.max(maxGain, gain);
+    }
+    expect(minGain).toBeGreaterThanOrEqual(60); // round(200 × 0.30)
+    expect(maxGain).toBeLessThanOrEqual(90);    // round(200 × 0.45⁻)
   });
 });

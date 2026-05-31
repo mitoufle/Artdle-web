@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   AFFIX_KINDS,
   AFFIX_MAGNITUDE_RANGE,
+  FUSE_MAGNITUDE_PCT_RANGE,
   MAX_INVENTORY_SLOTS,
 } from "@/config/workshopAffixes";
 import { ALL_ITEM_TIERS } from "@/core/workshopRoll";
@@ -64,6 +65,28 @@ describe("workshopAffixes config", () => {
 
   it("MAX_INVENTORY_SLOTS === 3 (pin v1 contract)", () => {
     expect(MAX_INVENTORY_SLOTS).toBe(3);
+  });
+});
+
+describe("FUSE_MAGNITUDE_PCT_RANGE", () => {
+  it("matches the per-tier fusion bands", () => {
+    expect(FUSE_MAGNITUDE_PCT_RANGE.normal).toEqual({ min: 0.10, max: 0.25 });
+    expect(FUSE_MAGNITUDE_PCT_RANGE.magic).toEqual({ min: 0.15, max: 0.30 });
+    expect(FUSE_MAGNITUDE_PCT_RANGE.rare).toEqual({ min: 0.20, max: 0.35 });
+    expect(FUSE_MAGNITUDE_PCT_RANGE.epic).toEqual({ min: 0.25, max: 0.40 });
+    expect(FUSE_MAGNITUDE_PCT_RANGE.legendary).toEqual({ min: 0.30, max: 0.45 });
+  });
+
+  it("every tier band is valid (0 < min < max) and floors rise with tier", () => {
+    const tiers = ALL_ITEM_TIERS;
+    for (let i = 0; i < tiers.length; i++) {
+      const band = FUSE_MAGNITUDE_PCT_RANGE[tiers[i]!];
+      expect(band.min).toBeGreaterThan(0);
+      expect(band.max).toBeGreaterThan(band.min);
+      if (i > 0) {
+        expect(band.min).toBeGreaterThan(FUSE_MAGNITUDE_PCT_RANGE[tiers[i - 1]!].min);
+      }
+    }
   });
 });
 

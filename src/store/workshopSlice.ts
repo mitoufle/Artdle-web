@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 import {
   MAX_INVENTORY_SLOTS,
+  FUSE_MAGNITUDE_PCT_RANGE,
   type AffixKind,
   type SlotKind,
 } from "@/config/workshopAffixes";
@@ -303,10 +304,14 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
       );
     } else {
       const dropKindMap = new Map(drop.affixes.map((a) => [a.kind, a.magnitude]));
+      // Per-tier gain band: each affix absorbs round(dropMag × pct) of the drop,
+      // pct ∈ [min, max) for the item's tier. drop.tier === target.tier (enforced
+      // by getFusionTarget), so target.tier picks the band.
+      const range = FUSE_MAGNITUDE_PCT_RANGE[target.tier];
       newAffixes = target.affixes.map((a) => {
         const dropMag = dropKindMap.get(a.kind) ?? 0;
-        const pct = 0.05 + rng() * 0.45; // [0.05, 0.50)
-        // Math.round: gain can be 0 for low magnitudes (e.g., mag=5, pct=0.05 → 0.25 → 0). Intentional.
+        const pct = range.min + rng() * (range.max - range.min);
+        // Math.round: gain can be 0 for very low magnitudes. Intentional.
         const gain = Math.round(dropMag * pct);
         return { kind: a.kind, magnitude: a.magnitude + gain };
       });

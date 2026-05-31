@@ -96,6 +96,25 @@ export const AFFIX_MAGNITUDE_RANGE: Record<ItemTier, Record<AffixKind, { min: nu
   },
 };
 
+/**
+ * Per-tier fusion gain range. When fusing a drop into an equipped item, each
+ * matching affix gains `round(dropMagnitude × pct)`, where `pct` is rolled
+ * uniformly in this tier's `[min, max)` band. Higher tiers transfer a larger
+ * slice of the drop, so late-game fusion of strong items feels meaningful
+ * (the old flat 5%–50% band made high-magnitude legendary fuses underwhelming).
+ *
+ * Note: pct multiplies the DROP's magnitude, not the target's — so fusing
+ * comparable items raises the target by ~this band, but fusing a weak drop into
+ * a strong item stays weak (no compounding runaway).
+ */
+export const FUSE_MAGNITUDE_PCT_RANGE: Record<ItemTier, { min: number; max: number }> = {
+  normal:    { min: 0.10, max: 0.25 },
+  magic:     { min: 0.15, max: 0.30 },
+  rare:      { min: 0.20, max: 0.35 },
+  epic:      { min: 0.25, max: 0.40 },
+  legendary: { min: 0.30, max: 0.45 },
+};
+
 /** Inventory cap. Locked at 3 for v1. */
 export const MAX_INVENTORY_SLOTS = 3;
 
