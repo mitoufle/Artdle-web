@@ -270,4 +270,15 @@ export const ACHIEVEMENTS: ReadonlyArray<Achievement> = [
     condition: { stat: "lifetime.fPresses", op: ">=", value: 1 },
     effects: [{ kind: "inspi_pct", value: 0.1 }],
   },
+  {
+    id: "Materialist",
+    name: "Materialist",
+    description: "+2 base gold per canvas, after equipping your first legendary item.",
+    icon: "🎨",
+    category: "canvas",
+    // Unlocks the first time any equipped item is legendary-tier (see resolver).
+    condition: { stat: "equipped.hasLegendary", op: ">=", value: 1 },
+    // Base_canvas_gold_price adds flat to CANVAS_GOLD_BASE before the % multipliers.
+    effects: [{ kind: "Base_canvas_gold_price", value: 2 }],
+  },
 ];

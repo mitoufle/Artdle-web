@@ -70,3 +70,12 @@ describe("2026-05-31 submission — ascension tab + secrets", () => {
     expect(a?.effects).toContainEqual({ kind: "inspi_pct", value: 0.1 });
   });
 });
+
+describe("Materialist achievement", () => {
+  it("canvas, first legendary equipped, +2 base canvas gold", () => {
+    const a = byId.get("Materialist");
+    expect(a?.category).toBe("canvas");
+    expect(a?.condition).toEqual({ stat: "equipped.hasLegendary", op: ">=", value: 1 });
+    expect(a?.effects).toContainEqual({ kind: "Base_canvas_gold_price", value: 2 });
+  });
+});

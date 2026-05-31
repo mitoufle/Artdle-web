@@ -247,6 +247,8 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
         equipped: { ...s.equipped, [item.slot]: item },
       };
     });
+    // Equipping a legendary unlocks the Materialist achievement (equipped.hasLegendary).
+    get().evaluateAchievements();
     return true;
   },
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useGameStore } from "@/store";
 import { big } from "@/core/bigNumber";
+import type { Item } from "@/store/workshopSlice";
 
 /**
  * End-to-end wiring for the 2026-05-31 achievement submission against the REAL
@@ -14,6 +15,8 @@ function reset() {
     notificationQueue: [],
     ascendCount: 0,
     fame: big(0),
+    equipped: {},
+    inventory: [],
     statsLifetime: { ...s.statsLifetime, fameSpent: 0, logoClicks: 0, fPresses: 0 },
   }));
 }
@@ -47,6 +50,20 @@ describe("achievement wiring — ascension + secret achievements", () => {
     useGameStore.setState((s) => ({ statsLifetime: { ...s.statsLifetime, fPresses: 1 } }));
     useGameStore.getState().evaluateAchievements();
     expect(useGameStore.getState().completedAchievements.Pay_respect).toBe(true);
+  });
+
+  it("Materialist unlocks when a legendary item is equipped", () => {
+    const legendary: Item = { id: "leg-brush", slot: "brush", tier: "legendary", affixes: [], fuseCount: 0 };
+    useGameStore.setState({ completedAchievements: {}, inventory: [legendary], equipped: {} });
+    expect(useGameStore.getState().equipItem("leg-brush")).toBe(true);
+    expect(useGameStore.getState().completedAchievements.Materialist).toBe(true);
+  });
+
+  it("does NOT unlock Materialist for a non-legendary equip", () => {
+    const rare: Item = { id: "rare-brush", slot: "brush", tier: "rare", affixes: [], fuseCount: 0 };
+    useGameStore.setState({ completedAchievements: {}, inventory: [rare], equipped: {} });
+    expect(useGameStore.getState().equipItem("rare-brush")).toBe(true);
+    expect(useGameStore.getState().completedAchievements.Materialist).toBeUndefined();
   });
 
   it("buyNode accumulates lifetime fameSpent (drives Spotlight)", () => {

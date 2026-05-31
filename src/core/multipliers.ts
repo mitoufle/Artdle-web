@@ -11,7 +11,7 @@ import { getNodeLevel, countCapability, hasCapability } from "@/store/skillTreeS
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { MUSE_BURST_INSPI_MULT } from "@/core/skillTreeTickPure";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
-import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL, ACCELERATOR_XP_PER_LEVEL } from "./balance";
+import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL, ACCELERATOR_XP_PER_LEVEL, CANVAS_GOLD_BASE } from "./balance";
 import type { SlotKind } from "@/config/workshopAffixes";
 
 /**
@@ -99,6 +99,9 @@ export const getAscendFameMultiplier = (state: Pick<GameStore, "purchasedNodes" 
  *   - 10 color nodes: tier-scaled additive (50/80/130/200%). Full tree = +1280%.
  *   - Equipped items: `+sell_price%` additive contribution.
  *   - Rainbow: multiplicative on the additive base (× (1 + 5.00 × level)).
+ *   - Materialist achievement (`Base_canvas_gold_price`): raises the base gold
+ *     itself (10 → 12 at value 2) by scaling everything by (BASE + bonus)/BASE,
+ *     since all gold paths are CANVAS_GOLD_BASE × thisMultiplier × tier.
  */
 export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number => {
   let bonus = 0;
@@ -111,7 +114,11 @@ export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number =
   bonus += getAchievementBonus(state, "canvas_gold_pct");
   const additive = 1 + bonus;
   const rainbowMul = 1 + getNodeLevel(state, "rainbow") * RAINBOW_PER_LEVEL;
-  return additive * rainbowMul;
+  // Flat addition to the base gold (10 → 10 + bonus), applied as a base-scale
+  // factor so it lands identically in the engine sale and every UI preview.
+  const baseBonus = getAchievementBonus(state, "Base_canvas_gold_price");
+  const baseFactor = (CANVAS_GOLD_BASE + baseBonus) / CANVAS_GOLD_BASE;
+  return additive * rainbowMul * baseFactor;
 };
 
 /**

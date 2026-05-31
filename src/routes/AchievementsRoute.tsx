@@ -20,6 +20,7 @@ function effectLabel(kind: string, value: number): string {
   if (kind === "inspi_pct") return `+${Math.round(value * 100)}% inspiration`;
   if (kind === "ascend_fame_pct") return `+${Math.round(value * 100)}% fame on ascend`;
   if (kind === "fame_flat_gain") return `+${value} fame (one-time)`;
+  if (kind === "Base_canvas_gold_price") return `+${value} base canvas gold`;
   return `+${value} ${kind}`;
 }
 

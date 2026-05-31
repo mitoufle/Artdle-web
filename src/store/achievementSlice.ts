@@ -51,6 +51,10 @@ function resolveStatValue(state: GameStore, stat: string): number {
   if (stat === "lifetime.ascend") return state.ascendCount;
   // Tree tier displayed in the UI is 1-indexed (Tier 1 = Tiny Sprout = stage 0).
   if (stat === "tree.tier") return state.currentStage + 1;
+  // 1 once any equipped item is legendary-tier (drives the Materialist achievement).
+  if (stat === "equipped.hasLegendary") {
+    return Object.values(state.equipped).some((it) => it?.tier === "legendary") ? 1 : 0;
+  }
   if (stat.startsWith("lifetime.")) {
     const key = stat.slice("lifetime.".length);
     return (state.statsLifetime as unknown as Record<string, number>)[key] ?? 0;

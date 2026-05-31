@@ -14,7 +14,7 @@ import { createWorker } from "@/store/officeSlice";
 import type { CanvasMultiplierInputs } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
 import type { Item } from "@/store/workshopSlice";
-import { CRIT_SOFT_CAP_CEILING, BASE_CRIT_CHUNKS } from "@/core/balance";
+import { CRIT_SOFT_CAP_CEILING, BASE_CRIT_CHUNKS, canvasGold } from "@/core/balance";
 
 describe("multipliers — sellPriceLevel + speedLevel contributions", () => {
   // Helper: minimal state-shape stub. The selectors only read certain fields.
@@ -122,6 +122,19 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     useGameStore.setState({ purchasedNodes: { royalties: 3 } });
     // 1 + 3 * 0.70 = 3.10
     expect(getAscendFameMultiplier(useGameStore.getState())).toBeCloseTo(3.10, 5);
+  });
+
+  it("Materialist achievement raises base canvas gold from 10 to 12", () => {
+    useGameStore.setState({ purchasedNodes: {}, equipped: {}, sellPriceLevel: 0, completedAchievements: { Materialist: true } });
+    const mult = getCanvasGoldMultiplier(useGameStore.getState());
+    // CANVAS_GOLD_BASE × mult × tier(1) — with no other bonuses this is the base itself.
+    expect(canvasGold(mult, 1).toNumber()).toBe(12);
+    expect(mult).toBeCloseTo(1.2, 5);
+  });
+
+  it("without Materialist the base canvas gold stays 10", () => {
+    useGameStore.setState({ purchasedNodes: {}, equipped: {}, sellPriceLevel: 0, completedAchievements: {} });
+    expect(canvasGold(getCanvasGoldMultiplier(useGameStore.getState()), 1).toNumber()).toBe(10);
   });
 
   it("getAscendFameMultiplier: Spotlight achievement adds +10%, stacking with Royalties", () => {

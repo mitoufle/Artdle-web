@@ -448,5 +448,23 @@
         "value": 0.1
       }
     ]
+  },
+  {
+    "id": "Materialist",
+    "name": "Materialist",
+    "description": "Gain additionnal base gold per canvas upon getting your first legendary item equiped",
+    "icon": "🎨",
+    "category": "canvas",
+    "condition": {
+      "stat": "lifetime.canvasesSold",
+      "op": ">=",
+      "value": 1
+    },
+    "effects": [
+      {
+        "kind": "Base_canvas_gold_price",
+        "value": 2
+      }
+    ]
   }
 ]
