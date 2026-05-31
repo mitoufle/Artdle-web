@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useGameStore } from "@/store";
 import { formatBig } from "@/core/formatter";
 import { CurrencyChip, type CurrencyKind } from "./CurrencyChip";
+import { MuseBurstBuff } from "./MuseBurstBuff";
 import { InfoPanel } from "./InfoPanel";
 import styles from "./BottomBar.module.css";
 
@@ -58,6 +59,7 @@ export function BottomBar(): JSX.Element {
           value={formatBig(fame)}
           dimmed={!isProminent("fame", pathname)}
         />
+        <MuseBurstBuff />
       </div>
       <InfoPanel />
     </footer>

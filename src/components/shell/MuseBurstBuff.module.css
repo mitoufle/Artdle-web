@@ -1,0 +1,59 @@
+.buff {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 5px;
+  border: 1px solid var(--ink-1);
+  border-radius: var(--r-sm);
+  background: rgba(201, 184, 255, 0.12);
+  color: var(--ink-1);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  animation: museBurstPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes museBurstPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 184, 255, 0); }
+  50%      { box-shadow: 0 0 8px 0 rgba(201, 184, 255, 0.45); }
+}
+
+.mult {
+  font-weight: 700;
+  color: #fff;
+}
+
+.label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.time {
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Depleting timer bar pinned to the bottom edge. */
+.track {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: rgba(201, 184, 255, 0.18);
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--ink-1);
+  transition: width 0.12s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buff { animation: none; }
+  .fill { transition: none; }
+}
