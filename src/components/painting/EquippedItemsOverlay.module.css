@@ -32,10 +32,13 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  /* Black fill behind the icon so the ring between the badge art and the disc
+     edge is solid black, not the stage showing through. */
+  background-color: #000;
   background-repeat: no-repeat;
   background-position: center;
   z-index: 1;
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 /* Empty + locked slots: a plain dark-grey disc. */
