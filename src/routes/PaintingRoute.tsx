@@ -21,6 +21,7 @@ import { WorkerAvatars } from "@/components/painting/WorkerAvatars";
 import { TrackCard } from "@/components/painting/TrackCard";
 import { StrokeCycleBorder } from "@/components/painting/StrokeCycleBorder";
 import { CanvasUpgradesStrip } from "@/components/painting/CanvasUpgradesStrip";
+import { EquippedItemsOverlay } from "@/components/painting/EquippedItemsOverlay";
 import { RoomRail, type RoomId } from "@/components/painting/RoomRail";
 import { WorkshopRoom } from "@/components/painting/WorkshopRoom";
 import { OfficeRoom } from "@/components/painting/OfficeRoom";
@@ -79,6 +80,7 @@ export function PaintingRoute(): JSX.Element {
           chunkCount={chunkCount}
         />
         <WorkerAvatars />
+        <EquippedItemsOverlay />
         <div className={styles.upgradesOverlay}>
           <StrokeCycleBorder interval={interval} />
           <CanvasUpgradesStrip>

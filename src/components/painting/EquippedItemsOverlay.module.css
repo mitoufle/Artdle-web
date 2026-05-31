@@ -1,0 +1,71 @@
+/* Two columns of equipped-gear slots pinned to the bottom corners of the stage,
+   flanking the centered upgrade panel. */
+.flank {
+  position: absolute;
+  bottom: 8%;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  pointer-events: none; /* purely informational — don't eat canvas clicks */
+}
+
+.flankLeft  { left: var(--s-3); }
+.flankRight { right: var(--s-3); }
+
+.slot {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+
+.disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 1;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* Empty + locked slots: a plain dark-grey disc. */
+.discPlaceholder {
+  background-color: #2a2730;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lock {
+  font-size: 20px;
+  opacity: 0.6;
+  filter: grayscale(1);
+}
+
+/* Fusion ready — rotating rainbow ring (the circular analog of the Workshop's
+   caterpillar), same hues and cadence. Sits behind the disc so only the ring
+   peeks out around it. */
+@keyframes equippedFusionSpin {
+  to { transform: rotate(360deg); }
+}
+
+.fusion::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    hsl(0,   100%, 65%),
+    hsl(60,  100%, 65%),
+    hsl(120, 100%, 65%),
+    hsl(180, 100%, 65%),
+    hsl(240, 100%, 65%),
+    hsl(300, 100%, 65%),
+    hsl(0,   100%, 65%)
+  );
+  animation: equippedFusionSpin 0.8s linear infinite;
+  z-index: 0;
+  will-change: transform;
+}
