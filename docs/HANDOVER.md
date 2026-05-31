@@ -31,7 +31,7 @@ content targets the live game directly, no v2 dependency. Starting prompt for a 
 
 ## GitHub bug fixes + fusion rework + equipped-items display (2026-05-31, pm) — SHIPPED
 
-> **All on `master`, deployed to production.** `master` HEAD = **`12da3ae`**. Live bundle **`index-BdlK4sAn.js`**
+> **All on `master`, deployed to production.** `master` HEAD = **`2985e4c`**. Live bundle **`index-DSu1zstQ.js`**
 > at https://artdle-web.vercel.app (deploy: `npx vercel --prod` after **every** push — Vercel builds local code,
 > not from git). Full suite green at **1208 tests**; `npx tsc -b` clean. **`SAVE_VERSION` bumped 29 → 30**
 > (migration v30 aggregates item affixes — see Fusion below). This wave was direct small-fix work off five
@@ -86,6 +86,15 @@ untracked and are now committed (an unresolved import would fail the case-sensit
 locked → 🔒, empty → grey disc, equipped → tier icon on a black fill, fusion-ready + affordable → rotating
 rainbow ring (circular analog of the Workshop caterpillar). `pointer-events: none` (display-only); reuses
 `getUnlockedSlotKinds` / `getFusionTarget` so it stays in sync with the Workshop.
+
+**Constellation cluster roots render purple** (`967c616` teal → superseded by `2985e4c` purple). Each cluster's
+starter node (`SKILL_CLUSTERS[].rootNodeId`) uses the **`--inspi` purple** accent instead of gold across its
+circle fill/stroke, glow halo, and level text (`StarCanvas`), so the entry node of all 7 clusters is visually
+distinct. (Teal was tried first but read off against the gold tree.) Non-root nodes unchanged.
+
+> **Docs note:** this handover was audited + trimmed in the same session — waves for 2026-05-24 and earlier (plus
+> the v2.0/v1.1/v1.0 history) now live in `HANDOVER_ARCHIVE.md`, and a top-of-file **"What's next"** section was
+> added (v1.2 pointer + open follow-ups + the imported-but-untracked-assets housekeeping flag).
 
 ---
 
