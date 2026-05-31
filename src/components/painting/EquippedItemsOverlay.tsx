@@ -19,11 +19,12 @@ interface SlotProps {
   item: Item | undefined;
   unlocked: boolean;
   fusable: boolean;
+  apex: boolean;
 }
 
-function ItemSlot({ slot, item, unlocked, fusable }: SlotProps): JSX.Element {
+function ItemSlot({ slot, item, unlocked, fusable, apex }: SlotProps): JSX.Element {
   const state = !unlocked ? "locked" : item ? "equipped" : "empty";
-  const cls = `${styles.slot}${fusable ? ` ${styles.fusion}` : ""}`;
+  const cls = `${styles.slot}${apex ? ` ${styles.slotApex}` : ""}${fusable ? ` ${styles.fusion}` : ""}`;
   return (
     <div
       className={cls}
@@ -83,13 +84,14 @@ export function EquippedItemsOverlay(): JSX.Element {
     return set;
   }, [inventory, equipped, gold, workshopLevel, purchasedNodes]);
 
-  const renderSlot = (slot: SlotKind): JSX.Element => (
+  const renderSlot = (slot: SlotKind, index: number): JSX.Element => (
     <ItemSlot
       key={slot}
       slot={slot}
       item={equipped[slot]}
       unlocked={unlocked.has(slot)}
       fusable={fusableSlots.has(slot)}
+      apex={index === 0}
     />
   );
 
