@@ -84,3 +84,17 @@ export const SCHOOL_TIERS: ReadonlyArray<SchoolTier> = [
     ],
   },
 ];
+
+/** The research config for an id across all tiers, or null if unknown. */
+export function getResearchById(id: string): SchoolResearch | null {
+  for (const tier of SCHOOL_TIERS) {
+    const r = tier.researches.find((res) => res.id === id);
+    if (r) return r;
+  }
+  return null;
+}
+
+/** Display name for a research id across all tiers, or the id itself if unknown. */
+export function getResearchName(id: string): string {
+  return getResearchById(id)?.name ?? id;
+}

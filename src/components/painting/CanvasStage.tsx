@@ -18,6 +18,7 @@ import paintingScreenAnim from "@/assets/images/painting_screen_anim.mp4";
 import { getSketchUrl, getCellRevealOrder, getCanvasCellLayout } from "./canvasArt";
 import { useRevealQueue } from "./useRevealQueue";
 import { TierUpgradeCard } from "./TierUpgradeCard";
+import { SchoolResearchBook } from "./SchoolResearchBook";
 
 /**
  * Module-level cache: each unique sketch URL is decoded at most once across
@@ -286,6 +287,9 @@ export function CanvasStage({
       )}
 
       <TierUpgradeCard stageName={stageName} />
+
+      {/* Assigned School research (top-right). Hidden until the School unlocks. */}
+      <SchoolResearchBook />
 
       {/* Current-canvas sell price, top-center just below the tier button. */}
       <div className={styles.topSell}>

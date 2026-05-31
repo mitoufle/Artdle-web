@@ -1,0 +1,79 @@
+.book {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 224px;
+  z-index: 3;
+  /* Display-only — never intercept canvas paint clicks. */
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bookImg {
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* Ink text sitting on the open pages, just above the spine. */
+/* Dark plaque that masks the busy book behind the title for readability. */
+.text {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 80%;
+  text-align: center;
+  white-space: pre-line;
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: var(--ink-1);
+  background: rgba(10, 8, 20, 0.82);
+  padding: 5px 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+/* Research progress bar — mirrors the worker XP bar, in the mystic purple. */
+.progress {
+  position: absolute;
+  top: 61%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56%;
+  height: 5px;
+  background: var(--bg-stone-d);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--inspi);
+  transition: width 200ms ease;
+}
+
+/* No research assigned → breathe the whole book to draw the eye. drop-shadow
+   follows the sprite's alpha shape, so it glows around the book, not a box. */
+.idle .bookImg {
+  animation: bookBreathe 2.4s ease-in-out infinite;
+}
+
+.idle .text {
+  opacity: 0.85;
+}
+
+@keyframes bookBreathe {
+  0%, 100% { filter: drop-shadow(0 0 1px rgba(230, 182, 103, 0.25)); }
+  50%      { filter: drop-shadow(0 0 7px rgba(230, 182, 103, 0.95)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idle .bookImg { animation: none; }
+}
