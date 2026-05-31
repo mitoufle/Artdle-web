@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   getInspiMultiplier,
+  getAscendFameMultiplier,
   getCanvasGoldMultiplier,
   getCanvasSpeedMultiplier,
   getTreeUpgradeCostMultiplier,
@@ -47,6 +48,7 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
       equipped: {},
       sellPriceLevel: 0,
       speedLevel: 0,
+      museBurstTimer: 0,
     });
   });
 
@@ -84,6 +86,41 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 2, zion: 1 }, partLevels: { a: 100 } });
     // 1 + 2*0.50 + 1*0.10 = 2.10
     expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.10, 5);
+  });
+
+  it("Babylon King: +100% inspiration per level (additive)", () => {
+    useGameStore.setState({ purchasedNodes: { babylon_king: 2 } });
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(3.0, 5);
+  });
+
+  it("Babylon King: stacks additively with get_inspired", () => {
+    useGameStore.setState({ purchasedNodes: { get_inspired: 1, babylon_king: 1 } });
+    // 1 + 0.50 + 1.00 = 2.50
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.5, 5);
+  });
+
+  it("Muse Burst: x7 inspiration multiplier while the buff timer is active", () => {
+    useGameStore.setState({ purchasedNodes: {}, museBurstTimer: 42 });
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(7, 5);
+  });
+
+  it("Muse Burst: no effect when the timer is 0", () => {
+    useGameStore.setState({ purchasedNodes: {}, museBurstTimer: 0 });
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1, 5);
+  });
+
+  it("Muse Burst: multiplies the whole bonus pool (stacks with get_inspired)", () => {
+    useGameStore.setState({ purchasedNodes: { get_inspired: 1 }, museBurstTimer: 42 });
+    // (1 + 0.50) * 7 = 10.5
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(10.5, 5);
+  });
+
+  it("getAscendFameMultiplier: 1.0 without Royalties, +70% per level with", () => {
+    useGameStore.setState({ purchasedNodes: {} });
+    expect(getAscendFameMultiplier(useGameStore.getState())).toBeCloseTo(1, 5);
+    useGameStore.setState({ purchasedNodes: { royalties: 3 } });
+    // 1 + 3 * 0.70 = 3.10
+    expect(getAscendFameMultiplier(useGameStore.getState())).toBeCloseTo(3.10, 5);
   });
 
   it("getCanvasGoldMultiplier returns 1.0 with no nodes and no items", () => {

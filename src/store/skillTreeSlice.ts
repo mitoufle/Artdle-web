@@ -17,6 +17,13 @@ export interface SkillTreeState {
    * POKE_TREE_INTERVAL_S seconds while `level(poke_tree) > 0`.
    */
   pokeTreeTimer: number;
+  /**
+   * Seconds remaining on the Muse Burst inspiration buff (×7 while > 0).
+   * Set to MUSE_BURST_DURATION_S when a 100-canvas-sale milestone is crossed;
+   * ticked down each frame. Transient — excluded from persistence (no offline
+   * progress in v1), so it resets to 0 on reload.
+   */
+  museBurstTimer: number;
   /** Dev toggle — when true all node purchases skip the fame cost check. Not persisted. */
   devFreeNodes: boolean;
 }
@@ -24,6 +31,7 @@ export interface SkillTreeState {
 export const initialSkillTreeState: SkillTreeState = Object.freeze({
   purchasedNodes: Object.freeze({}) as Partial<Record<SkillNodeId, number>>,
   pokeTreeTimer: 0,
+  museBurstTimer: 0,
   devFreeNodes: false,
 }) as SkillTreeState;
 
@@ -80,6 +88,7 @@ export const createSkillTreeSlice: StateCreator<GameStore, [], [], SkillTreeSlic
       skillTreeTickPure(draft, deltaSeconds);
       return {
         pokeTreeTimer: draft.pokeTreeTimer,
+        museBurstTimer: draft.museBurstTimer,
         inspiration: draft.inspiration,
         lifetimeInspiration: draft.lifetimeInspiration,
       };

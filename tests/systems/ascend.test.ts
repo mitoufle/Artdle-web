@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   canAscend,
   performAscendOrchestrator,
+  computeAscendFameGain,
 } from "@/systems/ascend";
 import { useGameStore } from "@/store";
 import { createWorker } from "@/store/officeSlice";
@@ -246,6 +247,31 @@ describe("systems/ascend", () => {
       // MUST be `> 1`: a worker starts at level 1 and level only increases, so `>= 1`
       // would pass even if applyAscendXp did nothing.
       expect(after.roster[0]!.level).toBeGreaterThan(1);
+    });
+  });
+
+  describe("Royalties — +% fame on ascend", () => {
+    beforeEach(() => {
+      useGameStore.getState().resetRunCurrencies();
+      useGameStore.setState({ purchasedNodes: {}, ascendCount: 0, fame: big(0) });
+    });
+
+    it("computeAscendFameGain applies +70% per Royalties level on top of the base curve", () => {
+      // fameOnAscend(1e6) = 102. Royalties level 2 → ×(1 + 2*0.70) = ×2.40 → floor(244.8) = 244.
+      useGameStore.setState({ inspiration: big(1_000_000), purchasedNodes: { royalties: 2 } });
+      expect(fameOnAscend(big(1_000_000))).toBe(102);
+      expect(computeAscendFameGain(useGameStore.getState())).toBe(244);
+    });
+
+    it("computeAscendFameGain equals the base curve with no Royalties", () => {
+      useGameStore.setState({ inspiration: big(1_000_000), purchasedNodes: {} });
+      expect(computeAscendFameGain(useGameStore.getState())).toBe(102);
+    });
+
+    it("performAscendOrchestrator credits the Royalties-boosted fame", () => {
+      useGameStore.setState({ inspiration: big(1_000_000), purchasedNodes: { royalties: 2 }, fame: big(0) });
+      performAscendOrchestrator(useGameStore.getState);
+      expect(useGameStore.getState().fame.toNumber()).toBe(244);
     });
   });
 });

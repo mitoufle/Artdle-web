@@ -2,10 +2,9 @@ import type { JSX } from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGameStore } from "@/store";
-import { canAscend } from "@/systems/ascend";
-import { fameOnAscend } from "@/core/balance";
+import { canAscend, computeAscendFameGain } from "@/systems/ascend";
 import { big } from "@/core/bigNumber";
-import { getAscendThresholdReduction, getWorkerXpPoolMultiplier } from "@/core/multipliers";
+import { getWorkerXpPoolMultiplier } from "@/core/multipliers";
 import { previewAscendLevelGains } from "@/core/workerAscend";
 import { formatBig, formatShort } from "@/core/formatter";
 import { Cavern, type CavernPhase } from "@/components/ascension/Cavern";
@@ -23,7 +22,7 @@ function ascendHoverBody(): JSX.Element {
   if (!canAscend(state)) {
     return <div>Need 10,000 inspiration to gain your first fame point.</div>;
   }
-  const gain = fameOnAscend(state.inspiration, getAscendThresholdReduction(state));
+  const gain = computeAscendFameGain(state);
   return (
     <>
       <div>Current inspi: {formatBig(state.inspiration)}</div>
@@ -43,6 +42,7 @@ export function AscensionRoute(): JSX.Element {
   const fame = useGameStore((s) => s.fame);
   const ascendCount = useGameStore((s) => s.ascendCount);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
+  const completedResearches = useGameStore((s) => s.completedResearches);
   const roster = useGameStore((s) => s.roster);
   const pastRuns = useGameStore((s) => s.pastRuns);
   const performAscend = useGameStore((s) => s.performAscend);
@@ -50,7 +50,8 @@ export function AscensionRoute(): JSX.Element {
   const navigate = useNavigate();
 
   const canDo = canAscend({ inspiration, purchasedNodes });
-  const fameGain = fameOnAscend(inspiration, getAscendThresholdReduction({ purchasedNodes }));
+  // Shared with performAscendOrchestrator so preview == awarded (incl. Royalties).
+  const fameGain = computeAscendFameGain({ inspiration, purchasedNodes, completedResearches });
 
   // Preview how many levels the worker roster would gain from this ascend's XP
   // pool (= fameGain × pool multiplier), mirroring performAscendOrchestrator's

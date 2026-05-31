@@ -1,7 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { skillTreeTickPure } from "@/core/skillTreeTickPure";
+import { skillTreeTickPure, crossedSaleMilestone } from "@/core/skillTreeTickPure";
 import { big } from "@/core/bigNumber";
 import { useGameStore } from "@/store";
+
+describe("crossedSaleMilestone", () => {
+  it("true only when a multiple of the interval is crossed", () => {
+    expect(crossedSaleMilestone(99, 100, 100)).toBe(true);
+    expect(crossedSaleMilestone(0, 100, 100)).toBe(true);
+    expect(crossedSaleMilestone(150, 260, 100)).toBe(true); // crossed 200
+    expect(crossedSaleMilestone(100, 101, 100)).toBe(false);
+    expect(crossedSaleMilestone(50, 99, 100)).toBe(false);
+    expect(crossedSaleMilestone(100, 100, 100)).toBe(false); // no new sale
+  });
+});
+
+describe("skillTreeTickPure — Muse Burst timer", () => {
+  it("decrements museBurstTimer by delta, even when poke_tree is not owned", () => {
+    const draft = { ...useGameStore.getState(), purchasedNodes: {}, pokeTreeTimer: 0, museBurstTimer: 42 } as any;
+    skillTreeTickPure(draft, 1);
+    expect(draft.museBurstTimer).toBe(41);
+  });
+
+  it("floors museBurstTimer at 0 (never negative)", () => {
+    const draft = { ...useGameStore.getState(), purchasedNodes: {}, museBurstTimer: 0.5 } as any;
+    skillTreeTickPure(draft, 1);
+    expect(draft.museBurstTimer).toBe(0);
+  });
+});
 
 describe("skillTreeTickPure", () => {
   it("no-op when poke_tree not purchased", () => {

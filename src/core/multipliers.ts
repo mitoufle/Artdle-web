@@ -9,6 +9,7 @@ import { getEquippedContribution } from "@/store/workshopSlice";
 import type { Item } from "@/store/workshopSlice";
 import { getNodeLevel, countCapability, hasCapability } from "@/store/skillTreeSlice";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
+import { MUSE_BURST_INSPI_MULT } from "@/core/skillTreeTickPure";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
 import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL, ACCELERATOR_XP_PER_LEVEL } from "./balance";
 import type { SlotKind } from "@/config/workshopAffixes";
@@ -38,6 +39,10 @@ export type CanvasMultiplierInputs = Pick<GameStore,
 /** Zion (`zion_tree_milestone`): +10% inspiration per tree upgrade at this level. */
 const ZION_MILESTONE_LEVEL = 100;
 const ZION_INSPI_PER_MILESTONE = 0.10;
+/** Babylon King (`babylon_inspi_bonus`): +100% inspiration per level (additive). */
+const BABYLON_INSPI_PER_LEVEL = 1.0;
+/** Royalties (`ascend_fame_bonus`): +70% fame on ascend per level. */
+const ROYALTIES_FAME_PER_LEVEL = 0.70;
 
 /** Count of tree upgrades that have reached `level`. Guards an absent map. */
 const countTreeUpgradesAtLevel = (
@@ -58,19 +63,31 @@ const countTreeUpgradesAtLevel = (
  * Wiring:
  *   - get_inspired: +50% per level (additive). 5 levels = +250%.
  *   - zion (`zion_tree_milestone`): +10% per tree upgrade at level ≥ 100.
+ *   - babylon_king (`babylon_inspi_bonus`): +100% per level (additive).
+ *   - muse_burst (`museBurstTimer`): ×7 the whole rate while the buff is active.
  *   - workshop items: do NOT contribute (painting-only by design).
  */
-export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedResearches" | "completedAchievements" | "partLevels">): number => {
+export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedResearches" | "completedAchievements" | "partLevels" | "museBurstTimer">): number => {
   const zionBonus = hasCapability(state, "zion_tree_milestone")
     ? ZION_INSPI_PER_MILESTONE * countTreeUpgradesAtLevel(state.partLevels, ZION_MILESTONE_LEVEL)
     : 0;
   const bonus = getNodeLevel(state, "get_inspired") * GET_INSPIRED_PER_LEVEL
     + countCapability(state, "inspi_mult_bonus") * 0.10
+    + countCapability(state, "babylon_inspi_bonus") * BABYLON_INSPI_PER_LEVEL
     + zionBonus
     + getSchoolBonus(state, "+% inspiration gain")
     + getAchievementBonus(state, "inspi_pct");
-  return 1 + bonus;
+  const museBurstMult = (state.museBurstTimer ?? 0) > 0 ? MUSE_BURST_INSPI_MULT : 1;
+  return (1 + bonus) * museBurstMult;
 };
+
+/**
+ * Multiplier on fame gained per ascend from the Royalties node
+ * (`ascend_fame_bonus`): `1 + 0.70 × levels`. Applied on top of the base
+ * fame curve and the school "+% Fame gain" bonus — see computeAscendFameGain.
+ */
+export const getAscendFameMultiplier = (state: Pick<GameStore, "purchasedNodes">): number =>
+  1 + countCapability(state, "ascend_fame_bonus") * ROYALTIES_FAME_PER_LEVEL;
 
 /**
  * Aggregate multiplier on gold credited per canvas sale.

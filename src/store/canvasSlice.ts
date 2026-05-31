@@ -6,8 +6,9 @@ import {
 } from "@/core/balance";
 import type { GameStore } from "@/store";
 import { type Big } from "@/core/bigNumber";
-import { getCanvasTrackUnlocked } from "@/store/skillTreeSlice";
+import { getCanvasTrackUnlocked, hasCapability } from "@/store/skillTreeSlice";
 import { canvasTickPure } from "@/core/canvasTickPure";
+import { crossedSaleMilestone, MUSE_BURST_SALE_INTERVAL, MUSE_BURST_DURATION_S } from "@/core/skillTreeTickPure";
 
 export interface CanvasState {
   /**
@@ -118,6 +119,10 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
       const draft = { ...state } as GameStore;
       canvasTickPure(draft, deltaSeconds, opts);
       fired = draft.statsRun.canvasesSold !== before;
+      // Muse Burst: a crossed 100-sale milestone (re)arms the ×7 inspiration buff.
+      const museBurstTriggered =
+        hasCapability(state, "muse_burst_buff") &&
+        crossedSaleMilestone(before, draft.statsRun.canvasesSold, MUSE_BURST_SALE_INTERVAL);
       return {
         canvasProgress: draft.canvasProgress,
         critChunks: draft.critChunks,
@@ -129,6 +134,9 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
         lifetimeGold: draft.lifetimeGold,
         statsLifetime: draft.statsLifetime,
         statsRun: draft.statsRun,
+        // Only set when triggered, so a normal frame doesn't clobber the
+        // countdown that skillTreeTick applies later this same frame.
+        ...(museBurstTriggered ? { museBurstTimer: MUSE_BURST_DURATION_S } : {}),
       };
     });
     if (fired) get().evaluateAchievements();

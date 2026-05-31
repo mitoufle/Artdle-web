@@ -2,7 +2,7 @@ import type { GameStore } from "@/store";
 import type { StoreApi } from "zustand";
 import { big } from "@/core/bigNumber";
 import { fameOnAscend } from "@/core/balance";
-import { getAscendThresholdReduction } from "@/core/multipliers";
+import { getAscendThresholdReduction, getAscendFameMultiplier } from "@/core/multipliers";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 
 /**
@@ -14,6 +14,20 @@ import { getSchoolBonus } from "@/core/schoolMultipliers";
  */
 export const canAscend = (state: Pick<GameStore, "inspiration" | "purchasedNodes">): boolean =>
   fameOnAscend(state.inspiration, getAscendThresholdReduction(state)) >= 1;
+
+/**
+ * Final fame credited on ascend — the single source of truth shared by the
+ * orchestrator and the AscensionRoute preview (so the displayed gain and the
+ * worker-XP preview always match what's actually awarded).
+ *
+ * `floor( fameOnAscend(inspi, thresholdReduction) × (1 + school "+% Fame gain") × Royalties )`.
+ */
+export const computeAscendFameGain = (
+  state: Pick<GameStore, "inspiration" | "purchasedNodes" | "completedResearches">,
+): number => {
+  const raw = fameOnAscend(state.inspiration, getAscendThresholdReduction(state));
+  return Math.floor(raw * (1 + getSchoolBonus(state, "+% Fame gain")) * getAscendFameMultiplier(state));
+};
 
 /**
  * Atomic ascend orchestrator. Returns true on success; false if canAscend is false.
@@ -33,8 +47,7 @@ export const performAscendOrchestrator = (
   if (!canAscend(state)) return false;
 
   // 1. Capture fame gain BEFORE inspiration is reset.
-  const rawFameGain = fameOnAscend(state.inspiration, getAscendThresholdReduction(state));
-  const fameGain = Math.floor(rawFameGain * (1 + getSchoolBonus(state, "+% Fame gain")));
+  const fameGain = computeAscendFameGain(state);
 
   // 2. Reset run state via existing slice actions.
   state.resetRunCurrencies(); // gold + inspiration → 0; fame preserved

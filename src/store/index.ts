@@ -714,6 +714,7 @@ export const useGameStore = create<GameStore>()(
           painterClocks: _pc,
           lastAscendRoll: _lar,
           devFreeNodes: _dfn,
+          museBurstTimer: _mbt,
           activeNotification: _an,
           notificationQueue: _nq,
           ...rest

@@ -90,9 +90,9 @@ export const SKILL_NODES: ReadonlyArray<SkillNodeConfig> = [
   // their gameplay effects (fame-on-ascend, timed inspiration buff, etc.) are
   // not wired to engine capabilities yet; unlocks intentionally empty.
   { id: "zion", clusterId: "inspiration", name: "Zion", description: "every time a tree upgrades reaches level 100, gain +10% total inspiration gain.", numericEffect: "10", parentIds: ["Bargain"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [25000], unlocks: ["zion_tree_milestone"] },
-  { id: "babylon_king", clusterId: "inspiration", name: "Babylon King", description: "each level increase inspiration gain by #%", numericEffect: "100", parentIds: ["patron"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [10000, 20000, 30000, 40000, 50000], unlocks: [] },
-  { id: "muse_burst", clusterId: "inspiration", name: "Muse Burst", description: "every 100 sold canvas, grant # total inspiration gain for 42 seconds", numericEffect: "x7", parentIds: ["poke_tree"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [15000], unlocks: [] },
-  { id: "royalties", clusterId: "inspiration", name: "Royalties", description: "increases total Fame gain upon ascending by #%", numericEffect: "70", parentIds: ["enlightenment"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [30000, 50000, 80000, 100000, 150000], unlocks: [] },
+  { id: "babylon_king", clusterId: "inspiration", name: "Babylon King", description: "each level increase inspiration gain by #%", numericEffect: "100", parentIds: ["patron"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [10000, 20000, 30000, 40000, 50000], unlocks: ["babylon_inspi_bonus"] },
+  { id: "muse_burst", clusterId: "inspiration", name: "Muse Burst", description: "every 100 sold canvas, grant # total inspiration gain for 42 seconds", numericEffect: "x7", parentIds: ["poke_tree"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [15000], unlocks: ["muse_burst_buff"] },
+  { id: "royalties", clusterId: "inspiration", name: "Royalties", description: "increases total Fame gain upon ascending by #%", numericEffect: "70", parentIds: ["enlightenment"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [30000, 50000, 80000, 100000, 150000], unlocks: ["ascend_fame_bonus"] },
 ];
 
 /** Lookup helper. Returns null if id unknown. */
