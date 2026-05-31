@@ -172,15 +172,15 @@ describe("aggregateAffixes", () => {
     ]);
   });
 
-  it("sums crit/combo too (value-preserving — the one-roll cap is enforced at roll time, not here)", () => {
+  it("keeps only the largest single magnitude for crit/combo — never more than one roll's worth", () => {
     const out = aggregateAffixes([
       { kind: "+combo_chance%", magnitude: 40 },
       { kind: "+combo_chance%", magnitude: 52 },
       { kind: "+crit_chunks", magnitude: 30 },
       { kind: "+crit_chunks", magnitude: 18 },
     ]);
-    expect(out).toContainEqual({ kind: "+crit_chunks", magnitude: 48 });
-    expect(out).toContainEqual({ kind: "+combo_chance%", magnitude: 92 });
+    expect(out).toContainEqual({ kind: "+crit_chunks", magnitude: 30 });
+    expect(out).toContainEqual({ kind: "+combo_chance%", magnitude: 52 });
     expect(out).toHaveLength(2);
   });
 
