@@ -1,5 +1,73 @@
 # Artdle Web — Handover
 
+## Constellation clusters + cluster designer + school banking + achievement ladders (2026-05-31) — SHIPPED
+
+> **All items below are on `master` and deployed to production.** `master` HEAD = **`87fae6e`**.
+> Live bundle **`index-5ksZ1mR1.js`** at https://artdle-web.vercel.app (deploy: `npx vercel --prod` — Vercel
+> builds local code, not from git push, so always deploy after pushing). Full suite green at **1180 tests**;
+> `npx tsc -b` clean. `SAVE_VERSION` unchanged at **29** (no migration needed this wave — see school note).
+> Constellation + cluster-designer ran the full brainstorm → spec → plan → subagent-driven loop; school +
+> achievements were direct (user flagged them as small). Specs/plans in `docs/superpowers/{specs,plans}/2026-05-3{0,1}-*`.
+
+**TOOLING — the real typecheck is `npx tsc -b`.** The root `tsconfig.json` is a project-references stub
+(`"files": []`), so `tsc -p tsconfig.json` checks **nothing** and falsely reports clean. Use `tsc -b` (or
+`npm run build`). This burned time this session. The old "office/catchup tsc red" note is **stale** — `tsc -b`
+is fully clean now.
+
+**Constellation redesign — hubless seven clusters** (spec/plan `2026-05-30-constellation-clusters`, SHAs
+`1236024`…`bf03e6a`, `4b1b461`). Replaced the single FAME hub with **7 independent themed clusters**
+(`src/config/skillClusters.ts`): Inspiration, Colors, Workshop (absorbs the 2 speed nodes), Crit, Combo,
+Office, School. Every node carries a `clusterId`; the **5 cross-cluster prereq links were cut** so each
+cluster is a self-contained DAG with exactly one root (= "each cluster has a starting node"). **All clusters
+open from start — fame cost is the only gate** (no hidden crit→combo coupling; verified). Completion is
+**derived** (`clusterComplete` = all member nodes maxed) and grants a placeholder `completionBonus` capability
+tag via `hasCapability` (no multiplier consumes it yet — real bonus values are a later gameplay pass). FAME
+hub retired from runtime + designer; new pure **`core/clusterLayout.ts`** lays each cluster out in its own
+region of one pannable sky (`computeClusterLayout` + `constellationViewbox`, `WORLD_PAD` baked in so positions
+are one shared coordinate space). `StarCanvas` gained a per-cluster completion-art `<image>` layer (inert —
+`completionArtPath` is `null` for all 7 until art exists). Default viewport now **frames the Inspiration
+starter cluster** (zoom 2.2) instead of the whole ~2920×1880 sky (which rendered nodes as tiny dots).
+
+**Designer ⇄ game layout unified + stale positions cleared** (`e2ea934`, `38fef5a`, `cf338ef`). The skill
+designer had used its own FAME-radial `autoLayout` while the game used the cluster layout → positions never
+matched. Both now consume `computeClusterLayout` over the same clusters, so **a star dragged in the designer
+lands exactly where the game renders it**. Also **cleared 22 stale authored positions** in
+`skillTreeDesign.json` (leftovers from the old FAME-radial designer, 2026-05-23 — they jammed half the nodes
+near the origin in both views). `autoLayout.ts` deleted (orphaned).
+
+**Cluster authoring in the skill designer** (spec/plan `2026-05-31-cluster-authoring-designer`, SHAs
+`98a3985`…`affc862`, `cf338ef`). `DesignFile` gained `clusters[]` (`DesignCluster {id,name,theme,rootNodeId,
+region}`); the 7 clusters are **seeded into `skillTreeDesign.json`**. New **"+ Add Cluster"** + `ClusterListRail`
++ `ClusterForm` (name/theme/read-only-id/root-picker/delete); node form's cluster picker reads `design.clusters`;
+new clusters **auto-place** in empty sky (`nextClusterRegion`); validation flags **one-root-per-cluster** +
+empty + unknown-clusterId. **Author-as-spec:** the game still reads hand-coded `SKILL_CLUSTERS` — when the user
+saves a new cluster, the agent wires it into `skillClusters.ts` (+ reconciles node `clusterId`s) per
+**`docs/agent_docs/cluster-authoring-handoff.md`**; a guard test enforces TS⇄JSON agreement on id/name/root/region.
+> **Designer reads `localStorage` draft `?? file`.** A user's browser holds a draft that **overrides**
+> `skillTreeDesign.json` — they must hit **Reset** in the designer to pick up file changes. Fresh-profile
+> headless smoke masks this. `/constellation` is gated by the `unlockedConstellation` store flag (set on first
+> fame) and `main.tsx` force-redirects every boot to `/tree`, so headless smoke must seed `window.useGameStore`
+> (DEV build only) + click the nav link rather than navigate by URL.
+
+**School — research progress is banked, not discarded** (`d7cb506`, `e7635a5`). The School's stop button
+discarded a research's elapsed time. Renamed `cancelResearch` → **`pauseResearch`**: it now **banks** the
+remaining seconds per research in a new persisted `researchProgress: Record<string,number>` on the school
+slice; `startResearch` **resumes** from the bank if present. **Clicking another research switches** (pauses +
+banks the active one, starts/resumes the clicked one). Persisted (survives ascend + reload) — note school was
+already never reset on ascend; the only thing wiping progress was the old Cancel. No `SAVE_VERSION` bump:
+the new field defaults via the persist shallow-merge with `initialSchoolState`. School room shows paused
+researches as "⏸ Paused — X left (click to resume)".
+
+**Achievements — gold + tree-tier ladders extended by 6 each** (`87fae6e`). Pure data in
+`achievementConfig.ts` + `achievementsDesign.json` (no engine changes — reuses `canvas_gold_pct` /
+`lifetime.goldgain` / `tree.tier`). Gold ladder after Piggy Bank/Millionaire/Nerbard Alnaurt: **Trillionaire
+`1e12` → Octillionaire `1e27`** (×1000 threshold, +5% gold per rung, 0.30→0.55). Tree ladder after T2/T3/T4:
+**T5→T10** (`tree.tier ≥ 5…10`, flat +100% gold each; all reachable — tree has 10 stages). Config test
+(`tests/config/achievementConfig.test.ts`) locks the ladder values. Conditions compare via
+`lifetimeGold.toNumber()` (float), so `1e12`…`1e27` thresholds are fine.
+
+---
+
 ## Office UX + painting-view redesign + audio + ascend reveal wave (2026-05-30) — SHIPPED
 
 > **All items below are merged to `master` and deployed to production.** `master` HEAD = **`b63b678`**.
