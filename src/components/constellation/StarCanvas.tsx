@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { SkillNodeId } from "@/config/skillTreeNodes";
 import { getSkillNodeConfig } from "@/config/skillTreeNodes";
+import { SKILL_CLUSTERS } from "@/config/skillClusters";
 import { EDGES, NODE_POSITIONS, VIEWBOX, CLUSTER_REGIONS, type EdgeFrom } from "./nodeLayout";
 import {
   DEFAULT_VIEWPORT,
@@ -13,6 +14,9 @@ import styles from "./StarCanvas.module.css";
 
 const DRAG_THRESHOLD_PX = 3;
 const WHEEL_ZOOM_FACTOR = 1.15;
+
+/** Each cluster's root (starter) node is rendered teal instead of gold. */
+const ROOT_NODE_IDS = new Set<SkillNodeId>(SKILL_CLUSTERS.map((c) => c.rootNodeId));
 
 function screenToSvg(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
   const pt = svg.createSVGPoint();
@@ -225,8 +229,13 @@ export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewp
             const stateName = nodeStateName(state);
             const isSelected = selectedId === id;
             const isMajor = getSkillNodeConfig(id)?.kind === "major";
+            const isRoot = ROOT_NODE_IDS.has(id);
             const baseR = isMajor ? 16 : 11;
             const r = isSelected ? baseR + 3 : baseR;
+            // Cluster roots render teal; every other node keeps the gold accent.
+            const accent = isRoot ? "var(--teal)" : "var(--gold)";
+            const accentDark = isRoot ? "var(--teal-d)" : "var(--gold-d)";
+            const accentGlow = isRoot ? "rgba(45,212,191,0.20)" : "rgba(255,216,106,0.18)";
 
             return (
               <g
@@ -239,23 +248,23 @@ export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewp
                 onClick={() => onSelect(id)}
               >
                 {isMajor && (
-                  <circle cx={pos.x} cy={pos.y} r={r + 10} fill="rgba(255,216,106,0.18)" />
+                  <circle cx={pos.x} cy={pos.y} r={r + 10} fill={accentGlow} />
                 )}
                 {(stateName === "owned" || stateName === "maxed" || isSelected) && (
                   <circle
                     cx={pos.x}
                     cy={pos.y}
                     r={r + 8}
-                    fill={isSelected ? "rgba(155,108,214,0.25)" : "rgba(255,216,106,0.18)"}
+                    fill={isSelected ? "rgba(155,108,214,0.25)" : accentGlow}
                   />
                 )}
                 {stateName === "maxed" ? (
-                  <circle cx={pos.x} cy={pos.y} r={r} fill="var(--gold)" stroke="var(--gold-d)" strokeWidth="2" />
+                  <circle cx={pos.x} cy={pos.y} r={r} fill={accent} stroke={accentDark} strokeWidth="2" />
                 ) : stateName === "owned" ? (
-                  <circle cx={pos.x} cy={pos.y} r={r} fill="var(--gold)" stroke="var(--gold-d)" strokeWidth="1.5" />
+                  <circle cx={pos.x} cy={pos.y} r={r} fill={accent} stroke={accentDark} strokeWidth="1.5" />
                 ) : stateName === "available" ? (
                   <>
-                    <circle cx={pos.x} cy={pos.y} r={r} fill="var(--bg-1)" stroke="var(--gold)" strokeWidth="2" />
+                    <circle cx={pos.x} cy={pos.y} r={r} fill="var(--bg-1)" stroke={accent} strokeWidth="2" />
                     {isSelected && (
                       <circle cx={pos.x} cy={pos.y} r={r * 0.45} fill="var(--inspi)" />
                     )}
@@ -271,7 +280,7 @@ export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewp
                     fontFamily="var(--mono)"
                     fontSize="10"
                     fontWeight="700"
-                    fill="var(--gold)"
+                    fill={accent}
                   >
                     {state.level}/{state.maxLevel}
                   </text>
