@@ -1,13 +1,65 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { setSeed } from "@/core/rng";
 import { big } from "@/core/bigNumber";
-import { splitAscendPool, applyAscendXpToWorker } from "@/core/workerAscend";
+import {
+  splitAscendPool,
+  applyAscendXpToWorker,
+  countWorkerLevelGains,
+  previewAscendLevelGains,
+} from "@/core/workerAscend";
 import { createWorker } from "@/store/officeSlice";
 import { WORKER_BASELINE_XP_FRACTION, workerXpToNext } from "@/core/balance";
+import { rng } from "@/core/rng";
 
 function workerWith(over: Partial<ReturnType<typeof createWorker>>) {
   return { ...createWorker(), ...over };
 }
+
+describe("countWorkerLevelGains", () => {
+  beforeEach(() => setSeed(7));
+
+  it("returns 0 when the share can't reach the next level", () => {
+    const w = createWorker(); // level 1, cost to L2 = 1000
+    expect(countWorkerLevelGains(w, big(999))).toBe(0);
+  });
+
+  it("matches the level delta actually applied by applyAscendXpToWorker", () => {
+    for (const share of [big(1000), big(2500), big(7000), big(50000)]) {
+      const w = createWorker();
+      const applied = applyAscendXpToWorker(w, share);
+      expect(countWorkerLevelGains(w, share)).toBe(applied.levelAfter - applied.levelBefore);
+    }
+  });
+
+  it("does not consume the RNG (safe to call every render in a preview)", () => {
+    setSeed(42);
+    const before = rng();
+    setSeed(42);
+    countWorkerLevelGains(createWorker(), big(100000));
+    const after = rng();
+    expect(after).toBe(before);
+  });
+});
+
+describe("previewAscendLevelGains", () => {
+  beforeEach(() => setSeed(7));
+
+  it("is 0 for an empty roster", () => {
+    expect(previewAscendLevelGains(big(100000), [])).toBe(0);
+  });
+
+  it("sums the level gains the roster would get from the pool", () => {
+    const roster = [
+      workerWith({ strokesThisRun: 100 }),
+      workerWith({ strokesThisRun: 0 }),
+    ];
+    const pool = big(8000);
+    const shares = splitAscendPool(pool, roster);
+    const expected = roster.reduce((sum, w, i) => sum + countWorkerLevelGains(w, shares[i]!), 0);
+    expect(previewAscendLevelGains(pool, roster)).toBe(expected);
+    expect(expected).toBeGreaterThan(0);
+  });
+});
 
 describe("splitAscendPool", () => {
   it("returns [] for an empty roster", () => {

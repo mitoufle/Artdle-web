@@ -29,6 +29,14 @@
   gap: var(--s-2);
 }
 
+.workerLevels {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--xp, #6fc36f);
+  letter-spacing: 0.02em;
+}
+
 .caption {
   font-family: var(--mono);
   font-size: 11px;

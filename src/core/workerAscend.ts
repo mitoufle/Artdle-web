@@ -33,6 +33,38 @@ export function splitAscendPool(
   );
 }
 
+/**
+ * Count how many levels `worker` would gain from `xpShare` — WITHOUT rolling
+ * stats or touching the RNG (unlike `applyAscendXpToWorker`). Pure arithmetic,
+ * so the ascend screen can call it every render to preview level-ups without
+ * desyncing the real ascend's stat rolls. Capped at `LEVEL_UP_CAP` like the
+ * real pass.
+ */
+export function countWorkerLevelGains(worker: Worker, xpShare: Big): number {
+  let level = worker.level;
+  let xp = worker.xp.add(xpShare);
+  let gained = 0;
+  for (; gained < LEVEL_UP_CAP; gained++) {
+    const cost = workerXpToNext(level);
+    if (xp.lt(cost)) break;
+    xp = xp.sub(cost);
+    level += 1;
+  }
+  return gained;
+}
+
+/**
+ * Total levels the whole roster would gain if `pool` XP were applied now.
+ * Mirrors `applyAscendXp`'s split (baseline floor + stroke-share) but counts
+ * levels only — no RNG, no mutation. Drives the ascend screen's worker-level
+ * preview alongside the fame-gain preview.
+ */
+export function previewAscendLevelGains(pool: Big, workers: ReadonlyArray<Worker>): number {
+  if (workers.length === 0) return 0;
+  const shares = splitAscendPool(pool, workers);
+  return workers.reduce((sum, w, i) => sum + countWorkerLevelGains(w, shares[i]!), 0);
+}
+
 /** Per-worker outcome of an ascend XP pass — a pure before/after snapshot. */
 export interface WorkerLevelUpResult {
   readonly worker: Worker;       // xp/level/stats/mastery updated; strokesThisRun untouched

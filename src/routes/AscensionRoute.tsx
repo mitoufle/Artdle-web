@@ -1,10 +1,12 @@
 import type { JSX } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGameStore } from "@/store";
 import { canAscend } from "@/systems/ascend";
 import { fameOnAscend } from "@/core/balance";
-import { getAscendThresholdReduction } from "@/core/multipliers";
+import { big } from "@/core/bigNumber";
+import { getAscendThresholdReduction, getWorkerXpPoolMultiplier } from "@/core/multipliers";
+import { previewAscendLevelGains } from "@/core/workerAscend";
 import { formatBig, formatShort } from "@/core/formatter";
 import { Cavern, type CavernPhase } from "@/components/ascension/Cavern";
 import { ThresholdPanel } from "@/components/ascension/ThresholdPanel";
@@ -41,6 +43,7 @@ export function AscensionRoute(): JSX.Element {
   const fame = useGameStore((s) => s.fame);
   const ascendCount = useGameStore((s) => s.ascendCount);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
+  const roster = useGameStore((s) => s.roster);
   const pastRuns = useGameStore((s) => s.pastRuns);
   const performAscend = useGameStore((s) => s.performAscend);
   const clearAscendRoll = useGameStore((s) => s.clearAscendRoll);
@@ -48,6 +51,15 @@ export function AscensionRoute(): JSX.Element {
 
   const canDo = canAscend({ inspiration, purchasedNodes });
   const fameGain = fameOnAscend(inspiration, getAscendThresholdReduction({ purchasedNodes }));
+
+  // Preview how many levels the worker roster would gain from this ascend's XP
+  // pool (= fameGain × pool multiplier), mirroring performAscendOrchestrator's
+  // applyAscendXp(fameGain) without mutating state or consuming the RNG.
+  const workerLevelGain = useMemo(() => {
+    if (roster.length === 0 || fameGain <= 0) return 0;
+    const pool = big(fameGain).mul(getWorkerXpPoolMultiplier({ purchasedNodes }));
+    return previewAscendLevelGains(pool, roster);
+  }, [roster, fameGain, purchasedNodes]);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cavernPhase, setCavernPhase] = useState<CavernPhase>("idle");
@@ -127,7 +139,7 @@ export function AscensionRoute(): JSX.Element {
 
       <aside className={styles.rail}>
         <ThresholdPanel currentInspi={formatBig(inspiration)} />
-        <FamePreviewCard fameGain={fameGain} />
+        <FamePreviewCard fameGain={fameGain} workerLevelGain={workerLevelGain} />
         <PastRunsLedger runs={pastRuns} totalFame={pastRuns.reduce((acc, r) => acc + r.fame, 0)} />
       </aside>
 
