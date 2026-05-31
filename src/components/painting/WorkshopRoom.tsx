@@ -387,7 +387,7 @@ export function WorkshopRoom(): JSX.Element {
                   <div className={styles.itemRowAffixes}>
                     {item.affixes.map((a, i) => (
                       <span key={i} className={styles.affixChip}>
-                        <span className={styles.affixSymbol} style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
+                        <span style={{ color: AFFIX_COLOR[a.kind], fontSize: `${11 * AFFIX_SYMBOL_SCALE[a.kind]}px` }}>{AFFIX_SYMBOL[a.kind]}</span>
                         {a.magnitude}%
                       </span>
                     ))}

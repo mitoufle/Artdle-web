@@ -252,17 +252,6 @@
   white-space: nowrap;
 }
 
-/* Fixed-width, centered symbol box so the magnitude number starts at the same
-   offset for every affix kind. Without this the wider ⚡ (crit) glyph pushes its
-   value out of line with the $ » ∞ chips. */
-.affixSymbol {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  width: 12px;
-  flex-shrink: 0;
-}
-
 .emptyRow {
   display: flex;
   align-items: center;

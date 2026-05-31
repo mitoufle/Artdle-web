@@ -38,25 +38,18 @@ describe("workshopAffixes config", () => {
   it("AFFIX_MAGNITUDE_RANGE: normal tier matches base ranges", () => {
     expect(AFFIX_MAGNITUDE_RANGE.normal["+sell_price%"]).toEqual({ min: 15, max: 25 });
     expect(AFFIX_MAGNITUDE_RANGE.normal["+speed%"]).toEqual({ min: 15, max: 25 });
-    expect(AFFIX_MAGNITUDE_RANGE.normal["+crit_chunks"]).toEqual({ min: 1, max: 1 });
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+crit_chunks"]).toEqual({ min: 15, max: 25 });
     expect(AFFIX_MAGNITUDE_RANGE.normal["+combo_chance%"]).toEqual({ min: 5, max: 20 });
   });
 
-  it("AFFIX_MAGNITUDE_RANGE: each tier has non-decreasing bounds vs the previous tier (crit_chunks: max strictly increases)", () => {
+  it("AFFIX_MAGNITUDE_RANGE: each tier has strictly increasing bounds vs the previous tier", () => {
     const tiers = ALL_ITEM_TIERS;
     for (let i = 1; i < tiers.length; i++) {
       for (const kind of AFFIX_KINDS) {
-        if (kind === "+crit_chunks") {
-          // crit_chunks uses raw integer chunk counts; min is not strictly monotone
-          // (normal→magic both have min=1), but max is always strictly increasing.
-          expect(AFFIX_MAGNITUDE_RANGE[tiers[i]!][kind].max)
-            .toBeGreaterThan(AFFIX_MAGNITUDE_RANGE[tiers[i - 1]!][kind].max);
-        } else {
-          expect(AFFIX_MAGNITUDE_RANGE[tiers[i]!][kind].min)
-            .toBeGreaterThan(AFFIX_MAGNITUDE_RANGE[tiers[i - 1]!][kind].min);
-          expect(AFFIX_MAGNITUDE_RANGE[tiers[i]!][kind].max)
-            .toBeGreaterThan(AFFIX_MAGNITUDE_RANGE[tiers[i - 1]!][kind].max);
-        }
+        expect(AFFIX_MAGNITUDE_RANGE[tiers[i]!][kind].min)
+          .toBeGreaterThan(AFFIX_MAGNITUDE_RANGE[tiers[i - 1]!][kind].min);
+        expect(AFFIX_MAGNITUDE_RANGE[tiers[i]!][kind].max)
+          .toBeGreaterThan(AFFIX_MAGNITUDE_RANGE[tiers[i - 1]!][kind].max);
       }
     }
   });
@@ -92,11 +85,14 @@ describe("workshopAffixes — crit_chunks replaces crit_chance", () => {
     expect(AFFIX_COLOR["+crit_chunks"]).toBe("#ffaf3a");
   });
 
-  it("+crit_chunks magnitude ranges are small integer chunk counts per tier", () => {
-    expect(AFFIX_MAGNITUDE_RANGE.normal["+crit_chunks"]).toEqual({ min: 1, max: 1 });
-    expect(AFFIX_MAGNITUDE_RANGE.magic["+crit_chunks"]).toEqual({ min: 1, max: 2 });
-    expect(AFFIX_MAGNITUDE_RANGE.rare["+crit_chunks"]).toEqual({ min: 2, max: 3 });
-    expect(AFFIX_MAGNITUDE_RANGE.epic["+crit_chunks"]).toEqual({ min: 2, max: 4 });
-    expect(AFFIX_MAGNITUDE_RANGE.legendary["+crit_chunks"]).toEqual({ min: 3, max: 5 });
+  it("+crit_chunks magnitude ranges are harmonized with the percent-scale affixes (issue #6)", () => {
+    // crit_chunks magnitude is consumed as a PERCENT of base crit chunks, so it
+    // shares the sell_price%/speed% scale; the old 1..5 integer counts floored
+    // to no effect and displayed out of line with the other affix values.
+    expect(AFFIX_MAGNITUDE_RANGE.normal["+crit_chunks"]).toEqual({ min: 15, max: 25 });
+    expect(AFFIX_MAGNITUDE_RANGE.magic["+crit_chunks"]).toEqual({ min: 20, max: 30 });
+    expect(AFFIX_MAGNITUDE_RANGE.rare["+crit_chunks"]).toEqual({ min: 26, max: 38 });
+    expect(AFFIX_MAGNITUDE_RANGE.epic["+crit_chunks"]).toEqual({ min: 35, max: 50 });
+    expect(AFFIX_MAGNITUDE_RANGE.legendary["+crit_chunks"]).toEqual({ min: 48, max: 66 });
   });
 });
