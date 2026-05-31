@@ -10,6 +10,7 @@ import {
   getComboBaseChance,
   getWorkerGoldFactor,
 } from "@/core/multipliers";
+import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { createWorker } from "@/store/officeSlice";
 import type { CanvasMultiplierInputs } from "@/core/multipliers";
 import { useGameStore, type GameStore } from "@/store";
@@ -50,6 +51,7 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
       speedLevel: 0,
       museBurstTimer: 0,
       completedAchievements: {},
+      completedResearches: {},
     });
   });
 
@@ -135,6 +137,31 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
   it("without Materialist the base canvas gold stays 10", () => {
     useGameStore.setState({ purchasedNodes: {}, equipped: {}, sellPriceLevel: 0, completedAchievements: {} });
     expect(canvasGold(getCanvasGoldMultiplier(useGameStore.getState()), 1).toNumber()).toBe(10);
+  });
+
+  it("invest_brain: +10% canvas gold per level per completed research", () => {
+    useGameStore.setState({ purchasedNodes: { invest_brain: 2 }, equipped: {}, sellPriceLevel: 0, completedAchievements: {}, completedResearches: { r1: true, r2: true } });
+    // 1 + (2 levels × 0.10 × 2 researches) = 1.40
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1.40, 5);
+  });
+
+  it("invest_brain: no bonus with zero completed researches", () => {
+    useGameStore.setState({ purchasedNodes: { invest_brain: 5 }, equipped: {}, sellPriceLevel: 0, completedAchievements: {}, completedResearches: {} });
+    expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1, 5);
+  });
+
+  it("feedback_loop: +10% worker XP pool per completed research", () => {
+    useGameStore.setState({ purchasedNodes: { feedback_loop: 1 }, completedResearches: { r1: true, r2: true, r3: true } });
+    // 1 + 0.10 × 3 = 1.30
+    expect(getWorkerXpPoolMultiplier(useGameStore.getState())).toBeCloseTo(1.30, 5);
+  });
+
+  it("mentorship: scales completed-research numeric effects by +30%", () => {
+    // 'composition' grants canvas_gold_pct 0.12.
+    useGameStore.setState({ purchasedNodes: {}, completedResearches: { composition: true } });
+    expect(getSchoolBonus(useGameStore.getState(), "canvas_gold_pct")).toBeCloseTo(0.12, 5);
+    useGameStore.setState({ purchasedNodes: { mentorship: 1 }, completedResearches: { composition: true } });
+    expect(getSchoolBonus(useGameStore.getState(), "canvas_gold_pct")).toBeCloseTo(0.156, 5);
   });
 
   it("getAscendFameMultiplier: Spotlight achievement adds +10%, stacking with Royalties", () => {

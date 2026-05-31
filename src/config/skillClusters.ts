@@ -46,7 +46,7 @@ export const SKILL_CLUSTERS: ReadonlyArray<SkillClusterConfig> = [
   { id: "crit", name: "Crit", theme: "Land critical strokes on the canvas.", rootNodeId: "genius_episode", completionBonus: "cluster_crit_complete", region: { x: 0, y: 700, w: 520, h: 520 }, completionArtPath: null },
   { id: "combo", name: "Combo", theme: "Chain strokes into escalating combos.", rootNodeId: "unrelentless", completionBonus: "cluster_combo_complete", region: { x: 620, y: 860, w: 420, h: 420 }, completionArtPath: null },
   { id: "office", name: "Office", theme: "Hire and grow a studio of workers.", rootNodeId: "entrepreneur", completionBonus: "cluster_office_complete", region: { x: 1140, y: 1060, w: 520, h: 420 }, completionArtPath: null },
-  { id: "school", name: "School", theme: "Open the Painting School for permanent research.", rootNodeId: "unlock_school", completionBonus: "cluster_school_complete", region: { x: 1760, y: 1060, w: 420, h: 420 }, completionArtPath: null },
+  { id: "school", name: "School", theme: "Open the Painting School for permanent research.", rootNodeId: "unlock_school", completionBonus: "cluster_school_complete", region: { x: 1760, y: 1060, w: 960, h: 960 }, completionArtPath: null },
 ];
 
 /** All known cluster ids, for exhaustive checks. */

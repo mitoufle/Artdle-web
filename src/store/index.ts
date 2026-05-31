@@ -715,6 +715,7 @@ export const useGameStore = create<GameStore>()(
           lastAscendRoll: _lar,
           devFreeNodes: _dfn,
           museBurstTimer: _mbt,
+          collaborativeStrokeAcc: _csa,
           activeNotification: _an,
           notificationQueue: _nq,
           ...rest

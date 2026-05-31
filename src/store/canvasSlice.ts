@@ -63,6 +63,11 @@ export interface CanvasState {
    * typically called from `onAnimationComplete`.
    */
   lastSale: { id: number; amount: Big } | null;
+  /**
+   * Carry-over count of worker #1 strokes toward the next Collaborative Research
+   * 10-stroke → −1s research milestone. TRANSIENT — excluded from persistence.
+   */
+  collaborativeStrokeAcc: number;
 }
 
 export const initialCanvasState: CanvasState = Object.freeze({
@@ -76,6 +81,7 @@ export const initialCanvasState: CanvasState = Object.freeze({
   critChunks: {},
   painterClocks: {},
   lastSale: null,
+  collaborativeStrokeAcc: 0,
 }) as CanvasState;
 
 export interface CanvasSlice extends CanvasState {
@@ -134,6 +140,10 @@ export const createCanvasSlice: StateCreator<GameStore, [], [], CanvasSlice> = (
         lifetimeGold: draft.lifetimeGold,
         statsLifetime: draft.statsLifetime,
         statsRun: draft.statsRun,
+        // Research acceleration (Sponsoring / Collaborative Research): canvasTickPure
+        // may have shaved time off the active research and advanced the stroke carry.
+        activeResearch: draft.activeResearch,
+        collaborativeStrokeAcc: draft.collaborativeStrokeAcc,
         // Only set when triggered, so a normal frame doesn't clobber the
         // countdown that skillTreeTick applies later this same frame.
         ...(museBurstTriggered ? { museBurstTimer: MUSE_BURST_DURATION_S } : {}),

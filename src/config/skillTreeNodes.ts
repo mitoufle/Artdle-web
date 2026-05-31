@@ -93,6 +93,24 @@ export const SKILL_NODES: ReadonlyArray<SkillNodeConfig> = [
   { id: "babylon_king", clusterId: "inspiration", name: "Babylon King", description: "each level increase inspiration gain by #%", numericEffect: "100", parentIds: ["patron"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [10000, 20000, 30000, 40000, 50000], unlocks: ["babylon_inspi_bonus"] },
   { id: "muse_burst", clusterId: "inspiration", name: "Muse Burst", description: "every 100 sold canvas, grant # total inspiration gain for 42 seconds", numericEffect: "x7", parentIds: ["poke_tree"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [15000], unlocks: ["muse_burst_buff"] },
   { id: "royalties", clusterId: "inspiration", name: "Royalties", description: "increases total Fame gain upon ascending by #%", numericEffect: "70", parentIds: ["enlightenment"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [30000, 50000, 80000, 100000, 150000], unlocks: ["ascend_fame_bonus"] },
+  // ── School tree expansion (2026-06-01 submission). The 9 nodes the designer
+  //    left in the default "inspiration" cluster are reassigned to "school"
+  //    here (and in the JSON) so the cluster stays a single connected tree.
+  { id: "invest_brain", clusterId: "school", name: "Invest in brain", description: "Each level grants +10% canvas sell price per completed school research.", numericEffect: "10%", parentIds: ["unlock_school"], stacking: "additive", kind: "minor", maxLevel: 5, costs: [50000, 75000, 100000, 150000, 200000], unlocks: ["invest_brain_sell"] },
+  { id: "collaborative_research", clusterId: "school", name: "Collaborative Research #1", description: "Worker #1 also researches: every 10 strokes it lands cuts 1s off the active research.", numericEffect: "1", parentIds: ["unlock_school"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [80000], unlocks: ["collaborative_research_speed"] },
+  { id: "feedback_loop", clusterId: "school", name: "Feedback Loop", description: "+10% worker XP gain per completed school research.", numericEffect: "10%", parentIds: ["collaborative_research"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [150000], unlocks: ["feedback_loop_xp"] },
+  { id: "Sponsoring", clusterId: "school", name: "Sponsoring", description: "Every canvas sold cuts 1s off the active research.", numericEffect: "1", parentIds: ["invest_brain"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [200000], unlocks: ["sponsoring_research_speed"] },
+  { id: "mentorship", clusterId: "school", name: "Mentorship", description: "All completed-research numeric effects are increased by 30%.", numericEffect: "30%", parentIds: ["unlock_school"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [250000], unlocks: ["mentorship_research_boost"] },
+  // Inert placeholders — authored but not yet crafted (no effect). Present so the
+  // constellation renders them and the JSON↔runtime agreement test passes.
+  { id: "new_node", clusterId: "school", name: "New Node", description: "", numericEffect: "", parentIds: ["feedback_loop"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [0], unlocks: [] },
+  { id: "new_node_2", clusterId: "school", name: "New Node", description: "", numericEffect: "", parentIds: ["Sponsoring"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [0], unlocks: [] },
+  { id: "new_node_3", clusterId: "school", name: "New Node", description: "", numericEffect: "", parentIds: ["new_node_2"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [0], unlocks: [] },
+  { id: "new_node_4", clusterId: "school", name: "New Node", description: "", numericEffect: "", parentIds: ["new_node"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [0], unlocks: [] },
+  { id: "new_node_5", clusterId: "school", name: "New Node", description: "", numericEffect: "", parentIds: ["new_node_3"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [0], unlocks: [] },
+  { id: "new_node_6", clusterId: "school", name: "New Node", description: "", numericEffect: "", parentIds: ["new_node_4"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [0], unlocks: [] },
+  { id: "new_node_7", clusterId: "school", name: "New Node", description: "", numericEffect: "", parentIds: ["mentorship"], stacking: "additive", kind: "minor", maxLevel: 1, costs: [0], unlocks: [] },
+  { id: "technical_implementation", clusterId: "school", name: "Technical Implementation", description: "", numericEffect: "", parentIds: ["new_node_6", "new_node_5", "new_node_7"], stacking: "additive", kind: "major", maxLevel: 1, costs: [0], unlocks: [] },
 ];
 
 /** Lookup helper. Returns null if id unknown. */

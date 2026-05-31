@@ -9,10 +9,14 @@ import {
   getWorkerGoldFactor,
 } from "@/core/multipliers";
 import { rng } from "@/core/rng";
+import { hasCapability } from "@/store/skillTreeSlice";
 import {
   addCurrency, trackSaleGoldPure,
   incrementStatPure, patchRunStatsPure, type DraftState,
 } from "@/core/pureMutations";
+
+/** Worker #1 strokes per −1s of research time, for Collaborative Research. */
+const COLLAB_STROKES_PER_SECOND = 10;
 
 /** Cap on canvas-sales resolved in a single tick (catch-up clips at this). */
 const MAX_SALES_PER_TICK = 1000;
@@ -234,6 +238,28 @@ export function canvasTickPure(
         ? { ...w, strokesThisRun: w.strokesThisRun + workerStrokes[w.id]! }
         : w,
     );
+  }
+
+  // School-research acceleration from skill nodes. DECREMENT ONLY — schoolTick
+  // runs later this frame and handles completion (keeps research-count-dependent
+  // gold stable within a single canvasTick).
+  if (draft.activeResearch) {
+    let secondsOff = 0;
+    if (hasCapability(draft, "sponsoring_research_speed")) {
+      secondsOff += salesThisTick; // Sponsoring: 1s per canvas sold.
+    }
+    if (hasCapability(draft, "collaborative_research_speed") && draft.roster.length > 0) {
+      const w1Strokes = workerStrokes[draft.roster[0]!.id] ?? 0;
+      const acc = (draft.collaborativeStrokeAcc ?? 0) + w1Strokes;
+      secondsOff += Math.floor(acc / COLLAB_STROKES_PER_SECOND);
+      draft.collaborativeStrokeAcc = acc % COLLAB_STROKES_PER_SECOND;
+    }
+    if (secondsOff > 0) {
+      draft.activeResearch = {
+        ...draft.activeResearch,
+        remainingSeconds: Math.max(0, draft.activeResearch.remainingSeconds - secondsOff),
+      };
+    }
   }
   if (lastSaleAmount !== null) {
     draft.lastSale = { id: lastSaleId, amount: lastSaleAmount };

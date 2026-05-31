@@ -59,9 +59,9 @@ export function AscensionRoute(): JSX.Element {
   // applyAscendXp(fameGain) without mutating state or consuming the RNG.
   const workerLevelGain = useMemo(() => {
     if (roster.length === 0 || fameGain <= 0) return 0;
-    const pool = big(fameGain).mul(getWorkerXpPoolMultiplier({ purchasedNodes }));
+    const pool = big(fameGain).mul(getWorkerXpPoolMultiplier({ purchasedNodes, completedResearches }));
     return previewAscendLevelGains(pool, roster);
-  }, [roster, fameGain, purchasedNodes]);
+  }, [roster, fameGain, purchasedNodes, completedResearches]);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cavernPhase, setCavernPhase] = useState<CavernPhase>("idle");

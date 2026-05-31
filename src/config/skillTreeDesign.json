@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-05-31T14:07:37.661Z",
+  "designedAt": "2026-05-31T22:25:37.965Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -1094,6 +1094,285 @@
         "y": 700
       },
       "clusterId": "inspiration"
+    },
+    {
+      "id": "invest_brain",
+      "name": "Invest in brain",
+      "description": "Each level of this upgrade grants #% additional canvas sell price per completed school research",
+      "numericEffect": "10",
+      "parentIds": [
+        "unlock_school"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 5,
+      "costs": [
+        50000,
+        75000,
+        100000,
+        150000,
+        200000
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2170,
+        "y": 1120
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "collaborative_research",
+      "name": "Collaborative Research #1",
+      "description": "# Worker is now also helping completing the research, every 10 strokes your worker n°1 lands on the Canvas reduce by 1s the remaining research time ",
+      "numericEffect": "1",
+      "parentIds": [
+        "unlock_school"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        80000
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2310,
+        "y": 1120
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "Sponsoring",
+      "name": "Sponsoring",
+      "description": "every sold canvas grant 1s of completion time for the ongoing  research.",
+      "numericEffect": "1",
+      "parentIds": [
+        "invest_brain"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        200000
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2065,
+        "y": 1155
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "feedback_loop",
+      "name": "Feedback Loop",
+      "description": "every completed school research grant #% increased xp gain by workers",
+      "numericEffect": "10",
+      "parentIds": [
+        "collaborative_research"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        150000
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2415,
+        "y": 1155
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "technical_implementation",
+      "name": "Technical Implementation",
+      "description": "",
+      "numericEffect": "",
+      "parentIds": [
+        "new_node_6",
+        "new_node_5",
+        "new_node_7"
+      ],
+      "stacking": "additive",
+      "kind": "major",
+      "maxLevel": 1,
+      "costs": [
+        0
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2240,
+        "y": 1365
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "new_node",
+      "name": "New Node",
+      "description": "",
+      "numericEffect": "",
+      "parentIds": [
+        "feedback_loop"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        0
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2415,
+        "y": 1260
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "new_node_2",
+      "name": "New Node",
+      "description": "",
+      "numericEffect": "",
+      "parentIds": [
+        "Sponsoring"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        0
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2065,
+        "y": 1260
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "new_node_3",
+      "name": "New Node",
+      "description": "",
+      "numericEffect": "",
+      "parentIds": [
+        "new_node_2"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        0
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2065,
+        "y": 1365
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "new_node_4",
+      "name": "New Node",
+      "description": "",
+      "numericEffect": "",
+      "parentIds": [
+        "new_node"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        0
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2415,
+        "y": 1365
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "new_node_5",
+      "name": "New Node",
+      "description": "",
+      "numericEffect": "",
+      "parentIds": [
+        "new_node_3"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        0
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2170,
+        "y": 1330
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "new_node_6",
+      "name": "New Node",
+      "description": "",
+      "numericEffect": "",
+      "parentIds": [
+        "new_node_4"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        0
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2310,
+        "y": 1330
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "mentorship",
+      "name": "Mentorship",
+      "description": "Every completed research granting numeric benefits is increased by #%",
+      "numericEffect": "30",
+      "parentIds": [
+        "unlock_school"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        250000
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2240,
+        "y": 1225
+      },
+      "clusterId": "school"
+    },
+    {
+      "id": "new_node_7",
+      "name": "New Node",
+      "description": "",
+      "numericEffect": "",
+      "parentIds": [
+        "mentorship"
+      ],
+      "stacking": "additive",
+      "kind": "minor",
+      "maxLevel": 1,
+      "costs": [
+        0
+      ],
+      "unlocks": [],
+      "position": {
+        "x": 2240,
+        "y": 1295
+      },
+      "clusterId": "school"
     }
   ],
   "clusters": [
@@ -1177,8 +1456,8 @@
       "region": {
         "x": 1760,
         "y": 1060,
-        "w": 420,
-        "h": 420
+        "w": 960,
+        "h": 960
       }
     }
   ]

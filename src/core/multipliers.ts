@@ -57,6 +57,15 @@ const countTreeUpgradesAtLevel = (
   return n;
 };
 
+/** Invest in brain (`invest_brain_sell`): +10% sell price per level per research. */
+const INVEST_BRAIN_SELL_PER_RESEARCH = 0.10;
+/** Feedback Loop (`feedback_loop_xp`): +10% worker XP per completed research. */
+const FEEDBACK_LOOP_XP_PER_RESEARCH = 0.10;
+
+/** Count of completed School researches (drives Invest in brain / Feedback Loop). */
+const completedResearchCount = (state: Pick<GameStore, "completedResearches">): number =>
+  Object.keys(state.completedResearches ?? {}).length;
+
 /**
  * Aggregate multiplier on inspiration accrual rate.
  *
@@ -112,6 +121,9 @@ export const getCanvasGoldMultiplier = (state: CanvasMultiplierInputs): number =
   bonus += SELL_PRICE_PER_LEVEL * state.sellPriceLevel;
   bonus += getSchoolBonus(state, "canvas_gold_pct");
   bonus += getAchievementBonus(state, "canvas_gold_pct");
+  // Invest in brain: +10% sell price per level, scaled by completed researches.
+  bonus += countCapability(state, "invest_brain_sell") * INVEST_BRAIN_SELL_PER_RESEARCH
+    * completedResearchCount(state);
   const additive = 1 + bonus;
   const rainbowMul = 1 + getNodeLevel(state, "rainbow") * RAINBOW_PER_LEVEL;
   // Flat addition to the base gold (10 → 10 + bonus), applied as a base-scale
@@ -155,7 +167,7 @@ export const getRainbowMultiplier = (state: Pick<GameStore, "purchasedNodes">): 
   1 + getNodeLevel(state, "rainbow") * RAINBOW_PER_LEVEL;
 
 /** School bonus contribution to canvas gold (additive fraction). */
-export const getSchoolGoldContribution = (state: Pick<GameStore, "completedResearches">): number =>
+export const getSchoolGoldContribution = (state: Pick<GameStore, "completedResearches" | "purchasedNodes">): number =>
   getSchoolBonus(state, "canvas_gold_pct");
 
 /** Achievement bonus contribution to canvas gold (additive fraction). */
@@ -163,7 +175,7 @@ export const getAchievementGoldContribution = (state: { completedAchievements?: 
   getAchievementBonus(state, "canvas_gold_pct");
 
 /** School bonus contribution to canvas speed (additive fraction). */
-export const getSchoolSpeedContribution = (state: Pick<GameStore, "completedResearches">): number =>
+export const getSchoolSpeedContribution = (state: Pick<GameStore, "completedResearches" | "purchasedNodes">): number =>
   getSchoolBonus(state, "speed_pct");
 
 /** Achievement bonus contribution to canvas speed (additive fraction). */
@@ -260,7 +272,7 @@ export const getAscendThresholdReduction = (state: Pick<GameStore, "purchasedNod
 
 /** Multiplicative boost on both affix min and max magnitude at roll time (school bonus). */
 export const getSchoolAffixMagnitudeMultiplier = (
-  state: Pick<GameStore, "completedResearches">,
+  state: Pick<GameStore, "completedResearches" | "purchasedNodes">,
 ): number => 1 + getSchoolBonus(state, "Item min/max affix magnitude");
 
 /**
@@ -273,12 +285,13 @@ export const getSkillAffixMagnitudeMultiplier = (
 ): number => 1 + countCapability(state, "affix_magnitude_pct") * 0.25;
 
 /**
- * Multiplier on the worker ascend-XP pool from the Accelerator node
- * (`worker_xp_mult` capability): `1 + ACCELERATOR_XP_PER_LEVEL × levels`.
- * Replaces the old per-sale `getWorkerXpMultiplier` (deleted in Phase C cleanup).
+ * Multiplier on the worker ascend-XP pool. Stacks additively:
+ *   - Accelerator node (`worker_xp_mult`): +ACCELERATOR_XP_PER_LEVEL per level.
+ *   - Feedback Loop (`feedback_loop_xp`): +10% per completed School research.
  */
-export const getWorkerXpPoolMultiplier = (state: Pick<GameStore, "purchasedNodes">): number =>
-  1 + countCapability(state, "worker_xp_mult") * ACCELERATOR_XP_PER_LEVEL;
+export const getWorkerXpPoolMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedResearches">): number =>
+  1 + countCapability(state, "worker_xp_mult") * ACCELERATOR_XP_PER_LEVEL
+    + countCapability(state, "feedback_loop_xp") * FEEDBACK_LOOP_XP_PER_RESEARCH * completedResearchCount(state);
 
 /**
  * Multiplicative gold factor contributed by the worker roster:
