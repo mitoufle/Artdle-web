@@ -826,4 +826,30 @@ describe("fusion — fuseItem action", () => {
     expect(minGain).toBeGreaterThanOrEqual(60); // round(200 × 0.30)
     expect(maxGain).toBeLessThanOrEqual(90);    // round(200 × 0.45⁻)
   });
+
+  it("sums duplicate-kind drop affixes when transferring — no magnitude discarded", () => {
+    // Defensive: items are unique-kind after aggregation, but the transfer must
+    // not silently drop magnitude if a duplicate-kind item ever appears. A drop
+    // with [sell 100, sell 40] must transfer from 140, not last-wins 40.
+    const drop = (): Item => ({
+      id: "drop-d", slot: "brush", tier: "normal",
+      affixes: [{ kind: "+sell_price%", magnitude: 100 }, { kind: "+sell_price%", magnitude: 40 }],
+      fuseCount: 0,
+    });
+    const eq = (): Item => ({
+      id: "eq-d", slot: "brush", tier: "normal",
+      affixes: [{ kind: "+sell_price%", magnitude: 0 }, { kind: "+sell_price%", magnitude: 0 }],
+      fuseCount: 0,
+    });
+    let minGain = Infinity;
+    for (let seed = 0; seed < 200; seed++) {
+      setSeed(seed);
+      useGameStore.setState({ inventory: [drop()], equipped: { brush: eq() }, gold: big(1_000_000), workshopLevel: 1 });
+      useGameStore.getState().fuseItem("drop-d");
+      for (const a of useGameStore.getState().equipped.brush!.affixes) minGain = Math.min(minGain, a.magnitude);
+    }
+    // normal band [0.10, 0.25): summed 140 → min gain round(140 × 0.10) = 14.
+    // Last-wins bug would use 40 → round(40 × 0.10) = 4.
+    expect(minGain).toBeGreaterThanOrEqual(14);
+  });
 });

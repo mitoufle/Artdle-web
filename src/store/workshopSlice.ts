@@ -303,7 +303,14 @@ export const createWorkshopSlice: StateCreator<GameStore, [], [], WorkshopSlice>
         getSchoolAffixMagnitudeMultiplier(state) * getSkillAffixMagnitudeMultiplier(state),
       );
     } else {
-      const dropKindMap = new Map(drop.affixes.map((a) => [a.kind, a.magnitude]));
+      // Sum the drop's magnitude per kind. Items are unique-kind after affix
+      // aggregation, but summing (rather than the old last-wins Map) keeps the
+      // transfer correct even for a legacy/duplicate-kind drop — no magnitude
+      // is silently discarded.
+      const dropKindMap = new Map<AffixKind, number>();
+      for (const a of drop.affixes) {
+        dropKindMap.set(a.kind, (dropKindMap.get(a.kind) ?? 0) + a.magnitude);
+      }
       // Per-tier gain band: each affix absorbs round(dropMag × pct) of the drop,
       // pct ∈ [min, max) for the item's tier. drop.tier === target.tier (enforced
       // by getFusionTarget), so target.tier picks the band.
