@@ -1,8 +1,7 @@
 import type { JSX } from "react";
 import { useState, useRef } from "react";
 import type { DesignNode, DesignCluster } from "./types";
-import { computeClusterLayout } from "@/core/clusterLayout";
-import { VIEWBOX } from "@/components/constellation/nodeLayout";
+import { computeClusterLayout, constellationViewbox } from "@/core/clusterLayout";
 import styles from "./DesignerCanvas.module.css";
 
 const DRAG_THRESHOLD_PX = 5;
@@ -41,22 +40,18 @@ interface ViewBox {
   h: number;
 }
 
-/** Frame the whole cluster sky, identical to the in-game constellation extent. */
-const INITIAL_VIEWBOX: ViewBox = {
-  x: 0,
-  y: 0,
-  w: VIEWBOX.width,
-  h: VIEWBOX.height,
-};
-
 export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }: Props): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<NodeDragState | null>(null);
   const [pan, setPan] = useState<PanState | null>(null);
-  const [viewBox, setViewBox] = useState<ViewBox>(INITIAL_VIEWBOX);
   const justDragged = useRef(false);
   // Same layout the game uses, so designer positions match the constellation route.
   const positions = computeClusterLayout(nodes, clusters);
+  // Frame THIS designer's clusters (including newly-authored ones), not the game's
+  // fixed seven — so a fresh cluster's region stays within Reset-view reach.
+  const full = constellationViewbox(positions, clusters);
+  const fullViewbox: ViewBox = { x: 0, y: 0, w: full.width, h: full.height };
+  const [viewBox, setViewBox] = useState<ViewBox>(fullViewbox);
 
   function pointFor(id: string): { x: number; y: number } {
     return positions[id] ?? { x: 0, y: 0 };
@@ -180,7 +175,7 @@ export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }
   }
 
   function handleResetView() {
-    setViewBox(INITIAL_VIEWBOX);
+    setViewBox(fullViewbox);
   }
 
   const cursorStyle = pan !== null ? "grabbing" : "grab";
@@ -205,10 +200,10 @@ export function DesignerCanvas({ nodes, clusters, selectedId, onSelect, onMove }
       >
         {/* Background — also catches pan events. Sized big enough that pan never reaches an edge. */}
         <rect
-          x={-VIEWBOX.width * 5}
-          y={-VIEWBOX.height * 5}
-          width={VIEWBOX.width * 11}
-          height={VIEWBOX.height * 11}
+          x={-full.width * 5}
+          y={-full.height * 5}
+          width={full.width * 11}
+          height={full.height * 11}
           fill="var(--bg-0)"
           onPointerDown={handleBackgroundPointerDown}
           onPointerMove={handleBackgroundPointerMove}
