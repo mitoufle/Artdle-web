@@ -8,6 +8,7 @@ import {
 import type { Item } from "@/store/workshopSlice";
 import type { SlotKind } from "@/config/workshopAffixes";
 import { getItemSpriteStyle } from "./itemSprites";
+import { PixelLock } from "@/ui/widgets/PixelLock";
 import styles from "./EquippedItemsOverlay.module.css";
 
 /** Brush / palette / easel on the left of the upgrade panel; the rest on the right. */
@@ -47,7 +48,7 @@ function ItemSlot({ slot, item, unlocked, fusable, apex }: SlotProps): JSX.Eleme
         className={`${styles.disc} ${state === "equipped" ? "" : styles.discPlaceholder}`}
         style={state === "equipped" ? getItemSpriteStyle(slot, item!.tier) : undefined}
       >
-        {state === "locked" && <span className={styles.lock} aria-hidden="true">🔒</span>}
+        {state === "locked" && <PixelLock className={styles.lock} />}
       </div>
     </div>
   );

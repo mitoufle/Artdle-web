@@ -8,6 +8,7 @@ import { MusicControls } from "./MusicControls";
 import { BugReportModal } from "./BugReportModal";
 import { Bug } from "lucide-react";
 import { pauseTickLoop } from "@/core/tickLoop";
+import { PixelLock } from "@/ui/widgets/PixelLock";
 import { canAscend } from "@/systems/ascend";
 import treeIcon from "@/assets/bar_icons/tree.png";
 import paintingIcon from "@/assets/bar_icons/painting.png";
@@ -129,24 +130,7 @@ export function TopBar(): JSX.Element {
                 title={lockTitle(to, label)}
               >
                 <img src={icon} alt="" className={styles.navIcon} />
-                <svg
-                  className={styles.lockBadge}
-                  viewBox="0 0 10 10"
-                  shapeRendering="crispEdges"
-                  aria-hidden="true"
-                >
-                  {/* shackle */}
-                  <rect x="3" y="1" width="4" height="1" fill="#2a2228" />
-                  <rect x="3" y="2" width="1" height="2" fill="#2a2228" />
-                  <rect x="6" y="2" width="1" height="2" fill="#2a2228" />
-                  {/* body */}
-                  <rect x="2" y="4" width="6" height="5" fill="#c98a2e" />
-                  <rect x="2" y="4" width="6" height="1" fill="#f0c66a" />
-                  <rect x="2" y="8" width="6" height="1" fill="#8a5a20" />
-                  {/* keyhole */}
-                  <rect x="4" y="5" width="2" height="2" fill="#2a2228" />
-                  <rect x="4" y="7" width="2" height="1" fill="#2a2228" />
-                </svg>
+                <PixelLock className={styles.lockBadge} />
               </span>
             );
           }

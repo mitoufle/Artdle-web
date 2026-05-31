@@ -50,9 +50,9 @@
 }
 
 .lock {
-  font-size: 38px;
-  opacity: 0.6;
-  filter: grayscale(1);
+  width: 55%;
+  height: auto;
+  opacity: 0.85;
 }
 
 /* Fusion ready — rotating rainbow ring (the circular analog of the Workshop's

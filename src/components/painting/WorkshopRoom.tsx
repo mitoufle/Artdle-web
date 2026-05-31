@@ -13,6 +13,7 @@ import { ALL_SLOT_KINDS, AFFIX_SYMBOL, AFFIX_COLOR, AFFIX_SYMBOL_SCALE } from "@
 import { formatBig } from "@/core/formatter";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { CurrencyAmount } from "@/ui/widgets/CurrencyAmount";
+import { PixelLock } from "@/ui/widgets/PixelLock";
 import {
   computeTierProbabilities,
   ALL_ITEM_TIERS,
@@ -332,7 +333,7 @@ export function WorkshopRoom(): JSX.Element {
                   <div className={styles.lockedRow}>
                     <span className={styles.itemRowIcon}>{SLOT_PLACEHOLDER[slot]}</span>
                     <span>{slot}</span>
-                    <span>🔒</span>
+                    <PixelLock size={16} />
                   </div>
                 </Hoverable>
               );
