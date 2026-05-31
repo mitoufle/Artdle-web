@@ -72,6 +72,60 @@
     ]
   },
   {
+    "id": "Trillionaire",
+    "name": "Trillionaire",
+    "description": "Increases gold gain when player reaches 1T lifetime gold acquired",
+    "icon": "💵",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 0.3 }]
+  },
+  {
+    "id": "Quadrillionaire",
+    "name": "Quadrillionaire",
+    "description": "Increases gold gain when player reaches 1Qa lifetime gold acquired",
+    "icon": "💴",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 0.35 }]
+  },
+  {
+    "id": "Quintillionaire",
+    "name": "Quintillionaire",
+    "description": "Increases gold gain when player reaches 1Qi lifetime gold acquired",
+    "icon": "💶",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000000 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 0.4 }]
+  },
+  {
+    "id": "Sextillionaire",
+    "name": "Sextillionaire",
+    "description": "Increases gold gain when player reaches 1Sx lifetime gold acquired",
+    "icon": "💷",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000000000 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 0.45 }]
+  },
+  {
+    "id": "Septillionaire",
+    "name": "Septillionaire",
+    "description": "Increases gold gain when player reaches 1Sp lifetime gold acquired",
+    "icon": "🪙",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000000000000 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 0.5 }]
+  },
+  {
+    "id": "Octillionaire",
+    "name": "Octillionaire",
+    "description": "Increases gold gain when player reaches 1Oc lifetime gold acquired",
+    "icon": "🏦",
+    "category": "canvas",
+    "condition": { "stat": "lifetime.goldgain", "op": ">=", "value": 1000000000000000000000000000 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 0.55 }]
+  },
+  {
     "id": "Psychedelic_enjoyer",
     "name": "Psychedelic Enjoyer",
     "description": "Increases inspiration gain when player reaches 1K lifetime inspiration acquired",
@@ -142,6 +196,60 @@
         "value": 1
       }
     ]
+  },
+  {
+    "id": "T5",
+    "name": "Tier 5",
+    "description": "increases gold gain upon reaching Tier 5 Tree",
+    "icon": "5️⃣",
+    "category": "inspiration",
+    "condition": { "stat": "tree.tier", "op": ">=", "value": 5 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+  },
+  {
+    "id": "T6",
+    "name": "Tier 6",
+    "description": "increases gold gain upon reaching Tier 6 Tree",
+    "icon": "6️⃣",
+    "category": "inspiration",
+    "condition": { "stat": "tree.tier", "op": ">=", "value": 6 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+  },
+  {
+    "id": "T7",
+    "name": "Tier 7",
+    "description": "increases gold gain upon reaching Tier 7 Tree",
+    "icon": "7️⃣",
+    "category": "inspiration",
+    "condition": { "stat": "tree.tier", "op": ">=", "value": 7 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+  },
+  {
+    "id": "T8",
+    "name": "Tier 8",
+    "description": "increases gold gain upon reaching Tier 8 Tree",
+    "icon": "8️⃣",
+    "category": "inspiration",
+    "condition": { "stat": "tree.tier", "op": ">=", "value": 8 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+  },
+  {
+    "id": "T9",
+    "name": "Tier 9",
+    "description": "increases gold gain upon reaching Tier 9 Tree",
+    "icon": "9️⃣",
+    "category": "inspiration",
+    "condition": { "stat": "tree.tier", "op": ">=", "value": 9 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
+  },
+  {
+    "id": "T10",
+    "name": "Tier 10",
+    "description": "increases gold gain upon reaching Tier 10 Tree",
+    "icon": "🔟",
+    "category": "inspiration",
+    "condition": { "stat": "tree.tier", "op": ">=", "value": 10 },
+    "effects": [{ "kind": "canvas_gold_pct", "value": 1 }]
   },
   {
     "id": "Rising_star",
