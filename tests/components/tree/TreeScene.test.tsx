@@ -40,9 +40,10 @@ describe("<TreeScene />", () => {
     expect(stage5Src).toMatch(/phase6\./);
     expect(stage5Src).not.toBe(stage0Src);
 
-    // Stages past the last phase clamp to phase6 (no crash, no broken src).
+    // Stages past the last phase clamp to phase10 (no crash, no broken src).
     rerender(<TreeScene stage={42} />);
     const stageHigh = container.querySelector('[data-testid="phase-image"]') as HTMLImageElement | null;
-    expect(stageHigh?.getAttribute("src")).toBe(stage5Src);
+    expect(stageHigh?.getAttribute("src")).toMatch(/phase10\./);
+    expect(stageHigh?.getAttribute("src")).not.toBe(stage5Src);
   });
 });

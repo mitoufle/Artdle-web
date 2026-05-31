@@ -6,13 +6,21 @@ import phase3 from "@/assets/images/Inspiration_Tree_phases/phase3.png";
 import phase4 from "@/assets/images/Inspiration_Tree_phases/phase4.png";
 import phase5 from "@/assets/images/Inspiration_Tree_phases/phase5.png";
 import phase6 from "@/assets/images/Inspiration_Tree_phases/phase6.png";
+import phase7 from "@/assets/images/Inspiration_Tree_phases/phase7.png";
+import phase8 from "@/assets/images/Inspiration_Tree_phases/phase8.png";
+import phase9 from "@/assets/images/Inspiration_Tree_phases/phase9.png";
+import phase10 from "@/assets/images/Inspiration_Tree_phases/phase10.png";
 
 interface Props {
   stage: number;
 }
 
-/** Phase images: one per stage. Stages beyond the last image clamp to the final phase. */
-const PHASE_IMAGES = [phase1, phase2, phase3, phase4, phase5, phase6] as const;
+/**
+ * Phase images: one per tree tier. `stage` is the 0-based tier index, so tier 1
+ * (stage 0) → phase1 … tier 10 (stage 9) → phase10. Stages beyond the last image
+ * clamp to the final phase.
+ */
+const PHASE_IMAGES = [phase1, phase2, phase3, phase4, phase5, phase6, phase7, phase8, phase9, phase10] as const;
 const getPhaseImage = (stage: number): string => {
   const idx = Math.min(PHASE_IMAGES.length - 1, Math.max(0, stage));
   return PHASE_IMAGES[idx]!;
