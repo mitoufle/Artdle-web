@@ -45,11 +45,11 @@ describe("skillTreeSlice (multi-level + DAG)", () => {
   });
 
   it("buyNode without all parents owned returns false", () => {
-    // 'red' has parents [magenta, yellow]. Owning only one is not enough.
-    useGameStore.setState({ fame: big(1000), purchasedNodes: { magenta: 1 } });
-    expect(useGameStore.getState().buyNode("red")).toBe(false);
-    useGameStore.setState({ purchasedNodes: { magenta: 1, yellow: 1 } });
-    expect(useGameStore.getState().buyNode("red")).toBe(true);
+    // 'forget_pain' has parents [steel_chest, taylorsim]. Owning only one is not enough.
+    useGameStore.setState({ fame: big(1000), purchasedNodes: { steel_chest: 1 } });
+    expect(useGameStore.getState().buyNode("forget_pain")).toBe(false);
+    useGameStore.setState({ purchasedNodes: { steel_chest: 1, taylorsim: 1 } });
+    expect(useGameStore.getState().buyNode("forget_pain")).toBe(true);
   });
 
   it("cut cluster roots are buyable from scratch (no former parent required)", () => {

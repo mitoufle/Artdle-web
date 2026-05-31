@@ -64,6 +64,28 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(3.50, 5);
   });
 
+  it("Zion: no bonus when not owned, even with upgrades at level 100", () => {
+    useGameStore.setState({ purchasedNodes: {}, partLevels: { a: 100, b: 140 } });
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1, 5);
+  });
+
+  it("Zion: no bonus when owned but no upgrade has reached level 100", () => {
+    useGameStore.setState({ purchasedNodes: { zion: 1 }, partLevels: { a: 99, b: 50 } });
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1, 5);
+  });
+
+  it("Zion: +10% per upgrade at level >= 100 (counted once each)", () => {
+    useGameStore.setState({ purchasedNodes: { zion: 1 }, partLevels: { a: 100, b: 140, c: 99 } });
+    // two upgrades >= 100 => +20%
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.20, 5);
+  });
+
+  it("Zion: stacks additively with get_inspired", () => {
+    useGameStore.setState({ purchasedNodes: { get_inspired: 2, zion: 1 }, partLevels: { a: 100 } });
+    // 1 + 2*0.50 + 1*0.10 = 2.10
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.10, 5);
+  });
+
   it("getCanvasGoldMultiplier returns 1.0 with no nodes and no items", () => {
     expect(getCanvasGoldMultiplier(useGameStore.getState())).toBe(1);
   });

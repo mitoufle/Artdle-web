@@ -42,10 +42,11 @@ describe("<StarCanvas /> (designer-driven)", () => {
     expect(screen.getByTestId("node-rainbow")).toBeInTheDocument();
   });
 
-  it("renders a multi-parent node's edges from each parent (red has parents magenta, yellow)", () => {
+  it("renders a multi-parent node's edges from each parent (rainbow has parents orange, brown, purple)", () => {
     render(<StarCanvas selectedId={null} onSelect={() => {}} nodeStates={makeStates()} viewport={DEFAULT_VIEWPORT} onViewportChange={() => {}} completedClusterIds={new Set()} />);
-    expect(screen.getByTestId("edge-magenta-red")).toBeInTheDocument();
-    expect(screen.getByTestId("edge-yellow-red")).toBeInTheDocument();
+    expect(screen.getByTestId("edge-orange-rainbow")).toBeInTheDocument();
+    expect(screen.getByTestId("edge-brown-rainbow")).toBeInTheDocument();
+    expect(screen.getByTestId("edge-purple-rainbow")).toBeInTheDocument();
   });
 
   it("clicking a node calls onSelect with that id", () => {

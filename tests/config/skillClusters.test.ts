@@ -58,7 +58,7 @@ describe("node → cluster invariants", () => {
     }
     const total = [...counts.values()].reduce((a, b) => a + b, 0);
     expect(total).toBe(SKILL_NODES.length);
-    expect(SKILL_NODES.length).toBe(44);
+    expect(SKILL_NODES.length).toBe(48);
   });
 
   it("each cluster has exactly one root, equal to its declared rootNodeId", () => {

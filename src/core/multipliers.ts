@@ -7,7 +7,7 @@
 import type { GameStore } from "@/store";
 import { getEquippedContribution } from "@/store/workshopSlice";
 import type { Item } from "@/store/workshopSlice";
-import { getNodeLevel, countCapability } from "@/store/skillTreeSlice";
+import { getNodeLevel, countCapability, hasCapability } from "@/store/skillTreeSlice";
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
 import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL, ACCELERATOR_XP_PER_LEVEL } from "./balance";
@@ -35,16 +35,38 @@ export type CanvasMultiplierInputs = Pick<GameStore,
   | "completedAchievements"
 >;
 
+/** Zion (`zion_tree_milestone`): +10% inspiration per tree upgrade at this level. */
+const ZION_MILESTONE_LEVEL = 100;
+const ZION_INSPI_PER_MILESTONE = 0.10;
+
+/** Count of tree upgrades that have reached `level`. Guards an absent map. */
+const countTreeUpgradesAtLevel = (
+  partLevels: Record<string, number> | undefined,
+  level: number,
+): number => {
+  if (!partLevels) return 0;
+  let n = 0;
+  for (const lvl of Object.values(partLevels)) {
+    if ((lvl ?? 0) >= level) n += 1;
+  }
+  return n;
+};
+
 /**
  * Aggregate multiplier on inspiration accrual rate.
  *
  * Wiring:
  *   - get_inspired: +50% per level (additive). 5 levels = +250%.
+ *   - zion (`zion_tree_milestone`): +10% per tree upgrade at level ≥ 100.
  *   - workshop items: do NOT contribute (painting-only by design).
  */
-export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedResearches" | "completedAchievements">): number => {
+export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedResearches" | "completedAchievements" | "partLevels">): number => {
+  const zionBonus = hasCapability(state, "zion_tree_milestone")
+    ? ZION_INSPI_PER_MILESTONE * countTreeUpgradesAtLevel(state.partLevels, ZION_MILESTONE_LEVEL)
+    : 0;
   const bonus = getNodeLevel(state, "get_inspired") * GET_INSPIRED_PER_LEVEL
     + countCapability(state, "inspi_mult_bonus") * 0.10
+    + zionBonus
     + getSchoolBonus(state, "+% inspiration gain")
     + getAchievementBonus(state, "inspi_pct");
   return 1 + bonus;
