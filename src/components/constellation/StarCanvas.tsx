@@ -15,7 +15,7 @@ import styles from "./StarCanvas.module.css";
 const DRAG_THRESHOLD_PX = 3;
 const WHEEL_ZOOM_FACTOR = 1.15;
 
-/** Each cluster's root (starter) node is rendered teal instead of gold. */
+/** Each cluster's root (starter) node is rendered purple instead of gold. */
 const ROOT_NODE_IDS = new Set<SkillNodeId>(SKILL_CLUSTERS.map((c) => c.rootNodeId));
 
 function screenToSvg(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
@@ -232,10 +232,10 @@ export function StarCanvas({ selectedId, onSelect, nodeStates, viewport, onViewp
             const isRoot = ROOT_NODE_IDS.has(id);
             const baseR = isMajor ? 16 : 11;
             const r = isSelected ? baseR + 3 : baseR;
-            // Cluster roots render teal; every other node keeps the gold accent.
-            const accent = isRoot ? "var(--teal)" : "var(--gold)";
-            const accentDark = isRoot ? "var(--teal-d)" : "var(--gold-d)";
-            const accentGlow = isRoot ? "rgba(45,212,191,0.20)" : "rgba(255,216,106,0.18)";
+            // Cluster roots render purple; every other node keeps the gold accent.
+            const accent = isRoot ? "var(--inspi)" : "var(--gold)";
+            const accentDark = isRoot ? "var(--inspi-d)" : "var(--gold-d)";
+            const accentGlow = isRoot ? "rgba(155,108,214,0.22)" : "rgba(255,216,106,0.18)";
 
             return (
               <g
