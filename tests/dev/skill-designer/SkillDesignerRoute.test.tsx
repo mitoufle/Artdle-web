@@ -46,4 +46,11 @@ describe("<SkillDesignerRoute />", () => {
     fireEvent.click(screen.getByRole("button", { name: /export/i }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
+
+  it("adds a cluster and shows the cluster form for it", () => {
+    renderWithRouter();
+    fireEvent.click(screen.getByTestId("add-cluster"));
+    // cluster form now visible (its root picker is present)
+    expect(screen.getByLabelText(/cluster root/i)).toBeTruthy();
+  });
 });

@@ -5,22 +5,29 @@ import { DevTabBar } from "../DevTabBar";
 import { saveToFile } from "./api";
 import { validateDesign } from "./validation";
 import { NodeListRail } from "./NodeListRail";
+import { ClusterListRail } from "./ClusterListRail";
 import { DesignerCanvas } from "./DesignerCanvas";
 import { NodeForm } from "./NodeForm";
+import { ClusterForm } from "./ClusterForm";
 import { ExportModal } from "./ExportModal";
 import styles from "./SkillDesignerRoute.module.css";
 
 type Status = "saved" | "dirty" | "saving";
 
 export function SkillDesignerRoute(): JSX.Element {
-  const { design, selectedId, actions } = useDesignerState();
+  const { design, selectedId, selectedClusterId, actions } = useDesignerState();
   const [status, setStatus] = useState<Status>("saved");
   const [exportOpen, setExportOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
-  const issues = validateDesign(design.nodes);
+  const issues = validateDesign(design.nodes, design.clusters);
   const selectedNode =
     selectedId !== null ? design.nodes.find((n) => n.id === selectedId) ?? null : null;
+  const selectedCluster =
+    selectedClusterId !== null ? design.clusters.find((c) => c.id === selectedClusterId) ?? null : null;
+  const clusterMembers = selectedCluster
+    ? design.nodes.filter((n) => n.clusterId === selectedCluster.id)
+    : [];
 
   const handleSave = useCallback(async () => {
     setStatus("saving");
@@ -85,12 +92,20 @@ export function SkillDesignerRoute(): JSX.Element {
       </div>
       <DevTabBar />
       <div className={styles.panes}>
-        <NodeListRail
-          nodes={design.nodes}
-          selectedId={selectedId}
-          onSelect={actions.selectNode}
-          onAdd={wrapAction(actions.addNode)}
-        />
+        <div className={styles.rails}>
+          <ClusterListRail
+            clusters={design.clusters}
+            selectedClusterId={selectedClusterId}
+            onSelect={actions.selectCluster}
+            onAdd={wrapAction(actions.addCluster)}
+          />
+          <NodeListRail
+            nodes={design.nodes}
+            selectedId={selectedId}
+            onSelect={actions.selectNode}
+            onAdd={wrapAction(actions.addNode)}
+          />
+        </div>
         <DesignerCanvas
           nodes={design.nodes}
           clusters={design.clusters}
@@ -98,13 +113,22 @@ export function SkillDesignerRoute(): JSX.Element {
           onSelect={actions.selectNode}
           onMove={handleMove}
         />
-        <NodeForm
-          node={selectedNode}
-          allNodes={design.nodes}
-          clusters={design.clusters}
-          onChange={wrapAction(actions.updateNode)}
-          onDelete={wrapAction(actions.deleteNode)}
-        />
+        {selectedClusterId !== null ? (
+          <ClusterForm
+            cluster={selectedCluster}
+            members={clusterMembers}
+            onChange={wrapAction(actions.updateCluster)}
+            onDelete={wrapAction(actions.deleteCluster)}
+          />
+        ) : (
+          <NodeForm
+            node={selectedNode}
+            allNodes={design.nodes}
+            clusters={design.clusters}
+            onChange={wrapAction(actions.updateNode)}
+            onDelete={wrapAction(actions.deleteNode)}
+          />
+        )}
       </div>
       <ExportModal open={exportOpen} design={design} onClose={() => setExportOpen(false)} />
     </div>
