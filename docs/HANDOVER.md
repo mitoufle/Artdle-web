@@ -1,5 +1,34 @@
 # Artdle Web — Handover
 
+## What's next
+
+**Next content wave — v1.2: Subjects + Quality axis.** Per `docs/PORT_PLAN.md` §2.1 and
+`docs/specs/2026-04-25-canvas-design.md` §7: **Subjects** (5 starter + 15 derived) with per-subject **10-tier
+mastery**, plus the **Quality axis**. The v2.0 visual redesign is **shelved** (confirmed 2026-05-29) — v1.2
+content targets the live game directly, no v2 dependency. Starting prompt for a fresh session in this directory:
+> Read CLAUDE.md and docs/HANDOVER.md. v1.1 is shipped; starting v1.2 — Subjects + per-subject mastery + the
+> Quality axis. Read docs/specs/2026-04-25-canvas-design.md §7 for the source design. Use brainstorming →
+> writing-plans → subagent-driven-development.
+
+**Open follow-ups from the 2026-05-31 pm wave.**
+- **Fusion crit/combo over-cap on legacy saves.** The v30 migration caps duplicate crit/combo to the larger
+  single roll — but a save *already* migrated under the earlier sum-everything build (`b042d0e`) has those values
+  summed and **can't be un-summed**. Such an item stays over-cap until the player re-rolls it (M&A cross-affix
+  fuse, or discard + craft). A blanket fix would need a v31 one-time clamp, but the "correct" ceiling is
+  magnitude-multiplier-dependent — discuss before building.
+- **Equipped-items flank tuning.** Position/size are CSS knobs in `EquippedItemsOverlay.module.css`
+  (`--disc-size`, `bottom`, `left`/`right`). The icon badge sits on a black disc with a small margin; for
+  edge-to-edge framing, crop the sprite cell tighter in `itemSprites.ts`.
+
+**Repo housekeeping (do soon).**
+- **Imported-but-untracked assets — fresh clone would fail to build.** `workerAvatarMap.ts` imports
+  `assets/images/Workers/worker_{2,3,4}.png` and `CanvasSoldSfx.tsx` imports `assets/sounds/…`, but those files
+  are **untracked in git** (show as `??`). Deploys only work because `npx vercel --prod` uploads the local
+  working dir, not git. Commit them (also `assets/images/achievment icons/`).
+- **Stale untracked plan files** in `docs/superpowers/plans/` (2026-05-17/23/25) — commit or delete.
+
+---
+
 ## GitHub bug fixes + fusion rework + equipped-items display (2026-05-31, pm) — SHIPPED
 
 > **All on `master`, deployed to production.** `master` HEAD = **`12da3ae`**. Live bundle **`index-BdlK4sAn.js`**
