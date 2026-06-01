@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import { Hoverable } from "@/ui/widgets/Hoverable";
 import { TREE_STAGES } from "@/config/treeStages";
+import { formatShort } from "@/core/formatter";
 import styles from "./StagePanel.module.css";
 
 interface Props {
@@ -28,7 +29,7 @@ function stagePanelHoverBody(
   const thresholdMet = inspiPerSec >= threshold;
   return (
     <>
-      <div>Inspiration/sec: {inspiPerSec.toFixed(1)} / {threshold}</div>
+      <div>Inspiration/sec: {formatShort(inspiPerSec)} / {formatShort(threshold)}</div>
       <div>Progress: {pct.toFixed(0)}%</div>
       <div>───</div>
       <div>{thresholdMet ? "Threshold reached — advancing!" : "Grow any upgrade to reach it."}</div>
@@ -99,7 +100,7 @@ export function StagePanel({
               <div className={styles.progressFill} style={{ width: `${progressPct}%` }} />
             </div>
             <div className={styles.progressLabel}>
-              {inspiPerSec.toFixed(1)} / {unlockInspiPerSec} inspi/sec
+              {formatShort(inspiPerSec)} / {formatShort(unlockInspiPerSec)} inspi/sec
             </div>
           </>
         )}

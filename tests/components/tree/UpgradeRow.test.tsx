@@ -1,9 +1,13 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { UpgradeRow } from "@/components/tree/UpgradeRow";
+import { useGameStore } from "@/store";
 
 describe("<UpgradeRow />", () => {
-  it("renders monogram, name, level, rate, cost", () => {
+  beforeEach(() => {
+    useGameStore.setState({ purchasedNodes: {}, completedResearches: {}, completedAchievements: {}, museBurstTimer: 0 });
+  });
+  it("renders monogram, name, level, contribution, cost", () => {
     render(
       <UpgradeRow
         partId="cotyledon"
@@ -18,8 +22,32 @@ describe("<UpgradeRow />", () => {
     expect(screen.getByText("C")).toBeInTheDocument(); // monogram
     expect(screen.getByText("Cotyledon")).toBeInTheDocument();
     expect(screen.getByText(/Lv 3/i)).toBeInTheDocument();
-    expect(screen.getByText(/0\.1/)).toBeInTheDocument();
+    // Tile shows the live contribution: level 3 × rate 0.1 × milestone 1.0 × global mult 1.0 = 0.30
+    expect(screen.getByText(/\+0\.30 inspi\/s/)).toBeInTheDocument();
     expect(screen.getByText(/120/)).toBeInTheDocument();
+  });
+
+  it("tile contribution reflects external inspi modifiers (get_inspired Lv 1 = ×1.5)", () => {
+    useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
+    render(
+      <UpgradeRow
+        partId="cotyledon" name="Cotyledon" level={3} rate={0.1}
+        cost="120" canAfford={true} onBuy={() => {}}
+      />,
+    );
+    // 3 × 0.1 × milestone 1.0 × 1.5 mult = 0.45
+    expect(screen.getByText(/\+0\.45 inspi\/s/)).toBeInTheDocument();
+  });
+
+  it("tile contribution reflects the milestone multiplier at the current level (Lv 10 = ×2)", () => {
+    render(
+      <UpgradeRow
+        partId="cotyledon" name="Cotyledon" level={10} rate={0.1}
+        cost="500" canAfford={true} onBuy={() => {}}
+      />,
+    );
+    // 10 × 0.1 × milestone 2.0 × 1.0 mult = 2.00
+    expect(screen.getByText(/\+2(\.00)? inspi\/s/)).toBeInTheDocument();
   });
 
   it("calls onBuy when the button is clicked and affordable", () => {

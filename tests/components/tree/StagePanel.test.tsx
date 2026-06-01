@@ -20,7 +20,7 @@ describe("<StagePanel />", () => {
   });
 
 
-  it("renders the progress label '{N} / {threshold} inspi/sec'", () => {
+  it("renders the progress label '{N} / {threshold} inspi/sec' with big-number formatting", () => {
     render(
       <StagePanel
         currentStageIndex={1}
@@ -30,7 +30,20 @@ describe("<StagePanel />", () => {
         unlockInspiPerSec={12}
       />,
     );
-    expect(screen.getByText(/5\.0 \/ 12 inspi\/sec/i)).toBeInTheDocument();
+    expect(screen.getByText(/5 \/ 12 inspi\/sec/i)).toBeInTheDocument();
+  });
+
+  it("formats large thresholds with K/M/B suffixes", () => {
+    render(
+      <StagePanel
+        currentStageIndex={1}
+        currentStageName="Bud"
+        nextStageName="Leaflet"
+        inspiPerSec={1500}
+        unlockInspiPerSec={2_500_000}
+      />,
+    );
+    expect(screen.getByText(/1\.50K \/ 2\.50M inspi\/sec/i)).toBeInTheDocument();
   });
 
   it("does NOT render a Grow button (advancement is automatic)", () => {

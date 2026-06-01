@@ -20,7 +20,7 @@ describe("StagePanel hover wiring", () => {
     fireEvent.mouseEnter(screen.getByTestId("stage-panel"));
     expect(useGameStore.getState().hoverTitle).toBe("Tiny Sprout → Bud");
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/Inspiration\/sec: 2\.0 \/ 5/);
+    expect(container.textContent).toMatch(/Inspiration\/sec: 2 \/ 5/);
     expect(container.textContent).toMatch(/Progress: 40%/);
     expect(container.textContent).toMatch(/Grow any upgrade to reach it/);
     expect(String(useGameStore.getState().hoverFooter)).toMatch(/automatically/i);

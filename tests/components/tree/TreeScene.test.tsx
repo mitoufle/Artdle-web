@@ -17,6 +17,13 @@ describe("<TreeScene />", () => {
     expect(container.firstChild).toHaveAttribute("data-stage", "2");
   });
 
+  it("renders a 1-based 'Tier N' badge for the current stage", () => {
+    const { container, rerender } = render(<TreeScene stage={0} />);
+    expect(container.querySelector('[data-testid="tier-badge"]')).toHaveTextContent("Tier 1");
+    rerender(<TreeScene stage={4} />);
+    expect(container.querySelector('[data-testid="tier-badge"]')).toHaveTextContent("Tier 5");
+  });
+
   it("renders the inspiration motes group", () => {
     const { container } = render(<TreeScene stage={1} />);
     expect(container.querySelector('[data-testid="motes"]')).toBeInTheDocument();

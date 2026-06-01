@@ -91,6 +91,10 @@ export function TreeScene({ stage }: Props): JSX.Element {
           </circle>
         </g>
       </svg>
+
+      <div className={styles.tierBadge} data-testid="tier-badge">
+        Tier {stage + 1}
+      </div>
     </div>
   );
 }
