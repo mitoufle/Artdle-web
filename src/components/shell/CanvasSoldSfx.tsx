@@ -6,9 +6,9 @@ import soldSfx from "@/assets/sounds/Canvas_sold.mp3";
 // slider AND the mute button both govern this sound.
 const KEY_VOL = "artdle-music-volume";
 const KEY_MUTED = "artdle-music-muted";
-// gain = volume × BOOST, capped. At the default slider (0.2) that's ~0.5;
+// gain = volume × BOOST, capped. At the default slider (0.2) that's ~0.25;
 // the slider still scales it down to silence at 0.
-const SFX_BOOST = 2.5;
+const SFX_BOOST = 1.25;
 const SFX_MAX_GAIN = 3;
 
 type AudioCtor = typeof AudioContext;
