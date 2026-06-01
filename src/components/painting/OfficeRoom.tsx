@@ -1,15 +1,18 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
-import { getRosterCap, getWorkerXpGrowth, type Worker } from "@/store/officeSlice";
+import { getRosterCap, getWorkerXpGrowth, getWorkerSpawnBonuses, type Worker } from "@/store/officeSlice";
+import { applySpawnBonuses, type WorkerSpawnBonuses } from "@/core/workerModel";
 import { workerXpToNext } from "@/core/balance";
 import { formatBig } from "@/core/formatter";
 import { WORKER_STAT_KEYS, WORKER_STAT_LABELS, formatWorkerStatAbsolute } from "./workerStatDisplay";
 import { WORKER_AVATARS } from "./workerAvatarMap";
 import styles from "./OfficeRoom.module.css";
 
-function WorkerStatCard({ worker, xpGrowth }: { worker: Worker; xpGrowth: number }): JSX.Element {
+function WorkerStatCard({ worker, xpGrowth, spawnBonuses }: { worker: Worker; xpGrowth: number; spawnBonuses: WorkerSpawnBonuses }): JSX.Element {
   const xpToNext = workerXpToNext(worker.level, xpGrowth);
   const xpFrac = Math.max(0, Math.min(1, worker.xp.div(xpToNext).toNumber()));
+  // Effective stats = intrinsic (base + level rolls) + live Office node bonuses.
+  const stats = applySpawnBonuses(worker.stats, spawnBonuses);
   return (
     <li className={styles.card} data-testid="worker-stat-card">
       <header className={styles.cardHeader}>
@@ -36,7 +39,7 @@ function WorkerStatCard({ worker, xpGrowth }: { worker: Worker; xpGrowth: number
         {WORKER_STAT_KEYS.map((k) => (
           <li key={k} className={styles.statRow}>
             <span className={styles.statLabel}>{WORKER_STAT_LABELS[k]}</span>
-            <span className={styles.statValue}>{formatWorkerStatAbsolute(k, worker.stats[k])}</span>
+            <span className={styles.statValue}>{formatWorkerStatAbsolute(k, stats[k])}</span>
           </li>
         ))}
       </ul>
@@ -54,6 +57,8 @@ export function OfficeRoom(): JSX.Element {
   const roster = useGameStore((s) => s.roster);
   const rosterCap = useGameStore(getRosterCap);
   const xpGrowth = useGameStore(getWorkerXpGrowth);
+  const purchasedNodes = useGameStore((s) => s.purchasedNodes);
+  const spawnBonuses = getWorkerSpawnBonuses({ purchasedNodes });
 
   return (
     <section className={styles.room} aria-label="Painter's Office">
@@ -66,7 +71,7 @@ export function OfficeRoom(): JSX.Element {
         ) : (
           <ul className={styles.cardList}>
             {roster.map((w) => (
-              <WorkerStatCard key={w.id} worker={w} xpGrowth={xpGrowth} />
+              <WorkerStatCard key={w.id} worker={w} xpGrowth={xpGrowth} spawnBonuses={spawnBonuses} />
             ))}
           </ul>
         )}

@@ -7,8 +7,9 @@ import {
 import {
   getCanvasGoldMultiplier, getCanvasSpeedMultiplier,
   getCritChance, getCritChunks, getComboBaseChance, getComboDecayReduction,
-  getWorkerGoldFactor,
+  getWorkerGoldFactor, getWorkerSpawnBonuses,
 } from "@/core/multipliers";
+import { applySpawnBonuses } from "@/core/workerModel";
 import { rng } from "@/core/rng";
 import { hasCapability } from "@/store/skillTreeSlice";
 import {
@@ -79,14 +80,17 @@ export function canvasTickPure(
   // they never stroke. Without this, `canvasTick(playerInterval)` fast-forwarded
   // the whole sim, making every worker's next-stroke bar leap on each click.
   if (!opts?.playerOnly) {
+    // Office spawn-stat node bonuses buff EVERY worker as a live layer.
+    const spawnBonuses = getWorkerSpawnBonuses(draft);
     for (const w of draft.roster) {
-      const interval = chunkInterval(w.stats.speed);
+      const eff = applySpawnBonuses(w.stats, spawnBonuses);
+      const interval = chunkInterval(eff.speed);
       if (interval <= 0) continue;
       painters.push({
         id: w.id, isPlayer: false, interval,
-        critChance: w.stats.critChance,
-        critChunks: w.stats.strokesPerCrit,
-        comboBase: w.stats.comboChance,
+        critChance: eff.critChance,
+        critChunks: eff.strokesPerCrit,
+        comboBase: eff.comboChance,
       });
     }
   }

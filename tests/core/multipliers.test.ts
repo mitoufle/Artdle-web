@@ -666,14 +666,21 @@ describe("multipliers — per-level effects do NOT scale with canvasTier", () =>
 
 describe("getWorkerGoldFactor", () => {
   it("is 1.0 with an empty roster (solo player unaffected)", () => {
-    expect(getWorkerGoldFactor({ roster: [] } as unknown as GameStore)).toBe(1);
+    expect(getWorkerGoldFactor({ roster: [], purchasedNodes: {} } as unknown as GameStore)).toBe(1);
   });
 
   it("multiplies (1 + goldPct) across the roster", () => {
     const a = { ...createWorker(), stats: { ...createWorker().stats, goldPct: 0.10 } };
     const b = { ...createWorker(), stats: { ...createWorker().stats, goldPct: 0.25 } };
     // (1.10) * (1.25) = 1.375
-    expect(getWorkerGoldFactor({ roster: [a, b] } as unknown as GameStore)).toBeCloseTo(1.375, 9);
+    expect(getWorkerGoldFactor({ roster: [a, b], purchasedNodes: {} } as unknown as GameStore)).toBeCloseTo(1.375, 9);
+  });
+
+  it("robin_hood boosts the goldPct of EXISTING workers (live layer, not baked at hire)", () => {
+    // Two base-stat workers (goldPct 0); robin_hood Lv1 → +7% each → 1.07² = 1.1449.
+    const a = createWorker();
+    const b = createWorker();
+    expect(getWorkerGoldFactor({ roster: [a, b], purchasedNodes: { robin_hood: 1 } } as unknown as GameStore)).toBeCloseTo(1.1449, 9);
   });
 });
 

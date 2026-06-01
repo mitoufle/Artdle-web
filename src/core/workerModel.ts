@@ -40,20 +40,22 @@ export const NO_SPAWN_BONUSES: WorkerSpawnBonuses = Object.freeze({
 });
 
 /**
- * A fresh level-1 worker's spawn stats with Office skill-node base-stat bonuses
- * applied on top of WORKER_BASE_STATS. Pure — the caller supplies the bonus
- * counts read from the fame tree. critChance stays clamped at its cap.
+ * Apply Office skill-node base-stat bonuses ON TOP OF a worker's own stats.
+ * Pure; the caller supplies the bonus counts read from the fame tree. Used as a
+ * LIVE layer at every stat-consumption point (canvas tick, displays) so the
+ * bonuses buff EVERY worker — not just freshly-hired ones — and react instantly
+ * to buying/levelling the nodes. critChance stays clamped at its cap.
  */
-export const createSpawnStats = (bonuses: WorkerSpawnBonuses = NO_SPAWN_BONUSES): WorkerStats => {
+export const applySpawnBonuses = (stats: WorkerStats, bonuses: WorkerSpawnBonuses = NO_SPAWN_BONUSES): WorkerStats => {
   const food = bonuses.foodRegulation * FOOD_REGULATION_PCT_STEP;
   return {
-    goldPct: WORKER_BASE_STATS.goldPct + food + bonuses.robinHoodLevels * ROBIN_HOOD_GOLDPCT_PER_LEVEL,
-    speed: WORKER_BASE_STATS.speed + food
+    goldPct: stats.goldPct + food + bonuses.robinHoodLevels * ROBIN_HOOD_GOLDPCT_PER_LEVEL,
+    speed: stats.speed + food
       + bonuses.bluryHandLevels * BLURY_HAND_SPEED_PER_LEVEL
       + bonuses.handcraftedBrushLevels * HANDCRAFTED_BRUSH_SPEED_PER_LEVEL,
-    critChance: Math.min(WORKER_CRIT_CHANCE_CAP, WORKER_BASE_STATS.critChance + food),
-    strokesPerCrit: WORKER_BASE_STATS.strokesPerCrit + bonuses.foodRegulation * FOOD_REGULATION_STROKES_STEP,
-    comboChance: WORKER_BASE_STATS.comboChance + food,
+    critChance: Math.min(WORKER_CRIT_CHANCE_CAP, stats.critChance + food),
+    strokesPerCrit: stats.strokesPerCrit + bonuses.foodRegulation * FOOD_REGULATION_STROKES_STEP,
+    comboChance: stats.comboChance + food,
   };
 };
 

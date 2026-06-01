@@ -46,17 +46,16 @@ describe("office worker skill-node selectors", () => {
     expect(getWorkerXpGrowth({ purchasedNodes: { learning_curve: 1 } })).toBeCloseTo(1.45, 9);
   });
 
-  it("reconcileRoster spawns workers with skill-node-boosted base stats", () => {
+  it("reconcileRoster spawns workers with INTRINSIC base stats (bonuses are a live layer, not baked)", () => {
     useGameStore.setState({
       roster: [],
-      // entrepreneur + hire_manager give roster slots; robin_hood boosts goldPct.
       purchasedNodes: { entrepreneur: 1, robin_hood: 2, blury_hand: 1 },
     });
     useGameStore.getState().reconcileRoster();
     const roster = useGameStore.getState().roster;
     expect(roster.length).toBeGreaterThan(0);
-    expect(roster[0]!.stats.goldPct).toBeCloseTo(0.14, 9); // 2 × 0.07
-    expect(roster[0]!.stats.speed).toBeCloseTo(1.10, 9);   // +10% from blury_hand
+    // Stored stats are the un-boosted base — the node bonuses are NOT baked in.
+    expect(roster[0]!.stats).toEqual(createBaseStats());
   });
 });
 

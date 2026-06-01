@@ -3,8 +3,8 @@ import { v4 as uuidv4 } from "uuid";
 import { big, type Big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
 import { countCapability } from "@/store/skillTreeSlice";
-import { createBaseStats, createSpawnStats, type WorkerStats, type WorkerSpawnBonuses } from "@/core/workerModel";
-import { getWorkerXpPoolMultiplier } from "@/core/multipliers";
+import { createBaseStats, type WorkerStats } from "@/core/workerModel";
+import { getWorkerXpPoolMultiplier, getWorkerSpawnBonuses } from "@/core/multipliers";
 import { splitAscendPool, applyAscendXpToWorker } from "@/core/workerAscend";
 import { WORKER_XP_GROWTH, LEARNING_CURVE_GROWTH_REDUCTION, WORKER_XP_GROWTH_FLOOR } from "@/core/balance";
 import { WORKER_NAME_POOL } from "@/config/workerNames";
@@ -82,17 +82,9 @@ export interface OfficeSlice extends OfficeState {
 export const getRosterCap = (state: Pick<GameStore, "purchasedNodes">): number =>
   countCapability(state, "roster_slot");
 
-/**
- * Office skill-node bonuses applied to a newly-spawned worker's base stats.
- * Read by capability tag (decoupled from node ids per the SkillNodeConfig
- * contract): food_regulation / robin_hood / blury_hand.
- */
-export const getWorkerSpawnBonuses = (state: Pick<GameStore, "purchasedNodes">): WorkerSpawnBonuses => ({
-  foodRegulation: countCapability(state, "worker_food_regulation"),
-  robinHoodLevels: countCapability(state, "worker_goldpct_base"),
-  bluryHandLevels: countCapability(state, "worker_speed_base"),
-  handcraftedBrushLevels: countCapability(state, "worker_speed_per_level"),
-});
+// getWorkerSpawnBonuses now lives in core/multipliers (so the canvas tick + gold
+// factor can use it without a cycle); re-exported here for existing call sites.
+export { getWorkerSpawnBonuses };
 
 /**
  * Worker XP-curve growth multiplier after learning_curve. Each purchased level
@@ -178,9 +170,11 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
     const state = get();
     const cap = getRosterCap(state);
     const missing = cap - state.roster.length;
-    const spawnBonuses = getWorkerSpawnBonuses(state);
+    // Spawn with intrinsic base stats only; Office spawn-stat node bonuses are
+    // applied as a LIVE layer at use time (see applySpawnBonuses), so they buff
+    // every worker — including ones hired before the node was bought.
     const spawned: Worker[] = [];
-    for (let i = 0; i < missing; i++) spawned.push(createWorker("base", createSpawnStats(spawnBonuses)));
+    for (let i = 0; i < missing; i++) spawned.push(createWorker());
     const combined = spawned.length > 0 ? [...state.roster, ...spawned] : state.roster;
     // Normalize avatars + names so every painter is visually and nominally
     // distinct (also self-heals legacy saves whose workers share either).
