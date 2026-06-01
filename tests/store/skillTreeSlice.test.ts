@@ -260,6 +260,14 @@ describe("countCapability — sums level across nodes with the tag", () => {
     const state = useGameStore.getState();
     expect(countCapability(state, "canvas_crit")).toBe(0);
   });
+
+  it("clamps a node's contribution to its maxLevel (stale over-level save)", () => {
+    // hire_manager is maxLevel 1 (roster_slot); a legacy save holding level 4
+    // must contribute only 1 — entrepreneur(1) + hire_manager(clamped 1) = 2.
+    useGameStore.setState({ purchasedNodes: { entrepreneur: 1, hire_manager: 4 } });
+    const state = useGameStore.getState();
+    expect(countCapability(state, "roster_slot")).toBe(2);
+  });
 });
 
 describe("skill tree — crit per-chunk rework", () => {

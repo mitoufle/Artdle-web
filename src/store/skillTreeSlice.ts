@@ -197,6 +197,11 @@ export const hasCapability = (state: Pick<GameStore, "purchasedNodes">, capabili
  * contains `capability`. Used for count-based capability tags like
  * `roster_slot` and `queue_slot` where each level of an authored node grants
  * +1 to the cap.
+ *
+ * Each node's contribution is clamped to its current `maxLevel`. A save may
+ * hold a stored level above the config's maxLevel after the maxLevel is lowered
+ * (e.g. hire_manager 4→1 in the 2026-06-01 Office rework); clamping keeps the
+ * capability count faithful to the live design instead of honoring stale levels.
  */
 export const countCapability = (state: Pick<GameStore, "purchasedNodes">, capability: string): number => {
   let total = 0;
@@ -204,7 +209,7 @@ export const countCapability = (state: Pick<GameStore, "purchasedNodes">, capabi
     const lvl = level ?? 0;
     if (lvl < 1) continue;
     const config = getSkillNodeConfig(nodeId);
-    if (config && config.unlocks.includes(capability)) total += lvl;
+    if (config && config.unlocks.includes(capability)) total += Math.min(lvl, config.maxLevel);
   }
   return total;
 };

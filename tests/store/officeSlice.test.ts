@@ -97,7 +97,8 @@ describe("getRosterCap", () => {
 
 describe("reconcileRoster", () => {
   it("spawns level-1 workers up to the roster cap", () => {
-    useGameStore.setState({ purchasedNodes: { hire_manager: 2 } });
+    // entrepreneur + hire_manager each grant 1 roster_slot (both maxLevel 1) → cap 2.
+    useGameStore.setState({ purchasedNodes: { entrepreneur: 1, hire_manager: 1 } });
     useGameStore.getState().reconcileRoster();
     expect(useGameStore.getState().roster.length).toBe(2);
     for (const w of useGameStore.getState().roster) {
@@ -107,7 +108,7 @@ describe("reconcileRoster", () => {
   });
 
   it("is idempotent — calling twice does not over-spawn", () => {
-    useGameStore.setState({ purchasedNodes: { hire_manager: 2 } });
+    useGameStore.setState({ purchasedNodes: { entrepreneur: 1, hire_manager: 1 } });
     useGameStore.getState().reconcileRoster();
     useGameStore.getState().reconcileRoster();
     expect(useGameStore.getState().roster.length).toBe(2);
@@ -187,7 +188,7 @@ describe("v26 save → migrate drops legacy fields; reconcile fills roster", () 
   });
 
   it("after migrate, reconcileRoster spawns level-1 workers for unlocked slots", () => {
-    useGameStore.setState({ roster: [], purchasedNodes: { hire_manager: 2 } });
+    useGameStore.setState({ roster: [], purchasedNodes: { entrepreneur: 1, hire_manager: 1 } });
     useGameStore.getState().reconcileRoster();
     expect(useGameStore.getState().roster.length).toBe(2);
     expect(useGameStore.getState().roster.every((w) => w.level === 1)).toBe(true);
