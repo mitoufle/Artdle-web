@@ -11,7 +11,7 @@ import { getNodeLevel, countCapability, hasCapability } from "@/store/skillTreeS
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { MUSE_BURST_INSPI_MULT } from "@/core/skillTreeTickPure";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
-import { applySpawnBonuses, type WorkerSpawnBonuses } from "@/core/workerModel";
+import { applyBaseStatBonuses, type WorkerBaseStatBonuses } from "@/core/workerModel";
 import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, PATRON_INSPI_PER_LEVEL, ENLIGHTENMENT_INSPI_PER_EQUIPPED, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL, ACCELERATOR_XP_PER_LEVEL, CANVAS_GOLD_BASE } from "./balance";
 import type { SlotKind } from "@/config/workshopAffixes";
 
@@ -307,9 +307,9 @@ export const getWorkerXpPoolMultiplier = (state: Pick<GameStore, "purchasedNodes
  * (the A2 structural guarantee). Tunable: multiplicative per spec §2.2.
  */
 export const getWorkerGoldFactor = (state: Pick<GameStore, "roster" | "purchasedNodes">): number => {
-  const bonuses = getWorkerSpawnBonuses(state);
+  const bonuses = getWorkerBaseStatBonuses(state);
   let factor = 1;
-  for (const w of state.roster) factor *= 1 + applySpawnBonuses(w.stats, bonuses).goldPct;
+  for (const w of state.roster) factor *= 1 + applyBaseStatBonuses(w.stats, bonuses).goldPct;
   return factor;
 };
 
@@ -319,7 +319,7 @@ export const getWorkerGoldFactor = (state: Pick<GameStore, "roster" | "purchased
  * capability tag. Lives here (not officeSlice) so canvas-tick + gold-factor can
  * use it without an officeSlice↔multipliers import cycle; officeSlice re-exports.
  */
-export const getWorkerSpawnBonuses = (state: Pick<GameStore, "purchasedNodes">): WorkerSpawnBonuses => ({
+export const getWorkerBaseStatBonuses = (state: Pick<GameStore, "purchasedNodes">): WorkerBaseStatBonuses => ({
   foodRegulation: countCapability(state, "worker_food_regulation"),
   robinHoodLevels: countCapability(state, "worker_goldpct_base"),
   bluryHandLevels: countCapability(state, "worker_speed_base"),

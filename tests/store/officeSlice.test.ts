@@ -3,7 +3,7 @@ import { useGameStore } from "@/store";
 import {
   initialOfficeState,
   getRosterCap,
-  getWorkerSpawnBonuses,
+  getWorkerBaseStatBonuses,
   getWorkerXpGrowth,
   createWorker,
   type Worker,
@@ -32,11 +32,11 @@ describe("initialOfficeState", () => {
 });
 
 describe("office worker skill-node selectors", () => {
-  it("getWorkerSpawnBonuses reads food_regulation / robin_hood / blury_hand by capability", () => {
-    expect(getWorkerSpawnBonuses({ purchasedNodes: {} })).toEqual({
+  it("getWorkerBaseStatBonuses reads food_regulation / robin_hood / blury_hand by capability", () => {
+    expect(getWorkerBaseStatBonuses({ purchasedNodes: {} })).toEqual({
       foodRegulation: 0, robinHoodLevels: 0, bluryHandLevels: 0, handcraftedBrushLevels: 0,
     });
-    expect(getWorkerSpawnBonuses({
+    expect(getWorkerBaseStatBonuses({
       purchasedNodes: { food_regulation: 1, robin_hood: 3, blury_hand: 1, handcrafted_brush: 2 },
     })).toEqual({ foodRegulation: 1, robinHoodLevels: 3, bluryHandLevels: 1, handcraftedBrushLevels: 2 });
   });

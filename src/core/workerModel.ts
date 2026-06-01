@@ -18,10 +18,10 @@ export interface WorkerStats {
 export const createBaseStats = (): WorkerStats => ({ ...WORKER_BASE_STATS });
 
 /**
- * Office skill-node bonuses that raise a worker's SPAWN base stats. Each field
- * is a purchased-node level count (see officeSlice.getWorkerSpawnBonuses).
+ * Office skill-node bonuses that raise every worker's base stats. Each field is
+ * a purchased-node level count (see multipliers.getWorkerBaseStatBonuses).
  */
-export interface WorkerSpawnBonuses {
+export interface WorkerBaseStatBonuses {
   /** food_regulation level (0/1): +1 native step to every base stat. */
   foodRegulation: number;
   /** robin_hood level (0..5): +7% goldPct base each. */
@@ -32,7 +32,7 @@ export interface WorkerSpawnBonuses {
   handcraftedBrushLevels: number;
 }
 
-export const NO_SPAWN_BONUSES: WorkerSpawnBonuses = Object.freeze({
+export const NO_BASE_STAT_BONUSES: WorkerBaseStatBonuses = Object.freeze({
   foodRegulation: 0,
   robinHoodLevels: 0,
   bluryHandLevels: 0,
@@ -46,7 +46,7 @@ export const NO_SPAWN_BONUSES: WorkerSpawnBonuses = Object.freeze({
  * bonuses buff EVERY worker — not just freshly-hired ones — and react instantly
  * to buying/levelling the nodes. critChance stays clamped at its cap.
  */
-export const applySpawnBonuses = (stats: WorkerStats, bonuses: WorkerSpawnBonuses = NO_SPAWN_BONUSES): WorkerStats => {
+export const applyBaseStatBonuses = (stats: WorkerStats, bonuses: WorkerBaseStatBonuses = NO_BASE_STAT_BONUSES): WorkerStats => {
   const food = bonuses.foodRegulation * FOOD_REGULATION_PCT_STEP;
   return {
     goldPct: stats.goldPct + food + bonuses.robinHoodLevels * ROBIN_HOOD_GOLDPCT_PER_LEVEL,

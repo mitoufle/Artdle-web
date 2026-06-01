@@ -4,7 +4,7 @@ import { big, type Big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
 import { countCapability } from "@/store/skillTreeSlice";
 import { createBaseStats, type WorkerStats } from "@/core/workerModel";
-import { getWorkerXpPoolMultiplier, getWorkerSpawnBonuses } from "@/core/multipliers";
+import { getWorkerXpPoolMultiplier, getWorkerBaseStatBonuses } from "@/core/multipliers";
 import { splitAscendPool, applyAscendXpToWorker } from "@/core/workerAscend";
 import { WORKER_XP_GROWTH, LEARNING_CURVE_GROWTH_REDUCTION, WORKER_XP_GROWTH_FLOOR } from "@/core/balance";
 import { WORKER_NAME_POOL } from "@/config/workerNames";
@@ -82,9 +82,9 @@ export interface OfficeSlice extends OfficeState {
 export const getRosterCap = (state: Pick<GameStore, "purchasedNodes">): number =>
   countCapability(state, "roster_slot");
 
-// getWorkerSpawnBonuses now lives in core/multipliers (so the canvas tick + gold
+// getWorkerBaseStatBonuses now lives in core/multipliers (so the canvas tick + gold
 // factor can use it without a cycle); re-exported here for existing call sites.
-export { getWorkerSpawnBonuses };
+export { getWorkerBaseStatBonuses };
 
 /**
  * Worker XP-curve growth multiplier after learning_curve. Each purchased level
@@ -149,8 +149,8 @@ export function distinctNames(roster: ReadonlyArray<Worker>): Worker[] {
 }
 
 /** Factory: a fresh level-1 worker of the given class (default neutral "base").
- *  `stats` defaults to the un-boosted base; the roster reconciler passes
- *  skill-node-boosted spawn stats (see getWorkerSpawnBonuses). */
+ *  Workers always store INTRINSIC base stats; Office base-stat node bonuses are
+ *  applied as a live layer at use time (see applyBaseStatBonuses), not baked. */
 export const createWorker = (classId = "base", stats: WorkerStats = createBaseStats()): Worker => ({
   id: uuidv4(),
   classId,
@@ -170,8 +170,8 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
     const state = get();
     const cap = getRosterCap(state);
     const missing = cap - state.roster.length;
-    // Spawn with intrinsic base stats only; Office spawn-stat node bonuses are
-    // applied as a LIVE layer at use time (see applySpawnBonuses), so they buff
+    // Spawn with intrinsic base stats only; Office base-stat node bonuses are
+    // applied as a LIVE layer at use time (see applyBaseStatBonuses), so they buff
     // every worker — including ones hired before the node was bought.
     const spawned: Worker[] = [];
     for (let i = 0; i < missing; i++) spawned.push(createWorker());

@@ -1,18 +1,18 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
-import { getRosterCap, getWorkerXpGrowth, getWorkerSpawnBonuses, type Worker } from "@/store/officeSlice";
-import { applySpawnBonuses, type WorkerSpawnBonuses } from "@/core/workerModel";
+import { getRosterCap, getWorkerXpGrowth, getWorkerBaseStatBonuses, type Worker } from "@/store/officeSlice";
+import { applyBaseStatBonuses, type WorkerBaseStatBonuses } from "@/core/workerModel";
 import { workerXpToNext } from "@/core/balance";
 import { formatBig } from "@/core/formatter";
 import { WORKER_STAT_KEYS, WORKER_STAT_LABELS, formatWorkerStatAbsolute } from "./workerStatDisplay";
 import { WORKER_AVATARS } from "./workerAvatarMap";
 import styles from "./OfficeRoom.module.css";
 
-function WorkerStatCard({ worker, xpGrowth, spawnBonuses }: { worker: Worker; xpGrowth: number; spawnBonuses: WorkerSpawnBonuses }): JSX.Element {
+function WorkerStatCard({ worker, xpGrowth, baseBonuses }: { worker: Worker; xpGrowth: number; baseBonuses: WorkerBaseStatBonuses }): JSX.Element {
   const xpToNext = workerXpToNext(worker.level, xpGrowth);
   const xpFrac = Math.max(0, Math.min(1, worker.xp.div(xpToNext).toNumber()));
   // Effective stats = intrinsic (base + level rolls) + live Office node bonuses.
-  const stats = applySpawnBonuses(worker.stats, spawnBonuses);
+  const stats = applyBaseStatBonuses(worker.stats, baseBonuses);
   return (
     <li className={styles.card} data-testid="worker-stat-card">
       <header className={styles.cardHeader}>
@@ -58,7 +58,7 @@ export function OfficeRoom(): JSX.Element {
   const rosterCap = useGameStore(getRosterCap);
   const xpGrowth = useGameStore(getWorkerXpGrowth);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
-  const spawnBonuses = getWorkerSpawnBonuses({ purchasedNodes });
+  const baseBonuses = getWorkerBaseStatBonuses({ purchasedNodes });
 
   return (
     <section className={styles.room} aria-label="Painter's Office">
@@ -71,7 +71,7 @@ export function OfficeRoom(): JSX.Element {
         ) : (
           <ul className={styles.cardList}>
             {roster.map((w) => (
-              <WorkerStatCard key={w.id} worker={w} xpGrowth={xpGrowth} spawnBonuses={spawnBonuses} />
+              <WorkerStatCard key={w.id} worker={w} xpGrowth={xpGrowth} baseBonuses={baseBonuses} />
             ))}
           </ul>
         )}

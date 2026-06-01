@@ -350,19 +350,19 @@ export const WORKER_STROKES_PER_CRIT_INCREMENTS: ReadonlyArray<number> = [0, 1];
 /** Hard ceiling on a worker's crit chance. */
 export const WORKER_CRIT_CHANCE_CAP = 0.5;
 
-// ── Office skill-node worker bonuses (2026-06-01 design submission) ──────────
-// These modify a worker's SPAWN base stats / XP curve. Existing workers keep
-// the stats they were hired with; only newly-spawned workers get the boosts.
-/** food_regulation: +1 native step to every spawn base stat — +0.01 to the four
+// ── Office skill-node worker base-stat bonuses (2026-06-01 design submission) ─
+// These boost every worker's base stats as a LIVE layer (applyBaseStatBonuses),
+// so they apply to the whole roster — not just freshly-hired workers.
+/** food_regulation: +1 native step to every base stat — +0.01 to the four
  *  fractional stats (1 percentage point, matching WORKER_PCT_INCREMENTS) … */
 export const FOOD_REGULATION_PCT_STEP = 0.01;
 /** … and +1 to strokesPerCrit (matching WORKER_STROKES_PER_CRIT_INCREMENTS). */
 export const FOOD_REGULATION_STROKES_STEP = 1;
-/** robin_hood: +7% to a worker's spawn goldPct base, per level (maxLevel 5). */
+/** robin_hood: +7% to every worker's goldPct base, per level (maxLevel 5). */
 export const ROBIN_HOOD_GOLDPCT_PER_LEVEL = 0.07;
-/** blury_hand: +10% to a worker's spawn speed base, per level (maxLevel 1). */
+/** blury_hand: +10% to every worker's speed base, per level (maxLevel 1). */
 export const BLURY_HAND_SPEED_PER_LEVEL = 0.10;
-/** handcrafted_brush: +3% to a worker's spawn speed base, per level (maxLevel 5). */
+/** handcrafted_brush: +3% to every worker's speed base, per level (maxLevel 5). */
 export const HANDCRAFTED_BRUSH_SPEED_PER_LEVEL = 0.03;
 /** ai_freelancer: workers each bank this much XP per canvas completed during a run. */
 export const AI_FREELANCER_XP_PER_CANVAS = 5;

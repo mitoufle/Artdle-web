@@ -2,8 +2,8 @@ import type { JSX, CSSProperties } from "react";
 import { useRef } from "react";
 import { useGameStore } from "@/store";
 import { chunkInterval, workerXpToNext } from "@/core/balance";
-import { getWorkerXpGrowth, getWorkerSpawnBonuses, type Worker } from "@/store/officeSlice";
-import { applySpawnBonuses } from "@/core/workerModel";
+import { getWorkerXpGrowth, getWorkerBaseStatBonuses, type Worker } from "@/store/officeSlice";
+import { applyBaseStatBonuses } from "@/core/workerModel";
 import { WORKER_AVATARS } from "./workerAvatarMap";
 import styles from "./WorkerAvatars.module.css";
 
@@ -22,7 +22,7 @@ export function WorkerAvatars(): JSX.Element | null {
   const painterClocks = useGameStore((s) => s.painterClocks);
   const purchasedNodes = useGameStore((s) => s.purchasedNodes);
   const xpGrowth = getWorkerXpGrowth({ purchasedNodes });
-  const spawnBonuses = getWorkerSpawnBonuses({ purchasedNodes });
+  const baseBonuses = getWorkerBaseStatBonuses({ purchasedNodes });
 
   // Per-worker previous clock + a monotonic "stroke happened" nonce. A worker
   // strokes exactly when its clock DROPS (resets toward 0). Updating prev within
@@ -40,7 +40,7 @@ export function WorkerAvatars(): JSX.Element | null {
   const right = roster.filter((w) => !LEFT_AVATARS.has(w.avatar));
 
   const renderAvatar = (w: Worker): JSX.Element => {
-    const interval = chunkInterval(applySpawnBonuses(w.stats, spawnBonuses).speed);
+    const interval = chunkInterval(applyBaseStatBonuses(w.stats, baseBonuses).speed);
     const clock = painterClocks[w.id] ?? 0;
     const prev = prevClocks.current[w.id] ?? 0;
     if (clock < prev) procNonce.current[w.id] = (procNonce.current[w.id] ?? 0) + 1;
