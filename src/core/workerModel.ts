@@ -2,6 +2,7 @@ import { rngPick } from "@/core/rng";
 import {
   WORKER_BASE_STATS, WORKER_PCT_INCREMENTS, WORKER_STROKES_PER_CRIT_INCREMENTS, WORKER_CRIT_CHANCE_CAP,
   FOOD_REGULATION_PCT_STEP, FOOD_REGULATION_STROKES_STEP, ROBIN_HOOD_GOLDPCT_PER_LEVEL, BLURY_HAND_SPEED_PER_LEVEL,
+  HANDCRAFTED_BRUSH_SPEED_PER_LEVEL,
 } from "@/core/balance";
 
 /** The five stats of a redesigned worker. See office painter-redesign spec §2.1. */
@@ -27,12 +28,15 @@ export interface WorkerSpawnBonuses {
   robinHoodLevels: number;
   /** blury_hand level (0..1): +10% speed base each. */
   bluryHandLevels: number;
+  /** handcrafted_brush level (0..5): +3% speed base each. */
+  handcraftedBrushLevels: number;
 }
 
 export const NO_SPAWN_BONUSES: WorkerSpawnBonuses = Object.freeze({
   foodRegulation: 0,
   robinHoodLevels: 0,
   bluryHandLevels: 0,
+  handcraftedBrushLevels: 0,
 });
 
 /**
@@ -44,7 +48,9 @@ export const createSpawnStats = (bonuses: WorkerSpawnBonuses = NO_SPAWN_BONUSES)
   const food = bonuses.foodRegulation * FOOD_REGULATION_PCT_STEP;
   return {
     goldPct: WORKER_BASE_STATS.goldPct + food + bonuses.robinHoodLevels * ROBIN_HOOD_GOLDPCT_PER_LEVEL,
-    speed: WORKER_BASE_STATS.speed + food + bonuses.bluryHandLevels * BLURY_HAND_SPEED_PER_LEVEL,
+    speed: WORKER_BASE_STATS.speed + food
+      + bonuses.bluryHandLevels * BLURY_HAND_SPEED_PER_LEVEL
+      + bonuses.handcraftedBrushLevels * HANDCRAFTED_BRUSH_SPEED_PER_LEVEL,
     critChance: Math.min(WORKER_CRIT_CHANCE_CAP, WORKER_BASE_STATS.critChance + food),
     strokesPerCrit: WORKER_BASE_STATS.strokesPerCrit + bonuses.foodRegulation * FOOD_REGULATION_STROKES_STEP,
     comboChance: WORKER_BASE_STATS.comboChance + food,

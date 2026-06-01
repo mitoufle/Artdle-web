@@ -49,6 +49,23 @@ describe("canvasTickPure — multi-painter", () => {
     expect(d.roster[0]!.strokesThisRun).toBeGreaterThanOrEqual(2);
   });
 
+  it("ai_freelancer: workers bank +5 XP per canvas completed", () => {
+    const d = makeDraft({
+      purchasedNodes: { ai_freelancer: 1 } as DraftState["purchasedNodes"],
+      roster: [worker({ speed: 1 })],
+    });
+    canvasTickPure(d, BASE_CHUNK_INTERVAL * 5); // ~1 T1 canvas
+    expect(d.statsRun.canvasesSold).toBe(1);
+    expect(d.roster[0]!.xp.toNumber()).toBe(5); // 5 XP × 1 sale
+  });
+
+  it("ai_freelancer: no banked worker XP without the node", () => {
+    const d = makeDraft({ roster: [worker({ speed: 1 })] });
+    canvasTickPure(d, BASE_CHUNK_INTERVAL * 5);
+    expect(d.statsRun.canvasesSold).toBe(1);
+    expect(d.roster[0]!.xp.toNumber()).toBe(0);
+  });
+
   it("applies workerGoldFactor to sale gold (∏(1+goldPct))", () => {
     const d = makeDraft({ roster: [worker({ speed: 1, goldPct: 0.5 })] });
     canvasTickPure(d, BASE_CHUNK_INTERVAL * 5); // ~10 chunks across 2 painters → 1 T1 canvas

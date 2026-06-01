@@ -2,6 +2,7 @@ import { big, type Big } from "@/core/bigNumber";
 import {
   canvasGold, chunksPerCanvas, chunkInterval,
   COMBO_DECAY_PER_LINK, comboBonusFactor, comboEffectiveChance,
+  AI_FREELANCER_XP_PER_CANVAS,
 } from "@/core/balance";
 import {
   getCanvasGoldMultiplier, getCanvasSpeedMultiplier,
@@ -232,12 +233,23 @@ export function canvasTickPure(
   // their bars to 0 on the next real tick). Normal ticks replace wholesale so a
   // worker removed from the roster mid-tick drops out as intended.
   draft.painterClocks = opts?.playerOnly ? { ...prevClocks, ...clocks } : clocks;
-  if (Object.keys(workerStrokes).length > 0) {
-    draft.roster = draft.roster.map((w) =>
-      workerStrokes[w.id]
-        ? { ...w, strokesThisRun: w.strokesThisRun + workerStrokes[w.id]! }
-        : w,
-    );
+  // ai_freelancer: every worker banks XP per canvas completed this tick (applied
+  // to levels at the next ascend, like all worker XP). Independent of who landed
+  // the final chunk — it fires on completion, not on a worker's stroke.
+  const freelancerXp =
+    salesThisTick > 0 && hasCapability(draft, "worker_xp_on_canvas")
+      ? AI_FREELANCER_XP_PER_CANVAS * salesThisTick
+      : 0;
+  if (Object.keys(workerStrokes).length > 0 || freelancerXp > 0) {
+    draft.roster = draft.roster.map((w) => {
+      const ds = workerStrokes[w.id] ?? 0;
+      if (ds === 0 && freelancerXp === 0) return w;
+      return {
+        ...w,
+        strokesThisRun: w.strokesThisRun + ds,
+        xp: freelancerXp > 0 ? w.xp.add(big(freelancerXp)) : w.xp,
+      };
+    });
   }
 
   // School-research acceleration from skill nodes. DECREMENT ONLY — schoolTick

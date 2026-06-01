@@ -11,7 +11,7 @@ import { getNodeLevel, countCapability, hasCapability } from "@/store/skillTreeS
 import { getSchoolBonus } from "@/core/schoolMultipliers";
 import { MUSE_BURST_INSPI_MULT } from "@/core/skillTreeTickPure";
 import { getAchievementBonus } from "@/core/achievementMultipliers";
-import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL, ACCELERATOR_XP_PER_LEVEL, CANVAS_GOLD_BASE } from "./balance";
+import { SELL_PRICE_PER_LEVEL, SPEED_PER_LEVEL, CRIT_PER_LEVEL, BASE_CRIT_CHANCE, BASE_CRIT_CHUNKS, MAX_CRIT_LEVEL, COMBO_PER_LEVEL, CRIT_SOFT_CAP_THRESHOLD, CRIT_SOFT_CAP_CEILING, COLOR_PER_LEVEL, RAINBOW_PER_LEVEL, GET_INSPIRED_PER_LEVEL, BASIC_TECHNIQUE_PER_LEVEL, MUSCLE_MEMORY_PER_LEVEL, PATRON_INSPI_PER_LEVEL, ENLIGHTENMENT_INSPI_PER_EQUIPPED, BARGAIN_PER_LEVEL, BARGAIN_DISCOUNT_FLOOR, CRAFTSMANSHIP_PER_LEVEL, BETTER_SCALING_PER_WORKSHOP_LEVEL, ACCELERATOR_XP_PER_LEVEL, CANVAS_GOLD_BASE } from "./balance";
 import type { SlotKind } from "@/config/workshopAffixes";
 
 /**
@@ -76,13 +76,18 @@ const completedResearchCount = (state: Pick<GameStore, "completedResearches">): 
  *   - muse_burst (`museBurstTimer`): ×7 the whole rate while the buff is active.
  *   - workshop items: do NOT contribute (painting-only by design).
  */
-export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedResearches" | "completedAchievements" | "partLevels" | "museBurstTimer">): number => {
+export const getInspiMultiplier = (state: Pick<GameStore, "purchasedNodes" | "completedResearches" | "completedAchievements" | "partLevels" | "museBurstTimer" | "equipped">): number => {
   const zionBonus = hasCapability(state, "zion_tree_milestone")
     ? ZION_INSPI_PER_MILESTONE * countTreeUpgradesAtLevel(state.partLevels, ZION_MILESTONE_LEVEL)
     : 0;
+  // enlightenment: +2% inspiration per equipped item, per node level.
+  const equippedCount = Object.values(state.equipped).filter(Boolean).length;
+  const enlightenmentBonus =
+    countCapability(state, "inspi_per_equipped_item") * ENLIGHTENMENT_INSPI_PER_EQUIPPED * equippedCount;
   const bonus = getNodeLevel(state, "get_inspired") * GET_INSPIRED_PER_LEVEL
-    + countCapability(state, "inspi_mult_bonus") * 0.10
+    + countCapability(state, "inspi_mult_bonus") * PATRON_INSPI_PER_LEVEL
     + countCapability(state, "babylon_inspi_bonus") * BABYLON_INSPI_PER_LEVEL
+    + enlightenmentBonus
     + zionBonus
     + getSchoolBonus(state, "+% inspiration gain")
     + getAchievementBonus(state, "inspi_pct");

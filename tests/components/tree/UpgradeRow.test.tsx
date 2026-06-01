@@ -27,7 +27,7 @@ describe("<UpgradeRow />", () => {
     expect(screen.getByText(/120/)).toBeInTheDocument();
   });
 
-  it("tile contribution reflects external inspi modifiers (get_inspired Lv 1 = ×1.5)", () => {
+  it("tile contribution reflects external inspi modifiers (get_inspired Lv 1 = ×1.2)", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
     render(
       <UpgradeRow
@@ -35,8 +35,8 @@ describe("<UpgradeRow />", () => {
         cost="120" canAfford={true} onBuy={() => {}}
       />,
     );
-    // 3 × 0.1 × milestone 1.0 × 1.5 mult = 0.45
-    expect(screen.getByText(/\+0\.45 inspi\/s/)).toBeInTheDocument();
+    // 3 × 0.1 × milestone 1.0 × 1.2 mult = 0.36
+    expect(screen.getByText(/\+0\.36 inspi\/s/)).toBeInTheDocument();
   });
 
   it("tile contribution reflects the milestone multiplier at the current level (Lv 10 = ×2)", () => {

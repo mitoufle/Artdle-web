@@ -59,14 +59,14 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getInspiMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getInspiMultiplier returns 1.50 with get_inspired level 1", () => {
+  it("getInspiMultiplier returns 1.20 with get_inspired level 1", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.20, 5);
   });
 
-  it("getInspiMultiplier returns 3.50 with get_inspired level 5 (5 × 0.50)", () => {
+  it("getInspiMultiplier returns 2.00 with get_inspired level 5 (5 × 0.20)", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 5 } });
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(3.50, 5);
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.00, 5);
   });
 
   it("Zion: no bonus when not owned, even with upgrades at level 100", () => {
@@ -87,8 +87,8 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
 
   it("Zion: stacks additively with get_inspired", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 2, zion: 1 }, partLevels: { a: 100 } });
-    // 1 + 2*0.50 + 1*0.10 = 2.10
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.10, 5);
+    // 1 + 2*0.20 + 1*0.10 = 1.50
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
   });
 
   it("Babylon King: +100% inspiration per level (additive)", () => {
@@ -98,8 +98,8 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
 
   it("Babylon King: stacks additively with get_inspired", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 1, babylon_king: 1 } });
-    // 1 + 0.50 + 1.00 = 2.50
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.5, 5);
+    // 1 + 0.20 + 1.00 = 2.20
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(2.2, 5);
   });
 
   it("Muse Burst: x7 inspiration multiplier while the buff timer is active", () => {
@@ -114,8 +114,8 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
 
   it("Muse Burst: multiplies the whole bonus pool (stacks with get_inspired)", () => {
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 }, museBurstTimer: 42 });
-    // (1 + 0.50) * 7 = 10.5
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(10.5, 5);
+    // (1 + 0.20) * 7 = 8.4
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(8.4, 5);
   });
 
   it("getAscendFameMultiplier: 1.0 without Royalties, +70% per level with", () => {
@@ -148,6 +148,11 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
   it("invest_brain: no bonus with zero completed researches", () => {
     useGameStore.setState({ purchasedNodes: { invest_brain: 5 }, equipped: {}, sellPriceLevel: 0, completedAchievements: {}, completedResearches: {} });
     expect(getCanvasGoldMultiplier(useGameStore.getState())).toBeCloseTo(1, 5);
+  });
+
+  it("work_ethic: +10% worker ascend-XP pool (via worker_xp_mult)", () => {
+    useGameStore.setState({ purchasedNodes: { work_ethic: 1 }, completedResearches: {} });
+    expect(getWorkerXpPoolMultiplier(useGameStore.getState())).toBeCloseTo(1.10, 5);
   });
 
   it("feedback_loop: +10% worker XP pool per completed research", () => {
@@ -257,10 +262,10 @@ describe("core/multipliers — skill-tree v3 (designer-driven)", () => {
     expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBe(1);
   });
 
-  it("getCanvasSpeedMultiplier sums basic_technique 10%/lvl + muscle_memory 10%/lvl", () => {
+  it("getCanvasSpeedMultiplier sums basic_technique 5%/lvl + muscle_memory 5%/lvl", () => {
     useGameStore.setState({ purchasedNodes: { basic_technique: 5, muscle_memory: 5 } });
-    // 1 + 0.10*5 + 0.10*5 = 1 + 0.50 + 0.50 = 2.00
-    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBeCloseTo(2.00, 5);
+    // 1 + 0.05*5 + 0.05*5 = 1 + 0.25 + 0.25 = 1.50
+    expect(getCanvasSpeedMultiplier(useGameStore.getState())).toBeCloseTo(1.50, 5);
   });
 
   it("getTreeUpgradeCostMultiplier returns 1 with no Bargain", () => {
@@ -503,6 +508,7 @@ describe("school bonuses on multipliers", () => {
     const state = {
       purchasedNodes: {},
       completedResearches: { closer_to_nature: true },
+      equipped: {},
     } as unknown as GameStore;
     expect(getInspiMultiplier(state)).toBeCloseTo(1.15, 5);
   });
@@ -511,9 +517,10 @@ describe("school bonuses on multipliers", () => {
     const state = {
       purchasedNodes: { get_inspired: 2 },
       completedResearches: { closer_to_nature: true },
+      equipped: {},
     } as unknown as GameStore;
-    // 1 + 2*0.50 + 0.15 = 2.15
-    expect(getInspiMultiplier(state)).toBeCloseTo(2.15, 5);
+    // 1 + 2*0.20 + 0.15 = 1.55
+    expect(getInspiMultiplier(state)).toBeCloseTo(1.55, 5);
   });
 
   it("getSchoolAffixMagnitudeMultiplier: 1.0 with no completed research", async () => {
@@ -551,11 +558,11 @@ describe("school bonuses on multipliers", () => {
 });
 
 describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
-  it("patron: inspi_mult_bonus adds +10% per level on top of get_inspired", async () => {
+  it("patron: inspi_mult_bonus adds +50% per level on top of get_inspired", async () => {
     const { getInspiMultiplier } = await import("@/core/multipliers");
     useGameStore.setState({ purchasedNodes: { get_inspired: 5, patron: 3 } });
-    // 5 × 0.50 (get_inspired) + 3 × 0.10 (patron) = 2.80 bonus → ×3.80
-    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(3.80, 4);
+    // 5 × 0.20 (get_inspired) + 3 × 0.50 (patron) = 2.50 bonus → ×3.50
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(3.50, 4);
   });
 
   it("afterburner: combo_decay_reduction returns 0.01 × level", async () => {
@@ -564,10 +571,26 @@ describe("new-node capabilities (fame-tree additions 2026-05-11)", () => {
     expect(getComboDecayReduction(state)).toBeCloseTo(0.03, 4);
   });
 
-  it("enlightenment: ascend_threshold_reduction returns 0.05 × level", async () => {
+  it("enlightenment: no longer reduces the ascend threshold (reworked)", async () => {
     const { getAscendThresholdReduction } = await import("@/core/multipliers");
     const state = { purchasedNodes: { enlightenment: 4 } } as unknown as GameStore;
-    expect(getAscendThresholdReduction(state)).toBeCloseTo(0.20, 4);
+    expect(getAscendThresholdReduction(state)).toBeCloseTo(0, 4);
+  });
+
+  it("enlightenment: +2% inspiration per equipped item, per level", async () => {
+    const { getInspiMultiplier } = await import("@/core/multipliers");
+    // 4 levels × 0.02 × 2 equipped items = 0.16 bonus → ×1.16
+    useGameStore.setState({
+      purchasedNodes: { enlightenment: 4 },
+      equipped: { brush: { tier: "common" }, palette: { tier: "common" } } as unknown as GameStore["equipped"],
+    });
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1.16, 4);
+  });
+
+  it("enlightenment: no inspiration bonus with nothing equipped", async () => {
+    const { getInspiMultiplier } = await import("@/core/multipliers");
+    useGameStore.setState({ purchasedNodes: { enlightenment: 4 }, equipped: {} });
+    expect(getInspiMultiplier(useGameStore.getState())).toBeCloseTo(1, 4);
   });
 
 });

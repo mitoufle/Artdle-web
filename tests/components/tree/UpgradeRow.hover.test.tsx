@@ -27,8 +27,8 @@ describe("UpgradeRow hover wiring", () => {
   });
 
   it("contribution reflects current inspi multiplier (get_inspired levels)", () => {
-    // get_inspired Lv 1 = +50% inspi mult → 1.50×.
-    // 3 level × 1.5 rate × 1.50 mult = 6.75 → "6.75"
+    // get_inspired Lv 1 = +20% inspi mult → 1.20×.
+    // 3 level × 1.5 rate × 1.20 mult = 5.40 → "5.40"
     useGameStore.setState({ purchasedNodes: { get_inspired: 1 } });
     render(
       <UpgradeRow
@@ -38,7 +38,7 @@ describe("UpgradeRow hover wiring", () => {
     );
     fireEvent.mouseEnter(screen.getByTestId("upgrade-buy-cotyledon"));
     const { container } = render(<>{useGameStore.getState().hoverBody}</>);
-    expect(container.textContent).toMatch(/\+6\.75 inspi\/sec/);
+    expect(container.textContent).toMatch(/\+5\.40 inspi\/sec/);
   });
 
   it("footer reads the static scaling note", () => {

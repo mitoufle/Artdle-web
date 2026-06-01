@@ -34,11 +34,11 @@ describe("initialOfficeState", () => {
 describe("office worker skill-node selectors", () => {
   it("getWorkerSpawnBonuses reads food_regulation / robin_hood / blury_hand by capability", () => {
     expect(getWorkerSpawnBonuses({ purchasedNodes: {} })).toEqual({
-      foodRegulation: 0, robinHoodLevels: 0, bluryHandLevels: 0,
+      foodRegulation: 0, robinHoodLevels: 0, bluryHandLevels: 0, handcraftedBrushLevels: 0,
     });
     expect(getWorkerSpawnBonuses({
-      purchasedNodes: { food_regulation: 1, robin_hood: 3, blury_hand: 1 },
-    })).toEqual({ foodRegulation: 1, robinHoodLevels: 3, bluryHandLevels: 1 });
+      purchasedNodes: { food_regulation: 1, robin_hood: 3, blury_hand: 1, handcrafted_brush: 2 },
+    })).toEqual({ foodRegulation: 1, robinHoodLevels: 3, bluryHandLevels: 1, handcraftedBrushLevels: 2 });
   });
 
   it("getWorkerXpGrowth lowers growth by 0.05 per learning_curve level, floored at 1.0", () => {

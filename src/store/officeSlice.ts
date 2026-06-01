@@ -91,6 +91,7 @@ export const getWorkerSpawnBonuses = (state: Pick<GameStore, "purchasedNodes">):
   foodRegulation: countCapability(state, "worker_food_regulation"),
   robinHoodLevels: countCapability(state, "worker_goldpct_base"),
   bluryHandLevels: countCapability(state, "worker_speed_base"),
+  handcraftedBrushLevels: countCapability(state, "worker_speed_per_level"),
 });
 
 /**

@@ -27,7 +27,7 @@ export function TreeRoute(): JSX.Element {
   const buyPartLevel = useGameStore((s) => s.buyPartLevel);
   const buyAllAffordableTreeParts = useGameStore((s) => s.buyAllAffordableTreeParts);
 
-  const helperState = { currentStage, partLevels, purchasedNodes, completedResearches, completedAchievements, museBurstTimer };
+  const helperState = { currentStage, partLevels, purchasedNodes, completedResearches, completedAchievements, museBurstTimer, equipped };
   const treeUpgradeDiscount = getTreeUpgradeCostMultiplier(helperState);
 
   const rate = inspiPerSec(getProducingParts(helperState), getInspiMultiplier(helperState));

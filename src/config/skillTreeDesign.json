@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "Untitled draft",
-  "designedAt": "2026-06-01T18:02:21.583Z",
+  "designedAt": "2026-06-01T21:15:52.238Z",
   "nodes": [
     {
       "id": "get_inspired",
@@ -675,7 +675,7 @@
       "kind": "minor",
       "maxLevel": 1,
       "costs": [
-        4500
+        7000
       ],
       "unlocks": [
         "roster_slot"
@@ -1358,7 +1358,7 @@
       "kind": "minor",
       "maxLevel": 1,
       "costs": [
-        0
+        1200
       ],
       "unlocks": [],
       "position": {
@@ -1456,18 +1456,18 @@
       "clusterId": "office"
     },
     {
-      "id": "new_node_8",
-      "name": "New Node",
-      "description": "",
-      "numericEffect": "",
+      "id": "ai_freelancer",
+      "name": "AI Driven Freelancer",
+      "description": "workers gain #xp when a canvas is completed",
+      "numericEffect": "5",
       "parentIds": [
         "hire_manager"
       ],
       "stacking": "additive",
-      "kind": "minor",
+      "kind": "major",
       "maxLevel": 1,
       "costs": [
-        0
+        300000
       ],
       "unlocks": [],
       "position": {
@@ -1477,18 +1477,18 @@
       "clusterId": "office"
     },
     {
-      "id": "new_node_9",
-      "name": "New Node",
-      "description": "",
-      "numericEffect": "",
+      "id": "work_ethic",
+      "name": "Work Ethic",
+      "description": "fame grant +#% xp when ascneding",
+      "numericEffect": "10",
       "parentIds": [
         "employer_branding"
       ],
       "stacking": "additive",
-      "kind": "minor",
+      "kind": "major",
       "maxLevel": 1,
       "costs": [
-        0
+        200000
       ],
       "unlocks": [],
       "position": {
@@ -1503,14 +1503,14 @@
       "description": "unlocks an additional worker slot",
       "numericEffect": "1",
       "parentIds": [
-        "new_node_8",
-        "new_node_9"
+        "work_ethic",
+        "ai_freelancer"
       ],
       "stacking": "additive",
-      "kind": "minor",
+      "kind": "major",
       "maxLevel": 1,
       "costs": [
-        0
+        450000
       ],
       "unlocks": [],
       "position": {
@@ -1583,18 +1583,22 @@
       "clusterId": "office"
     },
     {
-      "id": "new_node_13",
-      "name": "New Node",
-      "description": "",
-      "numericEffect": "",
+      "id": "handcrafted_brush",
+      "name": "Handcrafted Brush",
+      "description": "workers gain #% stroke speed per level",
+      "numericEffect": "3",
       "parentIds": [
         "hire_manager"
       ],
       "stacking": "additive",
       "kind": "minor",
-      "maxLevel": 1,
+      "maxLevel": 5,
       "costs": [
-        0
+        10000,
+        15000,
+        20000,
+        25000,
+        35000
       ],
       "unlocks": [],
       "position": {

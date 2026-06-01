@@ -295,12 +295,14 @@ export const COLOR_PER_LEVEL: Readonly<Record<string, number>> = {
 };
 /** Rainbow stacks multiplicatively: × (1 + RAINBOW_PER_LEVEL × level). */
 export const RAINBOW_PER_LEVEL = 5.00;
-/** get_inspired: +50% inspi rate per level (additive). */
-export const GET_INSPIRED_PER_LEVEL = 0.50;
-/** basic_technique: +10% canvas speed per level (additive). */
-export const BASIC_TECHNIQUE_PER_LEVEL = 0.10;
-/** muscle_memory: +10% canvas speed per level (additive). */
-export const MUSCLE_MEMORY_PER_LEVEL = 0.10;
+/** get_inspired: +20% inspi rate per level (additive). */
+export const GET_INSPIRED_PER_LEVEL = 0.20;
+/** basic_technique: +5% canvas speed per level (additive). */
+export const BASIC_TECHNIQUE_PER_LEVEL = 0.05;
+/** muscle_memory: +5% canvas speed per level (additive). */
+export const MUSCLE_MEMORY_PER_LEVEL = 0.05;
+/** patron (inspi_mult_bonus): +50% inspi gain per level (additive). */
+export const PATRON_INSPI_PER_LEVEL = 0.50;
 /** Bargain: -5% tree upgrade cost per level (additive discount). */
 export const BARGAIN_PER_LEVEL = 0.05;
 /** Tree upgrade cost can never drop below 50% of base, regardless of Bargain level. */
@@ -360,6 +362,12 @@ export const FOOD_REGULATION_STROKES_STEP = 1;
 export const ROBIN_HOOD_GOLDPCT_PER_LEVEL = 0.07;
 /** blury_hand: +10% to a worker's spawn speed base, per level (maxLevel 1). */
 export const BLURY_HAND_SPEED_PER_LEVEL = 0.10;
+/** handcrafted_brush: +3% to a worker's spawn speed base, per level (maxLevel 5). */
+export const HANDCRAFTED_BRUSH_SPEED_PER_LEVEL = 0.03;
+/** ai_freelancer: workers each bank this much XP per canvas completed during a run. */
+export const AI_FREELANCER_XP_PER_CANVAS = 5;
+/** enlightenment: +2% inspiration gain per equipped item, per level. */
+export const ENLIGHTENMENT_INSPI_PER_EQUIPPED = 0.02;
 /** learning_curve: each level lowers the worker XP growth multiplier by 0.05
  *  (1.5 → 1.45 at maxLevel), gently flattening the curve while keeping it
  *  exponential. Floored at WORKER_XP_GROWTH_FLOOR so it can never go flat. */

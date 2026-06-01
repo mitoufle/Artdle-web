@@ -24,8 +24,8 @@ describe("skillTreeSlice (multi-level + DAG)", () => {
     expect(useGameStore.getState().fame.eq(0)).toBe(true);
   });
 
-  it("buyNode('get_inspired') 5 times spends [1,2,3,5,8] = 19 total fame", () => {
-    useGameStore.setState({ fame: big(19) });
+  it("buyNode('get_inspired') 5 times spends [1,2,3,4,5] = 15 total fame", () => {
+    useGameStore.setState({ fame: big(15) });
     for (let i = 0; i < 5; i++) {
       expect(useGameStore.getState().buyNode("get_inspired")).toBe(true);
     }
