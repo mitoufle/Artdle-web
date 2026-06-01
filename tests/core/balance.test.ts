@@ -301,6 +301,11 @@ describe("workerXpToNext", () => {
     expect(workerXpToNext(2).toNumber()).toBeCloseTo(1500, 6);
     expect(workerXpToNext(3).toNumber()).toBeCloseTo(2250, 6);
   });
+  it("learning_curve growth=1.0 flattens the curve to a constant WORKER_XP_BASE/level", () => {
+    expect(workerXpToNext(1, 1.0).toNumber()).toBeCloseTo(1000, 6);
+    expect(workerXpToNext(2, 1.0).toNumber()).toBeCloseTo(1000, 6);
+    expect(workerXpToNext(5, 1.0).toNumber()).toBeCloseTo(1000, 6);
+  });
 });
 
 // ============================================================================

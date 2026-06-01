@@ -1,5 +1,5 @@
 import { type Big } from "@/core/bigNumber";
-import { workerXpToNext, WORKER_BASELINE_XP_FRACTION } from "@/core/balance";
+import { workerXpToNext, WORKER_BASELINE_XP_FRACTION, WORKER_XP_GROWTH } from "@/core/balance";
 import { applyStatLevelUp, type WorkerStats } from "@/core/workerModel";
 import type { Worker } from "@/store/officeSlice";
 
@@ -40,12 +40,12 @@ export function splitAscendPool(
  * desyncing the real ascend's stat rolls. Capped at `LEVEL_UP_CAP` like the
  * real pass.
  */
-export function countWorkerLevelGains(worker: Worker, xpShare: Big): number {
+export function countWorkerLevelGains(worker: Worker, xpShare: Big, growth: number = WORKER_XP_GROWTH): number {
   let level = worker.level;
   let xp = worker.xp.add(xpShare);
   let gained = 0;
   for (; gained < LEVEL_UP_CAP; gained++) {
-    const cost = workerXpToNext(level);
+    const cost = workerXpToNext(level, growth);
     if (xp.lt(cost)) break;
     xp = xp.sub(cost);
     level += 1;
@@ -59,10 +59,14 @@ export function countWorkerLevelGains(worker: Worker, xpShare: Big): number {
  * levels only — no RNG, no mutation. Drives the ascend screen's worker-level
  * preview alongside the fame-gain preview.
  */
-export function previewAscendLevelGains(pool: Big, workers: ReadonlyArray<Worker>): number {
+export function previewAscendLevelGains(
+  pool: Big,
+  workers: ReadonlyArray<Worker>,
+  growth: number = WORKER_XP_GROWTH,
+): number {
   if (workers.length === 0) return 0;
   const shares = splitAscendPool(pool, workers);
-  return workers.reduce((sum, w, i) => sum + countWorkerLevelGains(w, shares[i]!), 0);
+  return workers.reduce((sum, w, i) => sum + countWorkerLevelGains(w, shares[i]!, growth), 0);
 }
 
 /** Per-worker outcome of an ascend XP pass — a pure before/after snapshot. */
@@ -80,7 +84,11 @@ export interface WorkerLevelUpResult {
  * Leftover XP carries toward the next level. Capped at LEVEL_UP_CAP per pass.
  * Does NOT touch `strokesThisRun` (the caller resets it).
  */
-export function applyAscendXpToWorker(worker: Worker, xpShare: Big): WorkerLevelUpResult {
+export function applyAscendXpToWorker(
+  worker: Worker,
+  xpShare: Big,
+  growth: number = WORKER_XP_GROWTH,
+): WorkerLevelUpResult {
   const levelBefore = worker.level;
   const statsBefore = worker.stats;
   let level = worker.level;
@@ -89,7 +97,7 @@ export function applyAscendXpToWorker(worker: Worker, xpShare: Big): WorkerLevel
   let mastery = worker.mastery;
   let i = 0;
   for (; i < LEVEL_UP_CAP; i++) {
-    const cost = workerXpToNext(level);
+    const cost = workerXpToNext(level, growth);
     if (xp.lt(cost)) break;
     xp = xp.sub(cost);
     level += 1;

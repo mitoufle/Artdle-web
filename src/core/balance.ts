@@ -321,8 +321,8 @@ export const WORKER_XP_GROWTH = 1.5;
  *  at 1, so the first level-up uses level=1 → BASE. Curve: 1000 × 1.5^(level-1)
  *  → 1000, 1500, 2250, 3375, … (eased from 3000 × 1.9 — XP was too punishing
  *  relative to the per-ascend fame pool; see GitHub issue #4). */
-export const workerXpToNext = (level: number): Big =>
-  big(WORKER_XP_BASE).mul(big(WORKER_XP_GROWTH).pow(level - 1));
+export const workerXpToNext = (level: number, growth: number = WORKER_XP_GROWTH): Big =>
+  big(WORKER_XP_BASE).mul(big(growth).pow(level - 1));
 
 // ============================================================================
 // Worker stat model — redesigned Painter's Office (autonomous painters).
@@ -347,6 +347,23 @@ export const WORKER_STROKES_PER_CRIT_INCREMENTS: ReadonlyArray<number> = [0, 1];
 
 /** Hard ceiling on a worker's crit chance. */
 export const WORKER_CRIT_CHANCE_CAP = 0.5;
+
+// ── Office skill-node worker bonuses (2026-06-01 design submission) ──────────
+// These modify a worker's SPAWN base stats / XP curve. Existing workers keep
+// the stats they were hired with; only newly-spawned workers get the boosts.
+/** food_regulation: +1 native step to every spawn base stat — +0.01 to the four
+ *  fractional stats (1 percentage point, matching WORKER_PCT_INCREMENTS) … */
+export const FOOD_REGULATION_PCT_STEP = 0.01;
+/** … and +1 to strokesPerCrit (matching WORKER_STROKES_PER_CRIT_INCREMENTS). */
+export const FOOD_REGULATION_STROKES_STEP = 1;
+/** robin_hood: +7% to a worker's spawn goldPct base, per level (maxLevel 5). */
+export const ROBIN_HOOD_GOLDPCT_PER_LEVEL = 0.07;
+/** blury_hand: +10% to a worker's spawn speed base, per level (maxLevel 1). */
+export const BLURY_HAND_SPEED_PER_LEVEL = 0.10;
+/** learning_curve: each level lowers the worker XP growth multiplier by 0.5,
+ *  floored at WORKER_XP_GROWTH_FLOOR (growth 1.0 = flat WORKER_XP_BASE/level). */
+export const LEARNING_CURVE_GROWTH_REDUCTION = 0.5;
+export const WORKER_XP_GROWTH_FLOOR = 1.0;
 
 /** Ascend-XP pool split: this fraction is distributed EQUALLY across the roster
  *  (the baseline floor — so a fresh / zero-stroke worker still climbs); the

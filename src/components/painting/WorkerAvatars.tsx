@@ -2,7 +2,7 @@ import type { JSX, CSSProperties } from "react";
 import { useRef } from "react";
 import { useGameStore } from "@/store";
 import { chunkInterval, workerXpToNext } from "@/core/balance";
-import type { Worker } from "@/store/officeSlice";
+import { getWorkerXpGrowth, type Worker } from "@/store/officeSlice";
 import { WORKER_AVATARS } from "./workerAvatarMap";
 import styles from "./WorkerAvatars.module.css";
 
@@ -19,6 +19,8 @@ const LEFT_AVATARS = new Set([2, 3]);
 export function WorkerAvatars(): JSX.Element | null {
   const roster = useGameStore((s) => s.roster);
   const painterClocks = useGameStore((s) => s.painterClocks);
+  const purchasedNodes = useGameStore((s) => s.purchasedNodes);
+  const xpGrowth = getWorkerXpGrowth({ purchasedNodes });
 
   // Per-worker previous clock + a monotonic "stroke happened" nonce. A worker
   // strokes exactly when its clock DROPS (resets toward 0). Updating prev within
@@ -43,7 +45,7 @@ export function WorkerAvatars(): JSX.Element | null {
     prevClocks.current[w.id] = clock;
     const nonce = procNonce.current[w.id] ?? 0;
     const fillPct = interval > 0 ? Math.max(0, Math.min(1, clock / interval)) : 0;
-    const xpToNext = workerXpToNext(w.level);
+    const xpToNext = workerXpToNext(w.level, xpGrowth);
     const xpFrac = Math.max(0, Math.min(1, w.xp.div(xpToNext).toNumber()));
     return (
       <div key={w.id} className={styles.avatar} data-testid="worker-avatar">

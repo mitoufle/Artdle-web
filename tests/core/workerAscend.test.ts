@@ -103,6 +103,19 @@ describe("applyAscendXpToWorker", () => {
     expect(r.worker.stats).toEqual(w.stats);
   });
 
+  it("a flattened growth (learning_curve) yields more level-ups for the same XP, and preview matches", () => {
+    const w = createWorker(); // level 1, xp 0
+    const POOL = big(6000);
+    // Default growth 1.5: 1000+1500+2250 = 4750 ≤ 6000 < +3375 → 3 levels.
+    const def = applyAscendXpToWorker(w, POOL).levelAfter - w.level;
+    // Flat growth 1.0: every level costs 1000 → 6 levels from 6000.
+    const flat = applyAscendXpToWorker(w, POOL, 1.0).levelAfter - w.level;
+    expect(flat).toBeGreaterThan(def);
+    // Preview path must thread the same growth and agree with the real pass.
+    expect(countWorkerLevelGains(w, POOL, 1.0)).toBe(flat);
+    expect(previewAscendLevelGains(POOL, [w], 1.0)).toBe(flat);
+  });
+
   it("levels up and rolls stat increments; mastery tracks levels", () => {
     const w = createWorker();
     const r = applyAscendXpToWorker(w, big(20000));

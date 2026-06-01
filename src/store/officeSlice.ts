@@ -3,9 +3,10 @@ import { v4 as uuidv4 } from "uuid";
 import { big, type Big } from "@/core/bigNumber";
 import type { GameStore } from "@/store";
 import { countCapability } from "@/store/skillTreeSlice";
-import { createBaseStats, type WorkerStats } from "@/core/workerModel";
+import { createBaseStats, createSpawnStats, type WorkerStats, type WorkerSpawnBonuses } from "@/core/workerModel";
 import { getWorkerXpPoolMultiplier } from "@/core/multipliers";
 import { splitAscendPool, applyAscendXpToWorker } from "@/core/workerAscend";
+import { WORKER_XP_GROWTH, LEARNING_CURVE_GROWTH_REDUCTION, WORKER_XP_GROWTH_FLOOR } from "@/core/balance";
 import { WORKER_NAME_POOL } from "@/config/workerNames";
 
 /**
@@ -81,6 +82,28 @@ export interface OfficeSlice extends OfficeState {
 export const getRosterCap = (state: Pick<GameStore, "purchasedNodes">): number =>
   countCapability(state, "roster_slot");
 
+/**
+ * Office skill-node bonuses applied to a newly-spawned worker's base stats.
+ * Read by capability tag (decoupled from node ids per the SkillNodeConfig
+ * contract): food_regulation / robin_hood / blury_hand.
+ */
+export const getWorkerSpawnBonuses = (state: Pick<GameStore, "purchasedNodes">): WorkerSpawnBonuses => ({
+  foodRegulation: countCapability(state, "worker_food_regulation"),
+  robinHoodLevels: countCapability(state, "worker_goldpct_base"),
+  bluryHandLevels: countCapability(state, "worker_speed_base"),
+});
+
+/**
+ * Worker XP-curve growth multiplier after learning_curve. Each purchased level
+ * lowers WORKER_XP_GROWTH by LEARNING_CURVE_GROWTH_REDUCTION, floored at
+ * WORKER_XP_GROWTH_FLOOR (growth 1.0 = flat WORKER_XP_BASE per level).
+ */
+export const getWorkerXpGrowth = (state: Pick<GameStore, "purchasedNodes">): number =>
+  Math.max(
+    WORKER_XP_GROWTH_FLOOR,
+    WORKER_XP_GROWTH - countCapability(state, "worker_xp_growth_reduction") * LEARNING_CURVE_GROWTH_REDUCTION,
+  );
+
 /** Cosmetic-only randomness (name/avatar). Deliberately NOT the seeded gameplay
  *  rng — picking these must never perturb the canvas/catch-up RNG stream. */
 const randomName = (): string =>
@@ -132,13 +155,15 @@ export function distinctNames(roster: ReadonlyArray<Worker>): Worker[] {
   });
 }
 
-/** Factory: a fresh level-1 worker of the given class (default neutral "base"). */
-export const createWorker = (classId = "base"): Worker => ({
+/** Factory: a fresh level-1 worker of the given class (default neutral "base").
+ *  `stats` defaults to the un-boosted base; the roster reconciler passes
+ *  skill-node-boosted spawn stats (see getWorkerSpawnBonuses). */
+export const createWorker = (classId = "base", stats: WorkerStats = createBaseStats()): Worker => ({
   id: uuidv4(),
   classId,
   level: 1,
   xp: big(0),
-  stats: createBaseStats(),
+  stats,
   mastery: 0,
   strokesThisRun: 0,
   name: randomName(),
@@ -152,8 +177,9 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
     const state = get();
     const cap = getRosterCap(state);
     const missing = cap - state.roster.length;
+    const spawnBonuses = getWorkerSpawnBonuses(state);
     const spawned: Worker[] = [];
-    for (let i = 0; i < missing; i++) spawned.push(createWorker());
+    for (let i = 0; i < missing; i++) spawned.push(createWorker("base", createSpawnStats(spawnBonuses)));
     const combined = spawned.length > 0 ? [...state.roster, ...spawned] : state.roster;
     // Normalize avatars + names so every painter is visually and nominally
     // distinct (also self-heals legacy saves whose workers share either).
@@ -179,10 +205,11 @@ export const createOfficeSlice: StateCreator<GameStore, [], [], OfficeSlice> = (
       return;
     }
     const pool = poolMagnitude.mul(getWorkerXpPoolMultiplier(state));
+    const growth = getWorkerXpGrowth(state);
     const shares = splitAscendPool(pool, state.roster);
     const roll: AscendRollEntry[] = [];
     const newRoster = state.roster.map((w, i) => {
-      const res = applyAscendXpToWorker(w, shares[i]!);
+      const res = applyAscendXpToWorker(w, shares[i]!, growth);
       if (res.levelAfter > res.levelBefore) {
         roll.push({
           id: w.id,

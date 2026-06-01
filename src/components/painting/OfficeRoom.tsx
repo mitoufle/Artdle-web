@@ -1,14 +1,14 @@
 import type { JSX } from "react";
 import { useGameStore } from "@/store";
-import { getRosterCap, type Worker } from "@/store/officeSlice";
+import { getRosterCap, getWorkerXpGrowth, type Worker } from "@/store/officeSlice";
 import { workerXpToNext } from "@/core/balance";
 import { formatBig } from "@/core/formatter";
 import { WORKER_STAT_KEYS, WORKER_STAT_LABELS, formatWorkerStatAbsolute } from "./workerStatDisplay";
 import { WORKER_AVATARS } from "./workerAvatarMap";
 import styles from "./OfficeRoom.module.css";
 
-function WorkerStatCard({ worker }: { worker: Worker }): JSX.Element {
-  const xpToNext = workerXpToNext(worker.level);
+function WorkerStatCard({ worker, xpGrowth }: { worker: Worker; xpGrowth: number }): JSX.Element {
+  const xpToNext = workerXpToNext(worker.level, xpGrowth);
   const xpFrac = Math.max(0, Math.min(1, worker.xp.div(xpToNext).toNumber()));
   return (
     <li className={styles.card} data-testid="worker-stat-card">
@@ -53,6 +53,7 @@ function WorkerStatCard({ worker }: { worker: Worker }): JSX.Element {
 export function OfficeRoom(): JSX.Element {
   const roster = useGameStore((s) => s.roster);
   const rosterCap = useGameStore(getRosterCap);
+  const xpGrowth = useGameStore(getWorkerXpGrowth);
 
   return (
     <section className={styles.room} aria-label="Painter's Office">
@@ -65,7 +66,7 @@ export function OfficeRoom(): JSX.Element {
         ) : (
           <ul className={styles.cardList}>
             {roster.map((w) => (
-              <WorkerStatCard key={w.id} worker={w} />
+              <WorkerStatCard key={w.id} worker={w} xpGrowth={xpGrowth} />
             ))}
           </ul>
         )}

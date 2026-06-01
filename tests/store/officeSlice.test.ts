@@ -3,6 +3,8 @@ import { useGameStore } from "@/store";
 import {
   initialOfficeState,
   getRosterCap,
+  getWorkerSpawnBonuses,
+  getWorkerXpGrowth,
   createWorker,
   type Worker,
 } from "@/store/officeSlice";
@@ -26,6 +28,35 @@ describe("initialOfficeState", () => {
     expect((initialOfficeState as unknown as Record<string, unknown>).officeLevel).toBeUndefined();
     expect((initialOfficeState as unknown as Record<string, unknown>).queue).toBeUndefined();
     expect((initialOfficeState as unknown as Record<string, unknown>).trickleTimer).toBeUndefined();
+  });
+});
+
+describe("office worker skill-node selectors", () => {
+  it("getWorkerSpawnBonuses reads food_regulation / robin_hood / blury_hand by capability", () => {
+    expect(getWorkerSpawnBonuses({ purchasedNodes: {} })).toEqual({
+      foodRegulation: 0, robinHoodLevels: 0, bluryHandLevels: 0,
+    });
+    expect(getWorkerSpawnBonuses({
+      purchasedNodes: { food_regulation: 1, robin_hood: 3, blury_hand: 1 },
+    })).toEqual({ foodRegulation: 1, robinHoodLevels: 3, bluryHandLevels: 1 });
+  });
+
+  it("getWorkerXpGrowth lowers growth by 0.5 per learning_curve level, floored at 1.0", () => {
+    expect(getWorkerXpGrowth({ purchasedNodes: {} })).toBeCloseTo(1.5, 9);
+    expect(getWorkerXpGrowth({ purchasedNodes: { learning_curve: 1 } })).toBeCloseTo(1.0, 9);
+  });
+
+  it("reconcileRoster spawns workers with skill-node-boosted base stats", () => {
+    useGameStore.setState({
+      roster: [],
+      // entrepreneur + hire_manager give roster slots; robin_hood boosts goldPct.
+      purchasedNodes: { entrepreneur: 1, robin_hood: 2, blury_hand: 1 },
+    });
+    useGameStore.getState().reconcileRoster();
+    const roster = useGameStore.getState().roster;
+    expect(roster.length).toBeGreaterThan(0);
+    expect(roster[0]!.stats.goldPct).toBeCloseTo(0.14, 9); // 2 × 0.07
+    expect(roster[0]!.stats.speed).toBeCloseTo(1.10, 9);   // +10% from blury_hand
   });
 });
 
@@ -122,10 +153,11 @@ describe("reconcileRoster", () => {
 
 describe("buying a roster_slot node spawns a worker", () => {
   it("reconciles the roster after a successful purchase", () => {
-    // hire_manager's parent is entrepreneur, so seeding it satisfies the prereq.
+    // hire_manager's prereq chain is entrepreneur → food_regulation → robin_hood,
+    // so seed those at level 1 to satisfy the parent gate.
     useGameStore.setState({
       roster: [],
-      purchasedNodes: { entrepreneur: 1 },
+      purchasedNodes: { entrepreneur: 1, food_regulation: 1, robin_hood: 1 },
       devFreeNodes: true,
     });
     const ok = useGameStore.getState().buyNode("hire_manager");
