@@ -360,9 +360,10 @@ export const FOOD_REGULATION_STROKES_STEP = 1;
 export const ROBIN_HOOD_GOLDPCT_PER_LEVEL = 0.07;
 /** blury_hand: +10% to a worker's spawn speed base, per level (maxLevel 1). */
 export const BLURY_HAND_SPEED_PER_LEVEL = 0.10;
-/** learning_curve: each level lowers the worker XP growth multiplier by 0.5,
- *  floored at WORKER_XP_GROWTH_FLOOR (growth 1.0 = flat WORKER_XP_BASE/level). */
-export const LEARNING_CURVE_GROWTH_REDUCTION = 0.5;
+/** learning_curve: each level lowers the worker XP growth multiplier by 0.05
+ *  (1.5 → 1.45 at maxLevel), gently flattening the curve while keeping it
+ *  exponential. Floored at WORKER_XP_GROWTH_FLOOR so it can never go flat. */
+export const LEARNING_CURVE_GROWTH_REDUCTION = 0.05;
 export const WORKER_XP_GROWTH_FLOOR = 1.0;
 
 /** Ascend-XP pool split: this fraction is distributed EQUALLY across the roster

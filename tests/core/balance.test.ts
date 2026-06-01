@@ -301,9 +301,14 @@ describe("workerXpToNext", () => {
     expect(workerXpToNext(2).toNumber()).toBeCloseTo(1500, 6);
     expect(workerXpToNext(3).toNumber()).toBeCloseTo(2250, 6);
   });
-  it("learning_curve growth=1.0 flattens the curve to a constant WORKER_XP_BASE/level", () => {
+  it("accepts a lowered growth and still scales with level (learning_curve 1.5→1.45)", () => {
+    // learning_curve gently flattens the curve; it stays exponential.
+    expect(workerXpToNext(1, 1.45).toNumber()).toBeCloseTo(1000, 6);
+    expect(workerXpToNext(2, 1.45).toNumber()).toBeCloseTo(1450, 6);
+    expect(workerXpToNext(3, 1.45).toNumber()).toBeCloseTo(2102.5, 4);
+  });
+  it("at the growth floor (1.0) the curve is flat — WORKER_XP_BASE every level", () => {
     expect(workerXpToNext(1, 1.0).toNumber()).toBeCloseTo(1000, 6);
-    expect(workerXpToNext(2, 1.0).toNumber()).toBeCloseTo(1000, 6);
     expect(workerXpToNext(5, 1.0).toNumber()).toBeCloseTo(1000, 6);
   });
 });

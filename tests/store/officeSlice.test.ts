@@ -41,9 +41,9 @@ describe("office worker skill-node selectors", () => {
     })).toEqual({ foodRegulation: 1, robinHoodLevels: 3, bluryHandLevels: 1 });
   });
 
-  it("getWorkerXpGrowth lowers growth by 0.5 per learning_curve level, floored at 1.0", () => {
+  it("getWorkerXpGrowth lowers growth by 0.05 per learning_curve level, floored at 1.0", () => {
     expect(getWorkerXpGrowth({ purchasedNodes: {} })).toBeCloseTo(1.5, 9);
-    expect(getWorkerXpGrowth({ purchasedNodes: { learning_curve: 1 } })).toBeCloseTo(1.0, 9);
+    expect(getWorkerXpGrowth({ purchasedNodes: { learning_curve: 1 } })).toBeCloseTo(1.45, 9);
   });
 
   it("reconcileRoster spawns workers with skill-node-boosted base stats", () => {
