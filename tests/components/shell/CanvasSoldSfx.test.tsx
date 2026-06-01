@@ -65,7 +65,7 @@ describe("CanvasSoldSfx", () => {
     await flushDecode();
     act(() => setSold(1));
     expect(started.count).toBe(1);
-    expect(lastGain?.value).toBeCloseTo(0.25); // 0.2 × 1.25 boost
+    expect(lastGain?.value).toBeCloseTo(0.125); // 0.2 × 0.625 boost
   });
 
   it("does not play when the count is unchanged or drops (ascend reset)", async () => {
