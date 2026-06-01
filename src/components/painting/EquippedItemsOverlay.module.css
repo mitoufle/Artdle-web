@@ -16,6 +16,31 @@
 .flankLeft  { left: var(--s-4); }
 .flankRight { right: var(--s-4); }
 
+/* White light pooling at the centroid of the three-disc triangle. Absolutely
+   positioned so it doesn't take part in the grid track sizing; sits behind the
+   discs (z-index 0 < .disc's 1) so it reads as an aura, not an overlay. */
+.flank::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 59%;
+  width: 104px;
+  height: 104px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.45) 40%,
+    rgba(255, 255, 255, 0.14) 70%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  filter: blur(9px);
+  z-index: 0;
+  pointer-events: none;
+  animation: triangleGlowPulse 3s ease-in-out infinite;
+}
+
 /* Apex disc: centered above the two base discs. */
 .slotApex {
   grid-column: 1 / span 2;
@@ -39,7 +64,15 @@
   background-position: center;
   z-index: 1;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  /* Gentle levitation, like the research book. Staggered per slot below so the
+     three discs bob around the central glow rather than in lockstep. */
+  animation: discFloat 3.6s ease-in-out infinite;
+  will-change: transform;
 }
+
+/* Apex disc leads; the two base discs trail so the triangle shimmers. */
+.slot:nth-child(2) .disc { animation-delay: 0.6s; }
+.slot:nth-child(3) .disc { animation-delay: 1.2s; }
 
 /* Empty + locked slots: a plain dark-grey disc. */
 .discPlaceholder {
@@ -80,4 +113,19 @@
   animation: equippedFusionSpin 0.8s linear infinite;
   z-index: 0;
   will-change: transform;
+}
+
+@keyframes discFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+@keyframes triangleGlowPulse {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.92); }
+  50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disc { animation: none; }
+  .flank::after { animation: none; }
 }
